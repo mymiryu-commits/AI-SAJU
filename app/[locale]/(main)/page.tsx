@@ -205,8 +205,8 @@ export default async function HomePage({
                 </Button>
               </Link>
               <Link href="/guide">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl backdrop-blur-sm group">
-                  <Play className="mr-2 h-5 w-5 group-hover:text-green-400 transition-colors" />
+                <Button size="lg" className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white border border-slate-500/50 px-8 py-6 text-lg rounded-xl backdrop-blur-sm group transition-all hover:scale-105">
+                  <Play className="mr-2 h-5 w-5 text-emerald-400" />
                   무료 가이드 시작
                 </Button>
               </Link>
