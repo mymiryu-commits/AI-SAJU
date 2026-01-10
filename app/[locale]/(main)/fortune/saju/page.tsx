@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles, ArrowRight, Loader2, Zap, Star, Heart, Briefcase, Activity } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, Zap, Star, Heart, Briefcase, Activity, Lock } from 'lucide-react';
 
 // Generate hour options for birth time
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
@@ -240,6 +240,32 @@ function ResultView({
   onReset: () => void;
 }) {
   const t = useTranslations('fortune.saju.result');
+  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
+
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        let { hours, minutes, seconds } = prev;
+        seconds--;
+        if (seconds < 0) {
+          seconds = 59;
+          minutes--;
+        }
+        if (minutes < 0) {
+          minutes = 59;
+          hours--;
+        }
+        if (hours < 0) {
+          hours = 23;
+          minutes = 59;
+          seconds = 59;
+        }
+        return { hours, minutes, seconds };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const scoreItems = [
     { key: 'overall', icon: Zap, color: 'text-purple-500' },
@@ -248,6 +274,28 @@ function ResultView({
     { key: 'career', icon: Briefcase, color: 'text-blue-500' },
     { key: 'health', icon: Activity, color: 'text-green-500' },
   ];
+
+  // Premium content that will be blurred
+  const premiumContent = {
+    detailedPersonality: '당신은 강한 리더십과 창의적 사고를 가진 사람입니다. 天干의 甲木이 강하게 작용하여 새로운 시작과 도전에 적합한 운을 타고났습니다. 특히 사업과 창업에 있어서 남다른 안목을 가지고 있으며, 위기 상황에서도 침착하게 대처하는 능력이 있습니다...',
+    wealthFortune: '2025년 재물운은 상반기에 집중되어 있습니다. 특히 3월과 7월에 좋은 기회가 찾아올 것입니다. 투자보다는 저축과 안정적인 자산 관리에 집중하는 것이 좋습니다. 下半期에는 예상치 못한 지출이 있을 수 있으니 비상금을 준비해두세요...',
+    loveFortune: '연애운은 5월에서 8월 사이가 가장 좋습니다. 싱글이라면 이 시기에 좋은 인연을 만날 가능성이 높습니다. 기존 연인이 있다면 관계가 더욱 깊어지는 시기입니다. 다만 11월경에는 사소한 오해로 갈등이 생길 수 있으니 대화를 아끼지 마세요...',
+    careerFortune: '직장인이라면 승진 또는 중요한 프로젝트 기회가 있습니다. 특히 상반기에 좋은 결과를 얻을 수 있습니다. 이직을 고려 중이라면 6월 이후가 적합합니다. 사업을 하고 계신다면 새로운 파트너십을 통해 성장할 기회가 있습니다...',
+    monthlyFortune: [
+      { month: '1월', score: 75, summary: '새해 계획 수립에 좋은 시기' },
+      { month: '2월', score: 82, summary: '인간관계 확장의 달' },
+      { month: '3월', score: 90, summary: '재물운 상승, 투자 기회' },
+      { month: '4월', score: 78, summary: '건강 관리 필요' },
+      { month: '5월', score: 85, summary: '연애운 상승' },
+      { month: '6월', score: 80, summary: '이직/전직 고려 적기' },
+      { month: '7월', score: 92, summary: '황금 기회의 달' },
+      { month: '8월', score: 75, summary: '휴식과 재충전' },
+      { month: '9월', score: 83, summary: '학업/자기계발 유리' },
+      { month: '10월', score: 88, summary: '사업 확장 기회' },
+      { month: '11월', score: 70, summary: '신중한 결정 필요' },
+      { month: '12월', score: 85, summary: '한 해 마무리와 준비' },
+    ],
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -263,10 +311,13 @@ function ResultView({
           </p>
         </div>
 
-        {/* Four Pillars */}
+        {/* Four Pillars - FREE */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>{t('fourPillars')}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t('fourPillars')}</CardTitle>
+              <Badge variant="secondary">무료</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
@@ -288,10 +339,13 @@ function ResultView({
           </CardContent>
         </Card>
 
-        {/* Scores */}
+        {/* Scores - FREE */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Fortune Scores</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>2025년 운세 점수</CardTitle>
+              <Badge variant="secondary">무료</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -322,10 +376,13 @@ function ResultView({
           </CardContent>
         </Card>
 
-        {/* Personality */}
+        {/* Basic Personality - FREE */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>{t('personality')}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>기본 성격 분석</CardTitle>
+              <Badge variant="secondary">무료</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
@@ -339,48 +396,184 @@ function ResultView({
           </CardContent>
         </Card>
 
-        {/* Advice */}
+        {/* Lucky Elements - FREE */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>{t('advice')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{result.advice}</p>
-          </CardContent>
-        </Card>
-
-        {/* Lucky Elements */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Lucky Elements</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>행운의 요소</CardTitle>
+              <Badge variant="secondary">무료</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center p-4 rounded-lg bg-muted">
-                <div className="text-sm text-muted-foreground mb-1">Color</div>
+                <div className="text-sm text-muted-foreground mb-1">행운의 색</div>
                 <div className="font-bold text-purple-500">{result.luckyElements.color}</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted">
-                <div className="text-sm text-muted-foreground mb-1">Number</div>
+                <div className="text-sm text-muted-foreground mb-1">행운의 숫자</div>
                 <div className="font-bold text-primary">{result.luckyElements.number}</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted">
-                <div className="text-sm text-muted-foreground mb-1">Direction</div>
+                <div className="text-sm text-muted-foreground mb-1">행운의 방향</div>
                 <div className="font-bold">{result.luckyElements.direction}</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* PREMIUM SECTION - BLURRED */}
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-xl">
+            <Lock className="h-12 w-12 text-primary mb-4" />
+            <h3 className="text-xl font-bold mb-2">프리미엄 분석 보기</h3>
+            <p className="text-muted-foreground text-center mb-4 px-4">
+              상세 성격 분석, 재물운, 연애운, 직업운까지<br/>
+              모든 정보를 확인하세요
+            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl font-bold text-primary">₩4,130</span>
+              <span className="text-muted-foreground line-through">₩5,900</span>
+              <Badge className="bg-red-500">30% OFF</Badge>
+            </div>
+          </div>
+
+          <Card className="blur-sm pointer-events-none">
+            <CardHeader>
+              <CardTitle>상세 성격 분석</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{premiumContent.detailedPersonality}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <Badge className="bg-purple-600 text-white px-4 py-2">
+              <Lock className="h-4 w-4 mr-2" />
+              Premium
+            </Badge>
+          </div>
+          <Card className="blur-sm pointer-events-none">
+            <CardHeader>
+              <CardTitle>2025년 재물운 상세</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{premiumContent.wealthFortune}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <Badge className="bg-pink-600 text-white px-4 py-2">
+              <Lock className="h-4 w-4 mr-2" />
+              Premium
+            </Badge>
+          </div>
+          <Card className="blur-sm pointer-events-none">
+            <CardHeader>
+              <CardTitle>2025년 연애운 상세</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{premiumContent.loveFortune}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <Badge className="bg-blue-600 text-white px-4 py-2">
+              <Lock className="h-4 w-4 mr-2" />
+              Premium
+            </Badge>
+          </div>
+          <Card className="blur-sm pointer-events-none">
+            <CardHeader>
+              <CardTitle>2025년 직업운 상세</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{premiumContent.careerFortune}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Monthly Fortune Preview - BLURRED */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/60 dark:bg-black/60 backdrop-blur-sm rounded-xl">
+            <Lock className="h-8 w-8 text-primary mb-2" />
+            <p className="font-semibold">월별 상세 운세 12개월</p>
+          </div>
+          <Card className="blur-sm pointer-events-none">
+            <CardHeader>
+              <CardTitle>2025년 월별 운세</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-2">
+                {premiumContent.monthlyFortune.slice(0, 8).map((month) => (
+                  <div key={month.month} className="text-center p-2 rounded bg-muted">
+                    <div className="font-bold">{month.month}</div>
+                    <div className="text-primary">{month.score}점</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Conversion CTA */}
+        <Card className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0">
+          <CardContent className="p-8 text-center">
+            <h3 className="text-2xl font-bold mb-2">지금 결제하면 30% 할인!</h3>
+            <p className="text-white/80 mb-4">
+              상세 분석 + 월별 운세 + PDF 다운로드까지
+            </p>
+
+            {/* Countdown Timer */}
+            <div className="flex justify-center gap-4 mb-6">
+              <div className="bg-white/20 rounded-lg px-4 py-2">
+                <div className="text-2xl font-bold">{timeLeft.hours.toString().padStart(2, '0')}</div>
+                <div className="text-xs text-white/60">시간</div>
+              </div>
+              <div className="text-2xl font-bold">:</div>
+              <div className="bg-white/20 rounded-lg px-4 py-2">
+                <div className="text-2xl font-bold">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+                <div className="text-xs text-white/60">분</div>
+              </div>
+              <div className="text-2xl font-bold">:</div>
+              <div className="bg-white/20 rounded-lg px-4 py-2">
+                <div className="text-2xl font-bold">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+                <div className="text-xs text-white/60">초</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <span className="text-3xl font-bold">₩4,130</span>
+              <span className="text-xl text-white/60 line-through">₩5,900</span>
+            </div>
+
+            <Button size="lg" className="bg-white text-purple-600 hover:bg-white/90 w-full max-w-md">
+              프리미엄 분석 결제하기
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+
+            <p className="text-xs text-white/60 mt-4">
+              카카오페이, 네이버페이, 신용카드 결제 가능
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button variant="outline" onClick={onReset}>
-            Try Again
+            다시 분석하기
           </Button>
-          <Button>
-            Get Premium Analysis
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <Link href="/fortune">
+            <Button variant="ghost">
+              다른 운세 보기
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
