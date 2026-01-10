@@ -1,0 +1,306 @@
+{
+  "common": {
+    "siteName": "AI RANK",
+    "siteDescription": "AI 도구 순위 및 AI 운세 서비스",
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "retry": "다시 시도",
+    "save": "저장",
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "edit": "수정",
+    "search": "검색",
+    "seeMore": "더 보기",
+    "seeAll": "전체 보기",
+    "close": "닫기",
+    "back": "뒤로",
+    "next": "다음",
+    "prev": "이전",
+    "submit": "제출",
+    "free": "무료",
+    "paid": "유료",
+    "new": "NEW",
+    "hot": "HOT",
+    "popular": "인기"
+  },
+  "nav": {
+    "home": "홈",
+    "ranking": "AI 순위",
+    "guide": "AI 가이드",
+    "prompts": "프롬프트 마켓",
+    "fortune": "AI 운세",
+    "qr": "QR 명함",
+    "community": "커뮤니티",
+    "pricing": "요금제",
+    "login": "로그인",
+    "signup": "회원가입",
+    "myPage": "마이페이지",
+    "logout": "로그아웃"
+  },
+  "home": {
+    "hero": {
+      "title": "AI 도구의 모든 것",
+      "subtitle": "무료 AI 순위부터 AI 운세까지",
+      "cta": "지금 시작하기"
+    },
+    "sections": {
+      "topAI": "TOP AI 도구",
+      "freeAI": "무료 AI 추천",
+      "trending": "인기 상승 중",
+      "fortune": "오늘의 운세",
+      "guides": "최신 AI 가이드"
+    }
+  },
+  "ranking": {
+    "title": "AI 순위",
+    "subtitle": "2025년 최고의 AI 도구들을 만나보세요",
+    "categories": {
+      "all": "전체",
+      "chat": "대화형 AI",
+      "image": "이미지 생성",
+      "video": "영상 생성",
+      "code": "코딩 AI",
+      "voice": "음성 AI",
+      "writing": "글쓰기 AI",
+      "productivity": "생산성"
+    },
+    "filters": {
+      "sort": "정렬",
+      "sortByScore": "점수순",
+      "sortByPopular": "인기순",
+      "sortByRecent": "최신순",
+      "pricing": "가격",
+      "pricingAll": "전체",
+      "pricingFree": "무료",
+      "pricingFreemium": "부분유료",
+      "pricingPaid": "유료"
+    },
+    "card": {
+      "score": "점수",
+      "reviews": "리뷰",
+      "visit": "방문하기",
+      "compare": "비교하기"
+    },
+    "detail": {
+      "overview": "개요",
+      "features": "주요 기능",
+      "pricing": "요금제",
+      "reviews": "사용자 리뷰",
+      "alternatives": "대안 도구",
+      "pros": "장점",
+      "cons": "단점",
+      "writeReview": "리뷰 작성"
+    }
+  },
+  "fortune": {
+    "title": "AI 운세",
+    "subtitle": "AI가 분석하는 당신의 운명",
+    "categories": {
+      "free": "무료 운세",
+      "saju": "사주 분석",
+      "face": "관상 분석",
+      "astrology": "별자리 운세",
+      "tarot": "타로 리딩",
+      "compatibility": "궁합",
+      "group": "가족/그룹 분석"
+    },
+    "saju": {
+      "title": "AI 사주 분석",
+      "subtitle": "사주팔자로 알아보는 당신의 운명",
+      "form": {
+        "name": "이름",
+        "namePlaceholder": "이름을 입력하세요",
+        "birthDate": "생년월일",
+        "birthTime": "태어난 시간",
+        "birthTimeUnknown": "모름",
+        "gender": "성별",
+        "genderMale": "남성",
+        "genderFemale": "여성",
+        "calendar": "양력/음력",
+        "calendarSolar": "양력",
+        "calendarLunar": "음력",
+        "submit": "무료 분석 시작"
+      },
+      "result": {
+        "title": "사주 분석 결과",
+        "fourPillars": "사주팔자",
+        "yearPillar": "년주",
+        "monthPillar": "월주",
+        "dayPillar": "일주",
+        "hourPillar": "시주",
+        "fiveElements": "오행 분석",
+        "personality": "성격 분석",
+        "career": "직업운",
+        "wealth": "재물운",
+        "love": "애정운",
+        "health": "건강운",
+        "thisYear": "올해의 운세",
+        "advice": "조언"
+      }
+    },
+    "daily": {
+      "title": "오늘의 운세",
+      "checkin": "출석 체크",
+      "streakDays": "연속 {count}일",
+      "todayFortune": "오늘의 운세를 확인하세요",
+      "scores": {
+        "overall": "종합운",
+        "wealth": "재물운",
+        "love": "애정운",
+        "career": "직업운",
+        "health": "건강운"
+      },
+      "luckyItems": {
+        "time": "행운의 시간",
+        "color": "행운의 색",
+        "number": "행운의 숫자"
+      }
+    },
+    "free": {
+      "title": "무료 운세",
+      "subtitle": "간단한 정보만으로 확인하는 오늘의 운세",
+      "cta": "무료로 확인하기"
+    },
+    "premium": {
+      "title": "프리미엄 분석",
+      "features": [
+        "상세 사주 분석",
+        "PDF 리포트 제공",
+        "음성 해설 포함",
+        "월별 운세 예측",
+        "전문가 상담 연결"
+      ],
+      "cta": "프리미엄 분석 받기"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "로그인",
+      "subtitle": "AI RANK에 오신 것을 환영합니다",
+      "email": "이메일",
+      "password": "비밀번호",
+      "rememberMe": "로그인 유지",
+      "forgotPassword": "비밀번호 찾기",
+      "submit": "로그인",
+      "noAccount": "계정이 없으신가요?",
+      "signup": "회원가입",
+      "or": "또는",
+      "socialLogin": {
+        "google": "Google로 계속하기",
+        "kakao": "카카오로 계속하기",
+        "apple": "Apple로 계속하기"
+      }
+    },
+    "signup": {
+      "title": "회원가입",
+      "subtitle": "무료 회원가입하고 모든 서비스를 이용하세요",
+      "email": "이메일",
+      "password": "비밀번호",
+      "confirmPassword": "비밀번호 확인",
+      "name": "이름",
+      "agreeTerms": "이용약관에 동의합니다",
+      "agreePrivacy": "개인정보처리방침에 동의합니다",
+      "agreeMarketing": "마케팅 수신에 동의합니다 (선택)",
+      "submit": "회원가입",
+      "hasAccount": "이미 계정이 있으신가요?",
+      "login": "로그인"
+    }
+  },
+  "mypage": {
+    "title": "마이페이지",
+    "tabs": {
+      "dashboard": "대시보드",
+      "history": "분석 기록",
+      "family": "가족 관리",
+      "subscription": "구독 관리",
+      "settings": "설정"
+    },
+    "dashboard": {
+      "welcome": "환영합니다, {name}님",
+      "membership": "멤버십",
+      "coins": "보유 코인",
+      "analyses": "총 분석",
+      "streak": "연속 출석"
+    }
+  },
+  "pricing": {
+    "title": "요금제",
+    "subtitle": "나에게 맞는 요금제를 선택하세요",
+    "monthly": "월간",
+    "yearly": "연간",
+    "yearlyDiscount": "2개월 무료",
+    "tiers": {
+      "free": {
+        "name": "무료",
+        "price": "0",
+        "features": [
+          "일일 무료 운세",
+          "간단 사주 분석 (1회)",
+          "AI 순위 열람",
+          "기본 가이드 이용"
+        ]
+      },
+      "basic": {
+        "name": "베이직",
+        "price": "4,900",
+        "features": [
+          "무료 플랜의 모든 기능",
+          "상세 사주 분석 월 3회",
+          "광고 제거",
+          "PDF 리포트"
+        ]
+      },
+      "pro": {
+        "name": "프로",
+        "price": "9,900",
+        "popular": true,
+        "features": [
+          "베이직 플랜의 모든 기능",
+          "무제한 사주/관상 분석",
+          "음성 리포트",
+          "우선 고객 지원"
+        ]
+      },
+      "premium": {
+        "name": "프리미엄",
+        "price": "19,900",
+        "features": [
+          "프로 플랜의 모든 기능",
+          "통합 분석 무제한",
+          "전문가 상담 월 1회",
+          "가족 분석 포함"
+        ]
+      }
+    },
+    "cta": {
+      "current": "현재 플랜",
+      "subscribe": "구독하기",
+      "upgrade": "업그레이드"
+    }
+  },
+  "footer": {
+    "company": {
+      "title": "회사 정보",
+      "about": "소개",
+      "careers": "채용",
+      "press": "보도자료"
+    },
+    "support": {
+      "title": "고객 지원",
+      "faq": "자주 묻는 질문",
+      "contact": "문의하기",
+      "feedback": "피드백"
+    },
+    "legal": {
+      "title": "법적 고지",
+      "terms": "이용약관",
+      "privacy": "개인정보처리방침",
+      "cookies": "쿠키 정책"
+    },
+    "social": {
+      "title": "소셜"
+    },
+    "copyright": "© 2025 AI RANK. All rights reserved."
+  }
+}

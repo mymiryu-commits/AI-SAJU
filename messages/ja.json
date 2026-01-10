@@ -1,0 +1,306 @@
+{
+  "common": {
+    "siteName": "AI RANK",
+    "siteDescription": "AIツールランキング＆AI占いサービス",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "retry": "再試行",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "search": "検索",
+    "seeMore": "もっと見る",
+    "seeAll": "すべて見る",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "prev": "前へ",
+    "submit": "送信",
+    "free": "無料",
+    "paid": "有料",
+    "new": "NEW",
+    "hot": "HOT",
+    "popular": "人気"
+  },
+  "nav": {
+    "home": "ホーム",
+    "ranking": "AIランキング",
+    "guide": "AIガイド",
+    "prompts": "プロンプトマーケット",
+    "fortune": "AI占い",
+    "qr": "QR名刺",
+    "community": "コミュニティ",
+    "pricing": "料金プラン",
+    "login": "ログイン",
+    "signup": "会員登録",
+    "myPage": "マイページ",
+    "logout": "ログアウト"
+  },
+  "home": {
+    "hero": {
+      "title": "AIツールのすべて",
+      "subtitle": "無料AIランキングからAI占いまで",
+      "cta": "今すぐ始める"
+    },
+    "sections": {
+      "topAI": "TOP AIツール",
+      "freeAI": "無料AIおすすめ",
+      "trending": "人気上昇中",
+      "fortune": "今日の運勢",
+      "guides": "最新AIガイド"
+    }
+  },
+  "ranking": {
+    "title": "AIランキング",
+    "subtitle": "2025年最高のAIツールをご紹介",
+    "categories": {
+      "all": "すべて",
+      "chat": "チャットAI",
+      "image": "画像生成",
+      "video": "動画生成",
+      "code": "コーディングAI",
+      "voice": "音声AI",
+      "writing": "ライティングAI",
+      "productivity": "生産性"
+    },
+    "filters": {
+      "sort": "並び替え",
+      "sortByScore": "スコア順",
+      "sortByPopular": "人気順",
+      "sortByRecent": "新着順",
+      "pricing": "価格",
+      "pricingAll": "すべて",
+      "pricingFree": "無料",
+      "pricingFreemium": "フリーミアム",
+      "pricingPaid": "有料"
+    },
+    "card": {
+      "score": "スコア",
+      "reviews": "レビュー",
+      "visit": "訪問する",
+      "compare": "比較する"
+    },
+    "detail": {
+      "overview": "概要",
+      "features": "主な機能",
+      "pricing": "料金プラン",
+      "reviews": "ユーザーレビュー",
+      "alternatives": "代替ツール",
+      "pros": "メリット",
+      "cons": "デメリット",
+      "writeReview": "レビューを書く"
+    }
+  },
+  "fortune": {
+    "title": "AI占い",
+    "subtitle": "AIが分析するあなたの運命",
+    "categories": {
+      "free": "無料占い",
+      "saju": "四柱推命",
+      "face": "人相占い",
+      "astrology": "星座占い",
+      "tarot": "タロット",
+      "compatibility": "相性診断",
+      "group": "家族/グループ分析"
+    },
+    "saju": {
+      "title": "AI四柱推命",
+      "subtitle": "四柱推命で読み解くあなたの運命",
+      "form": {
+        "name": "お名前",
+        "namePlaceholder": "お名前を入力してください",
+        "birthDate": "生年月日",
+        "birthTime": "生まれた時間",
+        "birthTimeUnknown": "不明",
+        "gender": "性別",
+        "genderMale": "男性",
+        "genderFemale": "女性",
+        "calendar": "新暦/旧暦",
+        "calendarSolar": "新暦",
+        "calendarLunar": "旧暦",
+        "submit": "無料分析を開始"
+      },
+      "result": {
+        "title": "四柱推命分析結果",
+        "fourPillars": "四柱八字",
+        "yearPillar": "年柱",
+        "monthPillar": "月柱",
+        "dayPillar": "日柱",
+        "hourPillar": "時柱",
+        "fiveElements": "五行分析",
+        "personality": "性格分析",
+        "career": "仕事運",
+        "wealth": "金運",
+        "love": "恋愛運",
+        "health": "健康運",
+        "thisYear": "今年の運勢",
+        "advice": "アドバイス"
+      }
+    },
+    "daily": {
+      "title": "今日の運勢",
+      "checkin": "チェックイン",
+      "streakDays": "{count}日連続",
+      "todayFortune": "今日の運勢を確認",
+      "scores": {
+        "overall": "総合運",
+        "wealth": "金運",
+        "love": "恋愛運",
+        "career": "仕事運",
+        "health": "健康運"
+      },
+      "luckyItems": {
+        "time": "ラッキータイム",
+        "color": "ラッキーカラー",
+        "number": "ラッキーナンバー"
+      }
+    },
+    "free": {
+      "title": "無料占い",
+      "subtitle": "簡単な情報で確認する今日の運勢",
+      "cta": "無料で確認"
+    },
+    "premium": {
+      "title": "プレミアム分析",
+      "features": [
+        "詳細四柱推命",
+        "PDFレポート",
+        "音声解説付き",
+        "月別運勢予測",
+        "専門家相談"
+      ],
+      "cta": "プレミアム分析を受ける"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "ログイン",
+      "subtitle": "AI RANKへようこそ",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "rememberMe": "ログイン状態を維持",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "submit": "ログイン",
+      "noAccount": "アカウントをお持ちでないですか？",
+      "signup": "会員登録",
+      "or": "または",
+      "socialLogin": {
+        "google": "Googleでログイン",
+        "kakao": "カカオでログイン",
+        "apple": "Appleでログイン"
+      }
+    },
+    "signup": {
+      "title": "会員登録",
+      "subtitle": "無料会員登録ですべてのサービスをご利用いただけます",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "confirmPassword": "パスワード確認",
+      "name": "お名前",
+      "agreeTerms": "利用規約に同意します",
+      "agreePrivacy": "プライバシーポリシーに同意します",
+      "agreeMarketing": "マーケティング受信に同意します（任意）",
+      "submit": "会員登録",
+      "hasAccount": "すでにアカウントをお持ちですか？",
+      "login": "ログイン"
+    }
+  },
+  "mypage": {
+    "title": "マイページ",
+    "tabs": {
+      "dashboard": "ダッシュボード",
+      "history": "分析履歴",
+      "family": "家族管理",
+      "subscription": "サブスクリプション",
+      "settings": "設定"
+    },
+    "dashboard": {
+      "welcome": "ようこそ、{name}さん",
+      "membership": "メンバーシップ",
+      "coins": "保有コイン",
+      "analyses": "総分析数",
+      "streak": "連続チェックイン"
+    }
+  },
+  "pricing": {
+    "title": "料金プラン",
+    "subtitle": "あなたに合ったプランをお選びください",
+    "monthly": "月額",
+    "yearly": "年額",
+    "yearlyDiscount": "2ヶ月無料",
+    "tiers": {
+      "free": {
+        "name": "無料",
+        "price": "0",
+        "features": [
+          "毎日の無料運勢",
+          "簡単四柱推命（1回）",
+          "AIランキング閲覧",
+          "基本ガイド利用"
+        ]
+      },
+      "basic": {
+        "name": "ベーシック",
+        "price": "550",
+        "features": [
+          "無料プランのすべての機能",
+          "詳細四柱推命 月3回",
+          "広告非表示",
+          "PDFレポート"
+        ]
+      },
+      "pro": {
+        "name": "プロ",
+        "price": "1,100",
+        "popular": true,
+        "features": [
+          "ベーシックプランのすべての機能",
+          "四柱推命/人相占い無制限",
+          "音声レポート",
+          "優先サポート"
+        ]
+      },
+      "premium": {
+        "name": "プレミアム",
+        "price": "2,200",
+        "features": [
+          "プロプランのすべての機能",
+          "統合分析無制限",
+          "専門家相談 月1回",
+          "家族分析含む"
+        ]
+      }
+    },
+    "cta": {
+      "current": "現在のプラン",
+      "subscribe": "登録する",
+      "upgrade": "アップグレード"
+    }
+  },
+  "footer": {
+    "company": {
+      "title": "会社情報",
+      "about": "会社概要",
+      "careers": "採用情報",
+      "press": "プレスリリース"
+    },
+    "support": {
+      "title": "サポート",
+      "faq": "よくある質問",
+      "contact": "お問い合わせ",
+      "feedback": "フィードバック"
+    },
+    "legal": {
+      "title": "法的情報",
+      "terms": "利用規約",
+      "privacy": "プライバシーポリシー",
+      "cookies": "クッキーポリシー"
+    },
+    "social": {
+      "title": "ソーシャル"
+    },
+    "copyright": "© 2025 AI RANK. All rights reserved."
+  }
+}
