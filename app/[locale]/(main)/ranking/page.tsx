@@ -26,7 +26,7 @@ import {
   Flame,
 } from 'lucide-react';
 
-// AI 툴 데이터 - 더 풍부한 정보
+// AI 툴 데이터 - 파스텔 톤 디자인
 const aiTools = [
   {
     id: '1',
@@ -43,9 +43,9 @@ const aiTools = [
     trend: 'up',
     useCases: ['블로그 글쓰기', '번역', '코딩', '분석'],
     monthlyIncome: '100~500만',
-    gradient: 'from-emerald-500/20 to-teal-500/20',
-    borderColor: 'border-emerald-500/30',
-    iconBg: 'bg-emerald-500',
+    borderColor: 'border-emerald-300/40',
+    iconBg: 'bg-gradient-to-br from-emerald-400 to-teal-500',
+    accentColor: 'text-emerald-400',
   },
   {
     id: '2',
@@ -62,9 +62,9 @@ const aiTools = [
     trend: 'up',
     useCases: ['코딩', '분석', '문서 작성', '리서치'],
     monthlyIncome: '200~800만',
-    gradient: 'from-orange-500/20 to-amber-500/20',
-    borderColor: 'border-orange-500/30',
-    iconBg: 'bg-orange-500',
+    borderColor: 'border-orange-300/40',
+    iconBg: 'bg-gradient-to-br from-orange-400 to-amber-500',
+    accentColor: 'text-orange-400',
   },
   {
     id: '3',
@@ -81,9 +81,9 @@ const aiTools = [
     trend: 'stable',
     useCases: ['썸네일', '상세페이지', '이모티콘', 'NFT'],
     monthlyIncome: '200~1,000만',
-    gradient: 'from-indigo-500/20 to-purple-500/20',
-    borderColor: 'border-indigo-500/30',
-    iconBg: 'bg-indigo-500',
+    borderColor: 'border-violet-300/40',
+    iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500',
+    accentColor: 'text-violet-400',
   },
   {
     id: '4',
@@ -100,9 +100,9 @@ const aiTools = [
     trend: 'up',
     useCases: ['쇼츠', '릴스', '광고', 'MV'],
     monthlyIncome: '300~1,500만',
-    gradient: 'from-pink-500/20 to-rose-500/20',
-    borderColor: 'border-pink-500/30',
-    iconBg: 'bg-pink-500',
+    borderColor: 'border-pink-300/40',
+    iconBg: 'bg-gradient-to-br from-pink-400 to-rose-500',
+    accentColor: 'text-pink-400',
   },
   {
     id: '5',
@@ -119,9 +119,9 @@ const aiTools = [
     trend: 'up',
     useCases: ['나레이션', '더빙', '팟캐스트', '오디오북'],
     monthlyIncome: '150~600만',
-    gradient: 'from-violet-500/20 to-purple-500/20',
-    borderColor: 'border-violet-500/30',
-    iconBg: 'bg-violet-500',
+    borderColor: 'border-purple-300/40',
+    iconBg: 'bg-gradient-to-br from-purple-400 to-indigo-500',
+    accentColor: 'text-purple-400',
   },
   {
     id: '6',
@@ -138,9 +138,9 @@ const aiTools = [
     trend: 'up',
     useCases: ['웹개발', 'SaaS', '자동화', '앱개발'],
     monthlyIncome: '500~3,000만',
-    gradient: 'from-cyan-500/20 to-blue-500/20',
-    borderColor: 'border-cyan-500/30',
-    iconBg: 'bg-cyan-500',
+    borderColor: 'border-cyan-300/40',
+    iconBg: 'bg-gradient-to-br from-cyan-400 to-blue-500',
+    accentColor: 'text-cyan-400',
   },
   {
     id: '7',
@@ -157,9 +157,9 @@ const aiTools = [
     trend: 'stable',
     useCases: ['썸네일', 'SNS', '프레젠테이션', '로고'],
     monthlyIncome: '100~400만',
-    gradient: 'from-teal-500/20 to-emerald-500/20',
-    borderColor: 'border-teal-500/30',
-    iconBg: 'bg-teal-500',
+    borderColor: 'border-teal-300/40',
+    iconBg: 'bg-gradient-to-br from-teal-400 to-emerald-500',
+    accentColor: 'text-teal-400',
   },
   {
     id: '8',
@@ -176,13 +176,13 @@ const aiTools = [
     trend: 'up',
     useCases: ['쇼츠', '강의', '광고', '소개영상'],
     monthlyIncome: '200~800만',
-    gradient: 'from-amber-500/20 to-yellow-500/20',
-    borderColor: 'border-amber-500/30',
-    iconBg: 'bg-amber-500',
+    borderColor: 'border-amber-300/40',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-500',
+    accentColor: 'text-amber-400',
   },
 ];
 
-// 수익화 AI 조합 - 난이도별 분류
+// 수익화 AI 조합 - 파스텔 톤 디자인
 const monetizationCombos = [
   {
     id: 'shorts',
@@ -191,8 +191,7 @@ const monetizationCombos = [
     difficulty: '중',
     avgIncome: '200~800만',
     period: '2~4주',
-    gradient: 'from-rose-500/20 to-pink-500/20',
-    borderColor: 'border-rose-500/30',
+    borderColor: 'border-rose-300/50',
     accentColor: 'text-rose-400',
     combos: [
       {
@@ -222,9 +221,8 @@ const monetizationCombos = [
     difficulty: '하',
     avgIncome: '100~400만',
     period: '즉시',
-    gradient: 'from-blue-500/20 to-indigo-500/20',
-    borderColor: 'border-blue-500/30',
-    accentColor: 'text-blue-400',
+    borderColor: 'border-sky-300/50',
+    accentColor: 'text-sky-400',
     combos: [
       {
         name: '쓰레드 자동화',
@@ -253,8 +251,7 @@ const monetizationCombos = [
     difficulty: '하',
     avgIncome: '50~300만',
     period: '1~2주',
-    gradient: 'from-orange-500/20 to-amber-500/20',
-    borderColor: 'border-orange-500/30',
+    borderColor: 'border-orange-300/50',
     accentColor: 'text-orange-400',
     combos: [
       {
@@ -284,8 +281,7 @@ const monetizationCombos = [
     difficulty: '중',
     avgIncome: '300~1,500만',
     period: '2~4주',
-    gradient: 'from-emerald-500/20 to-teal-500/20',
-    borderColor: 'border-emerald-500/30',
+    borderColor: 'border-emerald-300/50',
     accentColor: 'text-emerald-400',
     combos: [
       {
@@ -315,9 +311,8 @@ const monetizationCombos = [
     difficulty: '중',
     avgIncome: '200~800만',
     period: '1~2주',
-    gradient: 'from-pink-500/20 to-fuchsia-500/20',
-    borderColor: 'border-pink-500/30',
-    accentColor: 'text-pink-400',
+    borderColor: 'border-fuchsia-300/50',
+    accentColor: 'text-fuchsia-400',
     combos: [
       {
         name: '상세페이지 제작',
@@ -346,8 +341,7 @@ const monetizationCombos = [
     difficulty: '상',
     avgIncome: '500~3,000만',
     period: '1~3개월',
-    gradient: 'from-amber-500/20 to-yellow-500/20',
-    borderColor: 'border-amber-500/30',
+    borderColor: 'border-amber-300/50',
     accentColor: 'text-amber-400',
     combos: [
       {
@@ -520,46 +514,46 @@ function ToolCard({
 }) {
   return (
     <div
-      className={`rounded-2xl bg-gradient-to-br ${tool.gradient} ${tool.borderColor} border backdrop-blur-sm p-4 hover:scale-[1.02] transition-all cursor-pointer group`}
+      className={`rounded-2xl bg-slate-800/30 ${tool.borderColor} border backdrop-blur-sm p-4 hover:bg-slate-800/50 hover:scale-[1.01] transition-all cursor-pointer group`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl ${tool.iconBg} flex items-center justify-center text-white font-bold`}>
+          <div className={`w-10 h-10 rounded-xl ${tool.iconBg} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
             #{rank}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-white">{tool.name}</h3>
+              <h3 className="font-semibold text-white">{tool.name}</h3>
               {tool.trend === 'up' && (
-                <TrendingUp className="h-4 w-4 text-green-400" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
               )}
             </div>
-            <p className="text-xs text-slate-400">{tool.price}</p>
+            <p className="text-xs text-slate-500">{tool.price}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white font-medium">{tool.totalScore}</span>
+        <div className="flex items-center gap-1 bg-slate-900/50 px-2 py-1 rounded-lg">
+          <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+          <span className="text-white text-sm font-medium">{tool.totalScore}</span>
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-slate-400 mb-3 line-clamp-2">{tool.description}</p>
+      <p className="text-xs text-slate-400 mb-3 line-clamp-2 leading-relaxed">{tool.description}</p>
 
       {/* Use Cases */}
-      <div className="flex flex-wrap gap-1 mb-3">
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {tool.useCases.slice(0, 3).map((useCase) => (
-          <span key={useCase} className="text-xs bg-slate-900/50 text-slate-300 px-2 py-0.5 rounded">
+          <span key={useCase} className={`text-xs ${tool.accentColor} bg-slate-900/40 px-2 py-1 rounded-md`}>
             {useCase}
           </span>
         ))}
       </div>
 
       {/* Income */}
-      <div className="flex items-center justify-between pt-3 border-t border-white/10">
+      <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
         <span className="text-xs text-slate-500">예상 수익</span>
-        <span className="text-sm font-bold text-green-400">₩{tool.monthlyIncome}/월</span>
+        <span className="text-sm font-bold text-emerald-400">₩{tool.monthlyIncome}/월</span>
       </div>
 
       {/* Visit Button */}
@@ -567,7 +561,7 @@ function ToolCard({
         href={tool.website}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 w-full flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white transition-colors py-2 rounded-lg bg-slate-900/30 hover:bg-slate-900/50"
+        className={`mt-3 w-full flex items-center justify-center gap-2 text-xs ${tool.accentColor} hover:text-white transition-colors py-2 rounded-lg bg-slate-900/30 hover:bg-slate-900/50 border border-slate-700/30`}
       >
         사이트 방문 <ExternalLink className="h-3 w-3" />
       </a>
@@ -586,27 +580,27 @@ function ComboCard({
 
   return (
     <div
-      className={`rounded-2xl bg-gradient-to-br ${combo.gradient} ${combo.borderColor} border backdrop-blur-sm overflow-hidden ${expanded ? '' : 'hover:scale-[1.02]'} transition-all`}
+      className={`rounded-2xl bg-slate-800/30 ${combo.borderColor} border backdrop-blur-sm overflow-hidden ${expanded ? '' : 'hover:bg-slate-800/50 hover:scale-[1.01]'} transition-all`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-white/5">
+      <div className="p-4 border-b border-slate-700/30">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900/50 flex items-center justify-center">
+            <div className={`w-10 h-10 rounded-xl bg-slate-900/60 flex items-center justify-center border ${combo.borderColor}`}>
               <Icon className={`h-5 w-5 ${combo.accentColor}`} />
             </div>
             <div>
-              <h3 className="font-bold text-white">{combo.category}</h3>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+              <h3 className="font-semibold text-white">{combo.category}</h3>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Clock className="h-3 w-3" />
                 {combo.period}
               </div>
             </div>
           </div>
           <Badge className={`text-xs ${
-            combo.difficulty === '하' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-            combo.difficulty === '중' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-            'bg-rose-500/20 text-rose-400 border-rose-500/30'
+            combo.difficulty === '하' ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' :
+            combo.difficulty === '중' ? 'bg-amber-400/10 text-amber-400 border-amber-400/30' :
+            'bg-rose-400/10 text-rose-400 border-rose-400/30'
           }`}>
             난이도 {combo.difficulty}
           </Badge>
@@ -622,16 +616,16 @@ function ComboCard({
         {combo.combos.map((item, idx) => (
           <div
             key={idx}
-            className="p-3 rounded-lg bg-slate-900/40 hover:bg-slate-900/60 transition-colors"
+            className="p-3 rounded-xl bg-slate-900/30 hover:bg-slate-900/50 transition-colors border border-slate-700/20"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-white text-sm font-medium">{item.name}</span>
               <span className={`text-xs font-bold ${combo.accentColor}`}>₩{item.income}</span>
             </div>
             <p className="text-xs text-slate-500 mb-2">{item.desc}</p>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {item.tools.map((tool) => (
-                <span key={tool} className="text-xs bg-slate-800/50 text-slate-300 px-2 py-0.5 rounded">
+                <span key={tool} className="text-xs bg-slate-800/60 text-slate-400 px-2 py-1 rounded-md">
                   {tool}
                 </span>
               ))}
@@ -641,9 +635,9 @@ function ComboCard({
       </div>
 
       {expanded && (
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-slate-700/30">
           <div className="flex items-center gap-2 text-sm text-slate-400">
-            <CheckCircle2 className="h-4 w-4 text-green-400" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             <span>총 {combo.combos.length}가지 수익화 방법</span>
           </div>
         </div>
