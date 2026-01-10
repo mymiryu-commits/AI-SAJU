@@ -25,128 +25,103 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-// AI 순위 데이터 - 범용 AI
-const topAITools = [
+// 4가지 수익화 카테고리 - 난이도별 현실적 수익화 방법
+const monetizationCategories = [
   {
-    rank: 1,
-    name: 'ChatGPT',
-    category: '대화형 AI',
-    score: 95,
-    monthlyIncome: '₩3,200만',
-    incomeDesc: '콘텐츠 제작 평균',
-    color: 'from-emerald-500 to-teal-600',
-    users: '200M+',
-    trending: true,
-  },
-  {
-    rank: 2,
-    name: 'Claude',
-    category: '코딩/분석',
-    score: 94,
-    monthlyIncome: '₩2,800만',
-    incomeDesc: '개발 프리랜서 평균',
-    color: 'from-orange-500 to-amber-600',
-    users: '50M+',
-    trending: true,
-  },
-  {
-    rank: 3,
-    name: 'Midjourney',
-    category: '이미지 생성',
-    score: 98,
-    monthlyIncome: '₩1,500만',
-    incomeDesc: '디자인 판매 평균',
-    color: 'from-indigo-500 to-purple-600',
-    users: '16M+',
-    trending: false,
-  },
-];
-
-// 수익화 AI 순위
-const monetizationAI = [
-  {
-    rank: 1,
-    name: 'Jasper',
-    useCase: '마케팅 카피',
-    avgIncome: '₩850만/월',
-    difficulty: '쉬움',
-    color: 'from-violet-500 to-purple-600',
-  },
-  {
-    rank: 2,
-    name: 'Midjourney',
-    useCase: '디자인 판매',
-    avgIncome: '₩1,200만/월',
-    difficulty: '보통',
-    color: 'from-pink-500 to-rose-600',
-  },
-  {
-    rank: 3,
-    name: 'Cursor + Claude',
-    useCase: 'SaaS 개발',
-    avgIncome: '₩3,500만/월',
-    difficulty: '어려움',
-    color: 'from-blue-500 to-cyan-600',
-  },
-];
-
-// 수익화 성공 사례
-const successStories = [
-  {
-    title: '블로그 자동화',
-    income: '월 ₩320만',
-    period: '3개월만에',
-    tools: ['ChatGPT', 'Canva AI'],
-    avatar: '👨‍💻',
-  },
-  {
-    title: '유튜브 쇼츠',
-    income: '월 ₩580만',
-    period: '6개월만에',
-    tools: ['Runway', 'ElevenLabs'],
-    avatar: '🎬',
-  },
-  {
-    title: '이모티콘 판매',
-    income: '월 ₩450만',
-    period: '2개월만에',
-    tools: ['Midjourney', 'DALL-E'],
-    avatar: '🎨',
-  },
-  {
-    title: '온라인 강의',
-    income: '월 ₩1,200만',
-    period: '4개월만에',
-    tools: ['Claude', 'Synthesia'],
-    avatar: '📚',
-  },
-];
-
-// 수익화 카테고리
-const incomeCategories = [
-  {
+    id: 'beginner',
+    title: '입문',
+    subtitle: '누구나 시작 가능',
     icon: Rocket,
-    title: '빠른 시작',
-    desc: '오늘 바로 시작 가능',
-    items: ['블로그', '번역', '카피라이팅'],
-    gradient: 'from-green-500 to-emerald-600',
-    avgIncome: '₩200~500만',
+    gradient: 'from-emerald-500/20 to-teal-500/20',
+    borderColor: 'border-emerald-500/30',
+    accentColor: 'text-emerald-400',
+    items: [
+      { name: '블로그 글쓰기', income: '50~150만', tools: 'ChatGPT', time: '1~2주' },
+      { name: '번역/교정', income: '80~200만', tools: 'DeepL + GPT', time: '즉시' },
+      { name: '카피라이팅', income: '100~300만', tools: 'Jasper', time: '1주' },
+      { name: 'SNS 콘텐츠', income: '50~200만', tools: 'ChatGPT + Canva', time: '즉시' },
+    ],
   },
   {
+    id: 'content',
+    title: '콘텐츠 제작',
+    subtitle: '영상/음성 기반',
+    icon: Play,
+    gradient: 'from-violet-500/20 to-purple-500/20',
+    borderColor: 'border-violet-500/30',
+    accentColor: 'text-violet-400',
+    items: [
+      { name: '유튜브 쇼츠', income: '200~800만', tools: 'Runway + HeyGen', time: '2~4주' },
+      { name: '팟캐스트 제작', income: '100~400만', tools: 'ElevenLabs + Descript', time: '2주' },
+      { name: '전자책 출판', income: '150~500만', tools: 'Claude + Canva', time: '2~4주' },
+      { name: '온라인 강의', income: '300~1,500만', tools: 'Synthesia + GPT', time: '1~2개월' },
+    ],
+  },
+  {
+    id: 'design',
+    title: '디자인/비주얼',
+    subtitle: '이미지 기반',
     icon: Target,
-    title: '안정적 수익',
-    desc: '꾸준한 수입 창출',
-    items: ['콘텐츠 제작', '디자인', 'SNS 관리'],
-    gradient: 'from-blue-500 to-indigo-600',
-    avgIncome: '₩500~1,000만',
+    gradient: 'from-pink-500/20 to-rose-500/20',
+    borderColor: 'border-pink-500/30',
+    accentColor: 'text-pink-400',
+    items: [
+      { name: '상세페이지 제작', income: '200~600만', tools: 'Midjourney + Figma', time: '1~2주' },
+      { name: '썸네일 디자인', income: '150~400만', tools: 'DALL-E + Canva', time: '즉시' },
+      { name: '이모티콘 판매', income: '100~500만', tools: 'Midjourney', time: '2~4주' },
+      { name: 'AI 아트 판매', income: '200~800만', tools: 'Stable Diffusion', time: '1~2주' },
+    ],
   },
   {
+    id: 'advanced',
+    title: '고급 수익화',
+    subtitle: '전문성 필요',
     icon: Crown,
-    title: '고수익',
-    desc: '전문성 기반 고수익',
-    items: ['SaaS 개발', '컨설팅', '교육'],
-    gradient: 'from-amber-500 to-orange-600',
-    avgIncome: '₩1,000만+',
+    gradient: 'from-amber-500/20 to-orange-500/20',
+    borderColor: 'border-amber-500/30',
+    accentColor: 'text-amber-400',
+    items: [
+      { name: 'SaaS 개발', income: '500~3,000만', tools: 'Cursor + Claude', time: '1~3개월' },
+      { name: '자동화 구축', income: '400~1,500만', tools: 'n8n + GPT API', time: '2~4주' },
+      { name: 'AI 컨설팅', income: '500~2,000만', tools: '복합 AI', time: '즉시' },
+      { name: '커스텀 챗봇', income: '300~1,000만', tools: 'OpenAI API', time: '2~4주' },
+    ],
+  },
+];
+
+// 실제 수익화 사례 - 더 상세하고 현실적인 데이터
+const realCases = [
+  {
+    category: '쇼츠 자동화',
+    income: '월 580만',
+    period: '4개월',
+    difficulty: '중',
+    tools: ['Runway', 'ElevenLabs', 'CapCut'],
+    desc: '하루 3개 쇼츠 업로드',
+  },
+  {
+    category: '상세페이지 외주',
+    income: '월 420만',
+    period: '2개월',
+    difficulty: '하',
+    tools: ['Midjourney', 'Figma'],
+    desc: '주 3~4건 제작',
+  },
+  {
+    category: '블로그 애드센스',
+    income: '월 280만',
+    period: '6개월',
+    difficulty: '하',
+    tools: ['ChatGPT', 'Surfer SEO'],
+    desc: '일 2~3개 포스팅',
+  },
+  {
+    category: 'AI 자동화 대행',
+    income: '월 1,200만',
+    period: '3개월',
+    difficulty: '상',
+    tools: ['n8n', 'Make', 'GPT API'],
+    desc: '중소기업 5곳 계약',
   },
 ];
 
@@ -240,140 +215,119 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* 양쪽 순위 비교 섹션 */}
+      {/* 4가지 수익화 카테고리 섹션 */}
       <section className="py-16 relative">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* 왼쪽: AI 순위 */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <Trophy className="h-5 w-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">AI 순위 TOP 3</h2>
-                    <p className="text-sm text-slate-500">성능 기반</p>
-                  </div>
-                </div>
-                <Link href="/ranking" className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1">
-                  전체 보기 <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
+          <div className="text-center mb-10">
+            <Badge className="mb-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30">
+              <BarChart3 className="mr-1 h-3 w-3" /> 난이도별 수익화 방법
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              나에게 맞는 수익화 찾기
+            </h2>
+            <p className="text-slate-400">현실적인 예상 수익과 필요 기간</p>
+          </div>
 
-              <div className="space-y-3">
-                {topAITools.map((tool) => (
-                  <Card key={tool.name} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer group">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${tool.color} flex items-center justify-center text-white font-bold text-sm`}>
-                          #{tool.rank}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {monetizationCategories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <div
+                  key={cat.id}
+                  className={`rounded-2xl bg-gradient-to-br ${cat.gradient} ${cat.borderColor} border backdrop-blur-sm overflow-hidden hover:scale-[1.02] transition-all cursor-pointer group`}
+                >
+                  {/* 카테고리 헤더 */}
+                  <div className="p-4 border-b border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-8 h-8 rounded-lg bg-slate-900/50 flex items-center justify-center`}>
+                        <Icon className={`h-4 w-4 ${cat.accentColor}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white text-sm">{cat.title}</h3>
+                        <p className="text-xs text-slate-400">{cat.subtitle}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 아이템 리스트 */}
+                  <div className="p-3 space-y-2">
+                    {cat.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-lg bg-slate-900/40 hover:bg-slate-900/60 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-white text-sm font-medium">{item.name}</span>
+                          <span className={`text-xs font-bold ${cat.accentColor}`}>₩{item.income}</span>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white">{tool.name}</span>
-                            {tool.trending && (
-                              <TrendingUp className="h-4 w-4 text-green-400" />
-                            )}
-                          </div>
-                          <span className="text-xs text-slate-500">{tool.category}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                            <span className="text-white font-medium">{tool.score}</span>
-                          </div>
-                          <span className="text-xs text-slate-500">{tool.users} 사용</span>
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>{item.tools}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {item.time}
+                          </span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* 오른쪽: 수익화 순위 */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">수익화 AI TOP 3</h2>
-                    <p className="text-sm text-slate-500">수익 기반</p>
+                    ))}
                   </div>
                 </div>
-                <Link href="/ranking?sort=income" className="text-green-400 hover:text-green-300 text-sm flex items-center gap-1">
-                  전체 보기 <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-
-              <div className="space-y-3">
-                {monetizationAI.map((tool) => (
-                  <Card key={tool.name} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer group">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${tool.color} flex items-center justify-center text-white font-bold text-sm`}>
-                          #{tool.rank}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white">{tool.name}</span>
-                          </div>
-                          <span className="text-xs text-slate-500">{tool.useCase}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-green-400 font-bold">{tool.avgIncome}</div>
-                          <Badge variant="secondary" className={`text-xs ${
-                            tool.difficulty === '쉬움' ? 'bg-green-500/20 text-green-400' :
-                            tool.difficulty === '보통' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-red-500/20 text-red-400'
-                          }`}>
-                            {tool.difficulty}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* 수익화 성공 사례 */}
+      {/* 실제 수익화 사례 */}
       <section className="py-16 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/10 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-10">
             <Badge className="mb-3 bg-green-500/20 text-green-400 border-green-500/30">
-              <Wallet className="mr-1 h-3 w-3" /> 실제 수익 사례
+              <Wallet className="mr-1 h-3 w-3" /> 검증된 수익 사례
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-              이번 달 성공 사례
+              실제 수익화 후기
             </h2>
-            <p className="text-slate-400">실제 사용자들의 AI 수익화 결과</p>
+            <p className="text-slate-400">현실적인 수익과 소요 기간</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {successStories.map((story, index) => (
-              <Card key={index} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer group overflow-hidden">
-                <CardContent className="p-5">
-                  <div className="text-4xl mb-3">{story.avatar}</div>
-                  <h3 className="font-semibold text-white mb-1">{story.title}</h3>
-                  <div className="text-2xl font-bold text-green-400 mb-1">{story.income}</div>
-                  <p className="text-xs text-slate-500 mb-3">{story.period} 달성</p>
-                  <div className="flex flex-wrap gap-1">
-                    {story.tools.map((tool) => (
-                      <span key={tool} className="text-xs bg-white/10 text-slate-300 px-2 py-0.5 rounded">
-                        {tool}
-                      </span>
-                    ))}
+            {realCases.map((item, index) => (
+              <div
+                key={index}
+                className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-5 hover:border-green-500/30 transition-all cursor-pointer group"
+              >
+                {/* 상단: 수익 & 난이도 */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="text-2xl font-bold text-green-400">{item.income}</div>
+                    <p className="text-xs text-slate-500">{item.period} 소요</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <Badge className={`text-xs ${
+                    item.difficulty === '하' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                    item.difficulty === '중' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                    'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                  }`}>
+                    난이도 {item.difficulty}
+                  </Badge>
+                </div>
+
+                {/* 카테고리 & 설명 */}
+                <h3 className="font-semibold text-white mb-1">{item.category}</h3>
+                <p className="text-xs text-slate-400 mb-4">{item.desc}</p>
+
+                {/* 사용 툴 */}
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded-md"
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -384,49 +338,6 @@ export default async function HomePage({
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 수익 단계별 가이드 */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <Badge className="mb-3 bg-amber-500/20 text-amber-400 border-amber-500/30">
-              <BarChart3 className="mr-1 h-3 w-3" /> 수익 단계별
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-              당신의 목표는?
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {incomeCategories.map((cat, index) => {
-              const Icon = cat.icon;
-              return (
-                <Card key={index} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer group overflow-hidden relative">
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${cat.gradient}`} />
-                  <CardContent className="p-6">
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                      <Icon className="h-7 w-7 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-1">{cat.title}</h3>
-                    <p className="text-sm text-slate-500 mb-4">{cat.desc}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {cat.items.map((item) => (
-                        <span key={item} className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded">
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                      <span className="text-slate-500 text-sm">예상 수익</span>
-                      <span className="text-green-400 font-bold">{cat.avgIncome}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
           </div>
         </div>
       </section>
