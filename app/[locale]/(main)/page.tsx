@@ -25,16 +25,17 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-// 4가지 수익화 카테고리 - 난이도별 현실적 수익화 방법
+// 4가지 수익화 카테고리 - 밝은 파스텔 톤 디자인
 const monetizationCategories = [
   {
     id: 'beginner',
     title: '입문',
     subtitle: '누구나 시작 가능',
     icon: Rocket,
-    gradient: 'from-emerald-500/20 to-teal-500/20',
-    borderColor: 'border-emerald-500/30',
-    accentColor: 'text-emerald-400',
+    gradient: 'from-emerald-50 to-teal-50',
+    borderColor: 'border-emerald-300',
+    accentColor: 'text-emerald-600',
+    iconBg: 'bg-gradient-to-br from-emerald-400 to-teal-500',
     items: [
       { name: '블로그 글쓰기', income: '50~150만', tools: 'ChatGPT', time: '1~2주' },
       { name: '번역/교정', income: '80~200만', tools: 'DeepL + GPT', time: '즉시' },
@@ -47,9 +48,10 @@ const monetizationCategories = [
     title: '콘텐츠 제작',
     subtitle: '영상/음성 기반',
     icon: Play,
-    gradient: 'from-violet-500/20 to-purple-500/20',
-    borderColor: 'border-violet-500/30',
-    accentColor: 'text-violet-400',
+    gradient: 'from-violet-50 to-purple-50',
+    borderColor: 'border-violet-300',
+    accentColor: 'text-violet-600',
+    iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500',
     items: [
       { name: '유튜브 쇼츠', income: '200~800만', tools: 'Runway + HeyGen', time: '2~4주' },
       { name: '팟캐스트 제작', income: '100~400만', tools: 'ElevenLabs + Descript', time: '2주' },
@@ -62,9 +64,10 @@ const monetizationCategories = [
     title: '디자인/비주얼',
     subtitle: '이미지 기반',
     icon: Target,
-    gradient: 'from-pink-500/20 to-rose-500/20',
-    borderColor: 'border-pink-500/30',
-    accentColor: 'text-pink-400',
+    gradient: 'from-pink-50 to-rose-50',
+    borderColor: 'border-pink-300',
+    accentColor: 'text-pink-600',
+    iconBg: 'bg-gradient-to-br from-pink-400 to-rose-500',
     items: [
       { name: '상세페이지 제작', income: '200~600만', tools: 'Midjourney + Figma', time: '1~2주' },
       { name: '썸네일 디자인', income: '150~400만', tools: 'DALL-E + Canva', time: '즉시' },
@@ -77,9 +80,10 @@ const monetizationCategories = [
     title: '고급 수익화',
     subtitle: '전문성 필요',
     icon: Crown,
-    gradient: 'from-amber-500/20 to-orange-500/20',
-    borderColor: 'border-amber-500/30',
-    accentColor: 'text-amber-400',
+    gradient: 'from-amber-50 to-orange-50',
+    borderColor: 'border-amber-300',
+    accentColor: 'text-amber-600',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500',
     items: [
       { name: 'SaaS 개발', income: '500~3,000만', tools: 'Cursor + Claude', time: '1~3개월' },
       { name: '자동화 구축', income: '400~1,500만', tools: 'n8n + GPT API', time: '2~4주' },
@@ -219,7 +223,7 @@ export default async function HomePage({
       <section className="py-16 relative">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <Badge className="mb-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30">
+            <Badge className="mb-3 bg-gradient-to-r from-violet-100 to-purple-100 text-violet-600 border-violet-200">
               <BarChart3 className="mr-1 h-3 w-3" /> 난이도별 수익화 방법
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
@@ -234,33 +238,33 @@ export default async function HomePage({
               return (
                 <div
                   key={cat.id}
-                  className={`rounded-2xl bg-gradient-to-br ${cat.gradient} ${cat.borderColor} border backdrop-blur-sm overflow-hidden hover:scale-[1.02] transition-all cursor-pointer group`}
+                  className={`rounded-2xl bg-gradient-to-br ${cat.gradient} ${cat.borderColor} border overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group`}
                 >
                   {/* 카테고리 헤더 */}
-                  <div className="p-4 border-b border-white/5">
+                  <div className={`p-4 border-b ${cat.borderColor}`}>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-8 h-8 rounded-lg bg-slate-900/50 flex items-center justify-center`}>
-                        <Icon className={`h-4 w-4 ${cat.accentColor}`} />
+                      <div className={`w-8 h-8 rounded-lg ${cat.iconBg} flex items-center justify-center shadow-md`}>
+                        <Icon className="h-4 w-4 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-sm">{cat.title}</h3>
-                        <p className="text-xs text-slate-400">{cat.subtitle}</p>
+                        <h3 className="font-bold text-slate-800 text-sm">{cat.title}</h3>
+                        <p className="text-xs text-slate-500">{cat.subtitle}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* 아이템 리스트 */}
-                  <div className="p-3 space-y-2">
+                  <div className="p-3 space-y-2 bg-white/50">
                     {cat.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-lg bg-slate-900/40 hover:bg-slate-900/60 transition-colors"
+                        className="p-2.5 rounded-lg bg-white hover:bg-slate-50 transition-colors border border-slate-100"
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-white text-sm font-medium">{item.name}</span>
+                          <span className="text-slate-700 text-sm font-medium">{item.name}</span>
                           <span className={`text-xs font-bold ${cat.accentColor}`}>₩{item.income}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-slate-500">
+                        <div className="flex items-center justify-between text-xs text-slate-400">
                           <span>{item.tools}</span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
