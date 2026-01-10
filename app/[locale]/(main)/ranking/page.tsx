@@ -393,7 +393,7 @@ export default async function RankingPage({
         </div>
 
         {/* Content */}
-        <Suspense fallback={<div className="text-slate-400">Loading...</div>}>
+        <Suspense fallback={<div className="text-slate-400">로딩 중...</div>}>
           <RankingContent locale={locale} />
         </Suspense>
       </div>

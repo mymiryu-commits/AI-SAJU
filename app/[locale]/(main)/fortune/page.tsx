@@ -61,11 +61,11 @@ const fortuneServices = [
 ];
 
 const premiumFeatures = [
-  'Detailed analysis reports',
-  'PDF download available',
-  'Voice narration',
-  'Monthly predictions',
-  'Expert consultation',
+  '상세 분석 리포트',
+  'PDF 다운로드 가능',
+  '음성 나레이션',
+  '월별 운세 예측',
+  '전문가 상담',
 ];
 
 export default async function FortunePage({
@@ -111,7 +111,7 @@ function FortuneHero() {
     <div className="max-w-3xl mx-auto text-center">
       <Badge className="mb-4 bg-white/20 text-white">
         <Sparkles className="mr-1 h-3 w-3" />
-        AI Fortune Services
+        AI 운세 서비스
       </Badge>
       <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('title')}</h1>
       <p className="text-xl text-white/80 mb-8">{t('subtitle')}</p>
@@ -141,9 +141,9 @@ function FortuneServices({ locale }: { locale: string }) {
   return (
     <>
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-4">Our Services</h2>
+        <h2 className="text-3xl font-bold mb-4">운세 서비스</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose from our variety of AI-powered fortune telling services
+          다양한 AI 기반 운세 서비스 중 원하는 것을 선택하세요
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -154,7 +154,7 @@ function FortuneServices({ locale }: { locale: string }) {
               <Card className="card-hover h-full cursor-pointer relative overflow-hidden">
                 {service.free && (
                   <Badge className="absolute top-4 right-4 bg-green-500">
-                    Free
+                    무료
                   </Badge>
                 )}
                 <CardHeader>
@@ -163,12 +163,12 @@ function FortuneServices({ locale }: { locale: string }) {
                   </div>
                   <CardTitle>{t(service.key)}</CardTitle>
                   <CardDescription>
-                    Discover your fortune with AI-powered {service.key} analysis
+                    AI 기반 {t(service.key)}으로 당신의 운세를 확인하세요
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button variant="outline" className="w-full group">
-                    Try Now
+                    시작하기
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>
@@ -187,10 +187,10 @@ function PremiumSection({ locale }: { locale: string }) {
     <Card className="overflow-hidden">
       <div className="grid md:grid-cols-2">
         <div className="fortune-gradient p-8 md:p-12 text-white">
-          <Badge className="mb-4 bg-white/20 text-white">Premium</Badge>
+          <Badge className="mb-4 bg-white/20 text-white">프리미엄</Badge>
           <h2 className="text-3xl font-bold mb-4">{t('title')}</h2>
           <p className="text-white/80 mb-6">
-            Get the most comprehensive fortune analysis with our premium services
+            프리미엄 서비스로 가장 상세한 운세 분석을 받아보세요
           </p>
           <ul className="space-y-3 mb-8">
             {premiumFeatures.map((feature, index) => (
@@ -202,7 +202,7 @@ function PremiumSection({ locale }: { locale: string }) {
           </ul>
           <Link href="/pricing">
             <Button className="bg-white text-purple-700 hover:bg-white/90">
-              View Plans
+              요금제 보기
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -210,12 +210,12 @@ function PremiumSection({ locale }: { locale: string }) {
         <CardContent className="p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
           <div className="text-center">
             <div className="text-5xl font-bold mb-2">
-              <span className="text-muted-foreground text-xl">from</span>{' '}
-              <span className="text-primary">$3.99</span>
-              <span className="text-muted-foreground text-xl">/mo</span>
+              <span className="text-muted-foreground text-xl">월</span>{' '}
+              <span className="text-primary">₩4,900</span>
+              <span className="text-muted-foreground text-xl">부터</span>
             </div>
             <p className="text-muted-foreground mb-6">
-              Start with Basic plan
+              베이직 플랜으로 시작하세요
             </p>
             <Link href="/pricing">
               <Button size="lg" className="w-full">

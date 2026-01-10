@@ -28,10 +28,10 @@ const birthHours = Array.from({ length: 24 }, (_, i) => ({
 // Mock result data for demonstration
 const mockResult = {
   fourPillars: {
-    year: { heavenly: '甲', earthly: '子', element: 'Wood' },
-    month: { heavenly: '丙', earthly: '寅', element: 'Fire' },
-    day: { heavenly: '戊', earthly: '午', element: 'Earth' },
-    hour: { heavenly: '庚', earthly: '申', element: 'Metal' },
+    year: { heavenly: '甲', earthly: '子', element: '목(木)' },
+    month: { heavenly: '丙', earthly: '寅', element: '화(火)' },
+    day: { heavenly: '戊', earthly: '午', element: '토(土)' },
+    hour: { heavenly: '庚', earthly: '申', element: '금(金)' },
   },
   scores: {
     overall: 85,
@@ -41,16 +41,16 @@ const mockResult = {
     health: 75,
   },
   personality: [
-    'Strong leadership qualities',
-    'Creative and innovative thinking',
-    'Natural ability to inspire others',
-    'Practical approach to problem-solving',
+    '강한 리더십과 추진력이 있습니다',
+    '창의적이고 혁신적인 사고를 가지고 있습니다',
+    '타인을 이끄는 자연스러운 능력이 있습니다',
+    '문제 해결에 있어 실용적인 접근을 합니다',
   ],
-  advice: 'This year brings opportunities for career growth. Focus on building relationships and networking. Financial matters require careful attention in the second half of the year.',
+  advice: '올해는 직장 성장의 기회가 있습니다. 관계 구축과 네트워킹에 집중하세요. 하반기에는 재정적 사안에 신중한 주의가 필요합니다.',
   luckyElements: {
-    color: 'Purple',
+    color: '보라색',
     number: '7',
-    direction: 'South',
+    direction: '남쪽',
   },
 };
 
@@ -103,7 +103,7 @@ export default function SajuPage() {
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
             <Sparkles className="mr-1 h-3 w-3" />
-            Free Analysis
+            무료 분석
           </Badge>
           <h1 className="text-3xl md:text-4xl font-bold mb-4">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
@@ -112,9 +112,9 @@ export default function SajuPage() {
         {/* Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Enter Your Information</CardTitle>
+            <CardTitle>생년월일 정보 입력</CardTitle>
             <CardDescription>
-              We need your birth information for accurate analysis
+              정확한 분석을 위해 생년월일 정보가 필요합니다
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -165,7 +165,7 @@ export default function SajuPage() {
                   onValueChange={(value) => handleChange('birthHour', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select time" />
+                    <SelectValue placeholder="시간 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unknown">{t('form.birthTimeUnknown')}</SelectItem>
@@ -212,18 +212,18 @@ function AnalyzingView({ progress }: { progress: number }) {
           <div className="w-24 h-24 mx-auto mb-6 rounded-full fortune-gradient flex items-center justify-center animate-pulse">
             <Sparkles className="h-12 w-12 text-white" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Analyzing Your Destiny</h2>
+          <h2 className="text-2xl font-bold mb-2">사주팔자 분석 중</h2>
           <p className="text-muted-foreground">
-            Our AI is analyzing your four pillars of destiny...
+            AI가 당신의 사주팔자를 분석하고 있습니다...
           </p>
         </div>
         <div className="space-y-2">
           <Progress value={progress} className="h-3" />
-          <p className="text-sm text-muted-foreground">{progress}% complete</p>
+          <p className="text-sm text-muted-foreground">{progress}% 완료</p>
         </div>
         <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Please wait...</span>
+          <span>잠시만 기다려주세요...</span>
         </div>
       </div>
     </div>
@@ -268,11 +268,11 @@ function ResultView({
   }, []);
 
   const scoreItems = [
-    { key: 'overall', icon: Zap, color: 'text-purple-500' },
-    { key: 'wealth', icon: Star, color: 'text-yellow-500' },
-    { key: 'love', icon: Heart, color: 'text-pink-500' },
-    { key: 'career', icon: Briefcase, color: 'text-blue-500' },
-    { key: 'health', icon: Activity, color: 'text-green-500' },
+    { key: 'overall', label: '종합운', icon: Zap, color: 'text-purple-500' },
+    { key: 'wealth', label: '재물운', icon: Star, color: 'text-yellow-500' },
+    { key: 'love', label: '애정운', icon: Heart, color: 'text-pink-500' },
+    { key: 'career', label: '직업운', icon: Briefcase, color: 'text-blue-500' },
+    { key: 'health', label: '건강운', icon: Activity, color: 'text-green-500' },
   ];
 
   // Premium content that will be blurred
@@ -303,7 +303,7 @@ function ResultView({
         {/* Header */}
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-            Analysis Complete
+            분석 완료
           </Badge>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('title')}</h1>
           <p className="text-muted-foreground">
@@ -359,7 +359,7 @@ function ResultView({
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium capitalize">{item.key}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
                         <span className="text-sm font-bold">{score}/100</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
