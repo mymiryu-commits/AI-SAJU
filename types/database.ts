@@ -343,7 +343,13 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_coins: {
+        Args: {
+          user_id: string
+          amount: number
+        }
+        Returns: void
+      }
     }
     Enums: {
       [_ in never]: never
