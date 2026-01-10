@@ -385,7 +385,7 @@ export default async function RankingPage({
   setRequestLocale(locale);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
@@ -404,13 +404,13 @@ export default async function RankingPage({
 function RankingHeader() {
   return (
     <div className="text-center">
-      <Badge className="mb-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30">
+      <Badge className="mb-4 bg-gradient-to-r from-violet-100 to-purple-100 text-violet-600 border-violet-200">
         <Sparkles className="mr-1 h-3 w-3" /> AI 수익화 가이드
       </Badge>
-      <h1 className="text-3xl md:text-5xl font-bold text-white mb-3">
+      <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-slate-800 via-violet-700 to-purple-700 bg-clip-text text-transparent mb-3">
         AI 툴 & 수익화 조합 순위
       </h1>
-      <p className="text-slate-400 max-w-2xl mx-auto">
+      <p className="text-slate-500 max-w-2xl mx-auto">
         검증된 AI 툴과 수익화 조합을 확인하세요. 난이도별로 나에게 맞는 방법을 찾아보세요.
       </p>
     </div>
@@ -423,11 +423,11 @@ function RankingContent({ locale }: { locale: string }) {
       {/* AI 툴 순위 섹션 */}
       <section>
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-            <Star className="h-5 w-5 text-purple-400" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+            <Star className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">AI 툴 순위 TOP 8</h2>
+            <h2 className="text-xl font-bold text-slate-800">AI 툴 순위 TOP 8</h2>
             <p className="text-sm text-slate-500">성능 & 수익화 기준</p>
           </div>
         </div>
@@ -442,24 +442,24 @@ function RankingContent({ locale }: { locale: string }) {
       {/* 수익화 조합 섹션 */}
       <section>
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-            <DollarSign className="h-5 w-5 text-green-400" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
+            <DollarSign className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">수익화 AI 조합</h2>
+            <h2 className="text-xl font-bold text-slate-800">수익화 AI 조합</h2>
             <p className="text-sm text-slate-500">난이도별 분류</p>
           </div>
         </div>
 
         <Tabs defaultValue="all" className="space-y-6">
-          <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1 flex-wrap h-auto gap-1">
+          <TabsList className="bg-white border border-slate-200 p-1.5 flex-wrap h-auto gap-1 shadow-sm rounded-xl">
             {categories.map((cat) => {
               const Icon = cat.icon;
               return (
                 <TabsTrigger
                   key={cat.key}
                   value={cat.key}
-                  className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 gap-2 px-3 py-2"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md text-slate-600 gap-2 px-4 py-2 rounded-lg transition-all"
                 >
                   <Icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{cat.label}</span>
@@ -486,15 +486,15 @@ function RankingContent({ locale }: { locale: string }) {
 
       {/* CTA */}
       <section className="text-center py-8">
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl p-8">
-          <h3 className="text-2xl font-bold text-white mb-3">
+        <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-2xl p-8 shadow-sm">
+          <h3 className="text-2xl font-bold text-slate-800 mb-3">
             어떤 방법이 나에게 맞을까?
           </h3>
-          <p className="text-slate-400 mb-6">
+          <p className="text-slate-500 mb-6">
             AI 사주로 나에게 맞는 수익화 방법을 찾아보세요
           </p>
           <Link href="/fortune/free">
-            <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white">
+            <Button className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-200">
               무료 AI 사주 보기
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -514,46 +514,46 @@ function ToolCard({
 }) {
   return (
     <div
-      className={`rounded-2xl bg-slate-800/30 ${tool.borderColor} border backdrop-blur-sm p-4 hover:bg-slate-800/50 hover:scale-[1.01] transition-all cursor-pointer group`}
+      className="rounded-2xl bg-white border border-slate-200 p-4 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300 hover:-translate-y-1 transition-all cursor-pointer group"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl ${tool.iconBg} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+          <div className={`w-10 h-10 rounded-xl ${tool.iconBg} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
             #{rank}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-white">{tool.name}</h3>
+              <h3 className="font-semibold text-slate-800">{tool.name}</h3>
               {tool.trend === 'up' && (
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
               )}
             </div>
-            <p className="text-xs text-slate-500">{tool.price}</p>
+            <p className="text-xs text-slate-400">{tool.price}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1 bg-slate-900/50 px-2 py-1 rounded-lg">
-          <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm font-medium">{tool.totalScore}</span>
+        <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+          <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+          <span className="text-amber-700 text-sm font-semibold">{tool.totalScore}</span>
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-slate-400 mb-3 line-clamp-2 leading-relaxed">{tool.description}</p>
+      <p className="text-xs text-slate-500 mb-3 line-clamp-2 leading-relaxed">{tool.description}</p>
 
       {/* Use Cases */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {tool.useCases.slice(0, 3).map((useCase) => (
-          <span key={useCase} className={`text-xs ${tool.accentColor} bg-slate-900/40 px-2 py-1 rounded-md`}>
+          <span key={useCase} className="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
             {useCase}
           </span>
         ))}
       </div>
 
       {/* Income */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
-        <span className="text-xs text-slate-500">예상 수익</span>
-        <span className="text-sm font-bold text-emerald-400">₩{tool.monthlyIncome}/월</span>
+      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+        <span className="text-xs text-slate-400">예상 수익</span>
+        <span className="text-sm font-bold text-emerald-600">₩{tool.monthlyIncome}/월</span>
       </div>
 
       {/* Visit Button */}
@@ -561,7 +561,7 @@ function ToolCard({
         href={tool.website}
         target="_blank"
         rel="noopener noreferrer"
-        className={`mt-3 w-full flex items-center justify-center gap-2 text-xs ${tool.accentColor} hover:text-white transition-colors py-2 rounded-lg bg-slate-900/30 hover:bg-slate-900/50 border border-slate-700/30`}
+        className="mt-3 w-full flex items-center justify-center gap-2 text-xs text-violet-600 hover:text-white hover:bg-violet-500 transition-colors py-2.5 rounded-xl bg-violet-50 border border-violet-200 font-medium"
       >
         사이트 방문 <ExternalLink className="h-3 w-3" />
       </a>
@@ -578,36 +578,38 @@ function ComboCard({
 }) {
   const Icon = combo.icon;
 
+  const difficultyStyles = {
+    '하': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    '중': 'bg-amber-50 text-amber-600 border-amber-200',
+    '상': 'bg-rose-50 text-rose-600 border-rose-200',
+  };
+
   return (
     <div
-      className={`rounded-2xl bg-slate-800/30 ${combo.borderColor} border backdrop-blur-sm overflow-hidden ${expanded ? '' : 'hover:bg-slate-800/50 hover:scale-[1.01]'} transition-all`}
+      className={`rounded-2xl bg-white border border-slate-200 overflow-hidden ${expanded ? '' : 'hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-1'} transition-all`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/30">
+      <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl bg-slate-900/60 flex items-center justify-center border ${combo.borderColor}`}>
+            <div className={`w-10 h-10 rounded-xl ${combo.accentColor.replace('text-', 'bg-').replace('-400', '-100')} flex items-center justify-center border ${combo.borderColor}`}>
               <Icon className={`h-5 w-5 ${combo.accentColor}`} />
             </div>
             <div>
-              <h3 className="font-semibold text-white">{combo.category}</h3>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <h3 className="font-semibold text-slate-800">{combo.category}</h3>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
                 <Clock className="h-3 w-3" />
                 {combo.period}
               </div>
             </div>
           </div>
-          <Badge className={`text-xs ${
-            combo.difficulty === '하' ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' :
-            combo.difficulty === '중' ? 'bg-amber-400/10 text-amber-400 border-amber-400/30' :
-            'bg-rose-400/10 text-rose-400 border-rose-400/30'
-          }`}>
+          <Badge className={`text-xs ${difficultyStyles[combo.difficulty as keyof typeof difficultyStyles]}`}>
             난이도 {combo.difficulty}
           </Badge>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-500">평균 수익</span>
-          <span className={`font-bold ${combo.accentColor}`}>₩{combo.avgIncome}/월</span>
+          <span className="text-xs text-slate-400">평균 수익</span>
+          <span className="font-bold text-emerald-600">₩{combo.avgIncome}/월</span>
         </div>
       </div>
 
@@ -616,16 +618,16 @@ function ComboCard({
         {combo.combos.map((item, idx) => (
           <div
             key={idx}
-            className="p-3 rounded-xl bg-slate-900/30 hover:bg-slate-900/50 transition-colors border border-slate-700/20"
+            className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white text-sm font-medium">{item.name}</span>
-              <span className={`text-xs font-bold ${combo.accentColor}`}>₩{item.income}</span>
+              <span className="text-slate-800 text-sm font-medium">{item.name}</span>
+              <span className="text-xs font-bold text-emerald-600">₩{item.income}</span>
             </div>
             <p className="text-xs text-slate-500 mb-2">{item.desc}</p>
             <div className="flex flex-wrap gap-1.5">
               {item.tools.map((tool) => (
-                <span key={tool} className="text-xs bg-slate-800/60 text-slate-400 px-2 py-1 rounded-md">
+                <span key={tool} className="text-xs bg-white text-slate-600 px-2 py-1 rounded-md border border-slate-200">
                   {tool}
                 </span>
               ))}
@@ -635,9 +637,9 @@ function ComboCard({
       </div>
 
       {expanded && (
-        <div className="p-4 border-t border-slate-700/30">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="p-4 border-t border-slate-100 bg-slate-50">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <span>총 {combo.combos.length}가지 수익화 방법</span>
           </div>
         </div>
