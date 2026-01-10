@@ -1,8 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   ArrowRight,
   Sparkles,
@@ -11,10 +9,8 @@ import {
   Zap,
   DollarSign,
   Flame,
-  ChevronRight,
   Crown,
   Target,
-  Users,
   Rocket,
   Play,
   BarChart3,
@@ -23,110 +19,82 @@ import {
   Eye,
   Clock,
   CheckCircle2,
+  MousePointer,
+  ArrowUpRight,
+  Cpu,
+  Layers,
+  Globe,
 } from 'lucide-react';
 
-// 4가지 수익화 카테고리 - 밝은 파스텔 톤 디자인
-const monetizationCategories = [
+// 수익화 카테고리 데이터
+const categories = [
   {
     id: 'beginner',
     title: '입문',
     subtitle: '누구나 시작 가능',
     icon: Rocket,
-    gradient: 'from-emerald-50 to-teal-50',
-    borderColor: 'border-emerald-300',
-    accentColor: 'text-emerald-600',
-    iconBg: 'bg-gradient-to-br from-emerald-400 to-teal-500',
+    color: 'from-emerald-500 to-teal-600',
+    shadowColor: 'shadow-emerald-500/20',
     items: [
-      { name: '블로그 글쓰기', income: '50~150만', tools: 'ChatGPT', time: '1~2주' },
-      { name: '번역/교정', income: '80~200만', tools: 'DeepL + GPT', time: '즉시' },
-      { name: '카피라이팅', income: '100~300만', tools: 'Jasper', time: '1주' },
-      { name: 'SNS 콘텐츠', income: '50~200만', tools: 'ChatGPT + Canva', time: '즉시' },
+      { name: '블로그 글쓰기', income: '50~150만', tools: 'ChatGPT' },
+      { name: '번역/교정', income: '80~200만', tools: 'DeepL' },
+      { name: '카피라이팅', income: '100~300만', tools: 'Jasper' },
     ],
   },
   {
     id: 'content',
-    title: '콘텐츠 제작',
+    title: '콘텐츠',
     subtitle: '영상/음성 기반',
     icon: Play,
-    gradient: 'from-violet-50 to-purple-50',
-    borderColor: 'border-violet-300',
-    accentColor: 'text-violet-600',
-    iconBg: 'bg-gradient-to-br from-violet-400 to-purple-500',
+    color: 'from-violet-500 to-purple-600',
+    shadowColor: 'shadow-violet-500/20',
     items: [
-      { name: '유튜브 쇼츠', income: '200~800만', tools: 'Runway + HeyGen', time: '2~4주' },
-      { name: '팟캐스트 제작', income: '100~400만', tools: 'ElevenLabs + Descript', time: '2주' },
-      { name: '전자책 출판', income: '150~500만', tools: 'Claude + Canva', time: '2~4주' },
-      { name: '온라인 강의', income: '300~1,500만', tools: 'Synthesia + GPT', time: '1~2개월' },
+      { name: '유튜브 쇼츠', income: '200~800만', tools: 'Runway' },
+      { name: '전자책 출판', income: '150~500만', tools: 'Claude' },
+      { name: '온라인 강의', income: '300~1500만', tools: 'Synthesia' },
     ],
   },
   {
     id: 'design',
-    title: '디자인/비주얼',
+    title: '디자인',
     subtitle: '이미지 기반',
     icon: Target,
-    gradient: 'from-pink-50 to-rose-50',
-    borderColor: 'border-pink-300',
-    accentColor: 'text-pink-600',
-    iconBg: 'bg-gradient-to-br from-pink-400 to-rose-500',
+    color: 'from-pink-500 to-rose-600',
+    shadowColor: 'shadow-pink-500/20',
     items: [
-      { name: '상세페이지 제작', income: '200~600만', tools: 'Midjourney + Figma', time: '1~2주' },
-      { name: '썸네일 디자인', income: '150~400만', tools: 'DALL-E + Canva', time: '즉시' },
-      { name: '이모티콘 판매', income: '100~500만', tools: 'Midjourney', time: '2~4주' },
-      { name: 'AI 아트 판매', income: '200~800만', tools: 'Stable Diffusion', time: '1~2주' },
+      { name: '상세페이지', income: '200~600만', tools: 'Midjourney' },
+      { name: '썸네일', income: '150~400만', tools: 'DALL-E' },
+      { name: 'AI 아트', income: '200~800만', tools: 'Stable Diffusion' },
     ],
   },
   {
     id: 'advanced',
-    title: '고급 수익화',
+    title: '고급',
     subtitle: '전문성 필요',
     icon: Crown,
-    gradient: 'from-amber-50 to-orange-50',
-    borderColor: 'border-amber-300',
-    accentColor: 'text-amber-600',
-    iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500',
+    color: 'from-amber-500 to-orange-600',
+    shadowColor: 'shadow-amber-500/20',
     items: [
-      { name: 'SaaS 개발', income: '500~3,000만', tools: 'Cursor + Claude', time: '1~3개월' },
-      { name: '자동화 구축', income: '400~1,500만', tools: 'n8n + GPT API', time: '2~4주' },
-      { name: 'AI 컨설팅', income: '500~2,000만', tools: '복합 AI', time: '즉시' },
-      { name: '커스텀 챗봇', income: '300~1,000만', tools: 'OpenAI API', time: '2~4주' },
+      { name: 'SaaS 개발', income: '500~3000만', tools: 'Cursor' },
+      { name: '자동화 구축', income: '400~1500만', tools: 'n8n' },
+      { name: 'AI 컨설팅', income: '500~2000만', tools: '복합 AI' },
     ],
   },
 ];
 
-// 실제 수익화 사례 - 더 상세하고 현실적인 데이터
-const realCases = [
-  {
-    category: '쇼츠 자동화',
-    income: '월 580만',
-    period: '4개월',
-    difficulty: '중',
-    tools: ['Runway', 'ElevenLabs', 'CapCut'],
-    desc: '하루 3개 쇼츠 업로드',
-  },
-  {
-    category: '상세페이지 외주',
-    income: '월 420만',
-    period: '2개월',
-    difficulty: '하',
-    tools: ['Midjourney', 'Figma'],
-    desc: '주 3~4건 제작',
-  },
-  {
-    category: '블로그 애드센스',
-    income: '월 280만',
-    period: '6개월',
-    difficulty: '하',
-    tools: ['ChatGPT', 'Surfer SEO'],
-    desc: '일 2~3개 포스팅',
-  },
-  {
-    category: 'AI 자동화 대행',
-    income: '월 1,200만',
-    period: '3개월',
-    difficulty: '상',
-    tools: ['n8n', 'Make', 'GPT API'],
-    desc: '중소기업 5곳 계약',
-  },
+// 실제 수익 사례
+const successCases = [
+  { category: '쇼츠 자동화', income: '월 580만', period: '4개월', difficulty: '중' },
+  { category: '상세페이지 외주', income: '월 420만', period: '2개월', difficulty: '하' },
+  { category: 'AI 자동화 대행', income: '월 1,200만', period: '3개월', difficulty: '상' },
+];
+
+// 통계 데이터
+const stats = [
+  { value: '500+', label: 'AI 툴 분석', icon: Cpu },
+  { value: '12.8K', label: '수익 창출자', icon: TrendingUp },
+  { value: '₩4.2억', label: '이번달 총 수익', icon: Wallet },
+  { value: '3개월', label: '평균 수익 달성', icon: Clock },
 ];
 
 export default async function HomePage({
@@ -138,138 +106,179 @@ export default async function HomePage({
   setRequestLocale(locale);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Hero Section - 수익화 테마 */}
-      <section className="relative overflow-hidden py-16 md:py-28">
-        {/* Animated background */}
+    <div className="min-h-screen luxury-gradient">
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-green-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute top-40 right-20 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl animate-pulse delay-700" />
-          <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-yellow-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          {/* Gradient Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[128px] animate-float" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[128px] animate-float animation-delay-500" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-600/10 rounded-full blur-[150px] animate-float animation-delay-1000" />
+
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-grid-pattern opacity-30" />
+
+          {/* Floating particles */}
+          <div className="absolute top-20 left-[10%] w-2 h-2 bg-purple-400 rounded-full animate-float opacity-60" />
+          <div className="absolute top-40 right-[15%] w-3 h-3 bg-emerald-400 rounded-full animate-float animation-delay-300 opacity-60" />
+          <div className="absolute bottom-40 left-[20%] w-2 h-2 bg-pink-400 rounded-full animate-float animation-delay-700 opacity-60" />
+          <div className="absolute bottom-60 right-[25%] w-2 h-2 bg-amber-400 rounded-full animate-float animation-delay-500 opacity-60" />
         </div>
 
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-
         <div className="container mx-auto px-4 relative z-10">
-          {/* 실시간 수익 배너 */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-full px-5 py-2.5 backdrop-blur-sm">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Top Badge */}
+            <div className="inline-flex items-center gap-3 glass rounded-full px-6 py-3 mb-8 animate-fade-in-up">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-green-400 text-sm font-medium">
-                오늘 AI로 수익 창출 중인 사람: <span className="text-white font-bold">12,847명</span>
+              <span className="text-slate-300 text-sm">
+                오늘 <span className="text-white font-semibold">12,847명</span>이 AI로 수익 창출 중
               </span>
             </div>
-          </div>
 
-          <div className="max-w-5xl mx-auto text-center">
-            <Badge className="mb-6 bg-amber-500/20 text-amber-400 border-amber-500/30 px-4 py-2">
-              <DollarSign className="mr-2 h-4 w-4" />
-              2025 AI 수익화 가이드
-            </Badge>
-
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-              <span className="text-white">
-                AI로 시작하는
-              </span>
+            {/* Main Headline */}
+            <h1 className="text-display font-bold mb-8 animate-fade-in-up animation-delay-150">
+              <span className="text-white">AI로 시작하는</span>
               <br />
-              <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              <span className="text-gradient-emerald animate-text-glow">
                 월 1,000만원 수익화
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-400 mb-6 max-w-3xl mx-auto">
-              검증된 AI 조합으로 부업부터 본업까지 · 실제 수익 사례 공개 · 단계별 가이드 제공
+            {/* Subheadline */}
+            <p className="text-xl md:text-2xl text-slate-400 mb-8 max-w-3xl mx-auto animate-fade-in-up animation-delay-300 leading-relaxed">
+              검증된 AI 조합으로 부업부터 본업까지
+              <br className="hidden md:block" />
+              <span className="text-slate-300">실제 수익 사례</span>와 <span className="text-slate-300">단계별 가이드</span> 제공
             </p>
 
-            {/* 핵심 지표 */}
-            <div className="flex flex-wrap justify-center gap-6 mb-10">
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>500+ AI 툴 분석</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>1,200+ 수익화 사례</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span>평균 3개월 내 수익 달성</span>
-              </div>
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap justify-center gap-6 mb-12 animate-fade-in-up animation-delay-500">
+              {['500+ AI 툴 분석', '1,200+ 수익화 사례', '평균 3개월 내 수익'].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-slate-400">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-4">
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap justify-center gap-4 animate-fade-in-up animation-delay-700">
               <Link href="/ranking">
-                <Button size="lg" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-green-500/25 transition-all hover:shadow-green-500/40 hover:scale-105">
-                  <Flame className="mr-2 h-5 w-5" />
+                <Button
+                  size="lg"
+                  className="btn-premium bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-7 text-lg rounded-2xl shadow-2xl shadow-emerald-500/30"
+                >
+                  <TrendingUp className="mr-2 h-5 w-5" />
                   수익화 AI 순위 보기
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/guide">
-                <Button size="lg" className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white border border-slate-500/50 px-8 py-6 text-lg rounded-xl backdrop-blur-sm group transition-all hover:scale-105">
-                  <Play className="mr-2 h-5 w-5 text-emerald-400" />
+                <Button
+                  size="lg"
+                  className="btn-premium glass text-white px-8 py-7 text-lg rounded-2xl hover:bg-white/10"
+                >
+                  <Play className="mr-2 h-5 w-5" />
                   무료 가이드 시작
                 </Button>
               </Link>
+            </div>
+
+            {/* Scroll Indicator */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-subtle">
+              <MousePointer className="h-6 w-6 text-slate-500" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4가지 수익화 카테고리 섹션 */}
-      <section className="py-16 relative">
+      {/* ===== STATS SECTION ===== */}
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={stat.label}
+                  className="text-center group animate-fade-in-up"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                >
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Icon className="h-7 w-7 text-emerald-400" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                    {stat.value}
+                  </div>
+                  <div className="text-slate-500 text-sm">
+                    {stat.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CATEGORIES SECTION ===== */}
+      <section className="py-24 relative">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <Badge className="mb-3 bg-gradient-to-r from-violet-100 to-purple-100 text-violet-600 border-violet-200">
-              <BarChart3 className="mr-1 h-3 w-3" /> 난이도별 수익화 방법
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-6">
+              <BarChart3 className="h-4 w-4 text-violet-400" />
+              <span className="text-slate-300 text-sm font-medium">난이도별 수익화</span>
+            </div>
+            <h2 className="text-headline font-bold text-white mb-4">
               나에게 맞는 수익화 찾기
             </h2>
-            <p className="text-slate-400">현실적인 예상 수익과 필요 기간</p>
+            <p className="text-slate-400 text-lg">
+              현실적인 예상 수익과 필요 기간을 확인하세요
+            </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {monetizationCategories.map((cat) => {
+          {/* Category Cards */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {categories.map((cat, index) => {
               const Icon = cat.icon;
               return (
                 <div
                   key={cat.id}
-                  className={`rounded-2xl bg-gradient-to-br ${cat.gradient} ${cat.borderColor} border overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group`}
+                  className="card-premium glass-card rounded-3xl overflow-hidden animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  {/* 카테고리 헤더 */}
-                  <div className={`p-4 border-b ${cat.borderColor}`}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-8 h-8 rounded-lg ${cat.iconBg} flex items-center justify-center shadow-md`}>
-                        <Icon className="h-4 w-4 text-white" />
+                  {/* Card Header */}
+                  <div className={`bg-gradient-to-r ${cat.color} p-6`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <Icon className="h-6 w-6 text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-sm">{cat.title}</h3>
-                        <p className="text-xs text-slate-500">{cat.subtitle}</p>
-                      </div>
+                      <ArrowUpRight className="h-5 w-5 text-white/60 group-hover:text-white transition-colors" />
                     </div>
+                    <h3 className="text-2xl font-bold text-white mb-1">{cat.title}</h3>
+                    <p className="text-white/70 text-sm">{cat.subtitle}</p>
                   </div>
 
-                  {/* 아이템 리스트 */}
-                  <div className="p-3 space-y-2 bg-white/50">
+                  {/* Card Content */}
+                  <div className="p-5 space-y-3">
                     {cat.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-lg bg-white hover:bg-slate-50 transition-colors border border-slate-100"
+                        className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group/item"
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-slate-700 text-sm font-medium">{item.name}</span>
-                          <span className={`text-xs font-bold ${cat.accentColor}`}>₩{item.income}</span>
+                        <div>
+                          <p className="text-white font-medium text-sm group-hover/item:text-emerald-400 transition-colors">
+                            {item.name}
+                          </p>
+                          <p className="text-slate-500 text-xs mt-0.5">{item.tools}</p>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-slate-400">
-                          <span>{item.tools}</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {item.time}
-                          </span>
+                        <div className="text-emerald-400 font-bold text-sm">
+                          ₩{item.income}
                         </div>
                       </div>
                     ))}
@@ -281,127 +290,165 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* 실제 수익화 사례 */}
-      <section className="py-16 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-900/10 to-transparent" />
+      {/* ===== SUCCESS CASES SECTION ===== */}
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/10 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-10">
-            <Badge className="mb-3 bg-green-500/20 text-green-400 border-green-500/30">
-              <Wallet className="mr-1 h-3 w-3" /> 검증된 수익 사례
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-6">
+              <Trophy className="h-4 w-4 text-amber-400" />
+              <span className="text-slate-300 text-sm font-medium">검증된 성공 사례</span>
+            </div>
+            <h2 className="text-headline font-bold text-white mb-4">
               실제 수익화 후기
             </h2>
-            <p className="text-slate-400">현실적인 수익과 소요 기간</p>
+            <p className="text-slate-400 text-lg">
+              현실적인 수익과 소요 기간
+            </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {realCases.map((item, index) => (
+          {/* Success Cards */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {successCases.map((item, index) => (
               <div
                 key={index}
-                className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-5 hover:border-green-500/30 transition-all cursor-pointer group"
+                className="card-premium glass-card rounded-3xl p-8 text-center animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                {/* 상단: 수익 & 난이도 */}
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="text-2xl font-bold text-green-400">{item.income}</div>
-                    <p className="text-xs text-slate-500">{item.period} 소요</p>
-                  </div>
-                  <Badge className={`text-xs ${
-                    item.difficulty === '하' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                    item.difficulty === '중' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                    'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                  }`}>
-                    난이도 {item.difficulty}
-                  </Badge>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">
+                  {item.income}
                 </div>
-
-                {/* 카테고리 & 설명 */}
-                <h3 className="font-semibold text-white mb-1">{item.category}</h3>
-                <p className="text-xs text-slate-400 mb-4">{item.desc}</p>
-
-                {/* 사용 툴 */}
-                <div className="flex flex-wrap gap-1.5">
-                  {item.tools.map((tool) => (
-                    <span
-                      key={tool}
-                      className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded-md"
-                    >
-                      {tool}
-                    </span>
-                  ))}
+                <div className="text-white font-semibold mb-1">{item.category}</div>
+                <div className="text-slate-500 text-sm mb-4">{item.period} 소요</div>
+                <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
+                  item.difficulty === '하'
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : item.difficulty === '중'
+                    ? 'bg-amber-500/20 text-amber-400'
+                    : 'bg-rose-500/20 text-rose-400'
+                }`}>
+                  난이도 {item.difficulty}
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="text-center mt-8">
+          {/* CTA */}
+          <div className="text-center mt-12">
             <Link href="/guide">
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white">
+              <Button
+                className="btn-premium bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white px-8 py-6 text-lg rounded-2xl shadow-2xl shadow-violet-500/30"
+              >
+                <Rocket className="mr-2 h-5 w-5" />
                 나도 시작하기
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Fortune CTA - 간소화 */}
-      <section className="py-16">
+      {/* ===== FORTUNE CTA SECTION ===== */}
+      <section className="py-24 relative">
         <div className="container mx-auto px-4">
-          <Card className="overflow-hidden bg-gradient-to-br from-purple-900/40 via-slate-900 to-indigo-900/40 border-white/10">
-            <CardContent className="p-8 md:p-12">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="text-center md:text-left">
-                  <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    AI FORTUNE
-                  </Badge>
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                    오늘의 AI 수익운은?
-                  </h2>
-                  <p className="text-slate-400">
-                    AI 사주로 나에게 맞는 수익화 분야를 찾아보세요
-                  </p>
+          <div className="glass-premium rounded-[2rem] p-12 md:p-16 relative overflow-hidden animate-border-glow">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-500/10 rounded-full blur-[100px]" />
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-6">
+                  <Sparkles className="h-4 w-4 text-purple-400" />
+                  <span className="text-slate-300 text-sm font-medium">AI FORTUNE</span>
                 </div>
-                <div className="flex gap-4">
-                  <Link href="/fortune/free">
-                    <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-                      무료 운세 보기
-                      <Zap className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  오늘의 AI 수익운은?
+                </h2>
+                <p className="text-slate-400 text-lg max-w-md">
+                  AI 사주 분석으로 나에게 맞는 수익화 분야를 찾아보세요
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/fortune/saju">
+                  <Button
+                    size="lg"
+                    className="btn-premium bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-6 text-lg rounded-2xl shadow-2xl shadow-purple-500/30"
+                  >
+                    <Zap className="mr-2 h-5 w-5" />
+                    무료 운세 보기
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 통계 섹션 */}
-      <section className="py-12 border-t border-white/10">
+      {/* ===== FEATURES SECTION ===== */}
+      <section className="py-24 relative">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: Eye, value: '500+', label: 'AI 툴 분석', color: 'text-purple-400' },
-              { icon: Users, value: '12.8K', label: '수익 창출자', color: 'text-green-400' },
-              { icon: DollarSign, value: '₩4.2억', label: '이번 달 총 수익', color: 'text-amber-400' },
-              { icon: Clock, value: '3개월', label: '평균 수익 달성', color: 'text-blue-400' },
-            ].map((stat) => {
-              const Icon = stat.icon;
+              {
+                icon: Cpu,
+                title: '최신 AI 분석',
+                desc: '500+ AI 툴의 실시간 분석과 수익화 잠재력 평가',
+                color: 'text-violet-400',
+              },
+              {
+                icon: Layers,
+                title: '단계별 가이드',
+                desc: '초보자부터 전문가까지 맞춤형 수익화 로드맵',
+                color: 'text-emerald-400',
+              },
+              {
+                icon: Globe,
+                title: '커뮤니티',
+                desc: '12,000+ 수익 창출자들과 함께하는 성장 네트워크',
+                color: 'text-amber-400',
+              },
+            ].map((feature, i) => {
+              const Icon = feature.icon;
               return (
-                <div key={stat.label} className="text-center">
-                  <Icon className={`h-6 w-6 mx-auto mb-2 ${stat.color}`} />
-                  <div className={`text-2xl md:text-3xl font-bold ${stat.color} mb-1`}>
-                    {stat.value}
+                <div key={i} className="glass-card rounded-3xl p-8 card-premium animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className={`w-14 h-14 rounded-2xl glass flex items-center justify-center mb-6 ${feature.color}`}>
+                    <Icon className="h-7 w-7" />
                   </div>
-                  <div className="text-slate-500 text-xs">{stat.label}</div>
+                  <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                  <p className="text-slate-400 leading-relaxed">{feature.desc}</p>
                 </div>
               );
             })}
           </div>
         </div>
       </section>
+
+      {/* ===== FINAL CTA ===== */}
+      <section className="py-24 relative">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-headline font-bold text-white mb-6">
+            지금 바로 시작하세요
+          </h2>
+          <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
+            이미 12,000명 이상이 AI를 활용해 새로운 수익을 창출하고 있습니다
+          </p>
+          <Link href="/ranking">
+            <Button
+              size="lg"
+              className="btn-premium bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-10 py-7 text-lg rounded-2xl shadow-2xl shadow-emerald-500/30"
+            >
+              <Flame className="mr-2 h-5 w-5" />
+              수익화 AI 탐색하기
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Bottom Spacer */}
+      <div className="h-20" />
     </div>
   );
 }
