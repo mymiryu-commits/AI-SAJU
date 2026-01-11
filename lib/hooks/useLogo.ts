@@ -71,6 +71,16 @@ export function useLogo() {
   const uploadLogo = async (file: File, type: 'site' | 'ai'): Promise<{ success: boolean; error?: string }> => {
     setIsUploading(true);
     try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
+      console.log('Supabase Key:', supabaseKey ? 'Set' : 'Missing');
+
+      if (!supabaseUrl || !supabaseKey) {
+        return { success: false, error: 'Supabase 환경 변수가 설정되지 않았습니다. 서버를 재시작해주세요.' };
+      }
+
       const supabase = createClient();
 
       // Validate file type
@@ -92,6 +102,8 @@ export function useLogo() {
       const fileName = type === 'site' ? `site-logo.${fileExt}` : `ai-icon.${fileExt}`;
       const filePath = `site/${fileName}`;
 
+      console.log('Uploading to:', BUCKET_NAME, filePath);
+
       // Upload to Supabase
       const { error } = await supabase.storage
         .from(BUCKET_NAME)
@@ -102,7 +114,7 @@ export function useLogo() {
 
       if (error) {
         console.error('Upload error:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: `업로드 실패: ${error.message}` };
       }
 
       // Get public URL
