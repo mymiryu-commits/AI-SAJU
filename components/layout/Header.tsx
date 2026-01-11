@@ -19,6 +19,7 @@ const navLinks = [
   { href: '/ranking', key: 'ranking', label: '전체 순위' },
   { href: '/prompts', key: 'prompts', label: '프롬프트' },
   { href: '/ebook', key: 'ebook', label: 'E-Book' },
+  { href: '/lotto', key: 'lotto', label: '로또 분석' },
   { href: '/marketplace', key: 'marketplace', label: '판매 사이트' },
   { href: '/community', key: 'community', label: '커뮤니티' },
 ] as const;
