@@ -53,7 +53,7 @@ export function useToolLogos() {
           const { data } = supabase.storage
             .from(BUCKET_NAME)
             .getPublicUrl(`${TOOLS_FOLDER}/${file.name}`);
-          logos[toolName] = data.publicUrl + '?t=' + Date.now(); // Cache bust
+          logos[toolName] = data.publicUrl;
         }
       }
 
@@ -117,7 +117,7 @@ export function useToolLogos() {
           .from(BUCKET_NAME)
           .getPublicUrl(filePath);
 
-        const logoUrl = urlData.publicUrl + '?t=' + Date.now();
+        const logoUrl = urlData.publicUrl;
 
         // Update state - use original tool name as key
         setToolLogos(prev => ({

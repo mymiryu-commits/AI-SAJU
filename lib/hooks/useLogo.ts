@@ -49,13 +49,13 @@ export function useLogo() {
             const { data } = supabase.storage
               .from(BUCKET_NAME)
               .getPublicUrl(`site/${file.name}`);
-            siteLogo = data.publicUrl + '?t=' + Date.now(); // Cache bust
+            siteLogo = data.publicUrl;
           }
           if (file.name.startsWith('ai-icon')) {
             const { data } = supabase.storage
               .from(BUCKET_NAME)
               .getPublicUrl(`site/${file.name}`);
-            aiLogo = data.publicUrl + '?t=' + Date.now(); // Cache bust
+            aiLogo = data.publicUrl;
           }
         }
       }
@@ -112,7 +112,7 @@ export function useLogo() {
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-      const logoUrl = urlData.publicUrl + '?t=' + Date.now();
+      const logoUrl = urlData.publicUrl;
 
       // Update state
       if (type === 'site') {
