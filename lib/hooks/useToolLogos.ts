@@ -38,6 +38,8 @@ export function useToolLogos() {
         .from(BUCKET_NAME)
         .list(TOOLS_FOLDER);
 
+      console.log('Loading tool logos - files:', files, 'error:', error);
+
       if (error) {
         console.error('Error loading tool logos:', error);
         setIsLoaded(true);
@@ -48,15 +50,20 @@ export function useToolLogos() {
 
       if (files) {
         for (const file of files) {
+          // Skip placeholder files
+          if (file.name === '.emptyFolderPlaceholder') continue;
+
           // Extract tool name from filename (remove extension)
           const toolName = file.name.replace(/\.[^/.]+$/, '');
           const { data } = supabase.storage
             .from(BUCKET_NAME)
             .getPublicUrl(`${TOOLS_FOLDER}/${file.name}`);
           logos[toolName] = data.publicUrl;
+          console.log('Loaded logo:', toolName, '->', data.publicUrl);
         }
       }
 
+      console.log('All loaded logos:', logos);
       setToolLogos(logos);
     } catch (error) {
       console.error('Error loading tool logos:', error);

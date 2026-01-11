@@ -122,6 +122,13 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   // Simple logo URL selection: custom > fallback
   const logoUrl = customLogo || fallbackUrl;
 
+  // Debug: log custom logo lookup
+  useEffect(() => {
+    if (logosLoaded && rank <= 5) {
+      console.log(`[ToolCard] ${tool.name}: customLogo=${customLogo ? 'YES' : 'NO'}, logoUrl=${logoUrl?.substring(0, 50)}...`);
+    }
+  }, [logosLoaded, customLogo, logoUrl, tool.name, rank]);
+
   // Reset error state when logo URL changes
   useEffect(() => {
     setImageError(false);
