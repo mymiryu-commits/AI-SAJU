@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { Star, Trophy, ExternalLink, Check, X, Sparkles, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -88,9 +89,23 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   const isTopThree = rank <= 3;
   const [logoState, setLogoState] = useState<'storage' | 'fallback' | 'initials'>('storage');
   const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const cardRef = React.useRef<HTMLDivElement>(null);
   const referralUrls = useReferralUrls();
 
   const colors = categoryColors[tool.category] || categoryColors.writing;
+
+  // Calculate tooltip position when hovered
+  const handleMouseEnter = () => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    }
+    setIsHovered(true);
+  };
 
   // Get the URL to navigate to (referral URL if set, otherwise default)
   const getNavigationUrl = () => {
@@ -151,10 +166,10 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   };
 
   return (
-    <div className={cn("relative group", isHovered && "z-[100]")}>
+    <div ref={cardRef} className="relative group">
       <div
         onClick={handleCardClick}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
           'rank-card p-5 animate-fade-in-up cursor-pointer transition-all duration-300',
@@ -226,48 +241,53 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
         </div>
       </div>
 
-      {/* Hover Tooltip - Now appears BELOW the card */}
-      {isHovered && (
+      {/* Hover Tooltip - Portal to body for z-index */}
+      {isHovered && typeof document !== 'undefined' && createPortal(
         <div
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 z-[200] pointer-events-none"
-          style={{ animation: 'fade-in-down 150ms ease-out forwards' }}
+          className="fixed w-80 z-[9999] pointer-events-none"
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            transform: 'translateX(-50%)',
+            animation: 'fade-in-down 150ms ease-out forwards'
+          }}
         >
           {/* Arrow pointing up */}
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-card dark:border-b-card" />
+          <div className="absolute left-1/2 -translate-x-1/2 -top-2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white dark:border-b-gray-800" />
 
-          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 space-y-3">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 space-y-3">
             {/* Header */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                 {logoUrl && logoState !== 'initials' ? (
                   <img src={logoUrl} alt={tool.name} className="w-8 h-8 object-contain" />
                 ) : (
-                  <span className="text-sm font-bold text-muted-foreground">
+                  <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
                     {tool.name.substring(0, 2).toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <h4 className="font-bold text-foreground">{tool.name}</h4>
-                <p className="text-xs text-muted-foreground">{tool.company} · {tool.price}</p>
+                <h4 className="font-bold text-gray-900 dark:text-white">{tool.name}</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{tool.company} · {tool.price}</p>
               </div>
             </div>
 
             {/* Detailed Description or Basic Description */}
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
               {tool.detailedDescription || tool.description}
             </p>
 
             {/* Features */}
             {tool.features && tool.features.length > 0 && (
               <div>
-                <h5 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1">
+                <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
                   주요 기능
                 </h5>
                 <div className="flex flex-wrap gap-1">
                   {tool.features.slice(0, 5).map((feature, i) => (
-                    <span key={i} className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">
+                    <span key={i} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
                       {feature}
                     </span>
                   ))}
@@ -283,7 +303,7 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
                     <h5 className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">장점</h5>
                     <ul className="space-y-0.5">
                       {tool.pros.slice(0, 3).map((pro, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1">
                           <Check className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{pro}</span>
                         </li>
@@ -296,7 +316,7 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
                     <h5 className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">단점</h5>
                     <ul className="space-y-0.5">
                       {tool.cons.slice(0, 3).map((con, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1">
                           <X className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
                           <span>{con}</span>
                         </li>
@@ -308,14 +328,15 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
             )}
 
             {/* Click to visit */}
-            <div className="pt-2 border-t border-border">
-              <p className="text-xs text-primary text-center flex items-center justify-center gap-1">
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-amber-500 text-center flex items-center justify-center gap-1">
                 <ExternalLink className="h-3 w-3" />
                 클릭하여 사이트 방문
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
