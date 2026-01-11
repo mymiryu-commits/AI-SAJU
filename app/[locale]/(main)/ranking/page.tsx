@@ -151,14 +151,14 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   };
 
   return (
-    <div className="relative group">
+    <div className={cn("relative group", isHovered && "z-[100]")}>
       <div
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
           'rank-card p-5 animate-fade-in-up cursor-pointer transition-all duration-300',
-          'hover:scale-[1.02] hover:shadow-xl hover:z-10',
+          'hover:scale-[1.02] hover:shadow-xl',
           showCategoryColor && colors.bg,
           showCategoryColor && colors.border,
           !showCategoryColor && isTopThree && rank === 1 && 'rank-1',
@@ -229,7 +229,7 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
       {/* Hover Tooltip - Now appears BELOW the card */}
       {isHovered && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 z-50 pointer-events-none"
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 z-[200] pointer-events-none"
           style={{ animation: 'fade-in-down 150ms ease-out forwards' }}
         >
           {/* Arrow pointing up */}
