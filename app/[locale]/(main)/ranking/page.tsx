@@ -257,8 +257,8 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
             {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                {logoUrl && logoState !== 'initials' ? (
-                  <img src={logoUrl} alt={tool.name} className="w-8 h-8 object-contain" />
+                {logoUrl && !imageError ? (
+                  <img src={logoUrl} alt={tool.name} className="w-8 h-8 object-contain" onError={() => setImageError(true)} />
                 ) : (
                   <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
                     {tool.name.substring(0, 2).toUpperCase()}
