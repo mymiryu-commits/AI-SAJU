@@ -93,7 +93,7 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const cardRef = React.useRef<HTMLDivElement>(null);
   const referralUrls = useReferralUrls();
-  const { toolLogos, isLoaded: logosLoaded } = useToolLogos();
+  const { getToolLogo, isLoaded: logosLoaded } = useToolLogos();
 
   const colors = categoryColors[tool.category] || categoryColors.writing;
 
@@ -114,8 +114,8 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
     return referralUrls[tool.name] || tool.website || defaultWebsites[tool.name] || '#';
   };
 
-  // Custom logo from admin settings (localStorage)
-  const customLogo = logosLoaded ? toolLogos[tool.name] : null;
+  // Custom logo from admin settings (Supabase Storage)
+  const customLogo = logosLoaded ? getToolLogo(tool.name) : null;
 
   // Get URLs from the logo system
   const storageUrl = getStorageLogoUrl(tool.name);
@@ -132,11 +132,11 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   };
 
   const getCurrentLogoUrl = () => {
-    // First priority: Custom uploaded logo from admin
+    // First priority: Custom uploaded logo from admin (Supabase)
     if (logoState === 'custom' && customLogo) {
       return customLogo;
     }
-    // Second priority: Supabase storage
+    // Second priority: Supabase storage (legacy)
     if ((logoState === 'storage' || (logoState === 'custom' && !customLogo)) && storageUrl) {
       return storageUrl;
     }

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { useLogo, fileToBase64 } from '@/lib/hooks/useLogo';
+import { useLogo } from '@/lib/hooks/useLogo';
 import {
   Upload,
   Trash2,
@@ -13,60 +13,41 @@ import {
   Loader2,
   ArrowRight,
   Layers,
+  Cloud,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 export default function AdminSettingsPage() {
-  const { siteLogo, aiLogo, isLoaded, setSiteLogo, setAiLogo } = useLogo();
-  const [uploading, setUploading] = useState<'site' | 'ai' | null>(null);
+  const { siteLogo, aiLogo, isLoaded, isUploading, setSiteLogo, setAiLogo } = useLogo();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const siteLogoInputRef = useRef<HTMLInputElement>(null);
   const aiLogoInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = async (
-    file: File,
-    type: 'site' | 'ai'
-  ) => {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: '이미지 파일만 업로드 가능합니다.' });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: '파일 크기는 2MB 이하여야 합니다.' });
-      return;
-    }
-
-    setUploading(type);
+  const handleFileUpload = async (file: File, type: 'site' | 'ai') => {
     setMessage(null);
 
-    try {
-      const base64 = await fileToBase64(file);
+    const result = type === 'site'
+      ? await setSiteLogo(file)
+      : await setAiLogo(file);
 
-      if (type === 'site') {
-        setSiteLogo(base64);
-      } else {
-        setAiLogo(base64);
-      }
-
+    if (result.success) {
       setMessage({ type: 'success', text: '로고가 성공적으로 업로드되었습니다.' });
-    } catch (error) {
-      setMessage({ type: 'error', text: '업로드 중 오류가 발생했습니다.' });
-    } finally {
-      setUploading(null);
+    } else {
+      setMessage({ type: 'error', text: result.error || '업로드 중 오류가 발생했습니다.' });
     }
   };
 
-  const handleDelete = (type: 'site' | 'ai') => {
-    if (type === 'site') {
-      setSiteLogo(null);
+  const handleDelete = async (type: 'site' | 'ai') => {
+    const result = type === 'site'
+      ? await setSiteLogo(null)
+      : await setAiLogo(null);
+
+    if (result.success) {
+      setMessage({ type: 'success', text: '로고가 삭제되었습니다.' });
     } else {
-      setAiLogo(null);
+      setMessage({ type: 'error', text: '삭제 중 오류가 발생했습니다.' });
     }
-    setMessage({ type: 'success', text: '로고가 삭제되었습니다.' });
   };
 
   if (!isLoaded) {
@@ -87,7 +68,13 @@ export default function AdminSettingsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">사이트 설정</h1>
-            <p className="text-muted-foreground text-sm">로고 및 브랜딩 설정을 관리합니다</p>
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
+              로고 및 브랜딩 설정을 관리합니다
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                <Cloud className="h-3 w-3" />
+                서버 저장
+              </span>
+            </p>
           </div>
         </div>
 
@@ -150,10 +137,10 @@ export default function AdminSettingsPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => siteLogoInputRef.current?.click()}
-                disabled={uploading === 'site'}
+                disabled={isUploading}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
               >
-                {uploading === 'site' ? (
+                {isUploading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="mr-2 h-4 w-4" />
@@ -164,6 +151,7 @@ export default function AdminSettingsPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleDelete('site')}
+                  disabled={isUploading}
                   className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -216,10 +204,10 @@ export default function AdminSettingsPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => aiLogoInputRef.current?.click()}
-                disabled={uploading === 'ai'}
+                disabled={isUploading}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
               >
-                {uploading === 'ai' ? (
+                {isUploading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="mr-2 h-4 w-4" />
@@ -230,6 +218,7 @@ export default function AdminSettingsPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleDelete('ai')}
+                  disabled={isUploading}
                   className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -265,7 +254,7 @@ export default function AdminSettingsPage() {
             <li>• 메인 로고: 가로형 권장, 최대 너비 200px</li>
             <li>• AI 아이콘: 정사각형 권장, 40x40px</li>
             <li>• 파일 크기: 2MB 이하</li>
-            <li>• 로고는 브라우저 로컬 스토리지에 저장됩니다</li>
+            <li>• <span className="text-emerald-600 dark:text-emerald-400 font-medium">Supabase 서버에 저장되어 모든 기기에서 적용됩니다</span></li>
           </ul>
         </div>
       </div>
