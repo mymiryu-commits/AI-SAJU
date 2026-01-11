@@ -1,152 +1,40 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import { Star, Trophy, ExternalLink } from 'lucide-react';
+import { Star, Trophy, ExternalLink, Check, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStorageLogoUrl, getFallbackLogoUrl } from '@/lib/storage/getLogoUrl';
+import { aiToolsData, categoryLabels, categorySubtitles, AITool, defaultWebsites } from '@/lib/data/aiTools';
 
-// AI Tools Data with categories
-const aiTools: Record<string, Tool[]> = {
-  all: [
-    { id: '1', name: 'ChatGPT', company: 'OpenAI', rating: 4.8, price: '월 $20', description: 'OpenAI의 대화형 AI 어시스턴트', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg', category: 'writing' },
-    { id: '2', name: 'Claude', company: 'Anthropic', rating: 4.7, price: '월 $20', description: 'Anthropic의 안전한 AI 어시스턴트', logo: 'https://www.anthropic.com/images/icons/apple-touch-icon.png', category: 'writing' },
-    { id: '3', name: 'GEMINI', company: 'Google', rating: 4.6, price: '무료/월 $20', description: 'Google의 멀티모달 AI', logo: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg', category: 'writing' },
-    { id: '4', name: 'Midjourney', company: 'Midjourney', rating: 4.9, price: '월 $10', description: '최고 품질의 AI 이미지 생성', logo: 'https://cdn.worldvectorlogo.com/logos/midjourney-1.svg', category: 'image' },
-    { id: '5', name: 'DALL-E 3', company: 'OpenAI', rating: 4.6, price: '월 $20', description: 'OpenAI의 이미지 생성 AI', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg', category: 'image' },
-    { id: '6', name: 'Runway', company: 'Runway', rating: 4.4, price: '월 $15', description: 'AI 비디오 생성 플랫폼', logo: 'https://asset.brandfetch.io/idSFZwYhgE/idNVL6UQbQ.png', category: 'image' },
-    { id: '7', name: 'GitHub Copilot', company: 'GitHub', rating: 4.8, price: '월 $10', description: 'AI 코드 어시스턴트', logo: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png', category: 'coding' },
-    { id: '8', name: 'Cursor', company: 'Cursor', rating: 4.7, price: '월 $20', description: 'AI 기반 코드 에디터', logo: 'https://www.cursor.com/apple-touch-icon.png', category: 'coding' },
-    { id: '9', name: 'ElevenLabs', company: 'ElevenLabs', rating: 4.7, price: '월 $5', description: 'AI 음성 합성 도구', logo: 'https://elevenlabs.io/favicon.ico', category: 'audio' },
-    { id: '10', name: 'Suno', company: 'Suno AI', rating: 4.5, price: '월 $10', description: 'AI 음악 생성 플랫폼', logo: 'https://suno.com/favicon.ico', category: 'audio' },
-    { id: '11', name: 'Framer', company: 'Framer', rating: 4.7, price: '월 $20', description: 'AI 기반 웹사이트 빌더', logo: 'https://www.framer.com/images/favicons/apple-touch-icon.png', category: 'website' },
-    { id: '12', name: 'Zapier AI', company: 'Zapier', rating: 4.5, price: '월 $20', description: 'AI 워크플로우 자동화', logo: 'https://zapier.com/apple-touch-icon.png', category: 'automation' },
-  ],
-  writing: [
-    { id: '1', name: 'ChatGPT', company: 'OpenAI', rating: 4.8, price: '월 $20', description: 'OpenAI의 대화형 AI 어시스턴트', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg', category: 'writing' },
-    { id: '2', name: 'Claude', company: 'Anthropic', rating: 4.7, price: '월 $20', description: 'Anthropic의 안전한 AI 어시스턴트', logo: 'https://www.anthropic.com/images/icons/apple-touch-icon.png', category: 'writing' },
-    { id: '3', name: 'GEMINI', company: 'Google', rating: 4.6, price: '무료/월 $20', description: 'Google의 멀티모달 AI', logo: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg', category: 'writing' },
-    { id: '4', name: 'Jasper', company: 'Jasper AI', rating: 4.5, price: '월 $39', description: '마케팅 콘텐츠 전문 AI', logo: 'https://www.jasper.ai/favicon.ico', category: 'writing' },
-    { id: '5', name: 'Copy.ai', company: 'Copy.ai', rating: 4.2, price: '월 $36', description: 'AI 카피라이팅 전문 도구', logo: 'https://www.copy.ai/favicon.ico', category: 'writing' },
-    { id: '6', name: 'Perplexity', company: 'Perplexity AI', rating: 4.4, price: '무료/월 $20', description: '검색 기반 AI 답변 생성', logo: 'https://www.perplexity.ai/favicon.ico', category: 'writing' },
-    { id: '7', name: 'Writesonic', company: 'Writesonic', rating: 4.1, price: '월 $13', description: 'AI 콘텐츠 생성 플랫폼', logo: 'https://writesonic.com/favicon.ico', category: 'writing' },
-    { id: '8', name: 'Rytr', company: 'Rytr', rating: 4.0, price: '월 $9', description: 'AI 라이팅 어시스턴트', logo: 'https://rytr.me/favicon.ico', category: 'writing' },
-    { id: '9', name: 'QuillBot', company: 'QuillBot', rating: 4.2, price: '월 $5', description: 'AI 패러프레이징 도구', logo: 'https://quillbot.com/favicon.ico', category: 'writing' },
-    { id: '10', name: 'Wordtune', company: 'AI21 Labs', rating: 4.0, price: '월 $10', description: 'AI 글쓰기 개선 도구', logo: 'https://www.wordtune.com/favicon.ico', category: 'writing' },
-    { id: '11', name: 'Grammarly', company: 'Grammarly', rating: 4.1, price: '월 $15', description: '팀용 AI 글쓰기 도구', logo: 'https://static.grammarly.com/assets/files/efe57d016d9efff36da7884c193b646b/favicon.ico', category: 'writing' },
-  ],
-  image: [
-    { id: '1', name: 'Midjourney', company: 'Midjourney', rating: 4.9, price: '월 $10', description: '최고 품질의 AI 이미지 생성', logo: 'https://cdn.worldvectorlogo.com/logos/midjourney-1.svg', category: 'image' },
-    { id: '2', name: 'DALL-E 3', company: 'OpenAI', rating: 4.6, price: '월 $20', description: 'OpenAI의 이미지 생성 AI', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg', category: 'image' },
-    { id: '3', name: 'Runway', company: 'Runway', rating: 4.4, price: '월 $15', description: 'AI 비디오 생성 플랫폼', logo: 'https://asset.brandfetch.io/idSFZwYhgE/idNVL6UQbQ.png', category: 'image' },
-    { id: '4', name: 'Stable Diffusion', company: 'Stability AI', rating: 4.3, price: '무료', description: '오픈소스 이미지 생성 AI', logo: 'https://stability.ai/favicon.ico', category: 'image' },
-    { id: '5', name: 'Leonardo AI', company: 'Leonardo.ai', rating: 4.2, price: '월 $12', description: '게임 에셋 특화 AI', logo: 'https://leonardo.ai/favicon.ico', category: 'image' },
-    { id: '6', name: 'Canva AI', company: 'Canva', rating: 4.3, price: '월 $15', description: '디자인 자동화 플랫폼', logo: 'https://static.canva.com/static/images/favicon.ico', category: 'image' },
-    { id: '7', name: 'Adobe Firefly', company: 'Adobe', rating: 4.4, price: '월 $23', description: 'Adobe의 생성형 AI', logo: 'https://www.adobe.com/favicon.ico', category: 'image' },
-    { id: '8', name: 'Pika Labs', company: 'Pika', rating: 4.1, price: '월 $10', description: 'AI 비디오 생성', logo: 'https://pika.art/favicon.ico', category: 'image' },
-    { id: '9', name: 'Ideogram', company: 'Ideogram', rating: 4.0, price: '무료/월 $8', description: '텍스트 렌더링 특화 AI', logo: 'https://ideogram.ai/favicon.ico', category: 'image' },
-  ],
-  audio: [
-    { id: '1', name: 'Suno', company: 'Suno AI', rating: 4.5, price: '월 $10', description: 'AI 음악 생성 플랫폼', logo: 'https://suno.com/favicon.ico', category: 'audio' },
-    { id: '2', name: 'Udio', company: 'Udio', rating: 4.3, price: '월 $12', description: '고품질 AI 음악 제작', logo: 'https://www.udio.com/favicon.ico', category: 'audio' },
-    { id: '3', name: 'ElevenLabs', company: 'ElevenLabs', rating: 4.7, price: '월 $5', description: 'AI 음성 합성 도구', logo: 'https://elevenlabs.io/favicon.ico', category: 'audio' },
-    { id: '4', name: 'Mubert', company: 'Mubert', rating: 4.1, price: '월 $14', description: 'AI 배경음악 생성', logo: 'https://mubert.com/favicon.ico', category: 'audio' },
-    { id: '5', name: 'AIVA', company: 'AIVA', rating: 4.0, price: '월 $11', description: 'AI 작곡가', logo: 'https://www.aiva.ai/favicon.ico', category: 'audio' },
-    { id: '6', name: 'Soundraw', company: 'Soundraw', rating: 3.9, price: '월 $17', description: '로열티 프리 AI 음악', logo: 'https://soundraw.io/favicon.ico', category: 'audio' },
-    { id: '7', name: 'Boomy', company: 'Boomy', rating: 3.7, price: '월 $3', description: '즉석 음악 생성', logo: 'https://boomy.com/favicon.ico', category: 'audio' },
-    { id: '8', name: 'Descript', company: 'Descript', rating: 4.2, price: '월 $12', description: 'AI 오디오/비디오 편집', logo: 'https://www.descript.com/favicon.ico', category: 'audio' },
-  ],
-  website: [
-    { id: '1', name: 'Framer', company: 'Framer', rating: 4.7, price: '월 $20', description: 'AI 기반 웹사이트 빌더', logo: 'https://www.framer.com/images/favicons/apple-touch-icon.png', category: 'website' },
-    { id: '2', name: 'Webflow', company: 'Webflow', rating: 4.6, price: '월 $14', description: '노코드 웹사이트 제작', logo: 'https://webflow.com/favicon.ico', category: 'website' },
-    { id: '3', name: '10Web', company: '10Web', rating: 4.3, price: '월 $10', description: 'AI 웹사이트 생성기', logo: 'https://10web.io/favicon.ico', category: 'website' },
-    { id: '4', name: 'Wix ADI', company: 'Wix', rating: 4.1, price: '월 $16', description: 'AI 웹사이트 디자인', logo: 'https://www.wix.com/favicon.ico', category: 'website' },
-    { id: '5', name: 'Durable', company: 'Durable', rating: 4.0, price: '월 $12', description: '30초 웹사이트 생성', logo: 'https://durable.co/favicon.ico', category: 'website' },
-    { id: '6', name: 'Hostinger AI', company: 'Hostinger', rating: 3.9, price: '월 $3', description: 'AI 웹사이트 빌더', logo: 'https://www.hostinger.com/favicon.ico', category: 'website' },
-    { id: '7', name: 'Squarespace', company: 'Squarespace', rating: 4.2, price: '월 $18', description: '디자인 중심 웹빌더', logo: 'https://www.squarespace.com/favicon.ico', category: 'website' },
-  ],
-  coding: [
-    { id: '1', name: 'GitHub Copilot', company: 'GitHub', rating: 4.8, price: '월 $10', description: 'AI 코드 어시스턴트', logo: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png', category: 'coding' },
-    { id: '2', name: 'Cursor', company: 'Cursor', rating: 4.7, price: '월 $20', description: 'AI 기반 코드 에디터', logo: 'https://www.cursor.com/apple-touch-icon.png', category: 'coding' },
-    { id: '3', name: 'Tabnine', company: 'Tabnine', rating: 4.3, price: '월 $12', description: 'AI 코드 자동완성', logo: 'https://www.tabnine.com/favicon.ico', category: 'coding' },
-    { id: '4', name: 'Replit AI', company: 'Replit', rating: 4.4, price: '월 $7', description: 'AI 기반 개발 환경', logo: 'https://replit.com/public/icons/favicon.ico', category: 'coding' },
-    { id: '5', name: 'Codeium', company: 'Codeium', rating: 4.2, price: '무료', description: '무료 AI 코딩 도구', logo: 'https://codeium.com/favicon.ico', category: 'coding' },
-    { id: '6', name: 'Amazon Q', company: 'AWS', rating: 4.1, price: '무료/월 $19', description: 'AWS AI 코드 생성', logo: 'https://a0.awsstatic.com/libra-css/images/site/fav/favicon.ico', category: 'coding' },
-    { id: '7', name: 'Sourcegraph Cody', company: 'Sourcegraph', rating: 4.0, price: '무료/월 $9', description: 'AI 코드 검색 & 생성', logo: 'https://sourcegraph.com/favicon.ico', category: 'coding' },
-  ],
-  automation: [
-    { id: '1', name: 'Zapier AI', company: 'Zapier', rating: 4.5, price: '월 $20', description: 'AI 워크플로우 자동화', logo: 'https://zapier.com/apple-touch-icon.png', category: 'automation' },
-    { id: '2', name: 'Make', company: 'Make', rating: 4.4, price: '월 $9', description: '시각적 자동화 플랫폼', logo: 'https://www.make.com/favicon.ico', category: 'automation' },
-    { id: '3', name: 'n8n', company: 'n8n', rating: 4.3, price: '무료/월 $20', description: '오픈소스 자동화 도구', logo: 'https://n8n.io/favicon.ico', category: 'automation' },
-    { id: '4', name: 'Bardeen', company: 'Bardeen', rating: 4.2, price: '무료/월 $10', description: 'AI 브라우저 자동화', logo: 'https://www.bardeen.ai/favicon.ico', category: 'automation' },
-    { id: '5', name: 'Axiom', company: 'Axiom', rating: 4.0, price: '월 $15', description: '노코드 브라우저 봇', logo: 'https://axiom.ai/favicon.ico', category: 'automation' },
-    { id: '6', name: 'Magical', company: 'Magical', rating: 4.1, price: '무료/월 $10', description: 'AI 텍스트 확장', logo: 'https://www.getmagical.com/favicon.ico', category: 'automation' },
-  ],
-  education: [
-    { id: '1', name: 'Duolingo Max', company: 'Duolingo', rating: 4.6, price: '월 $30', description: 'AI 언어 학습', logo: 'https://d35aaqx5ub95lt.cloudfront.net/favicon.ico', category: 'education' },
-    { id: '2', name: 'Khanmigo', company: 'Khan Academy', rating: 4.5, price: '월 $4', description: 'AI 튜터', logo: 'https://cdn.kastatic.org/images/favicon.ico', category: 'education' },
-    { id: '3', name: 'Quizlet', company: 'Quizlet', rating: 4.3, price: '월 $8', description: 'AI 학습 도우미', logo: 'https://quizlet.com/favicon.ico', category: 'education' },
-    { id: '4', name: 'Photomath', company: 'Photomath', rating: 4.4, price: '무료/월 $10', description: 'AI 수학 문제 풀이', logo: 'https://photomath.com/favicon.ico', category: 'education' },
-    { id: '5', name: 'Socratic', company: 'Google', rating: 4.2, price: '무료', description: 'AI 숙제 도우미', logo: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg', category: 'education' },
-  ],
-  marketing: [
-    { id: '1', name: 'HubSpot AI', company: 'HubSpot', rating: 4.5, price: '월 $45', description: 'AI 마케팅 자동화', logo: 'https://www.hubspot.com/favicon.ico', category: 'marketing' },
-    { id: '2', name: 'Surfer SEO', company: 'Surfer', rating: 4.4, price: '월 $59', description: 'AI SEO 최적화', logo: 'https://surferseo.com/favicon.ico', category: 'marketing' },
-    { id: '3', name: 'AdCreative.ai', company: 'AdCreative', rating: 4.3, price: '월 $29', description: 'AI 광고 크리에이티브', logo: 'https://www.adcreative.ai/favicon.ico', category: 'marketing' },
-    { id: '4', name: 'Frase', company: 'Frase', rating: 4.2, price: '월 $15', description: 'AI 콘텐츠 전략', logo: 'https://www.frase.io/favicon.ico', category: 'marketing' },
-    { id: '5', name: 'MarketMuse', company: 'MarketMuse', rating: 4.1, price: '월 $149', description: 'AI 콘텐츠 인텔리전스', logo: 'https://www.marketmuse.com/favicon.ico', category: 'marketing' },
-  ],
-  platform: [
-    { id: '1', name: 'OpenAI API', company: 'OpenAI', rating: 4.9, price: '사용량 기반', description: 'GPT API 플랫폼', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg', category: 'platform' },
-    { id: '2', name: 'Google AI Studio', company: 'Google', rating: 4.6, price: '무료/사용량', description: 'Gemini API 플랫폼', logo: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg', category: 'platform' },
-    { id: '3', name: 'Anthropic API', company: 'Anthropic', rating: 4.7, price: '사용량 기반', description: 'Claude API 플랫폼', logo: 'https://www.anthropic.com/images/icons/apple-touch-icon.png', category: 'platform' },
-    { id: '4', name: 'Hugging Face', company: 'Hugging Face', rating: 4.5, price: '무료/Pro', description: 'AI 모델 허브', logo: 'https://huggingface.co/favicon.ico', category: 'platform' },
-    { id: '5', name: 'Replicate', company: 'Replicate', rating: 4.3, price: '사용량 기반', description: 'AI 모델 호스팅', logo: 'https://replicate.com/favicon.ico', category: 'platform' },
-  ],
-};
+// Hook to get referral URLs from localStorage (can be managed by admin)
+function useReferralUrls() {
+  const [referralUrls, setReferralUrls] = useState<Record<string, string>>({});
 
-const categoryLabels: Record<string, string> = {
-  all: '전체 AI 도구 랭킹',
-  writing: '글쓰기 AI 도구',
-  image: '이미지/영상 AI 도구',
-  audio: '음원 AI 도구',
-  website: '홈페이지 AI 도구',
-  coding: 'AI 코딩 도구',
-  automation: '업무/자동화 AI 도구',
-  education: '교육 AI 도구',
-  marketing: '마케팅/광고 AI 도구',
-  platform: 'AI 플랫폼',
-};
+  useEffect(() => {
+    const stored = localStorage.getItem('ai-referral-urls');
+    if (stored) {
+      try {
+        setReferralUrls(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse referral URLs:', e);
+      }
+    }
+  }, []);
 
-const categorySubtitles: Record<string, string> = {
-  all: '1위부터 3위까지 특별 표시된 최고의 AI 도구들을 확인하세요',
-  writing: '최고의 글쓰기 AI 도구들을 랭킹순으로 확인하세요',
-  image: '최고의 이미지/영상 AI 도구들을 랭킹순으로 확인하세요',
-  audio: '최고의 음원 AI 도구들을 랭킹순으로 확인하세요',
-  website: '최고의 홈페이지 AI 도구들을 랭킹순으로 확인하세요',
-  coding: '최고의 AI 코딩 도구들을 랭킹순으로 확인하세요',
-  automation: '최고의 업무/자동화 AI 도구들을 랭킹순으로 확인하세요',
-  education: '최고의 교육 AI 도구들을 랭킹순으로 확인하세요',
-  marketing: '최고의 마케팅/광고 AI 도구들을 랭킹순으로 확인하세요',
-  platform: '최고의 AI 플랫폼들을 랭킹순으로 확인하세요',
-};
-
-interface Tool {
-  id: string;
-  name: string;
-  company: string;
-  rating: number;
-  price: string;
-  description: string;
-  logo: string;
-  category: string;
+  return referralUrls;
 }
 
-function ToolCard({ tool, rank }: { tool: Tool; rank: number }) {
+function ToolCard({ tool, rank }: { tool: AITool; rank: number }) {
   const isTopThree = rank <= 3;
-  // Logo loading state: 'storage' -> 'fallback' -> 'initials'
   const [logoState, setLogoState] = useState<'storage' | 'fallback' | 'initials'>('storage');
+  const [isHovered, setIsHovered] = useState(false);
+  const referralUrls = useReferralUrls();
+
+  // Get the URL to navigate to (referral URL if set, otherwise default)
+  const getNavigationUrl = () => {
+    return referralUrls[tool.name] || tool.website || defaultWebsites[tool.name] || '#';
+  };
 
   // Get URLs from the logo system
   const storageUrl = getStorageLogoUrl(tool.name);
@@ -194,61 +82,181 @@ function ToolCard({ tool, rank }: { tool: Tool; rank: number }) {
     return labels[cat] || cat;
   };
 
+  const handleCardClick = () => {
+    const url = getNavigationUrl();
+    if (url && url !== '#') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const hasDetailedInfo = tool.detailedDescription || (tool.features && tool.features.length > 0);
+
   return (
-    <div
-      className={cn(
-        'rank-card p-5 animate-fade-in-up',
-        rank === 1 && 'rank-1',
-        rank === 2 && 'rank-2',
-        rank === 3 && 'rank-3'
-      )}
-      style={{ animationDelay: `${(rank - 1) * 50}ms` }}
-    >
-      {/* Top Row - Trophy/Rank & Category */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {isTopThree ? getTrophyIcon() : (
+    <div className="relative group">
+      <div
+        onClick={handleCardClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          'rank-card p-5 animate-fade-in-up cursor-pointer transition-all duration-300',
+          'hover:scale-[1.02] hover:shadow-xl hover:z-10',
+          rank === 1 && 'rank-1',
+          rank === 2 && 'rank-2',
+          rank === 3 && 'rank-3'
+        )}
+        style={{ animationDelay: `${(rank - 1) * 50}ms` }}
+      >
+        {/* Top Row - Trophy/Rank & Category */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {isTopThree ? getTrophyIcon() : (
+              <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
+            )}
+          </div>
+          <span className="category-tag">{getCategoryLabel(tool.category)}</span>
+          {isTopThree && (
             <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
           )}
         </div>
-        <span className="category-tag">{getCategoryLabel(tool.category)}</span>
-        {isTopThree && (
-          <span className="text-sm font-medium text-muted-foreground">#{rank}</span>
-        )}
-      </div>
 
-      {/* Logo & Info */}
-      <div className="flex items-start gap-4 mb-3">
-        <div className="logo-container">
-          {logoUrl && logoState !== 'initials' ? (
-            <img
-              src={logoUrl}
-              alt={`${tool.name} logo`}
-              className="w-full h-full object-contain p-1"
-              onError={handleImageError}
-            />
-          ) : (
-            <span className="text-lg font-bold text-muted-foreground">
-              {tool.name.substring(0, 2).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg truncate">{tool.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="rating">
-              <Star className="h-4 w-4 rating-star" />
-              <span className="text-sm font-medium">{tool.rating}</span>
+        {/* Logo & Info */}
+        <div className="flex items-start gap-4 mb-3">
+          <div className="logo-container">
+            {logoUrl && logoState !== 'initials' ? (
+              <img
+                src={logoUrl}
+                alt={`${tool.name} logo`}
+                className="w-full h-full object-contain p-1"
+                onError={handleImageError}
+              />
+            ) : (
+              <span className="text-lg font-bold text-muted-foreground">
+                {tool.name.substring(0, 2).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-lg truncate">{tool.name}</h3>
+              <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="price-tag text-sm">{tool.price}</span>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="rating">
+                <Star className="h-4 w-4 rating-star" />
+                <span className="text-sm font-medium">{tool.rating}</span>
+              </div>
+              <span className="price-tag text-sm">{tool.price}</span>
+            </div>
           </div>
         </div>
+
+        {/* Description */}
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {tool.description}
+        </p>
+
+        {/* Visit Link Indicator */}
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{tool.company}</span>
+          <span className="text-xs text-primary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink className="h-3 w-3" />
+            방문하기
+          </span>
+        </div>
       </div>
 
-      {/* Description */}
-      <p className="text-sm text-muted-foreground line-clamp-2">
-        {tool.description}
-      </p>
+      {/* Hover Tooltip */}
+      {isHovered && hasDetailedInfo && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-80 z-50 animate-fade-in-up pointer-events-none"
+          style={{ animationDuration: '150ms' }}
+        >
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 space-y-3">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+                {logoUrl && logoState !== 'initials' ? (
+                  <img src={logoUrl} alt={tool.name} className="w-8 h-8 object-contain" />
+                ) : (
+                  <span className="text-sm font-bold text-muted-foreground">
+                    {tool.name.substring(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground">{tool.name}</h4>
+                <p className="text-xs text-muted-foreground">{tool.company}</p>
+              </div>
+            </div>
+
+            {/* Detailed Description */}
+            {tool.detailedDescription && (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {tool.detailedDescription}
+              </p>
+            )}
+
+            {/* Features */}
+            {tool.features && tool.features.length > 0 && (
+              <div>
+                <h5 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  주요 기능
+                </h5>
+                <div className="flex flex-wrap gap-1">
+                  {tool.features.slice(0, 5).map((feature, i) => (
+                    <span key={i} className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pros & Cons */}
+            {((tool.pros && tool.pros.length > 0) || (tool.cons && tool.cons.length > 0)) && (
+              <div className="grid grid-cols-2 gap-2">
+                {tool.pros && tool.pros.length > 0 && (
+                  <div>
+                    <h5 className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">장점</h5>
+                    <ul className="space-y-0.5">
+                      {tool.pros.slice(0, 3).map((pro, i) => (
+                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                          <Check className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{pro}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {tool.cons && tool.cons.length > 0 && (
+                  <div>
+                    <h5 className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">단점</h5>
+                    <ul className="space-y-0.5">
+                      {tool.cons.slice(0, 3).map((con, i) => (
+                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                          <X className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                          <span>{con}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Click to visit */}
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-primary text-center flex items-center justify-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                클릭하여 사이트 방문
+              </p>
+            </div>
+          </div>
+          {/* Arrow */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-border" />
+        </div>
+      )}
     </div>
   );
 }
@@ -258,7 +266,7 @@ function RankingContent() {
   const category = searchParams.get('category') || 'all';
 
   // Get tools for current category
-  const tools = aiTools[category] || aiTools.all;
+  const tools = aiToolsData[category] || aiToolsData.all;
 
   return (
     <>
