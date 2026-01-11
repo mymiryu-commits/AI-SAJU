@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Star, Trophy, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getStorageLogoUrl, getFallbackLogoUrl } from '@/lib/storage/getLogoUrl';
 
 // AI Tools Data with categories
 const aiTools: Record<string, Tool[]> = {
@@ -144,7 +145,32 @@ interface Tool {
 
 function ToolCard({ tool, rank }: { tool: Tool; rank: number }) {
   const isTopThree = rank <= 3;
-  const [imgError, setImgError] = useState(false);
+  // Logo loading state: 'storage' -> 'fallback' -> 'initials'
+  const [logoState, setLogoState] = useState<'storage' | 'fallback' | 'initials'>('storage');
+
+  // Get URLs from the logo system
+  const storageUrl = getStorageLogoUrl(tool.name);
+  const fallbackUrl = getFallbackLogoUrl(tool.name) || tool.logo;
+
+  const handleImageError = () => {
+    if (logoState === 'storage') {
+      setLogoState('fallback');
+    } else if (logoState === 'fallback') {
+      setLogoState('initials');
+    }
+  };
+
+  const getCurrentLogoUrl = () => {
+    if (logoState === 'storage' && storageUrl) {
+      return storageUrl;
+    }
+    if (logoState === 'fallback' || (logoState === 'storage' && !storageUrl)) {
+      return fallbackUrl;
+    }
+    return null;
+  };
+
+  const logoUrl = getCurrentLogoUrl();
 
   const getTrophyIcon = () => {
     if (rank === 1) return <Trophy className="h-5 w-5 trophy-gold" />;
@@ -194,12 +220,12 @@ function ToolCard({ tool, rank }: { tool: Tool; rank: number }) {
       {/* Logo & Info */}
       <div className="flex items-start gap-4 mb-3">
         <div className="logo-container">
-          {!imgError ? (
+          {logoUrl && logoState !== 'initials' ? (
             <img
-              src={tool.logo}
+              src={logoUrl}
               alt={`${tool.name} logo`}
               className="w-full h-full object-contain p-1"
-              onError={() => setImgError(true)}
+              onError={handleImageError}
             />
           ) : (
             <span className="text-lg font-bold text-muted-foreground">
