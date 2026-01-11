@@ -236,60 +236,51 @@ export default function PromptsPage() {
   };
 
   return (
-    <div className="min-h-screen luxury-gradient">
-      {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-20 right-10 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[150px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-pink-600/5 rounded-full blur-[180px]" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-20" />
-      </div>
-
-      <div className="container mx-auto px-4 py-12 relative z-10">
-        {/* Header */}
-        <header className="text-center mb-16 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-6">
-            <Sparkles className="h-4 w-4 text-violet-400" />
-            <span className="text-slate-300 text-sm font-medium">프롬프트 마켓</span>
-          </div>
-          <h1 className="text-headline font-bold text-white mb-4">
-            검증된 AI 프롬프트로
-            <br />
-            <span className="text-gradient-purple">수익화를 시작하세요</span>
-          </h1>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-8">
-            전문가들이 만든 고품질 프롬프트로 시간을 절약하고 퀄리티를 높이세요
-          </p>
-
-          {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 mb-10">
-            {[
-              { value: '156+', label: '프롬프트' },
-              { value: '12.8K', label: '판매' },
-              { value: '4.8', label: '평균 평점' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-slate-500 text-sm">{stat.label}</div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 relative z-10">
+        {/* Compact Header */}
+        <header className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 border border-violet-200/50 dark:border-violet-700/50 rounded-full px-4 py-1.5">
+                <Sparkles className="h-4 w-4 text-violet-500" />
+                <span className="text-violet-700 dark:text-violet-300 text-sm font-medium">프롬프트 마켓</span>
               </div>
-            ))}
+              <p className="text-muted-foreground text-sm hidden md:block">
+                전문가들이 만든 고품질 프롬프트로 시간을 절약하고 퀄리티를 높이세요
+              </p>
+            </div>
+
+            {/* Stats - Compact */}
+            <div className="flex items-center gap-6">
+              {[
+                { value: '156+', label: '프롬프트' },
+                { value: '12.8K', label: '판매' },
+                { value: '4.8', label: '평균 평점' },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                  <div className="text-muted-foreground text-xs">{stat.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Search */}
-          <div className="max-w-xl mx-auto relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+          <div className="max-w-md relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="프롬프트 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-slate-500 rounded-2xl focus:border-violet-500 focus:ring-violet-500/20"
+              className="pl-10 h-10 bg-secondary/50 border-border rounded-xl"
             />
           </div>
         </header>
 
-        {/* Categories */}
-        <section className="mb-12 animate-fade-in-up animation-delay-150">
-          <div className="flex flex-wrap justify-center gap-3">
+        {/* Categories - Compact */}
+        <section className="mb-6">
+          <div className="flex flex-wrap gap-2">
             {categories.map((cat) => {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
@@ -297,16 +288,16 @@ export default function PromptsPage() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/30'
-                      : 'glass text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/20'
+                      : 'bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   <span className="font-medium">{cat.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    isActive ? 'bg-white/20' : 'bg-white/10'
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    isActive ? 'bg-white/20' : 'bg-secondary'
                   }`}>
                     {cat.count}
                   </span>
@@ -316,53 +307,49 @@ export default function PromptsPage() {
           </div>
         </section>
 
-        {/* Featured Bundles */}
-        <section className="mb-16 animate-fade-in-up animation-delay-300">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center">
-              <Crown className="h-6 w-6 text-amber-400" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">베스트 번들</h2>
-              <p className="text-slate-400 text-sm">최대 56% 할인 패키지</p>
-            </div>
+        {/* Featured Bundles - Compact */}
+        <section className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Crown className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-foreground">베스트 번들</h2>
+            <span className="text-muted-foreground text-sm">최대 56% 할인 패키지</span>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-4">
             {bundles.map((bundle) => (
               <div
                 key={bundle.id}
-                className="card-premium glass-card rounded-2xl overflow-hidden"
+                className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
               >
-                <div className={`bg-gradient-to-r ${bundle.gradient} p-6`}>
-                  <Badge className="bg-white/20 text-white border-0 mb-3">
+                <div className={`bg-gradient-to-r ${bundle.gradient} p-4`}>
+                  <Badge className="bg-white/20 text-white border-0 text-xs mb-2">
                     {bundle.discount}% 할인
                   </Badge>
-                  <h3 className="text-xl font-bold text-white mb-2">{bundle.title}</h3>
-                  <p className="text-white/80 text-sm">{bundle.description}</p>
+                  <h3 className="text-lg font-bold text-white mb-1">{bundle.title}</h3>
+                  <p className="text-white/80 text-xs">{bundle.description}</p>
                 </div>
-                <div className="p-5">
-                  <div className="flex flex-wrap gap-2 mb-4">
+                <div className="p-4">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {bundle.prompts.map((p) => (
-                      <span key={p} className="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-lg">
+                      <span key={p} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-md">
                         {p}
                       </span>
                     ))}
                   </div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-slate-500 line-through text-sm">
+                      <span className="text-muted-foreground line-through text-xs">
                         ₩{bundle.originalPrice.toLocaleString()}
                       </span>
-                      <span className="text-2xl font-bold text-white ml-2">
+                      <span className="text-xl font-bold text-foreground ml-2">
                         ₩{bundle.price.toLocaleString()}
                       </span>
                     </div>
+                    <Button size="sm" className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-lg">
+                      <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+                      구매
+                    </Button>
                   </div>
-                  <Button className="w-full btn-premium bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl">
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    구매하기
-                  </Button>
                 </div>
               </div>
             ))}
@@ -370,20 +357,14 @@ export default function PromptsPage() {
         </section>
 
         {/* Prompt List */}
-        <section className="animate-fade-in-up animation-delay-500">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center">
-                <Zap className="h-6 w-6 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">인기 프롬프트</h2>
-                <p className="text-slate-400 text-sm">{filteredPrompts.length}개의 프롬프트</p>
-              </div>
-            </div>
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <Zap className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-foreground">인기 프롬프트</h2>
+            <span className="text-muted-foreground text-sm">{filteredPrompts.length}개</span>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredPrompts.map((prompt, index) => (
               <PromptCard
                 key={prompt.id}
@@ -396,32 +377,31 @@ export default function PromptsPage() {
           </div>
 
           {filteredPrompts.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-slate-400">검색 결과가 없습니다</p>
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">검색 결과가 없습니다</p>
             </div>
           )}
         </section>
 
         {/* CTA */}
-        <section className="mt-20 animate-fade-in-up">
-          <div className="glass-premium rounded-[2rem] p-10 md:p-14 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-violet-500/10 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-emerald-500/10 rounded-full blur-[100px]" />
+        <section className="mt-12">
+          <div className="bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50 dark:from-violet-950/30 dark:via-purple-950/20 dark:to-pink-950/10 border border-violet-200/50 dark:border-violet-800/30 rounded-2xl p-8 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-200/30 dark:bg-violet-600/10 rounded-full blur-[80px]" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-pink-200/30 dark:bg-pink-600/10 rounded-full blur-[80px]" />
 
             <div className="relative z-10">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              <h3 className="text-xl font-bold text-foreground mb-2">
                 나만의 프롬프트를 판매하고 싶으신가요?
               </h3>
-              <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+              <p className="text-muted-foreground mb-6 text-sm max-w-md mx-auto">
                 검증된 프롬프트를 등록하고 수익을 창출하세요. 판매 수수료 15%만 받습니다.
               </p>
               <Button
-                size="lg"
-                className="btn-premium bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-6 text-lg rounded-2xl shadow-2xl shadow-emerald-500/30"
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white px-6 py-5 rounded-xl shadow-lg shadow-violet-500/20"
               >
-                <TrendingUp className="mr-2 h-5 w-5" />
+                <TrendingUp className="mr-2 h-4 w-4" />
                 판매자 등록하기
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -447,61 +427,60 @@ function PromptCard({
 
   return (
     <div
-      className="card-premium glass-card rounded-2xl overflow-hidden animate-fade-in-up"
-      style={{ animationDelay: `${index * 50}ms` }}
+      className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all"
     >
       {/* Header */}
-      <div className={`bg-gradient-to-r ${prompt.gradient} p-4 relative`}>
+      <div className={`bg-gradient-to-r ${prompt.gradient} p-3 relative`}>
         <div className="flex items-start justify-between">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {prompt.isHot && (
-              <Badge className="bg-white/20 text-white border-0 text-xs">
+              <Badge className="bg-white/20 text-white border-0 text-[10px] px-1.5">
                 🔥 인기
               </Badge>
             )}
             {prompt.isFeatured && (
-              <Badge className="bg-white/20 text-white border-0 text-xs">
+              <Badge className="bg-white/20 text-white border-0 text-[10px] px-1.5">
                 ⭐ 추천
               </Badge>
             )}
           </div>
-          <Badge className="bg-white/20 text-white border-0 text-xs">
+          <Badge className="bg-white/20 text-white border-0 text-[10px] px-1.5">
             {discount}% 할인
           </Badge>
         </div>
-        <h3 className="text-lg font-bold text-white mt-3 mb-1 line-clamp-1">
+        <h3 className="text-base font-bold text-white mt-2 mb-0.5 line-clamp-1">
           {prompt.title}
         </h3>
         <p className="text-white/70 text-xs">{prompt.author}</p>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <p className="text-slate-400 text-sm mb-3 line-clamp-2">
+      <div className="p-3">
+        <p className="text-muted-foreground text-xs mb-2 line-clamp-2">
           {prompt.description}
         </p>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-1 mb-3">
           {prompt.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="text-xs text-slate-400 bg-white/5 px-2 py-1 rounded-md">
+            <span key={tag} className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
               #{tag}
             </span>
           ))}
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3">
           <span className="flex items-center gap-1">
-            <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+            <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
             {prompt.rating}
           </span>
           <span className="flex items-center gap-1">
-            <MessageSquare className="h-3.5 w-3.5" />
+            <MessageSquare className="h-3 w-3" />
             {prompt.reviews}
           </span>
           <span className="flex items-center gap-1">
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3 w-3" />
             {prompt.sales}
           </span>
         </div>
@@ -509,18 +488,18 @@ function PromptCard({
         {/* Preview Toggle */}
         <button
           onClick={() => setShowPreview(!showPreview)}
-          className="w-full text-left mb-4"
+          className="w-full text-left mb-3"
         >
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
             <span className="flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5" />
+              <Eye className="h-3 w-3" />
               미리보기
             </span>
             <span>{showPreview ? '접기' : '펼치기'}</span>
           </div>
           {showPreview && (
             <div className="relative">
-              <pre className="text-xs text-slate-300 bg-white/5 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed max-h-32 overflow-y-auto">
+              <pre className="text-[11px] text-foreground bg-secondary p-2 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed max-h-28 overflow-y-auto">
                 {prompt.preview}
               </pre>
               <button
@@ -528,12 +507,12 @@ function PromptCard({
                   e.stopPropagation();
                   onCopy(prompt.id, prompt.preview);
                 }}
-                className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                className="absolute top-1.5 right-1.5 p-1 bg-background/80 hover:bg-background rounded transition-colors"
               >
                 {isCopied ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  <Check className="h-3 w-3 text-emerald-500" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 text-slate-400" />
+                  <Copy className="h-3 w-3 text-muted-foreground" />
                 )}
               </button>
             </div>
@@ -541,18 +520,18 @@ function PromptCard({
         </button>
 
         {/* Price & Buy */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between pt-3 border-t border-border">
           <div>
-            <span className="text-slate-500 line-through text-xs">
+            <span className="text-muted-foreground line-through text-[10px]">
               ₩{prompt.originalPrice.toLocaleString()}
             </span>
-            <span className="text-lg font-bold text-white ml-2">
+            <span className="text-base font-bold text-foreground ml-1.5">
               ₩{prompt.price.toLocaleString()}
             </span>
           </div>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-lg"
+            className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-lg text-xs h-8 px-3"
           >
             구매
           </Button>
