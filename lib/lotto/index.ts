@@ -103,4 +103,15 @@ export {
 } from './simulator';
 
 // 데이터 로딩
-export { loadLottoHistory, fetchLatestResults } from './data';
+export {
+  loadLottoHistory,
+  fetchLatestResults,
+  fetchRoundResult,
+  getCurrentRound,
+  getNextDrawDate,
+  getTimeUntilNextDraw,
+  getNumberColor,
+  getNumberColorClass,
+  formatPrize,
+  calculateRank,
+} from './data';

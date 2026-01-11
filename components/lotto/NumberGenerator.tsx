@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Zap, RefreshCw, Save, Trash2, Copy, Check } from 'lucide-react';
 import { LottoNumbers } from './LottoBall';
@@ -122,23 +122,23 @@ export function NumberGenerator({
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
+            <Checkbox
               id="pattern"
               checked={usePattern}
-              onCheckedChange={setUsePattern}
+              onCheckedChange={(checked) => setUsePattern(checked === true)}
             />
-            <Label htmlFor="pattern" className="text-sm">
+            <Label htmlFor="pattern" className="text-sm cursor-pointer">
               패턴 분석 적용
             </Label>
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
+            <Checkbox
               id="premium"
               checked={usePremium}
-              onCheckedChange={setUsePremium}
+              onCheckedChange={(checked) => setUsePremium(checked === true)}
             />
-            <Label htmlFor="premium" className="text-sm">
+            <Label htmlFor="premium" className="text-sm cursor-pointer">
               프리미엄 모드
             </Label>
             <Badge variant="secondary" className="text-xs">
