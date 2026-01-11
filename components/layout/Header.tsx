@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { useLogo } from '@/lib/hooks/useLogo';
 
 const navLinks = [
   { href: '/ranking', key: 'ranking', label: '전체 순위' },
@@ -36,6 +37,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { siteLogo, aiLogo, isLoaded } = useLogo();
 
   // Handle hydration mismatch
   React.useEffect(() => {
@@ -53,13 +55,34 @@ export function Header() {
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-shadow">
-            <span className="text-white font-bold text-sm tracking-tight">AI</span>
-            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-yellow-300 to-amber-400 rounded-full shadow-sm" />
-          </div>
+          {/* AI Icon Logo */}
+          {mounted && aiLogo ? (
+            <img
+              src={aiLogo}
+              alt="AI Logo"
+              className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-shadow"
+            />
+          ) : (
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-shadow">
+              <span className="text-white font-bold text-sm tracking-tight">AI</span>
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-yellow-300 to-amber-400 rounded-full shadow-sm" />
+            </div>
+          )}
+
+          {/* Site Logo or Text */}
           <div className="hidden sm:block">
-            <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">AI-SAJU</span>
-            <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-wide">수익화 인텔리전스</span>
+            {mounted && siteLogo ? (
+              <img
+                src={siteLogo}
+                alt="Site Logo"
+                className="max-h-8 max-w-[150px] object-contain"
+              />
+            ) : (
+              <>
+                <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">AI-SAJU</span>
+                <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-wide">수익화 인텔리전스</span>
+              </>
+            )}
           </div>
         </Link>
 
@@ -147,10 +170,12 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Settings */}
-          <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-          </Button>
+          {/* Settings - Link to admin settings */}
+          <Link href="/admin/settings">
+            <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          </Link>
 
           {/* Mobile menu button */}
           <button
@@ -185,6 +210,15 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Mobile Settings Link */}
+            <Link
+              href="/admin/settings"
+              className="block py-3 px-4 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:bg-secondary/50"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              사이트 설정
+            </Link>
 
             {/* Mobile Language Selector */}
             <div className="py-3 px-4 border-t mt-4">
