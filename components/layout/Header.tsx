@@ -52,13 +52,14 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-            AI
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-shadow">
+            <span className="text-white font-bold text-sm tracking-tight">AI</span>
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-yellow-300 to-amber-400 rounded-full shadow-sm" />
           </div>
           <div className="hidden sm:block">
-            <span className="text-lg font-bold">AI-TREND</span>
-            <span className="text-xs text-muted-foreground block -mt-1">Intelligence Hub</span>
+            <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">AI-SAJU</span>
+            <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-wide">수익화 인텔리전스</span>
           </div>
         </Link>
 

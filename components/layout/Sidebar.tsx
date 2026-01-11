@@ -223,7 +223,7 @@ export function Sidebar() {
 
       {/* AI Chat Button - Fixed Position */}
       <div className="fixed bottom-6 left-6 z-50">
-        <button className="flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-200">
+        <button className="flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium shadow-lg shadow-amber-500/30 hover:shadow-amber-500/40 hover:scale-105 transition-all duration-200">
           <MessageCircle className="h-5 w-5" />
           <span>AI 상담</span>
         </button>

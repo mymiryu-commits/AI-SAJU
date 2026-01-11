@@ -95,13 +95,13 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
 
   const colors = categoryColors[tool.category] || categoryColors.writing;
 
-  // Calculate tooltip position when hovered
+  // Calculate tooltip position when hovered (right-aligned with card)
   const handleMouseEnter = () => {
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       setTooltipPosition({
         top: rect.bottom + window.scrollY + 8,
-        left: rect.left + rect.width / 2 + window.scrollX,
+        left: rect.right + window.scrollX, // Align right edges
       });
     }
     setIsHovered(true);
@@ -248,12 +248,12 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
           style={{
             top: tooltipPosition.top,
             left: tooltipPosition.left,
-            transform: 'translateX(-50%)',
+            transform: 'translateX(-100%)', // Right-align with card
             animation: 'fade-in-down 150ms ease-out forwards'
           }}
         >
-          {/* Arrow pointing up */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white dark:border-b-gray-800" />
+          {/* Arrow pointing up - positioned towards right */}
+          <div className="absolute right-8 -top-2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white dark:border-b-gray-800" />
 
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 space-y-3">
             {/* Header */}
