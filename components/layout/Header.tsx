@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
-import { Menu, X, ChevronDown, Check } from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,13 +12,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const navLinks = [
-  { href: '/ranking', key: 'ranking' },
-  { href: '/guide', key: 'guide' },
-  { href: '/fortune', key: 'fortune' },
-  { href: '/prompts', key: 'prompts' },
-  { href: '/pricing', key: 'pricing' },
+  { href: '/ranking', key: 'ranking', label: '전체 순위' },
+  { href: '/prompts', key: 'prompts', label: '프롬프트' },
+  { href: '/ebook', key: 'ebook', label: 'E-Book' },
+  { href: '/marketplace', key: 'marketplace', label: '판매 사이트' },
+  { href: '/community', key: 'community', label: '커뮤니티' },
 ] as const;
 
 const languages = [
@@ -33,6 +34,13 @@ export function Header() {
   const router = useRouter();
   const locale = useLocale();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+
+  // Handle hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLanguageChange = (newLocale: string) => {
     router.replace(pathname, { locale: newLocale });
@@ -44,38 +52,59 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            AI RANK
-          </span>
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+            AI
+          </div>
+          <div className="hidden sm:block">
+            <span className="text-lg font-bold">AI-TREND</span>
+            <span className="text-xs text-muted-foreground block -mt-1">Intelligence Hub</span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.key}
               href={link.href}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                pathname === link.href
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
+                'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                pathname === link.href || pathname?.startsWith(link.href)
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
               )}
             >
-              {t(link.key)}
+              {link.label}
             </Link>
           ))}
         </div>
 
         {/* Right side actions */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle"
+            aria-label="Toggle theme"
+          >
+            {mounted ? (
+              theme === 'light' ? (
+                <Moon className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <Sun className="h-5 w-5 text-muted-foreground" />
+              )
+            ) : (
+              <Moon className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
                 <span className="text-base">{currentLanguage.flag}</span>
-                <span className="hidden sm:inline">{currentLanguage.label}</span>
+                <span className="hidden sm:inline text-sm">{currentLanguage.label}</span>
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -96,53 +125,69 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Auth buttons */}
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              {t('login')}
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button size="sm">{t('signup')}</Button>
-          </Link>
-        </div>
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/login" className="cursor-pointer">
+                  로그인
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/signup" className="cursor-pointer">
+                  회원가입
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+          {/* Settings */}
+          <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+          </Button>
+
+          {/* Mobile menu button */}
+          <button
+            className="lg:hidden p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
-          <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="lg:hidden border-t bg-background animate-fade-in">
+          <div className="container mx-auto px-4 py-4 space-y-2">
             {navLinks.map((link) => (
               <Link
                 key={link.key}
                 href={link.href}
                 className={cn(
-                  'block py-2 text-sm font-medium transition-colors',
-                  pathname === link.href
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
+                  'block py-3 px-4 text-sm font-medium rounded-lg transition-colors',
+                  pathname === link.href || pathname?.startsWith(link.href)
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:bg-secondary/50'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {t(link.key)}
+                {link.label}
               </Link>
             ))}
 
             {/* Mobile Language Selector */}
-            <div className="py-2 border-t">
-              <p className="text-xs text-muted-foreground mb-2">Language</p>
+            <div className="py-3 px-4 border-t mt-4">
+              <p className="text-xs text-muted-foreground mb-2">언어 선택</p>
               <div className="flex gap-2">
                 {languages.map((lang) => (
                   <Button
@@ -160,17 +205,6 @@ export function Header() {
                   </Button>
                 ))}
               </div>
-            </div>
-
-            <div className="flex flex-col space-y-2 pt-4 border-t">
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  {t('login')}
-                </Button>
-              </Link>
-              <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full">{t('signup')}</Button>
-              </Link>
             </div>
           </div>
         </div>
