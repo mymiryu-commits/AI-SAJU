@@ -1,54 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-background: hsl(0 0% 100%);
+  /* Light Theme (Default) */
+  --color-background: hsl(0 0% 99%);
   --color-foreground: hsl(222.2 84% 4.9%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222.2 84% 4.9%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(262.1 83.3% 57.8%);
-  --color-primary-foreground: hsl(210 40% 98%);
+  --color-primary: hsl(47 95% 55%);
+  --color-primary-foreground: hsl(222.2 84% 4.9%);
   --color-secondary: hsl(210 40% 96.1%);
   --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
   --color-muted: hsl(210 40% 96.1%);
   --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
+  --color-accent: hsl(47 95% 55%);
   --color-accent-foreground: hsl(222.2 47.4% 11.2%);
   --color-destructive: hsl(0 84.2% 60.2%);
   --color-destructive-foreground: hsl(210 40% 98%);
   --color-border: hsl(214.3 31.8% 91.4%);
   --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(262.1 83.3% 57.8%);
+  --color-ring: hsl(47 95% 55%);
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  /* Sidebar Colors */
+  --color-sidebar-bg: hsl(0 0% 100%);
+  --color-sidebar-hover: hsl(210 40% 96.1%);
+  --color-sidebar-active: hsl(210 40% 94%);
+
+  /* Card Highlight Colors */
+  --color-rank-gold: hsl(47 95% 88%);
+  --color-rank-silver: hsl(47 60% 92%);
+  --color-rank-bronze: hsl(47 50% 94%);
+
+  /* Premium Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 }
 
 .dark {
   --color-background: hsl(222.2 84% 4.9%);
   --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222.2 84% 4.9%);
+  --color-card: hsl(222.2 50% 8%);
   --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(222.2 84% 4.9%);
+  --color-popover: hsl(222.2 50% 8%);
   --color-popover-foreground: hsl(210 40% 98%);
-  --color-primary: hsl(263.4 70% 50.4%);
-  --color-primary-foreground: hsl(210 40% 98%);
+  --color-primary: hsl(47 95% 55%);
+  --color-primary-foreground: hsl(222.2 84% 4.9%);
   --color-secondary: hsl(217.2 32.6% 17.5%);
   --color-secondary-foreground: hsl(210 40% 98%);
   --color-muted: hsl(217.2 32.6% 17.5%);
   --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-accent: hsl(217.2 32.6% 17.5%);
-  --color-accent-foreground: hsl(210 40% 98%);
+  --color-accent: hsl(47 95% 55%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
   --color-destructive: hsl(0 62.8% 30.6%);
   --color-destructive-foreground: hsl(210 40% 98%);
   --color-border: hsl(217.2 32.6% 17.5%);
   --color-input: hsl(217.2 32.6% 17.5%);
-  --color-ring: hsl(263.4 70% 50.4%);
+  --color-ring: hsl(47 95% 55%);
+
+  --color-sidebar-bg: hsl(222.2 50% 6%);
+  --color-sidebar-hover: hsl(217.2 32.6% 12%);
+  --color-sidebar-active: hsl(217.2 32.6% 15%);
+
+  --color-rank-gold: hsl(47 70% 25%);
+  --color-rank-silver: hsl(47 40% 20%);
+  --color-rank-bronze: hsl(47 30% 18%);
 }
 
 * {
@@ -59,49 +78,425 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fortune gradient backgrounds */
-.fortune-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ===== LAYOUT ===== */
+.sidebar {
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
 }
 
-.fortune-gradient-dark {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+.sidebar-item {
+  transition: all 0.2s ease;
+  border-radius: var(--radius-xl);
 }
 
-/* Animation utilities */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.sidebar-item:hover {
+  background-color: var(--color-sidebar-hover);
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+.sidebar-item.active {
+  background-color: var(--color-sidebar-active);
+  font-weight: 600;
 }
 
-@keyframes pulse-slow {
+/* ===== RANK CARDS ===== */
+.rank-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rank-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.rank-card.rank-1 {
+  background-color: var(--color-rank-gold);
+  border-color: hsl(47 80% 70%);
+}
+
+.rank-card.rank-2 {
+  background-color: var(--color-rank-silver);
+  border-color: hsl(47 50% 80%);
+}
+
+.rank-card.rank-3 {
+  background-color: var(--color-rank-bronze);
+  border-color: hsl(47 40% 82%);
+}
+
+.dark .rank-card.rank-1 {
+  border-color: hsl(47 70% 40%);
+}
+
+.dark .rank-card.rank-2 {
+  border-color: hsl(47 50% 35%);
+}
+
+.dark .rank-card.rank-3 {
+  border-color: hsl(47 40% 30%);
+}
+
+/* ===== RANK BADGES ===== */
+.rank-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rank-badge.gold {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #1a1a1a;
+}
+
+.rank-badge.silver {
+  background: linear-gradient(135deg, #E8E8E8 0%, #B0B0B0 100%);
+  color: #1a1a1a;
+}
+
+.rank-badge.bronze {
+  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+  color: white;
+}
+
+/* ===== TROPHY ICONS ===== */
+.trophy-gold { color: #FFD700; }
+.trophy-silver { color: #C0C0C0; }
+.trophy-bronze { color: #CD7F32; }
+
+/* ===== CATEGORY TAG ===== */
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: hsl(210 40% 96.1%);
+  color: hsl(215.4 16.3% 46.9%);
+}
+
+.dark .category-tag {
+  background-color: hsl(217.2 32.6% 17.5%);
+  color: hsl(215 20.2% 65.1%);
+}
+
+/* ===== RATING ===== */
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-star {
+  color: #FBBF24;
+  fill: #FBBF24;
+}
+
+/* ===== PRICE TAG ===== */
+.price-tag {
+  font-weight: 500;
+  color: hsl(215.4 16.3% 46.9%);
+}
+
+.dark .price-tag {
+  color: hsl(215 20.2% 65.1%);
+}
+
+/* ===== AI CHAT BUTTON ===== */
+.ai-chat-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  border-radius: 9999px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.ai-chat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+}
+
+/* ===== THEME TOGGLE ===== */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-secondary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background-color: var(--color-muted);
+}
+
+/* ===== SEARCH BAR ===== */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  transition: all 0.2s ease;
+}
+
+.search-bar:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsl(47 95% 55% / 0.2);
+}
+
+.search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-subtle {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.7; }
 }
 
-.animate-pulse-slow {
-  animation: pulse-slow 3s ease-in-out infinite;
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
 }
 
-/* Card hover effects */
-.card-hover {
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(215.4 16.3% 80%);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(217.2 32.6% 25%);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(215.4 16.3% 65%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(217.2 32.6% 35%);
+}
+
+/* ===== SELECTION ===== */
+::selection {
+  background: hsl(47 95% 55% / 0.3);
+  color: inherit;
+}
+
+/* ===== LOGO IMAGE ===== */
+.logo-container {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: var(--color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-muted-foreground);
+}
+
+/* ===== HOVER EFFECTS ===== */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .hover-lift:hover {
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== BUTTON STYLES ===== */
+.btn-primary {
+  background: linear-gradient(135deg, hsl(47 95% 55%) 0%, hsl(40 95% 50%) 100%);
+  color: hsl(222.2 84% 4.9%);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
 }
 
-.card-hover:hover {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  transform: translateY(-4px);
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px hsl(47 95% 55% / 0.4);
 }
 
-/* Score bar */
-.score-bar {
-  height: 0.5rem;
-  border-radius: 9999px;
-  background: linear-gradient(to right, hsl(262.1 83.3% 57.8% / 0.3), hsl(262.1 83.3% 57.8%));
+/* ===== CONTENT AREA ===== */
+.content-area {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  color: var(--color-muted-foreground);
+  font-size: 0.95rem;
+}
+
+/* ===== GRID LAYOUTS ===== */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1280px) {
+  .grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .grid-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== TEXT UTILITIES ===== */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== MOBILE SIDEBAR ===== */
+@media (max-width: 1024px) {
+  .sidebar-desktop {
+    display: none;
+  }
 }

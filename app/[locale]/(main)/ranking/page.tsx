@@ -1,352 +1,472 @@
-import { Suspense } from 'react';
-import { useTranslations } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
+'use client';
+
+import React, { useState, Suspense, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useSearchParams } from 'next/navigation';
+import { Star, Trophy, ExternalLink, Check, X, Sparkles, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { aiToolsData, categoryLabels, categorySubtitles, AITool, defaultWebsites } from '@/lib/data/aiTools';
 import { Link } from '@/i18n/routing';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Star,
-  ExternalLink,
-  TrendingUp,
-  MessageSquare,
-  Image as ImageIcon,
-  Video,
-  Code,
-  Mic,
-  FileText,
-  Zap,
-} from 'lucide-react';
+import { useToolLogos } from '@/lib/hooks/useToolLogos';
 
-// Mock data - would come from Supabase in production
-const aiTools = [
-  {
-    id: '1',
-    slug: 'chatgpt',
-    name: 'ChatGPT',
-    category: 'chat',
-    description: 'OpenAI의 대화형 AI. GPT-4o 기반으로 자연스러운 대화와 다양한 작업 수행이 가능합니다.',
-    logo: '/logos/chatgpt.svg',
-    website: 'https://chat.openai.com',
-    pricingType: 'freemium',
-    totalScore: 95,
-    reviewCount: 1250,
-    isFeatured: true,
-    trend: 'up',
+// Category color schemes for visual distinction
+const categoryColors: Record<string, { bg: string; border: string; tag: string; gradient: string }> = {
+  writing: {
+    bg: 'bg-blue-50 dark:bg-blue-950/30',
+    border: 'border-blue-200 dark:border-blue-800',
+    tag: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+    gradient: 'from-blue-500 to-blue-600'
   },
-  {
-    id: '2',
-    slug: 'claude',
-    name: 'Claude',
-    category: 'chat',
-    description: 'Anthropic의 AI 어시스턴트. 긴 문맥 처리와 분석적 사고에 강점이 있습니다.',
-    logo: '/logos/claude.svg',
-    website: 'https://claude.ai',
-    pricingType: 'freemium',
-    totalScore: 93,
-    reviewCount: 890,
-    isFeatured: true,
-    trend: 'up',
+  image: {
+    bg: 'bg-purple-50 dark:bg-purple-950/30',
+    border: 'border-purple-200 dark:border-purple-800',
+    tag: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
+    gradient: 'from-purple-500 to-purple-600'
   },
-  {
-    id: '3',
-    slug: 'midjourney',
-    name: 'Midjourney',
-    category: 'image',
-    description: '최고 품질의 AI 이미지 생성. 예술적이고 창의적인 이미지 제작에 특화되어 있습니다.',
-    logo: '/logos/midjourney.svg',
-    website: 'https://midjourney.com',
-    pricingType: 'paid',
-    totalScore: 98,
-    reviewCount: 2100,
-    isFeatured: true,
-    trend: 'stable',
+  audio: {
+    bg: 'bg-pink-50 dark:bg-pink-950/30',
+    border: 'border-pink-200 dark:border-pink-800',
+    tag: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300',
+    gradient: 'from-pink-500 to-pink-600'
   },
-  {
-    id: '4',
-    slug: 'gemini',
-    name: 'Gemini',
-    category: 'chat',
-    description: 'Google의 멀티모달 AI. 텍스트, 이미지, 코드를 함께 처리할 수 있습니다.',
-    logo: '/logos/gemini.svg',
-    website: 'https://gemini.google.com',
-    pricingType: 'freemium',
-    totalScore: 90,
-    reviewCount: 780,
-    isFeatured: true,
-    trend: 'up',
+  website: {
+    bg: 'bg-cyan-50 dark:bg-cyan-950/30',
+    border: 'border-cyan-200 dark:border-cyan-800',
+    tag: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300',
+    gradient: 'from-cyan-500 to-cyan-600'
   },
-  {
-    id: '5',
-    slug: 'runway',
-    name: 'Runway',
-    category: 'video',
-    description: '영상 생성 및 편집 AI. Gen-3로 고품질 AI 영상을 만들 수 있습니다.',
-    logo: '/logos/runway.svg',
-    website: 'https://runway.ml',
-    pricingType: 'freemium',
-    totalScore: 90,
-    reviewCount: 650,
-    isFeatured: false,
-    trend: 'up',
+  coding: {
+    bg: 'bg-green-50 dark:bg-green-950/30',
+    border: 'border-green-200 dark:border-green-800',
+    tag: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+    gradient: 'from-green-500 to-green-600'
   },
-  {
-    id: '6',
-    slug: 'github-copilot',
-    name: 'GitHub Copilot',
-    category: 'code',
-    description: 'AI 코딩 어시스턴트. 코드 자동완성과 제안 기능을 제공합니다.',
-    logo: '/logos/copilot.svg',
-    website: 'https://github.com/features/copilot',
-    pricingType: 'paid',
-    totalScore: 90,
-    reviewCount: 1560,
-    isFeatured: true,
-    trend: 'stable',
+  automation: {
+    bg: 'bg-orange-50 dark:bg-orange-950/30',
+    border: 'border-orange-200 dark:border-orange-800',
+    tag: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+    gradient: 'from-orange-500 to-orange-600'
   },
-  {
-    id: '7',
-    slug: 'elevenlabs',
-    name: 'ElevenLabs',
-    category: 'voice',
-    description: '고품질 AI 음성 합성. 자연스러운 음성 생성과 음성 복제가 가능합니다.',
-    logo: '/logos/elevenlabs.svg',
-    website: 'https://elevenlabs.io',
-    pricingType: 'freemium',
-    totalScore: 95,
-    reviewCount: 720,
-    isFeatured: true,
-    trend: 'up',
+  education: {
+    bg: 'bg-indigo-50 dark:bg-indigo-950/30',
+    border: 'border-indigo-200 dark:border-indigo-800',
+    tag: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
+    gradient: 'from-indigo-500 to-indigo-600'
   },
-  {
-    id: '8',
-    slug: 'stable-diffusion',
-    name: 'Stable Diffusion',
-    category: 'image',
-    description: '오픈소스 이미지 생성 AI. 로컬 실행 가능하며 커스터마이징이 자유롭습니다.',
-    logo: '/logos/sd.svg',
-    website: 'https://stability.ai',
-    pricingType: 'free',
-    totalScore: 85,
-    reviewCount: 1890,
-    isFeatured: false,
-    trend: 'stable',
+  marketing: {
+    bg: 'bg-rose-50 dark:bg-rose-950/30',
+    border: 'border-rose-200 dark:border-rose-800',
+    tag: 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300',
+    gradient: 'from-rose-500 to-rose-600'
   },
-];
+  platform: {
+    bg: 'bg-amber-50 dark:bg-amber-950/30',
+    border: 'border-amber-200 dark:border-amber-800',
+    tag: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+    gradient: 'from-amber-500 to-amber-600'
+  },
+};
 
-const categories = [
-  { key: 'all', icon: Zap },
-  { key: 'chat', icon: MessageSquare },
-  { key: 'image', icon: ImageIcon },
-  { key: 'video', icon: Video },
-  { key: 'code', icon: Code },
-  { key: 'voice', icon: Mic },
-  { key: 'writing', icon: FileText },
-];
+// Hook to get referral URLs from localStorage (can be managed by admin)
+function useReferralUrls() {
+  const [referralUrls, setReferralUrls] = useState<Record<string, string>>({});
 
-export default async function RankingPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  useEffect(() => {
+    const stored = localStorage.getItem('ai-referral-urls');
+    if (stored) {
+      try {
+        setReferralUrls(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse referral URLs:', e);
+      }
+    }
+  }, []);
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <RankingHeader />
-      </div>
-
-      {/* Filters & Content */}
-      <Suspense fallback={<div>Loading...</div>}>
-        <RankingContent locale={locale} />
-      </Suspense>
-    </div>
-  );
+  return referralUrls;
 }
 
-function RankingHeader() {
-  const t = useTranslations('ranking');
-  return (
-    <div>
-      <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('title')}</h1>
-      <p className="text-muted-foreground">{t('subtitle')}</p>
-    </div>
-  );
-}
+function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; rank: number; showCategoryColor?: boolean }) {
+  const isTopThree = rank <= 3;
+  const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const referralUrls = useReferralUrls();
+  const { getToolLogo, isLoaded: logosLoaded } = useToolLogos();
 
-function RankingContent({ locale }: { locale: string }) {
-  const t = useTranslations('ranking');
-  const tFilters = useTranslations('ranking.filters');
-  const tCategories = useTranslations('ranking.categories');
+  const colors = categoryColors[tool.category] || categoryColors.writing;
 
-  return (
-    <Tabs defaultValue="all" className="space-y-6">
-      {/* Category Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <TabsList className="w-full md:w-auto overflow-x-auto">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <TabsTrigger key={cat.key} value={cat.key} className="gap-2">
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tCategories(cat.key)}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+  // Calculate tooltip position when hovered (right-aligned with card)
+  const handleMouseEnter = () => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX, // Align right edges
+      });
+    }
+    setIsHovered(true);
+  };
 
-        {/* Filters */}
-        <div className="flex gap-2">
-          <Select defaultValue="score">
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder={tFilters('sort')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score">{tFilters('sortByScore')}</SelectItem>
-              <SelectItem value="popular">{tFilters('sortByPopular')}</SelectItem>
-              <SelectItem value="recent">{tFilters('sortByRecent')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder={tFilters('pricing')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{tFilters('pricingAll')}</SelectItem>
-              <SelectItem value="free">{tFilters('pricingFree')}</SelectItem>
-              <SelectItem value="freemium">{tFilters('pricingFreemium')}</SelectItem>
-              <SelectItem value="paid">{tFilters('pricingPaid')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+  // Get the URL to navigate to (referral URL if set, otherwise default)
+  const getNavigationUrl = () => {
+    return referralUrls[tool.name] || tool.website || defaultWebsites[tool.name] || '#';
+  };
 
-      {/* Tool Cards */}
-      {categories.map((cat) => (
-        <TabsContent key={cat.key} value={cat.key} className="space-y-4">
-          <div className="grid gap-4">
-            {aiTools
-              .filter(
-                (tool) => cat.key === 'all' || tool.category === cat.key
-              )
-              .sort((a, b) => b.totalScore - a.totalScore)
-              .map((tool, index) => (
-                <ToolCard key={tool.id} tool={tool} rank={index + 1} locale={locale} />
-              ))}
-          </div>
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-}
+  // Custom logo from admin settings (Supabase Storage) - PRIORITY 1
+  const customLogo = logosLoaded ? getToolLogo(tool.name) : null;
 
-function ToolCard({
-  tool,
-  rank,
-  locale,
-}: {
-  tool: (typeof aiTools)[0];
-  rank: number;
-  locale: string;
-}) {
-  const t = useTranslations('ranking.card');
+  // Fallback URL from tool data - PRIORITY 2
+  const fallbackUrl = tool.logo;
 
-  const getPricingBadge = (type: string) => {
-    switch (type) {
-      case 'free':
-        return <Badge variant="success">Free</Badge>;
-      case 'freemium':
-        return <Badge variant="secondary">Freemium</Badge>;
-      case 'paid':
-        return <Badge variant="outline">Paid</Badge>;
-      default:
-        return null;
+  // Simple logo URL selection: custom > fallback
+  const logoUrl = customLogo || fallbackUrl;
+
+  // Debug: log custom logo lookup
+  useEffect(() => {
+    if (logosLoaded && rank <= 5) {
+      console.log(`[ToolCard] ${tool.name}: customLogo=${customLogo ? 'YES' : 'NO'}, logoUrl=${logoUrl?.substring(0, 50)}...`);
+    }
+  }, [logosLoaded, customLogo, logoUrl, tool.name, rank]);
+
+  // Reset error state when logo URL changes
+  useEffect(() => {
+    setImageError(false);
+  }, [logoUrl]);
+
+  const getTrophyIcon = () => {
+    if (rank === 1) return <Trophy className="h-5 w-5 trophy-gold" />;
+    if (rank === 2) return <Trophy className="h-5 w-5 trophy-silver" />;
+    if (rank === 3) return <Trophy className="h-5 w-5 trophy-bronze" />;
+    return null;
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    const labels: Record<string, string> = {
+      writing: '글쓰기',
+      image: '이미지/영상',
+      audio: '음원',
+      website: '홈페이지',
+      coding: 'AI코딩',
+      automation: '업무/자동화',
+      education: '교육',
+      marketing: '마케팅/광고',
+      platform: 'AI 플랫폼',
+    };
+    return labels[cat] || cat;
+  };
+
+  const handleCardClick = () => {
+    const url = getNavigationUrl();
+    if (url && url !== '#') {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
-    <Card className="card-hover">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-start gap-4">
-          {/* Rank */}
-          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm md:text-base">
-            {rank}
+    <div ref={cardRef} className="relative group">
+      <div
+        onClick={handleCardClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          'rank-card p-5 animate-fade-in-up cursor-pointer transition-all duration-300',
+          'hover:scale-[1.02] hover:shadow-xl',
+          showCategoryColor && colors.bg,
+          showCategoryColor && colors.border,
+          !showCategoryColor && isTopThree && rank === 1 && 'rank-1',
+          !showCategoryColor && isTopThree && rank === 2 && 'rank-2',
+          !showCategoryColor && isTopThree && rank === 3 && 'rank-3'
+        )}
+        style={{ animationDelay: `${(rank - 1) * 50}ms` }}
+      >
+        {/* Top Row - Trophy & Category */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {isTopThree && getTrophyIcon()}
           </div>
-
-          {/* Logo */}
-          <div className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-lg bg-muted flex items-center justify-center text-2xl font-bold">
-            {tool.name.charAt(0)}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h3 className="font-semibold text-lg">{tool.name}</h3>
-              {tool.isFeatured && (
-                <Badge className="bg-yellow-500 text-white">Featured</Badge>
-              )}
-              {getPricingBadge(tool.pricingType)}
-              {tool.trend === 'up' && (
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-              {tool.description}
-            </p>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                <span className="font-medium">{tool.totalScore}</span>
-              </div>
-              <span className="text-muted-foreground">
-                {tool.reviewCount.toLocaleString()} {t('reviews')}
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex-shrink-0 flex flex-col gap-2">
-            <Link href={`/ranking/${tool.category}/${tool.slug}`}>
-              <Button size="sm" variant="outline" className="w-full">
-                Details
-              </Button>
-            </Link>
-            <a href={tool.website} target="_blank" rel="noopener noreferrer">
-              <Button size="sm" className="w-full gap-1">
-                {t('visit')}
-                <ExternalLink className="h-3 w-3" />
-              </Button>
-            </a>
-          </div>
+          <span className={cn(
+            'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium',
+            showCategoryColor ? colors.tag : 'category-tag'
+          )}>
+            {getCategoryLabel(tool.category)}
+          </span>
         </div>
 
-        {/* Score bar */}
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground w-16">{t('score')}</span>
-            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
-                style={{ width: `${tool.totalScore}%` }}
+        {/* Logo & Info */}
+        <div className="flex items-start gap-4 mb-3">
+          <div className="logo-container">
+            {logoUrl && !imageError ? (
+              <img
+                src={logoUrl}
+                alt={`${tool.name} logo`}
+                className="w-full h-full object-contain p-1"
+                onError={() => setImageError(true)}
               />
+            ) : (
+              <span className="text-lg font-bold text-muted-foreground">
+                {tool.name.substring(0, 2).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-lg truncate">{tool.name}</h3>
+              <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="text-sm font-medium w-12 text-right">
-              {tool.totalScore}/100
-            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="rating">
+                <Star className="h-4 w-4 rating-star" />
+                <span className="text-sm font-medium">{tool.rating}</span>
+              </div>
+              <span className="price-tag text-sm">{tool.price}</span>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Description */}
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {tool.description}
+        </p>
+
+        {/* Visit Link Indicator */}
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{tool.company}</span>
+          <span className="text-xs text-primary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink className="h-3 w-3" />
+            방문하기
+          </span>
+        </div>
+      </div>
+
+      {/* Hover Tooltip - Portal to body for z-index */}
+      {isHovered && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed w-80 z-[9999] pointer-events-none"
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            transform: 'translateX(-100%)', // Right-align with card
+            animation: 'fade-in-down 150ms ease-out forwards'
+          }}
+        >
+          {/* Arrow pointing up - positioned towards right */}
+          <div className="absolute right-8 -top-2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white dark:border-b-gray-800" />
+
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 space-y-3">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                {logoUrl && !imageError ? (
+                  <img src={logoUrl} alt={tool.name} className="w-8 h-8 object-contain" onError={() => setImageError(true)} />
+                ) : (
+                  <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                    {tool.name.substring(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-900 dark:text-white">{tool.name}</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{tool.company} · {tool.price}</p>
+              </div>
+            </div>
+
+            {/* Detailed Description or Basic Description */}
+            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              {tool.detailedDescription || tool.description}
+            </p>
+
+            {/* Features */}
+            {tool.features && tool.features.length > 0 && (
+              <div>
+                <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  주요 기능
+                </h5>
+                <div className="flex flex-wrap gap-1">
+                  {tool.features.slice(0, 5).map((feature, i) => (
+                    <span key={i} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pros & Cons */}
+            {((tool.pros && tool.pros.length > 0) || (tool.cons && tool.cons.length > 0)) && (
+              <div className="grid grid-cols-2 gap-2">
+                {tool.pros && tool.pros.length > 0 && (
+                  <div>
+                    <h5 className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1">장점</h5>
+                    <ul className="space-y-0.5">
+                      {tool.pros.slice(0, 3).map((pro, i) => (
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1">
+                          <Check className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{pro}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {tool.cons && tool.cons.length > 0 && (
+                  <div>
+                    <h5 className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">단점</h5>
+                    <ul className="space-y-0.5">
+                      {tool.cons.slice(0, 3).map((con, i) => (
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1">
+                          <X className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                          <span>{con}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Click to visit */}
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-amber-500 text-center flex items-center justify-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                클릭하여 사이트 방문
+              </p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// Category Section for "All" view
+function CategorySection({ categoryKey, tools }: { categoryKey: string; tools: AITool[] }) {
+  const colors = categoryColors[categoryKey] || categoryColors.writing;
+  const categoryLabel = {
+    writing: '글쓰기',
+    image: '이미지/영상',
+    audio: '음원',
+    website: '홈페이지',
+    coding: 'AI코딩',
+    automation: '업무/자동화',
+    education: '교육',
+    marketing: '마케팅/광고',
+    platform: 'AI 플랫폼',
+  }[categoryKey] || categoryKey;
+
+  return (
+    <div className="mb-10 animate-fade-in-up">
+      {/* Category Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={cn('w-1.5 h-8 rounded-full bg-gradient-to-b', colors.gradient)} />
+          <h2 className="text-xl font-bold text-foreground">{categoryLabel}</h2>
+          <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', colors.tag)}>
+            TOP 3
+          </span>
+        </div>
+        <Link
+          href={`/ranking?category=${categoryKey}`}
+          className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+        >
+          더보기
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {tools.slice(0, 3).map((tool, index) => (
+          <ToolCard key={tool.id} tool={tool} rank={index + 1} showCategoryColor />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RankingContent() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category') || 'all';
+
+  // For "all" view, show categorized sections
+  if (category === 'all') {
+    const categoryOrder = ['writing', 'image', 'audio', 'coding', 'website', 'automation', 'education', 'marketing', 'platform'];
+
+    return (
+      <>
+        {/* Section Header */}
+        <div className="section-header animate-fade-in-up mb-8">
+          <h1 className="section-title">{categoryLabels.all}</h1>
+          <p className="section-subtitle">카테고리별 TOP 3 AI 도구를 한눈에 확인하세요</p>
+        </div>
+
+        {/* Category Sections */}
+        {categoryOrder.map((catKey) => {
+          const tools = aiToolsData[catKey];
+          if (!tools || tools.length === 0) return null;
+          return <CategorySection key={catKey} categoryKey={catKey} tools={tools} />;
+        })}
+      </>
+    );
+  }
+
+  // For specific category view
+  const tools = aiToolsData[category] || aiToolsData.all;
+
+  return (
+    <>
+      {/* Section Header */}
+      <div className="section-header animate-fade-in-up">
+        <h1 className="section-title">{categoryLabels[category] || categoryLabels.all}</h1>
+        <p className="section-subtitle">{categorySubtitles[category] || categorySubtitles.all}</p>
+      </div>
+
+      {/* Tools Grid */}
+      <div className="grid-cards">
+        {tools.map((tool, index) => (
+          <ToolCard key={tool.id} tool={tool} rank={index + 1} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function RankingFallback() {
+  return (
+    <>
+      <div className="section-header animate-fade-in-up">
+        <div className="h-10 w-64 bg-secondary rounded animate-pulse mx-auto mb-4"></div>
+        <div className="h-6 w-96 bg-secondary rounded animate-pulse mx-auto"></div>
+      </div>
+      <div className="grid-cards">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="rank-card p-5 animate-pulse">
+            <div className="flex justify-between mb-4">
+              <div className="h-6 w-6 bg-secondary rounded"></div>
+              <div className="h-6 w-16 bg-secondary rounded"></div>
+            </div>
+            <div className="flex gap-4 mb-3">
+              <div className="w-12 h-12 bg-secondary rounded-lg"></div>
+              <div className="flex-1">
+                <div className="h-6 bg-secondary rounded mb-2"></div>
+                <div className="h-4 w-24 bg-secondary rounded"></div>
+              </div>
+            </div>
+            <div className="h-10 bg-secondary rounded"></div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export default function RankingPage() {
+  return (
+    <div className="content-area">
+      <Suspense fallback={<RankingFallback />}>
+        <RankingContent />
+      </Suspense>
+    </div>
   );
 }
