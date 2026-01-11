@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { Star, Trophy, ExternalLink, Check, X, Sparkles, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getStorageLogoUrl, getFallbackLogoUrl } from '@/lib/storage/getLogoUrl';
 import { aiToolsData, categoryLabels, categorySubtitles, AITool, defaultWebsites } from '@/lib/data/aiTools';
 import { Link } from '@/i18n/routing';
 import { useToolLogos } from '@/lib/hooks/useToolLogos';
@@ -88,7 +87,7 @@ function useReferralUrls() {
 
 function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; rank: number; showCategoryColor?: boolean }) {
   const isTopThree = rank <= 3;
-  const [logoState, setLogoState] = useState<'custom' | 'storage' | 'fallback' | 'initials'>('custom');
+  const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const cardRef = React.useRef<HTMLDivElement>(null);
@@ -114,40 +113,19 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
     return referralUrls[tool.name] || tool.website || defaultWebsites[tool.name] || '#';
   };
 
-  // Custom logo from admin settings (Supabase Storage)
+  // Custom logo from admin settings (Supabase Storage) - PRIORITY 1
   const customLogo = logosLoaded ? getToolLogo(tool.name) : null;
 
-  // Get URLs from the logo system
-  const storageUrl = getStorageLogoUrl(tool.name);
-  const fallbackUrl = getFallbackLogoUrl(tool.name) || tool.logo;
+  // Fallback URL from tool data - PRIORITY 2
+  const fallbackUrl = tool.logo;
 
-  const handleImageError = () => {
-    if (logoState === 'custom') {
-      setLogoState('storage');
-    } else if (logoState === 'storage') {
-      setLogoState('fallback');
-    } else if (logoState === 'fallback') {
-      setLogoState('initials');
-    }
-  };
+  // Simple logo URL selection: custom > fallback
+  const logoUrl = customLogo || fallbackUrl;
 
-  const getCurrentLogoUrl = () => {
-    // First priority: Custom uploaded logo from admin (Supabase)
-    if (logoState === 'custom' && customLogo) {
-      return customLogo;
-    }
-    // Second priority: Supabase storage (legacy)
-    if ((logoState === 'storage' || (logoState === 'custom' && !customLogo)) && storageUrl) {
-      return storageUrl;
-    }
-    // Third priority: Fallback URL
-    if (logoState === 'fallback' || logoState === 'storage' || (logoState === 'custom' && !customLogo)) {
-      return fallbackUrl;
-    }
-    return null;
-  };
-
-  const logoUrl = getCurrentLogoUrl();
+  // Reset error state when logo URL changes
+  useEffect(() => {
+    setImageError(false);
+  }, [logoUrl]);
 
   const getTrophyIcon = () => {
     if (rank === 1) return <Trophy className="h-5 w-5 trophy-gold" />;
@@ -211,12 +189,12 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
         {/* Logo & Info */}
         <div className="flex items-start gap-4 mb-3">
           <div className="logo-container">
-            {logoUrl && logoState !== 'initials' ? (
+            {logoUrl && !imageError ? (
               <img
                 src={logoUrl}
                 alt={`${tool.name} logo`}
                 className="w-full h-full object-contain p-1"
-                onError={handleImageError}
+                onError={() => setImageError(true)}
               />
             ) : (
               <span className="text-lg font-bold text-muted-foreground">
