@@ -5,11 +5,12 @@ import { Footer } from '@/components/layout/Footer';
 
 function SidebarFallback() {
   return (
-    <aside className="sidebar sidebar-desktop w-64 min-h-screen p-4 sticky top-0">
+    <aside className="sidebar sidebar-desktop w-72 min-h-screen p-4 sticky top-0">
       <div className="animate-pulse space-y-4">
-        <div className="h-4 bg-secondary rounded w-24"></div>
+        <div className="h-16 bg-secondary rounded-xl mb-4"></div>
+        <div className="h-4 bg-secondary rounded w-20"></div>
         {[...Array(10)].map((_, i) => (
-          <div key={i} className="h-10 bg-secondary rounded"></div>
+          <div key={i} className="h-12 bg-secondary rounded-xl"></div>
         ))}
       </div>
     </aside>
