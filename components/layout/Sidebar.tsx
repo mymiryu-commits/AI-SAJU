@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import {
@@ -43,15 +43,15 @@ export const sidebarMenu = [
   { key: 'request', label: '자료 요청', icon: FileQuestion, href: '/request' },
 ];
 
-interface SidebarProps {
-  currentCategory?: string;
-}
-
-export function Sidebar({ currentCategory = 'all' }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentCategory = searchParams.get('category') || 'all';
+
+  const isRankingPage = pathname?.includes('/ranking');
 
   return (
-    <aside className="sidebar sidebar-desktop w-64 min-h-screen p-4 sticky top-0">
+    <aside className="sidebar sidebar-desktop w-64 min-h-screen p-4 sticky top-0 overflow-y-auto">
       <div className="space-y-6">
         {/* AI Categories */}
         <div>
@@ -61,9 +61,10 @@ export function Sidebar({ currentCategory = 'all' }: SidebarProps) {
           <nav className="space-y-1">
             {sidebarCategories.map((item) => {
               const Icon = item.icon;
-              const isActive =
-                (item.key === 'all' && pathname?.includes('/ranking') && !pathname.includes('?')) ||
-                currentCategory === item.key;
+              const isActive = isRankingPage && (
+                (item.key === 'all' && !searchParams.get('category')) ||
+                currentCategory === item.key
+              );
 
               return (
                 <Link
