@@ -11,7 +11,10 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  ArrowRight,
+  Layers,
 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
 export default function AdminSettingsPage() {
   const { siteLogo, aiLogo, isLoaded, setSiteLogo, setAiLogo } = useLogo();
@@ -236,8 +239,26 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
+        {/* AI Tool Logos Link */}
+        <Link href="/admin/tool-logos">
+          <div className="mt-8 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Layers className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-violet-800 dark:text-violet-300">AI 툴 로고 관리</h3>
+                  <p className="text-sm text-violet-600 dark:text-violet-400">깨진 AI 툴 로고를 직접 업로드하여 교체하세요</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-violet-500 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </Link>
+
         {/* Tips */}
-        <div className="mt-8 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl p-5">
+        <div className="mt-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl p-5">
           <h3 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">로고 업로드 팁</h3>
           <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
             <li>• PNG 또는 SVG 형식 권장 (투명 배경 지원)</li>

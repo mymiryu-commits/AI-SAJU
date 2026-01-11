@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { getStorageLogoUrl, getFallbackLogoUrl } from '@/lib/storage/getLogoUrl';
 import { aiToolsData, categoryLabels, categorySubtitles, AITool, defaultWebsites } from '@/lib/data/aiTools';
 import { Link } from '@/i18n/routing';
+import { useToolLogos } from '@/lib/hooks/useToolLogos';
 
 // Category color schemes for visual distinction
 const categoryColors: Record<string, { bg: string; border: string; tag: string; gradient: string }> = {
@@ -87,11 +88,12 @@ function useReferralUrls() {
 
 function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; rank: number; showCategoryColor?: boolean }) {
   const isTopThree = rank <= 3;
-  const [logoState, setLogoState] = useState<'storage' | 'fallback' | 'initials'>('storage');
+  const [logoState, setLogoState] = useState<'custom' | 'storage' | 'fallback' | 'initials'>('custom');
   const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const cardRef = React.useRef<HTMLDivElement>(null);
   const referralUrls = useReferralUrls();
+  const { toolLogos, isLoaded: logosLoaded } = useToolLogos();
 
   const colors = categoryColors[tool.category] || categoryColors.writing;
 
@@ -112,12 +114,17 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
     return referralUrls[tool.name] || tool.website || defaultWebsites[tool.name] || '#';
   };
 
+  // Custom logo from admin settings (localStorage)
+  const customLogo = logosLoaded ? toolLogos[tool.name] : null;
+
   // Get URLs from the logo system
   const storageUrl = getStorageLogoUrl(tool.name);
   const fallbackUrl = getFallbackLogoUrl(tool.name) || tool.logo;
 
   const handleImageError = () => {
-    if (logoState === 'storage') {
+    if (logoState === 'custom') {
+      setLogoState('storage');
+    } else if (logoState === 'storage') {
       setLogoState('fallback');
     } else if (logoState === 'fallback') {
       setLogoState('initials');
@@ -125,10 +132,16 @@ function ToolCard({ tool, rank, showCategoryColor = false }: { tool: AITool; ran
   };
 
   const getCurrentLogoUrl = () => {
-    if (logoState === 'storage' && storageUrl) {
+    // First priority: Custom uploaded logo from admin
+    if (logoState === 'custom' && customLogo) {
+      return customLogo;
+    }
+    // Second priority: Supabase storage
+    if ((logoState === 'storage' || (logoState === 'custom' && !customLogo)) && storageUrl) {
       return storageUrl;
     }
-    if (logoState === 'fallback' || (logoState === 'storage' && !storageUrl)) {
+    // Third priority: Fallback URL
+    if (logoState === 'fallback' || logoState === 'storage' || (logoState === 'custom' && !customLogo)) {
       return fallbackUrl;
     }
     return null;
