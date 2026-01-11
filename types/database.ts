@@ -338,9 +338,158 @@ export interface Database {
           reward_amount?: number | null
         }
       }
+      lotto_history: {
+        Row: {
+          id: number
+          round: number
+          numbers: number[]
+          bonus: number
+          draw_date: string
+          prize_1st: number | null
+          winners_1st: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          round: number
+          numbers: number[]
+          bonus: number
+          draw_date: string
+          prize_1st?: number | null
+          winners_1st?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          round?: number
+          numbers?: number[]
+          bonus?: number
+          draw_date?: string
+          prize_1st?: number | null
+          winners_1st?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      lotto_recommendations: {
+        Row: {
+          id: string
+          user_id: string | null
+          round: number
+          numbers: number[]
+          filters: Json | null
+          quality_score: number | null
+          matched_count: number | null
+          matched_bonus: boolean
+          prize_rank: number | null
+          prize_amount: number
+          is_checked: boolean
+          created_at: string
+          checked_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          round: number
+          numbers: number[]
+          filters?: Json | null
+          quality_score?: number | null
+          matched_count?: number | null
+          matched_bonus?: boolean
+          prize_rank?: number | null
+          prize_amount?: number
+          is_checked?: boolean
+          created_at?: string
+          checked_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          round?: number
+          numbers?: number[]
+          filters?: Json | null
+          quality_score?: number | null
+          matched_count?: number | null
+          matched_bonus?: boolean
+          prize_rank?: number | null
+          prize_amount?: number
+          is_checked?: boolean
+          created_at?: string
+          checked_at?: string | null
+        }
+      }
+      lotto_winning_stats: {
+        Row: {
+          id: number
+          round: number
+          total_recommendations: number
+          winners_rank1: number
+          winners_rank2: number
+          winners_rank3: number
+          winners_rank4: number
+          winners_rank5: number
+          total_prize_amount: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          round: number
+          total_recommendations?: number
+          winners_rank1?: number
+          winners_rank2?: number
+          winners_rank3?: number
+          winners_rank4?: number
+          winners_rank5?: number
+          total_prize_amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          round?: number
+          total_recommendations?: number
+          winners_rank1?: number
+          winners_rank2?: number
+          winners_rank3?: number
+          winners_rank4?: number
+          winners_rank5?: number
+          total_prize_amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
-      [_ in never]: never
+      lotto_total_stats: {
+        Row: {
+          total_recommendations: number
+          total_winners: number
+          winners_rank1: number
+          winners_rank2: number
+          winners_rank3: number
+          winners_rank4: number
+          winners_rank5: number
+          total_prize_amount: number
+          hit_rate: number
+        }
+      }
+      lotto_recent_winners: {
+        Row: {
+          id: string
+          round: number
+          numbers: number[]
+          matched_count: number
+          matched_bonus: boolean
+          prize_rank: number
+          prize_amount: number
+          checked_at: string
+          winning_numbers: number[]
+          winning_bonus: number
+        }
+      }
     }
     Functions: {
       increment_coins: {

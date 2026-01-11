@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/lotto/fetch-winning",
+      "schedule": "0 1 * * 6"
+    }
+  ]
+}

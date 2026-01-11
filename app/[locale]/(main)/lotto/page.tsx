@@ -21,6 +21,7 @@ import {
   NumberGenerator,
   StatisticsChart,
   FilterPanel,
+  WinningDashboard,
 } from '@/components/lotto';
 import {
   loadLottoHistory,
@@ -177,10 +178,14 @@ export default function LottoPage() {
 
       {/* 메인 콘텐츠 */}
       <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="generate" className="flex items-center gap-1">
             <Sparkles className="h-4 w-4" />
             번호 생성
+          </TabsTrigger>
+          <TabsTrigger value="winning" className="flex items-center gap-1">
+            <Trophy className="h-4 w-4" />
+            당첨 현황
           </TabsTrigger>
           <TabsTrigger value="statistics" className="flex items-center gap-1">
             <TrendingUp className="h-4 w-4" />
@@ -213,6 +218,11 @@ export default function LottoPage() {
               />
             </div>
           </div>
+        </TabsContent>
+
+        {/* 당첨 현황 탭 */}
+        <TabsContent value="winning">
+          <WinningDashboard />
         </TabsContent>
 
         {/* 통계 분석 탭 */}
