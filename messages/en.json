@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteName": "AI RANK",
+    "siteName": "AI Monetization",
     "siteDescription": "AI Tools Ranking & AI Fortune Services",
     "loading": "Loading...",
     "error": "An error occurred",
@@ -177,7 +177,7 @@
   "auth": {
     "login": {
       "title": "Login",
-      "subtitle": "Welcome to AI RANK",
+      "subtitle": "Welcome to AI Monetization",
       "email": "Email",
       "password": "Password",
       "rememberMe": "Remember me",
@@ -301,6 +301,6 @@
     "social": {
       "title": "Social"
     },
-    "copyright": "© 2025 AI RANK. All rights reserved."
+    "copyright": "© 2025 AI Monetization. All rights reserved."
   }
 }

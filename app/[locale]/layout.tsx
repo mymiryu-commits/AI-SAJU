@@ -11,8 +11,8 @@ export function generateStaticParams() {
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | AI RANK',
-    default: 'AI RANK - AI Tools Ranking & Fortune',
+    template: '%s | AI 수익화',
+    default: 'AI 수익화 - AI Tools Ranking & Fortune',
   },
   description: 'Discover the best AI tools and get AI-powered fortune readings',
 };
