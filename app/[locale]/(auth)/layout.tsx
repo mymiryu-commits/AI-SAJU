@@ -10,7 +10,7 @@ export default function AuthLayout({
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 fortune-gradient p-12 flex-col justify-between text-white">
         <Link href="/" className="text-2xl font-bold">
-          AI RANK
+          AI 수익화
         </Link>
         <div>
           <h1 className="text-4xl font-bold mb-4">
@@ -22,7 +22,7 @@ export default function AuthLayout({
           </p>
         </div>
         <p className="text-white/60 text-sm">
-          © 2025 AI RANK. All rights reserved.
+          © 2025 AI 수익화. All rights reserved.
         </p>
       </div>
 

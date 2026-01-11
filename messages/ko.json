@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteName": "AI RANK",
+    "siteName": "AI 수익화",
     "siteDescription": "AI 도구 순위 및 AI 운세 서비스",
     "loading": "로딩 중...",
     "error": "오류가 발생했습니다",
@@ -30,6 +30,7 @@
     "guide": "AI 가이드",
     "prompts": "프롬프트 마켓",
     "fortune": "AI 운세",
+    "lotto": "로또 분석",
     "qr": "QR 명함",
     "community": "커뮤니티",
     "pricing": "요금제",
@@ -177,7 +178,7 @@
   "auth": {
     "login": {
       "title": "로그인",
-      "subtitle": "AI RANK에 오신 것을 환영합니다",
+      "subtitle": "AI 수익화에 오신 것을 환영합니다",
       "email": "이메일",
       "password": "비밀번호",
       "rememberMe": "로그인 유지",
@@ -301,6 +302,6 @@
     "social": {
       "title": "소셜"
     },
-    "copyright": "© 2025 AI RANK. All rights reserved."
+    "copyright": "© 2025 AI 수익화. All rights reserved."
   }
 }

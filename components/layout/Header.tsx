@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/ranking', key: 'ranking' },
   { href: '/guide', key: 'guide' },
   { href: '/fortune', key: 'fortune' },
+  { href: '/lotto', key: 'lotto' },
   { href: '/prompts', key: 'prompts' },
   { href: '/pricing', key: 'pricing' },
 ] as const;
@@ -26,7 +27,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            AI RANK
+            AI 수익화
           </span>
         </Link>
 

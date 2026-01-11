@@ -387,7 +387,7 @@ export default function ExpertsPage() {
           <Award className="h-12 w-12 mx-auto mb-4 text-purple-500" />
           <h3 className="text-xl font-bold mb-2">전문가로 등록하고 싶으신가요?</h3>
           <p className="text-muted-foreground mb-4">
-            검증된 전문가라면 AI RANK에서 상담 서비스를 제공할 수 있습니다.
+            검증된 전문가라면 AI 수익화에서 상담 서비스를 제공할 수 있습니다.
           </p>
           <Button variant="outline">
             전문가 등록 신청
