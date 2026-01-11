@@ -34,8 +34,23 @@ export default function ToolLogosPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Get unique tools from all category
-  const allTools = aiToolsData.all || [];
+  // Get unique tools from all categories
+  const getAllUniqueTools = () => {
+    const toolMap = new Map<string, typeof aiToolsData.all[0]>();
+
+    // Iterate through all categories
+    Object.values(aiToolsData).forEach(categoryTools => {
+      categoryTools.forEach(tool => {
+        if (!toolMap.has(tool.name)) {
+          toolMap.set(tool.name, tool);
+        }
+      });
+    });
+
+    return Array.from(toolMap.values());
+  };
+
+  const allTools = getAllUniqueTools();
 
   // Filter tools based on search
   const filteredTools = allTools.filter(tool =>
