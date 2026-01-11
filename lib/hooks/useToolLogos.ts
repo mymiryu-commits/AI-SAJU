@@ -71,17 +71,6 @@ export function useToolLogos() {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsUploading(true);
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
-      console.log('Supabase Key:', supabaseKey ? 'Set' : 'Missing');
-
-      if (!supabaseUrl || !supabaseKey) {
-        setIsUploading(false);
-        return { success: false, error: 'Supabase 환경 변수가 설정되지 않았습니다. 서버를 재시작해주세요.' };
-      }
-
       const supabase = createClient();
       const safeToolName = toSafeFileName(toolName);
 
