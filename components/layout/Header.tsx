@@ -3,17 +3,20 @@
 import React, { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
-import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings } from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings, LogOut, Crown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useLogo } from '@/lib/hooks/useLogo';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
 
 const navLinks = [
   { href: '/ranking', key: 'ranking', label: '전체 순위' },
@@ -40,6 +43,7 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { siteLogo, aiLogo, isLoaded } = useLogo();
+  const { user, isAdmin, isLoading, signOut } = useAuth();
 
   // Handle hydration mismatch
   React.useEffect(() => {
@@ -50,7 +54,18 @@ export function Header() {
     router.replace(pathname, { locale: newLocale });
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
+  };
+
   const currentLanguage = languages.find((lang) => lang.code === locale) || languages[0];
+
+  // Get user display name (email before @)
+  const getUserDisplayName = () => {
+    if (!user?.email) return '';
+    return user.email.split('@')[0];
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -154,30 +169,96 @@ export function Header() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-5 w-5 text-muted-foreground" />
+              <Button variant="ghost" size="icon" className="rounded-full relative">
+                {user ? (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {getUserDisplayName().charAt(0).toUpperCase()}
+                  </div>
+                ) : (
+                  <User className="h-5 w-5 text-muted-foreground" />
+                )}
+                {isAdmin && (
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-amber-500 rounded-full flex items-center justify-center">
+                    <Crown className="h-2 w-2 text-white" />
+                  </div>
+                )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/login" className="cursor-pointer">
-                  로그인
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/signup" className="cursor-pointer">
-                  회원가입
-                </Link>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-56">
+              {user ? (
+                <>
+                  {/* User Info */}
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-semibold">
+                        {getUserDisplayName().charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <Badge className="mt-2 bg-amber-500 text-white">
+                        <Crown className="h-3 w-3 mr-1" />
+                        관리자
+                      </Badge>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/my/dashboard" className="cursor-pointer">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      마이페이지
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my/settings" className="cursor-pointer">
+                      <Settings className="h-4 w-4 mr-2" />
+                      계정 설정
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/settings" className="cursor-pointer">
+                        <Settings className="h-4 w-4 mr-2" />
+                        사이트 관리
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    로그아웃
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/login" className="cursor-pointer">
+                      <User className="h-4 w-4 mr-2" />
+                      로그인
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/signup" className="cursor-pointer">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      회원가입
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Settings - Link to admin settings */}
-          <Link href="/admin/settings">
-            <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
-              <Settings className="h-5 w-5 text-muted-foreground" />
-            </Button>
-          </Link>
+          {/* Settings - Link to admin settings (only for admin) */}
+          {isAdmin && (
+            <Link href="/admin/settings">
+              <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </Link>
+          )}
 
           {/* Mobile menu button */}
           <button
@@ -213,14 +294,69 @@ export function Header() {
               </Link>
             ))}
 
-            {/* Mobile Settings Link */}
-            <Link
-              href="/admin/settings"
-              className="block py-3 px-4 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:bg-secondary/50"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              사이트 설정
-            </Link>
+            {/* Mobile User Section */}
+            <div className="py-3 px-4 border-t mt-4">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-semibold">
+                      {getUserDisplayName().charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium">{getUserDisplayName()}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    {isAdmin && (
+                      <Badge className="bg-amber-500 text-white ml-auto">
+                        <Crown className="h-3 w-3 mr-1" />
+                        관리자
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Link href="/my/dashboard" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        마이페이지
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      로그아웃
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      로그인
+                    </Button>
+                  </Link>
+                  <Link href="/signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button size="sm" className="w-full">
+                      회원가입
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Settings Link (Admin only) */}
+            {isAdmin && (
+              <Link
+                href="/admin/settings"
+                className="block py-3 px-4 text-sm font-medium rounded-lg transition-colors text-muted-foreground hover:bg-secondary/50"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                사이트 설정
+              </Link>
+            )}
 
             {/* Mobile Language Selector */}
             <div className="py-3 px-4 border-t mt-4">

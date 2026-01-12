@@ -2,42 +2,107 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const t = useTranslations('auth.login');
+  const router = useRouter();
+  const { signInWithEmail, signInWithOAuth, isLoading: authLoading } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: Implement login logic with Supabase
-    setTimeout(() => setLoading(false), 1000);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { data, error } = await signInWithEmail(email, password);
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
+        } else {
+          setError(error.message);
+        }
+        return;
+      }
+
+      if (data.user) {
+        setSuccess('로그인 성공! 잠시 후 이동합니다...');
+        // Save email for saju page admin check
+        localStorage.setItem('saju_user_email', data.user.email || '');
+        setTimeout(() => {
+          router.push('/');
+        }, 1000);
+      }
+    } catch (err) {
+      setError('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // TODO: Implement social login with Supabase
-    console.log(`Login with ${provider}`);
+  const handleSocialLogin = async (provider: 'google' | 'kakao' | 'apple') => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await signInWithOAuth(provider);
+
+      if (error) {
+        setError(`${provider} 로그인 실패: ${error.message}`);
+        setLoading(false);
+      }
+      // OAuth will redirect, so we don't need to handle success here
+    } catch (err) {
+      setError('소셜 로그인 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
   };
 
   return (
     <Card className="border-0 shadow-none lg:border lg:shadow-sm">
       <CardHeader className="text-center">
         <div className="lg:hidden mb-4">
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            AI 수익화
+          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+            AI-PlanX
           </Link>
         </div>
         <CardTitle className="text-2xl">{t('title')}</CardTitle>
         <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <Alert className="mb-4 border-green-500 bg-green-50 text-green-700">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t('email')}</Label>
@@ -48,6 +113,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -66,10 +132,19 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
+              minLength={6}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Loading...' : t('submit')}
+          <Button type="submit" className="w-full" disabled={loading || authLoading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                로그인 중...
+              </>
+            ) : (
+              t('submit')
+            )}
           </Button>
         </form>
 
@@ -90,6 +165,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={() => handleSocialLogin('google')}
+            disabled={loading}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -116,6 +192,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 text-black border-[#FEE500]"
             onClick={() => handleSocialLogin('kakao')}
+            disabled={loading}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -130,6 +207,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full bg-black hover:bg-black/90 text-white border-black"
             onClick={() => handleSocialLogin('apple')}
+            disabled={loading}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
