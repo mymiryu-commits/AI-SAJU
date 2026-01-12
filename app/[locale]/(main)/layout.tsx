@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Footer } from '@/components/layout/Footer';
+import { AIChatbot } from '@/components/chat/AIChatbot';
 
 function SidebarFallback() {
   return (
@@ -37,6 +38,7 @@ export default function MainLayout({
         </main>
       </div>
       <Footer />
+      <AIChatbot />
     </div>
   );
 }
