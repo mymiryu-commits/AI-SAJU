@@ -20,8 +20,8 @@ import { Progress } from '@/components/ui/progress';
 import { Sparkles, ArrowRight, Loader2, Zap, Star, Heart, Briefcase, Activity, Lock, Save, User, Crown, Brain, Target, TrendingUp, Calendar, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-// Admin email for full access
-const ADMIN_EMAIL = 'mymiryu@naver.com';
+// Admin emails for full access
+const ADMIN_EMAILS = ['mymiryu@naver.com', 'mymiryu@gmail.com'];
 
 // Generate hour options for birth time
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
@@ -122,6 +122,29 @@ interface UserProfile {
 function calculateAge(birthYear: string): number {
   const currentYear = new Date().getFullYear();
   return currentYear - parseInt(birthYear);
+}
+
+// Calculate Tarot Birth Card from birth date
+// Uses numerology: sum all digits of birth date, reduce to 1-22
+function getTarotBirthCard(year: string, month: string, day: string): string {
+  const dateStr = year + month.padStart(2, '0') + day.padStart(2, '0');
+  let sum = dateStr.split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+
+  // Reduce to single or double digit (1-22)
+  while (sum > 22) {
+    sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+  }
+
+  // Map number to tarot card
+  const cardMap: Record<number, string> = {
+    0: 'fool', 1: 'magician', 2: 'high_priestess', 3: 'empress', 4: 'emperor',
+    5: 'hierophant', 6: 'lovers', 7: 'chariot', 8: 'strength', 9: 'hermit',
+    10: 'wheel', 11: 'justice', 12: 'hanged', 13: 'death', 14: 'temperance',
+    15: 'devil', 16: 'tower', 17: 'star', 18: 'moon', 19: 'sun',
+    20: 'judgement', 21: 'world', 22: 'fool'
+  };
+
+  return cardMap[sum] || 'fool';
 }
 
 // Get zodiac sign from birth date
@@ -404,7 +427,7 @@ export default function SajuPage() {
         const { data: { user: authUser } } = await supabase.auth.getUser();
         if (authUser?.email) {
           setUser({ email: authUser.email });
-          setIsAdmin(authUser.email === ADMIN_EMAIL);
+          setIsAdmin(ADMIN_EMAILS.includes(authUser.email));
           // Load saved profiles from localStorage
           const saved = localStorage.getItem(`saju_profiles_${authUser.email}`);
           if (saved) {
@@ -421,7 +444,7 @@ export default function SajuPage() {
     const savedEmail = localStorage.getItem('saju_user_email');
     if (savedEmail) {
       setUser({ email: savedEmail });
-      setIsAdmin(savedEmail === ADMIN_EMAIL);
+      setIsAdmin(ADMIN_EMAILS.includes(savedEmail));
       const saved = localStorage.getItem(`saju_profiles_${savedEmail}`);
       if (saved) {
         setSavedProfiles(JSON.parse(saved));
@@ -436,6 +459,16 @@ export default function SajuPage() {
       setFormData(prev => ({ ...prev, zodiac }));
     }
   }, [formData.birthMonth, formData.birthDay, formData.zodiac]);
+
+  // Auto-calculate tarot birth card when birth date is complete
+  useEffect(() => {
+    if (formData.birthYear && formData.birthMonth && formData.birthDay && !formData.tarotCard) {
+      if (/^\d{4}$/.test(formData.birthYear)) {
+        const tarotCard = getTarotBirthCard(formData.birthYear, formData.birthMonth, formData.birthDay);
+        setFormData(prev => ({ ...prev, tarotCard }));
+      }
+    }
+  }, [formData.birthYear, formData.birthMonth, formData.birthDay, formData.tarotCard]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -505,7 +538,7 @@ export default function SajuPage() {
 
   // Demo login for admin
   const handleDemoLogin = () => {
-    const email = ADMIN_EMAIL;
+    const email = ADMIN_EMAILS[0];
     localStorage.setItem('saju_user_email', email);
     setUser({ email });
     setIsAdmin(true);
@@ -828,18 +861,18 @@ export default function SajuPage() {
                 </Select>
               </div>
 
-              {/* Tarot Card */}
+              {/* Tarot Card - Birth Card */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-purple-500" />
-                  타로 카드 (끌리는 카드 선택)
+                  타로 출생 카드 (생년월일 기반 자동계산)
                 </Label>
                 <Select
                   value={formData.tarotCard}
                   onValueChange={(value) => handleChange('tarotCard', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="타로 카드 선택" />
+                    <SelectValue placeholder="생년월일 입력 시 자동 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     {tarotCards.map((card) => (

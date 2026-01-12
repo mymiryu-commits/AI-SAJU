@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
 // Admin emails list
-const ADMIN_EMAILS = ['mymiryu@naver.com'];
+const ADMIN_EMAILS = ['mymiryu@naver.com', 'mymiryu@gmail.com'];
 
 export interface AuthState {
   user: User | null;
