@@ -81,8 +81,8 @@ export function Header() {
               />
             ) : (
               <>
-                <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">AI-SAJU</span>
-                <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-wide">수익화 인텔리전스</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">AI-PlanX</span>
+                <span className="text-[10px] text-muted-foreground block -mt-0.5 tracking-wide">AI 수익화 플랫폼</span>
               </>
             )}
           </div>
@@ -95,10 +95,10 @@ export function Header() {
               key={link.key}
               href={link.href}
               className={cn(
-                'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                'px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300',
                 pathname === link.href || pathname?.startsWith(link.href)
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
+                  : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 dark:from-gray-800/50 dark:to-gray-700/50 text-muted-foreground hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
               )}
             >
               {link.label}
@@ -202,10 +202,10 @@ export function Header() {
                 key={link.key}
                 href={link.href}
                 className={cn(
-                  'block py-3 px-4 text-sm font-medium rounded-lg transition-colors',
+                  'block py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300',
                   pathname === link.href || pathname?.startsWith(link.href)
-                    ? 'bg-secondary text-foreground'
-                    : 'text-muted-foreground hover:bg-secondary/50'
+                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300'
+                    : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 dark:from-gray-800/50 dark:to-gray-700/50 text-muted-foreground'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
