@@ -19,14 +19,16 @@ import {
   ShoppingBag,
   Users,
   FileQuestion,
-  MessageCircle,
   Sparkles,
   ChevronRight,
+  Gift,
+  ExternalLink,
 } from 'lucide-react';
 
 // Category colors for sidebar icons
 const categoryIconColors: Record<string, string> = {
   all: 'text-amber-500',
+  free: 'text-emerald-500',
   writing: 'text-blue-500',
   image: 'text-purple-500',
   audio: 'text-pink-500',
@@ -40,6 +42,7 @@ const categoryIconColors: Record<string, string> = {
 
 const categoryBgColors: Record<string, string> = {
   all: 'bg-amber-500/10',
+  free: 'bg-emerald-500/10',
   writing: 'bg-blue-500/10',
   image: 'bg-purple-500/10',
   audio: 'bg-pink-500/10',
@@ -53,6 +56,7 @@ const categoryBgColors: Record<string, string> = {
 
 export const sidebarCategories = [
   { key: 'all', label: '전체', icon: Flame, href: '/ranking' },
+  { key: 'free', label: '무료 AI', icon: Gift, href: '/ranking?category=free' },
   { key: 'writing', label: '글쓰기', icon: PenTool, href: '/ranking?category=writing' },
   { key: 'image', label: '이미지/영상', icon: Image, href: '/ranking?category=image' },
   { key: 'audio', label: '음원', icon: Music, href: '/ranking?category=audio' },
@@ -72,6 +76,14 @@ export const sidebarMenu = [
   { key: 'request', label: '자료 요청', icon: FileQuestion, href: '/request' },
 ];
 
+// AI 바로가기 링크 (레퍼럴 링크 적용 가능)
+export const aiShortcuts = [
+  { key: 'chatgpt', label: 'ChatGPT', url: 'https://chat.openai.com', referralUrl: '' },
+  { key: 'claude', label: 'Claude', url: 'https://claude.ai', referralUrl: '' },
+  { key: 'midjourney', label: 'Midjourney', url: 'https://midjourney.com', referralUrl: '' },
+  { key: 'runway', label: 'Runway', url: 'https://runway.ml', referralUrl: '' },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -80,9 +92,9 @@ export function Sidebar() {
   const isRankingPage = pathname?.includes('/ranking');
 
   return (
-    <aside className="sidebar sidebar-desktop w-72 min-h-screen sticky top-0 overflow-y-auto">
+    <aside className="sidebar sidebar-desktop w-64 min-h-screen sticky top-0 overflow-y-auto">
       {/* Premium Header */}
-      <div className="p-5 border-b border-border/50">
+      <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
             <Sparkles className="h-5 w-5 text-white" />
@@ -94,10 +106,10 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-3 space-y-5">
         {/* AI Categories */}
         <div>
-          <div className="flex items-center justify-between mb-3 px-2">
+          <div className="flex items-center justify-between mb-2 px-2">
             <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               카테고리
             </h3>
@@ -120,29 +132,29 @@ export function Sidebar() {
                   key={item.key}
                   href={item.href}
                   className={cn(
-                    'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200',
+                    'group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all duration-300',
                     isActive
-                      ? 'bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20 shadow-sm'
-                      : 'hover:bg-secondary/80 border border-transparent'
+                      ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-300/30 shadow-sm'
+                      : 'bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 border border-transparent hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:border-amber-200/50'
                   )}
                 >
                   <div className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
-                    isActive ? bgColor : 'bg-secondary group-hover:bg-secondary/80'
+                    'w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200',
+                    isActive ? bgColor : 'bg-white/60 dark:bg-gray-800/60 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-900/30'
                   )}>
                     <Icon className={cn(
-                      'h-4 w-4 transition-colors',
-                      isActive ? iconColor : 'text-muted-foreground group-hover:' + iconColor
+                      'h-3.5 w-3.5 transition-colors',
+                      isActive ? iconColor : 'text-muted-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400'
                     )} />
                   </div>
                   <span className={cn(
-                    'flex-1 transition-colors',
-                    isActive ? 'text-foreground font-semibold' : 'text-muted-foreground group-hover:text-foreground'
+                    'flex-1 transition-colors text-[13px]',
+                    isActive ? 'text-amber-700 dark:text-amber-300 font-semibold' : 'text-muted-foreground group-hover:text-amber-700 dark:group-hover:text-amber-300'
                   )}>
                     {item.label}
                   </span>
                   {isActive && (
-                    <ChevronRight className="h-4 w-4 text-primary" />
+                    <ChevronRight className="h-3.5 w-3.5 text-amber-500" />
                   )}
                 </Link>
               );
@@ -151,12 +163,12 @@ export function Sidebar() {
         </div>
 
         {/* Elegant Divider */}
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center px-4">
+        <div className="relative py-1">
+          <div className="absolute inset-0 flex items-center px-3">
             <div className="w-full border-t border-border/50" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-sidebar-bg px-3 text-[10px] text-muted-foreground/60 uppercase tracking-widest">
+            <span className="bg-sidebar-bg px-2 text-[10px] text-muted-foreground/60 uppercase tracking-widest">
               서비스
             </span>
           </div>
@@ -174,29 +186,29 @@ export function Sidebar() {
                   key={item.key}
                   href={item.href}
                   className={cn(
-                    'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200',
+                    'group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all duration-300',
                     isActive
-                      ? 'bg-gradient-to-r from-secondary to-secondary/50 border border-border shadow-sm'
-                      : 'hover:bg-secondary/80 border border-transparent'
+                      ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-300/30 shadow-sm'
+                      : 'bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 border border-transparent hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:border-amber-200/50'
                   )}
                 >
                   <div className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
-                    isActive ? 'bg-primary/10' : 'bg-secondary group-hover:bg-secondary/80'
+                    'w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200',
+                    isActive ? 'bg-amber-500/10' : 'bg-white/60 dark:bg-gray-800/60 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-900/30'
                   )}>
                     <Icon className={cn(
-                      'h-4 w-4 transition-colors',
-                      isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                      'h-3.5 w-3.5 transition-colors',
+                      isActive ? 'text-amber-600' : 'text-muted-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400'
                     )} />
                   </div>
                   <span className={cn(
-                    'flex-1 transition-colors',
-                    isActive ? 'text-foreground font-semibold' : 'text-muted-foreground group-hover:text-foreground'
+                    'flex-1 transition-colors text-[13px]',
+                    isActive ? 'text-amber-700 dark:text-amber-300 font-semibold' : 'text-muted-foreground group-hover:text-amber-700 dark:group-hover:text-amber-300'
                   )}>
                     {item.label}
                   </span>
                   {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   )}
                 </Link>
               );
@@ -204,29 +216,44 @@ export function Sidebar() {
           </nav>
         </div>
 
+        {/* AI Shortcuts */}
+        <div>
+          <div className="flex items-center justify-between mb-2 px-2">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+              AI 바로가기
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {aiShortcuts.map((ai) => (
+              <a
+                key={ai.key}
+                href={ai.referralUrl || ai.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 text-muted-foreground hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:text-amber-700 dark:hover:text-amber-300 transition-all duration-300"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span>{ai.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
         {/* Premium Card */}
-        <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+        <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-amber-300/20">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <Sparkles className="h-3 w-3 text-primary" />
+            <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <Sparkles className="h-2.5 w-2.5 text-amber-600" />
             </div>
             <span className="text-xs font-semibold text-foreground">PRO 업그레이드</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-            프리미엄 기능을 이용하고 더 많은 AI 도구 정보를 확인하세요.
+          <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">
+            프리미엄 기능으로 더 많은 AI 도구를 확인하세요.
           </p>
-          <button className="w-full py-2 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
+          <button className="w-full py-1.5 px-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-sm shadow-amber-500/20">
             업그레이드
           </button>
         </div>
-      </div>
-
-      {/* AI Chat Button - Fixed Position */}
-      <div className="fixed bottom-6 left-6 z-50">
-        <button className="flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium shadow-lg shadow-amber-500/30 hover:shadow-amber-500/40 hover:scale-105 transition-all duration-200">
-          <MessageCircle className="h-5 w-5" />
-          <span>AI 상담</span>
-        </button>
       </div>
     </aside>
   );
