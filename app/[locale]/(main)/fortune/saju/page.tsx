@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, ArrowRight, Loader2, Zap, Star, Heart, Briefcase, Activity, Lock, Save, User, Crown, Brain, Target, TrendingUp, Calendar, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { analyzeSaju, toKorean, type SajuAnalysis } from '@/lib/saju/calculator';
 
 // Admin emails for full access
 const ADMIN_EMAILS = ['mymiryu@naver.com', 'mymiryu@gmail.com'];
@@ -171,21 +172,50 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
   const age = calculateAge(formData.birthYear);
   const ageGroup = age < 30 ? '20대' : age < 40 ? '30대' : age < 50 ? '40대' : age < 60 ? '50대' : '60대 이상';
 
-  // Four Pillars based on birth data
+  // Calculate real Four Pillars using saju calculator
+  const year = parseInt(formData.birthYear);
+  const month = parseInt(formData.birthMonth);
+  const day = parseInt(formData.birthDay);
+  const hour = formData.birthHour ? parseInt(formData.birthHour) : 12;
+
+  const sajuAnalysis = analyzeSaju(year, month, day, hour);
+
+  // Four Pillars from real calculation
   const fourPillars = {
-    year: { heavenly: '甲', earthly: '子', element: '목(木)' },
-    month: { heavenly: '丙', earthly: '寅', element: '화(火)' },
-    day: { heavenly: '戊', earthly: '午', element: '토(土)' },
-    hour: { heavenly: '庚', earthly: '申', element: '금(金)' },
+    year: {
+      heavenly: sajuAnalysis.fourPillars.year.stem,
+      earthly: sajuAnalysis.fourPillars.year.branch,
+      element: sajuAnalysis.fourPillars.year.element,
+      animal: sajuAnalysis.fourPillars.year.animal,
+    },
+    month: {
+      heavenly: sajuAnalysis.fourPillars.month.stem,
+      earthly: sajuAnalysis.fourPillars.month.branch,
+      element: sajuAnalysis.fourPillars.month.element,
+    },
+    day: {
+      heavenly: sajuAnalysis.fourPillars.day.stem,
+      earthly: sajuAnalysis.fourPillars.day.branch,
+      element: sajuAnalysis.fourPillars.day.element,
+    },
+    hour: {
+      heavenly: sajuAnalysis.fourPillars.hour.stem,
+      earthly: sajuAnalysis.fourPillars.hour.branch,
+      element: sajuAnalysis.fourPillars.hour.element,
+    },
   };
 
-  // Base scores with variations based on inputs
+  // Base scores calculated from saju element balance
+  const elementBalance = sajuAnalysis.elementBalance;
+  const totalElements = Object.values(elementBalance).reduce((a, b) => a + b, 0);
+
+  // Calculate scores based on element balance and other factors
   const baseScores = {
-    overall: 82 + (formData.mbti?.includes('E') ? 5 : 0),
-    wealth: 78 + (formData.bloodType === 'O' ? 5 : 0),
-    love: 80 + (formData.zodiac?.includes('libra') || formData.zodiac?.includes('leo') ? 8 : 0),
-    career: 85 + (formData.mbti?.includes('J') ? 5 : 0),
-    health: 75 + (formData.sasang === 'taeeum' ? 5 : formData.sasang === 'soeum' ? -3 : 0),
+    overall: Math.min(95, 70 + Math.round((elementBalance['木'] + elementBalance['火']) * 2) + (formData.mbti?.includes('E') ? 5 : 0)),
+    wealth: Math.min(95, 65 + Math.round((elementBalance['金'] + elementBalance['土']) * 2.5) + (formData.bloodType === 'O' ? 5 : 0)),
+    love: Math.min(95, 68 + Math.round((elementBalance['火'] + elementBalance['水']) * 2) + (formData.zodiac?.includes('libra') || formData.zodiac?.includes('leo') ? 8 : 0)),
+    career: Math.min(95, 70 + Math.round((elementBalance['金'] + elementBalance['木']) * 2) + (formData.mbti?.includes('J') ? 5 : 0)),
+    health: Math.min(95, 60 + Math.round(totalElements * 1.5) + (formData.sasang === 'taeeum' ? 5 : formData.sasang === 'soeum' ? -3 : 0)),
   };
 
   // Blood type analysis
@@ -375,6 +405,20 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
 
   return {
     fourPillars,
+    sajuAnalysis: {
+      dayMaster: sajuAnalysis.dayMaster,
+      dayMasterElement: sajuAnalysis.dayMasterElement,
+      elementBalance: sajuAnalysis.elementBalance,
+      strongElements: sajuAnalysis.strongElements,
+      weakElements: sajuAnalysis.weakElements,
+      characteristics: sajuAnalysis.characteristics,
+      careerSuggestions: sajuAnalysis.career,
+      healthAdvice: sajuAnalysis.health,
+      relationships: sajuAnalysis.relationships,
+      luckyElements: sajuAnalysis.luckyElements,
+      unluckyElements: sajuAnalysis.unluckyElements,
+      zodiacAnimal: sajuAnalysis.fourPillars.year.animal,
+    },
     scores: baseScores,
     personality: bloodTypeAnalysis[formData.bloodType]?.personality || ['성격 분석을 위해 혈액형을 선택해주세요.'],
     bloodTypeAnalysis: bloodTypeAnalysis[formData.bloodType],
@@ -385,9 +429,9 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
     coreInsights,
     futurePredictions,
     luckyElements: {
-      color: formData.zodiac === 'leo' || formData.zodiac === 'aries' ? '빨간색' : formData.zodiac === 'taurus' || formData.zodiac === 'virgo' ? '녹색' : '보라색',
+      color: sajuAnalysis.luckyElements.includes('火') ? '빨간색' : sajuAnalysis.luckyElements.includes('木') ? '녹색' : sajuAnalysis.luckyElements.includes('水') ? '검은색/파란색' : sajuAnalysis.luckyElements.includes('金') ? '흰색' : '노란색',
       number: String(((parseInt(formData.birthYear) || 1990) % 9) + 1),
-      direction: formData.gender === 'male' ? '동쪽' : '서쪽',
+      direction: sajuAnalysis.luckyElements.includes('木') ? '동쪽' : sajuAnalysis.luckyElements.includes('火') ? '남쪽' : sajuAnalysis.luckyElements.includes('金') ? '서쪽' : sajuAnalysis.luckyElements.includes('水') ? '북쪽' : '중앙',
     },
     currentAge: age,
     ageGroup,
@@ -1044,6 +1088,14 @@ function ResultView({
               <CardTitle>{t('fourPillars')}</CardTitle>
               <Badge variant="secondary">무료</Badge>
             </div>
+            <CardDescription>
+              {result.sajuAnalysis?.zodiacAnimal && (
+                <span className="text-lg">🐾 띠: <strong>{result.sajuAnalysis.zodiacAnimal}띠</strong></span>
+              )}
+              {result.sajuAnalysis?.dayMaster && (
+                <span className="ml-4 text-lg">👤 일간(日干): <strong>{result.sajuAnalysis.dayMaster}</strong> ({result.sajuAnalysis.dayMasterElement})</span>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
@@ -1059,11 +1111,131 @@ function ResultView({
                   <Badge variant="outline" className="text-xs">
                     {data.element}
                   </Badge>
+                  {'animal' in data && data.animal && (
+                    <div className="text-xs mt-1 text-muted-foreground">{data.animal}띠</div>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Element Balance */}
+            {result.sajuAnalysis?.elementBalance && (
+              <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  오행(五行) 균형
+                </h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {Object.entries(result.sajuAnalysis.elementBalance).map(([element, value]) => {
+                    const colors: Record<string, string> = {
+                      '木': 'bg-green-500',
+                      '火': 'bg-red-500',
+                      '土': 'bg-yellow-500',
+                      '金': 'bg-gray-400',
+                      '水': 'bg-blue-500',
+                    };
+                    const names: Record<string, string> = {
+                      '木': '목(나무)',
+                      '火': '화(불)',
+                      '土': '토(흙)',
+                      '金': '금(쇠)',
+                      '水': '수(물)',
+                    };
+                    return (
+                      <div key={element} className="text-center">
+                        <div className="text-lg font-bold">{element}</div>
+                        <div className="text-xs text-muted-foreground mb-1">{names[element]}</div>
+                        <div className="h-16 bg-muted rounded relative overflow-hidden">
+                          <div
+                            className={`absolute bottom-0 w-full ${colors[element]} transition-all`}
+                            style={{ height: `${Math.min(100, (value as number) * 10)}%` }}
+                          />
+                        </div>
+                        <div className="text-sm font-medium mt-1">{value as number}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 text-sm">
+                  <span className="text-green-600 dark:text-green-400">강한 오행: {result.sajuAnalysis.strongElements?.join(', ')}</span>
+                  <span className="ml-4 text-red-600 dark:text-red-400">약한 오행: {result.sajuAnalysis.weakElements?.join(', ')}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Saju Personality Analysis - FREE */}
+        {result.sajuAnalysis?.characteristics && (
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-purple-500" />
+                  사주 성격 분석
+                </CardTitle>
+                <Badge variant="secondary">무료</Badge>
+              </div>
+              <CardDescription>
+                일간(日干) {result.sajuAnalysis.dayMaster} 기준 성격 특성
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {result.sajuAnalysis.characteristics.map((trait, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-purple-500">•</span>
+                    <span>{trait}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Career Suggestions */}
+              {result.sajuAnalysis.careerSuggestions && result.sajuAnalysis.careerSuggestions.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                  <h5 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    사주 기반 적합 직업
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    {result.sajuAnalysis.careerSuggestions.map((career, index) => (
+                      <Badge key={index} variant="outline" className="bg-white dark:bg-gray-800">
+                        {career}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Health Advice */}
+              {result.sajuAnalysis.healthAdvice && result.sajuAnalysis.healthAdvice.length > 0 && (
+                <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                  <h5 className="font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    건강 조언
+                  </h5>
+                  <ul className="text-sm space-y-1">
+                    {result.sajuAnalysis.healthAdvice.map((advice, index) => (
+                      <li key={index}>• {advice}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Lucky/Unlucky Elements */}
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                  <h5 className="font-semibold text-amber-700 dark:text-amber-300 mb-1">용신 (用神)</h5>
+                  <p className="text-sm">도움이 되는 오행: <strong>{result.sajuAnalysis.luckyElements?.join(', ')}</strong></p>
+                </div>
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h5 className="font-semibold text-gray-700 dark:text-gray-300 mb-1">기신 (忌神)</h5>
+                  <p className="text-sm">주의할 오행: <strong>{result.sajuAnalysis.unluckyElements?.join(', ')}</strong></p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Scores - FREE */}
         <Card className="mb-6">
