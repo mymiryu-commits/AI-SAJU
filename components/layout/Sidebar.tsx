@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
+import { useAIShortcuts } from '@/lib/hooks/useAIShortcuts';
 import {
   Flame,
   PenTool,
@@ -76,18 +77,11 @@ export const sidebarMenu = [
   { key: 'request', label: '자료 요청', icon: FileQuestion, href: '/request' },
 ];
 
-// AI 바로가기 링크 (레퍼럴 링크 적용 가능)
-export const aiShortcuts = [
-  { key: 'chatgpt', label: 'ChatGPT', url: 'https://chat.openai.com', referralUrl: '' },
-  { key: 'claude', label: 'Claude', url: 'https://claude.ai', referralUrl: '' },
-  { key: 'midjourney', label: 'Midjourney', url: 'https://midjourney.com', referralUrl: '' },
-  { key: 'runway', label: 'Runway', url: 'https://runway.ml', referralUrl: '' },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category') || 'all';
+  const { shortcuts: aiShortcuts } = useAIShortcuts();
 
   const isRankingPage = pathname?.includes('/ranking');
 

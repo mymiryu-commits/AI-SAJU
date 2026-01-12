@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLogo } from '@/lib/hooks/useLogo';
+import { useAIShortcuts, type AIShortcut } from '@/lib/hooks/useAIShortcuts';
 import {
   Upload,
   Trash2,
@@ -14,15 +15,69 @@ import {
   ArrowRight,
   Layers,
   Cloud,
+  ExternalLink,
+  Plus,
+  Save,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 export default function AdminSettingsPage() {
   const { siteLogo, aiLogo, isLoaded, isUploading, setSiteLogo, setAiLogo } = useLogo();
+  const { shortcuts, isLoaded: shortcutsLoaded, saveShortcuts, resetToDefault } = useAIShortcuts();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [editingShortcuts, setEditingShortcuts] = useState<AIShortcut[]>([]);
+  const [newShortcut, setNewShortcut] = useState({ key: '', label: '', url: '', referralUrl: '' });
 
   const siteLogoInputRef = useRef<HTMLInputElement>(null);
   const aiLogoInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize editing shortcuts when loaded
+  useState(() => {
+    if (shortcutsLoaded && editingShortcuts.length === 0) {
+      setEditingShortcuts(shortcuts);
+    }
+  });
+
+  // Update editing shortcuts when shortcuts change
+  if (shortcutsLoaded && editingShortcuts.length === 0 && shortcuts.length > 0) {
+    setEditingShortcuts(shortcuts);
+  }
+
+  const handleShortcutChange = (index: number, field: keyof AIShortcut, value: string) => {
+    const updated = [...editingShortcuts];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditingShortcuts(updated);
+  };
+
+  const handleAddShortcut = () => {
+    if (!newShortcut.key || !newShortcut.label || !newShortcut.url) {
+      setMessage({ type: 'error', text: '키, 이름, URL은 필수입니다.' });
+      return;
+    }
+    setEditingShortcuts([...editingShortcuts, newShortcut]);
+    setNewShortcut({ key: '', label: '', url: '', referralUrl: '' });
+  };
+
+  const handleRemoveShortcut = (index: number) => {
+    const updated = editingShortcuts.filter((_, i) => i !== index);
+    setEditingShortcuts(updated);
+  };
+
+  const handleSaveShortcuts = () => {
+    const success = saveShortcuts(editingShortcuts);
+    if (success) {
+      setMessage({ type: 'success', text: 'AI 바로가기가 저장되었습니다.' });
+    } else {
+      setMessage({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
+    }
+  };
+
+  const handleResetShortcuts = () => {
+    resetToDefault();
+    setEditingShortcuts([]);
+    setMessage({ type: 'success', text: '기본값으로 초기화되었습니다.' });
+  };
 
   const handleFileUpload = async (file: File, type: 'site' | 'ai') => {
     setMessage(null);
@@ -245,6 +300,126 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </Link>
+
+        {/* AI Shortcuts Management */}
+        <div className="mt-8 bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center">
+                <ExternalLink className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">AI 바로가기 관리</h2>
+                <p className="text-muted-foreground text-sm">레퍼럴 링크를 설정하여 수익을 창출하세요</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetShortcuts}
+                className="text-muted-foreground"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                초기화
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveShortcuts}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                저장
+              </Button>
+            </div>
+          </div>
+
+          {/* Shortcuts List */}
+          <div className="space-y-3 mb-4">
+            {editingShortcuts.map((shortcut, index) => (
+              <div key={shortcut.key} className="p-3 rounded-xl bg-secondary/50 border border-border">
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={shortcut.label}
+                    onChange={(e) => handleShortcutChange(index, 'label', e.target.value)}
+                    placeholder="이름"
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={shortcut.url}
+                    onChange={(e) => handleShortcutChange(index, 'url', e.target.value)}
+                    placeholder="기본 URL"
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={shortcut.referralUrl}
+                    onChange={(e) => handleShortcutChange(index, 'referralUrl', e.target.value)}
+                    placeholder="레퍼럴 URL (선택)"
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm col-span-1"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveShortcut(index)}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {shortcut.referralUrl && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    ✓ 레퍼럴 링크 적용됨
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Add New Shortcut */}
+          <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30">
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-2">새 바로가기 추가</p>
+            <div className="grid grid-cols-5 gap-2">
+              <input
+                type="text"
+                value={newShortcut.key}
+                onChange={(e) => setNewShortcut({ ...newShortcut, key: e.target.value })}
+                placeholder="키 (영문)"
+                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+              />
+              <input
+                type="text"
+                value={newShortcut.label}
+                onChange={(e) => setNewShortcut({ ...newShortcut, label: e.target.value })}
+                placeholder="표시 이름"
+                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+              />
+              <input
+                type="text"
+                value={newShortcut.url}
+                onChange={(e) => setNewShortcut({ ...newShortcut, url: e.target.value })}
+                placeholder="기본 URL"
+                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+              />
+              <input
+                type="text"
+                value={newShortcut.referralUrl}
+                onChange={(e) => setNewShortcut({ ...newShortcut, referralUrl: e.target.value })}
+                placeholder="레퍼럴 URL"
+                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+              />
+              <Button
+                onClick={handleAddShortcut}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                추가
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {/* Tips */}
         <div className="mt-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl p-5">

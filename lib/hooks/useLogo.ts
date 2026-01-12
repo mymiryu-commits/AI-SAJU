@@ -49,13 +49,15 @@ export function useLogo() {
             const { data } = supabase.storage
               .from(BUCKET_NAME)
               .getPublicUrl(`site/${file.name}`);
-            siteLogo = data.publicUrl;
+            // 캐시 버스팅을 위한 타임스탬프 추가
+            siteLogo = `${data.publicUrl}?t=${file.updated_at || Date.now()}`;
           }
           if (file.name.startsWith('ai-icon')) {
             const { data } = supabase.storage
               .from(BUCKET_NAME)
               .getPublicUrl(`site/${file.name}`);
-            aiLogo = data.publicUrl;
+            // 캐시 버스팅을 위한 타임스탬프 추가
+            aiLogo = `${data.publicUrl}?t=${file.updated_at || Date.now()}`;
           }
         }
       }
@@ -107,12 +109,12 @@ export function useLogo() {
         return { success: false, error: `업로드 실패: ${error.message}` };
       }
 
-      // Get public URL
+      // Get public URL with cache busting
       const { data: urlData } = supabase.storage
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-      const logoUrl = urlData.publicUrl;
+      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
       // Update state
       if (type === 'site') {
