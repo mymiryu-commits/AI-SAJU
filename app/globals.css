@@ -659,3 +659,17 @@ body {
 .stagger-5 { animation-delay: 400ms; }
 .stagger-6 { animation-delay: 500ms; }
 .stagger-7 { animation-delay: 600ms; }
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
