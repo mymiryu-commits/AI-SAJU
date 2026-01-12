@@ -24,6 +24,8 @@ import {
   Gem,
   Award,
   Lightbulb,
+  QrCode,
+  ExternalLink,
 } from 'lucide-react';
 
 // 수익화 카테고리 데이터
@@ -413,6 +415,47 @@ export default async function HomePage({
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== QR CODE TOOL SECTION ===== */}
+      <section className="py-16 relative">
+        <div className="container mx-auto px-4">
+          <div className="bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/40 dark:via-purple-950/30 dark:to-fuchsia-950/20 border border-violet-200/50 dark:border-violet-800/30 rounded-3xl p-8 md:p-10 relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-200/40 to-purple-200/30 dark:from-violet-600/10 dark:to-purple-600/10 rounded-full blur-[60px]" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-br from-fuchsia-200/40 to-pink-200/30 dark:from-fuchsia-600/10 dark:to-pink-600/10 rounded-full blur-[60px]" />
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/25">
+                  <QrCode className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1">
+                    PLANX-QR
+                  </h3>
+                  <p className="text-muted-foreground text-sm md:text-base">
+                    QR 코드 생성 및 관리 서비스
+                  </p>
+                </div>
+              </div>
+              <a
+                href="https://30daysliving.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white px-8 py-6 text-base font-semibold rounded-xl shadow-xl shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:-translate-y-0.5"
+                >
+                  <QrCode className="mr-2 h-5 w-5" />
+                  QR 서비스 이용하기
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
       </section>
