@@ -6,18 +6,29 @@ import { routing } from '@/i18n/routing';
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  // Update Supabase session
-  const response = await updateSession(request);
-
-  // Handle internationalization
+  // Handle internationalization first
   const intlResponse = intlMiddleware(request);
 
-  // Merge headers from both middlewares
-  intlResponse.headers.forEach((value, key) => {
-    response.headers.set(key, value);
-  });
+  // If intl middleware returns a redirect, return it immediately
+  if (intlResponse.status !== 200) {
+    return intlResponse;
+  }
 
-  return response;
+  // Update Supabase session
+  try {
+    const sessionResponse = await updateSession(request);
+
+    // Merge headers from intl middleware
+    intlResponse.headers.forEach((value, key) => {
+      sessionResponse.headers.set(key, value);
+    });
+
+    return sessionResponse;
+  } catch (error) {
+    // If session update fails, still return the intl response
+    console.error('Session update failed:', error);
+    return intlResponse;
+  }
 }
 
 export const config = {
