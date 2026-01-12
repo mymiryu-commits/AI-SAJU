@@ -87,13 +87,26 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const { error } = await signInWithOAuth(provider);
+      console.log(`Starting ${provider} OAuth login...`);
+      const { data, error } = await signInWithOAuth(provider);
 
       if (error) {
+        console.error('OAuth error:', error);
         setError(`${provider} 로그인 실패: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // OAuth returns a URL to redirect to
+      if (data?.url) {
+        console.log('Redirecting to:', data.url);
+        window.location.href = data.url;
+      } else {
+        setError('로그인 URL을 가져오지 못했습니다.');
         setLoading(false);
       }
     } catch (err) {
+      console.error('OAuth exception:', err);
       setError('소셜 로그인 중 오류가 발생했습니다.');
       setLoading(false);
     }
