@@ -129,7 +129,7 @@ export function Sidebar() {
                     'group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all duration-300',
                     isActive
                       ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-300/30 shadow-sm'
-                      : 'bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 border border-transparent hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:border-amber-200/50'
+                      : 'bg-gradient-to-r from-amber-50/80 via-yellow-50/60 to-green-50/50 dark:from-amber-900/20 dark:via-yellow-900/15 dark:to-green-900/10 border border-amber-100/50 dark:border-amber-800/30 hover:from-amber-100/90 hover:via-yellow-100/70 hover:to-green-100/60 dark:hover:from-amber-900/30 dark:hover:via-yellow-900/25 dark:hover:to-green-900/20 hover:border-amber-200/60'
                   )}
                 >
                   <div className={cn(
@@ -183,7 +183,7 @@ export function Sidebar() {
                     'group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm transition-all duration-300',
                     isActive
                       ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-300/30 shadow-sm'
-                      : 'bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 border border-transparent hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:border-amber-200/50'
+                      : 'bg-gradient-to-r from-amber-50/80 via-yellow-50/60 to-green-50/50 dark:from-amber-900/20 dark:via-yellow-900/15 dark:to-green-900/10 border border-amber-100/50 dark:border-amber-800/30 hover:from-amber-100/90 hover:via-yellow-100/70 hover:to-green-100/60 dark:hover:from-amber-900/30 dark:hover:via-yellow-900/25 dark:hover:to-green-900/20 hover:border-amber-200/60'
                   )}
                 >
                   <div className={cn(
@@ -224,7 +224,7 @@ export function Sidebar() {
                 href={ai.referralUrl || ai.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs bg-gradient-to-r from-gray-100/60 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/30 text-muted-foreground hover:from-amber-100/70 hover:to-orange-100/50 dark:hover:from-amber-900/30 dark:hover:to-orange-900/20 hover:text-amber-700 dark:hover:text-amber-300 transition-all duration-300"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs bg-gradient-to-r from-amber-50/70 via-yellow-50/50 to-green-50/40 dark:from-amber-900/15 dark:via-yellow-900/10 dark:to-green-900/8 border border-amber-100/40 dark:border-amber-800/20 text-muted-foreground hover:from-amber-100/80 hover:via-yellow-100/60 hover:to-green-100/50 dark:hover:from-amber-900/25 dark:hover:via-yellow-900/20 dark:hover:to-green-900/15 hover:text-amber-700 dark:hover:text-amber-300 hover:border-amber-200/50 transition-all duration-300"
               >
                 <ExternalLink className="h-3 w-3" />
                 <span>{ai.label}</span>
