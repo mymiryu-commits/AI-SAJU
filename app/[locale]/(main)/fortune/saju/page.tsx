@@ -20,6 +20,8 @@ import { Progress } from '@/components/ui/progress';
 import { Sparkles, ArrowRight, Loader2, Zap, Star, Heart, Briefcase, Activity, Lock, Save, User, Crown, Brain, Target, TrendingUp, Calendar, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { analyzeSaju, toKorean, type SajuAnalysis } from '@/lib/saju/calculator';
+import { calculateSasangConstitution, generatePremiumStory, calculateDailyFortune, calculateYearlyFortune, type PremiumStoryResult } from '@/lib/saju/storytelling';
+import { generateVoiceScript, speakText, stopSpeaking, generatePrintableHTML } from '@/lib/saju/export';
 
 // Admin emails for full access
 const ADMIN_EMAILS = ['mymiryu@naver.com', 'mymiryu@gmail.com'];
@@ -179,6 +181,24 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
   const hour = formData.birthHour ? parseInt(formData.birthHour) : 12;
 
   const sajuAnalysis = analyzeSaju(year, month, day, hour);
+
+  // Auto-calculate Sasang constitution from element balance
+  const autoSasang = calculateSasangConstitution(sajuAnalysis.elementBalance);
+
+  // Generate premium story for detailed analysis
+  const premiumStory = generatePremiumStory(
+    sajuAnalysis,
+    year, month, day, hour,
+    formData.gender as 'male' | 'female',
+    formData.name
+  );
+
+  // Get yearly fortune for current year
+  const currentYear = new Date().getFullYear();
+  const yearlyFortune = calculateYearlyFortune(currentYear, sajuAnalysis.fourPillars, sajuAnalysis.dayMaster);
+
+  // Get daily fortune
+  const dailyFortune = calculateDailyFortune(new Date(), sajuAnalysis.fourPillars, sajuAnalysis.dayMaster);
 
   // Four Pillars from real calculation
   const fourPillars = {
@@ -423,7 +443,11 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
     personality: bloodTypeAnalysis[formData.bloodType]?.personality || ['성격 분석을 위해 혈액형을 선택해주세요.'],
     bloodTypeAnalysis: bloodTypeAnalysis[formData.bloodType],
     mbtiAnalysis: mbtiAnalysis[formData.mbti],
-    sasangAnalysis: sasangAnalysis[formData.sasang] || sasangAnalysis['unknown'],
+    // Use auto-calculated sasang if not manually selected
+    sasangAnalysis: formData.sasang && formData.sasang !== 'unknown'
+      ? sasangAnalysis[formData.sasang]
+      : { ...sasangAnalysis[autoSasang.type], autoCalculated: true, confidence: autoSasang.confidence, description: autoSasang.description },
+    autoSasang,
     tarotAnalysis: tarotAnalysis[formData.tarotCard],
     ageAnalysis: ageInfo,
     coreInsights,
@@ -433,6 +457,10 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
       number: String(((parseInt(formData.birthYear) || 1990) % 9) + 1),
       direction: sajuAnalysis.luckyElements.includes('木') ? '동쪽' : sajuAnalysis.luckyElements.includes('火') ? '남쪽' : sajuAnalysis.luckyElements.includes('金') ? '서쪽' : sajuAnalysis.luckyElements.includes('水') ? '북쪽' : '중앙',
     },
+    // Premium story data
+    premiumStory,
+    yearlyFortune,
+    dailyFortune,
     currentAge: age,
     ageGroup,
     isAdmin,
@@ -469,9 +497,14 @@ export default function SajuPage() {
       try {
         const supabase = createClient();
         const { data: { user: authUser } } = await supabase.auth.getUser();
+        console.log('Auth user check:', authUser?.email, 'Admin emails:', ADMIN_EMAILS);
         if (authUser?.email) {
           setUser({ email: authUser.email });
-          setIsAdmin(ADMIN_EMAILS.includes(authUser.email));
+          const isAdminUser = ADMIN_EMAILS.includes(authUser.email);
+          console.log('Is admin:', isAdminUser, 'Email:', authUser.email);
+          setIsAdmin(isAdminUser);
+          // Save email to localStorage for persistence
+          localStorage.setItem('saju_user_email', authUser.email);
           // Load saved profiles from localStorage
           const saved = localStorage.getItem(`saju_profiles_${authUser.email}`);
           if (saved) {
@@ -487,8 +520,11 @@ export default function SajuPage() {
     // Also check localStorage for saved session
     const savedEmail = localStorage.getItem('saju_user_email');
     if (savedEmail) {
+      console.log('Saved email from localStorage:', savedEmail);
       setUser({ email: savedEmail });
-      setIsAdmin(ADMIN_EMAILS.includes(savedEmail));
+      const isAdminUser = ADMIN_EMAILS.includes(savedEmail);
+      console.log('Is admin from localStorage:', isAdminUser);
+      setIsAdmin(isAdminUser);
       const saved = localStorage.getItem(`saju_profiles_${savedEmail}`);
       if (saved) {
         setSavedProfiles(JSON.parse(saved));
@@ -513,6 +549,22 @@ export default function SajuPage() {
       }
     }
   }, [formData.birthYear, formData.birthMonth, formData.birthDay, formData.tarotCard]);
+
+  // Auto-calculate sasang constitution when birth date and hour are complete
+  useEffect(() => {
+    if (formData.birthYear && formData.birthMonth && formData.birthDay && formData.birthHour && !formData.sasang) {
+      if (/^\d{4}$/.test(formData.birthYear)) {
+        const year = parseInt(formData.birthYear);
+        const month = parseInt(formData.birthMonth);
+        const day = parseInt(formData.birthDay);
+        const hour = parseInt(formData.birthHour);
+        const sajuResult = analyzeSaju(year, month, day, hour);
+        const autoSasang = calculateSasangConstitution(sajuResult.elementBalance);
+        console.log('Auto-calculated sasang:', autoSasang);
+        setFormData(prev => ({ ...prev, sasang: autoSasang.type }));
+      }
+    }
+  }, [formData.birthYear, formData.birthMonth, formData.birthDay, formData.birthHour, formData.sasang]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
