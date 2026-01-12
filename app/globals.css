@@ -673,3 +673,92 @@ body {
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
+
+/* ===== FORTUNE PAGE STYLES ===== */
+.fortune-gradient {
+  background: linear-gradient(135deg,
+    hsl(25, 95%, 53%) 0%,
+    hsl(35, 95%, 55%) 25%,
+    hsl(45, 90%, 50%) 50%,
+    hsl(35, 95%, 55%) 75%,
+    hsl(25, 95%, 53%) 100%
+  );
+  background-size: 200% 200%;
+  animation: fortune-gradient-shift 8s ease infinite;
+}
+
+@keyframes fortune-gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.fortune-card {
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  box-shadow:
+    0 4px 6px -1px rgba(251, 191, 36, 0.1),
+    0 2px 4px -1px rgba(251, 191, 36, 0.06);
+}
+
+.dark .fortune-card {
+  background: linear-gradient(180deg,
+    rgba(30, 30, 40, 0.95) 0%,
+    rgba(20, 20, 30, 0.9) 100%
+  );
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.fortune-icon-glow {
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
+}
+
+.fortune-score-ring {
+  background: conic-gradient(
+    hsl(45, 95%, 55%) calc(var(--score) * 1%),
+    hsl(220, 10%, 90%) calc(var(--score) * 1%)
+  );
+}
+
+.dark .fortune-score-ring {
+  background: conic-gradient(
+    hsl(45, 95%, 55%) calc(var(--score) * 1%),
+    hsl(220, 20%, 20%) calc(var(--score) * 1%)
+  );
+}
+
+/* Fortune Service Card Hover */
+.fortune-service-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fortune-service-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 25px -5px rgba(251, 191, 36, 0.15),
+    0 10px 10px -5px rgba(251, 191, 36, 0.1);
+}
+
+/* Zodiac Symbol Animation */
+@keyframes zodiac-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+  75% {
+    transform: translateY(5px) rotate(-2deg);
+  }
+}
+
+.animate-zodiac {
+  animation: zodiac-float 4s ease-in-out infinite;
+}
