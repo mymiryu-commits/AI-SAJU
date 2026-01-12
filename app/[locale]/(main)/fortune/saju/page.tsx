@@ -202,7 +202,7 @@ function generateComprehensiveAnalysis(formData: FormData, isAdmin: boolean) {
     'ISTJ': { strengths: ['신뢰성', '체계적', '헌신적'], career: '회계사, 공무원, 관리자', relationship: '안정적인 관계 선호' },
     'ISFJ': { strengths: ['헌신적', '배려심', '실용적'], career: '간호사, 교사, 행정직', relationship: '보살핌과 헌신' },
     'ESTJ': { strengths: ['조직력', '리더십', '실용적'], career: '관리자, 군인, 변호사', relationship: '전통적 가치 중시' },
-    'ESFJ': { strengths: ['사교적', '책임감', '협력적'], career: '영업, 간호사, 이벤트기획'], relationship: '조화로운 관계' },
+    'ESFJ': { strengths: ['사교적', '책임감', '협력적'], career: '영업, 간호사, 이벤트기획', relationship: '조화로운 관계' },
     'ISTP': { strengths: ['분석적', '실용적', '적응력'], career: '엔지니어, 기술자, 파일럿', relationship: '독립적이지만 충실' },
     'ISFP': { strengths: ['예술적', '유연함', '친절함'], career: '디자이너, 셰프, 수의사', relationship: '진실된 관계 추구' },
     'ESTP': { strengths: ['행동력', '적응력', '실용적'], career: '영업, 기업가, 운동선수', relationship: '활동적인 관계' },
