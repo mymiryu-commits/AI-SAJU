@@ -72,6 +72,27 @@ export function PaymentModal({
     m.available.includes(locale)
   );
 
+  // Load Toss Payments SDK dynamically
+  const loadTossPayments = (clientKey: string) => {
+    return new Promise<{ requestPayment: (method: string, params: Record<string, unknown>) => Promise<void> }>((resolve, reject) => {
+      // Check if already loaded
+      if ((window as unknown as { TossPayments?: (key: string) => unknown }).TossPayments) {
+        const TossPayments = (window as unknown as { TossPayments: (key: string) => { requestPayment: (method: string, params: Record<string, unknown>) => Promise<void> } }).TossPayments;
+        resolve(TossPayments(clientKey));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://js.tosspayments.com/v1/payment';
+      script.onload = () => {
+        const TossPayments = (window as unknown as { TossPayments: (key: string) => { requestPayment: (method: string, params: Record<string, unknown>) => Promise<void> } }).TossPayments;
+        resolve(TossPayments(clientKey));
+      };
+      script.onerror = () => reject(new Error('Failed to load Toss Payments SDK'));
+      document.head.appendChild(script);
+    });
+  };
+
   const handlePayment = async () => {
     if (!agreedToTerms || !agreedToPrivacy) {
       alert('약관에 동의해주세요.');
@@ -96,23 +117,45 @@ export function PaymentModal({
 
       if (data.success) {
         if (data.provider === 'toss') {
-          // Initialize Toss Payments SDK
-          // In production, use actual TossPayments SDK
-          console.log('Toss payment data:', data.paymentData);
-          // window.TossPayments(clientKey).requestPayment(...)
+          // Get client key from environment
+          const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
-          // Simulate success for demo
-          setTimeout(() => {
-            setIsProcessing(false);
-            onSuccess?.();
-            onClose();
-          }, 2000);
+          if (!clientKey) {
+            // Demo mode - simulate success
+            console.log('Toss payment (demo mode):', data.paymentData);
+            setTimeout(() => {
+              setIsProcessing(false);
+              onSuccess?.();
+              onClose();
+            }, 2000);
+            return;
+          }
+
+          // Load and use Toss Payments SDK
+          const tossPayments = await loadTossPayments(clientKey);
+
+          const paymentMethodMap: Record<string, string> = {
+            card: '카드',
+            kakaopay: '카카오페이',
+            naverpay: '네이버페이',
+            tosspay: '토스페이',
+            bank: '계좌이체',
+          };
+
+          await tossPayments.requestPayment(paymentMethodMap[selectedMethod] || '카드', {
+            amount: data.paymentData.amount,
+            orderId: data.paymentData.orderId,
+            orderName: data.paymentData.orderName,
+            customerEmail: data.paymentData.customerEmail,
+            customerName: data.paymentData.customerName,
+            successUrl: data.paymentData.successUrl,
+            failUrl: data.paymentData.failUrl,
+          });
         } else {
-          // Stripe Checkout
-          console.log('Stripe payment data:', data.paymentData);
-          // In production, redirect to Stripe Checkout
+          // Stripe Checkout - redirect to Stripe
+          console.log('Stripe payment:', data.paymentData);
 
-          // Simulate success for demo
+          // Demo mode - simulate success
           setTimeout(() => {
             setIsProcessing(false);
             onSuccess?.();
@@ -124,7 +167,13 @@ export function PaymentModal({
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('결제 처리 중 오류가 발생했습니다.');
+      const errorMessage = error instanceof Error && error.message !== 'USER_CANCEL'
+        ? error.message
+        : '결제 처리 중 오류가 발생했습니다.';
+
+      if (error instanceof Error && error.message !== 'USER_CANCEL') {
+        alert(errorMessage);
+      }
       setIsProcessing(false);
     }
   };

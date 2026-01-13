@@ -22,6 +22,7 @@ const navLinks = [
   { href: '/ranking', key: 'ranking', label: '전체 순위' },
   { href: '/fortune', key: 'fortune', label: '사주분석' },
   { href: '/lotto', key: 'lotto', label: '로또 분석' },
+  { href: '/tools/qrcode', key: 'qrcode', label: 'QR코드' },
   { href: '/prompts', key: 'prompts', label: '프롬프트' },
   { href: '/ebook', key: 'ebook', label: 'E-Book' },
   { href: '/marketplace', key: 'marketplace', label: '판매 사이트' },
