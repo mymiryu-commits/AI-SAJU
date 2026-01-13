@@ -189,6 +189,36 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
     discountedPrice: { krw: 6930, jpy: 770, usd: 6.29 },
     discountPercent: 30,
   },
+  lotto_basic: {
+    id: 'analysis_lotto_basic',
+    name: {
+      ko: '로또 기본 분석',
+      ja: 'ロト基本分析',
+      en: 'Basic Lotto Analysis',
+    },
+    description: {
+      ko: 'AI 기반 번호 추천 10게임',
+      ja: 'AI推薦番号10ゲーム',
+      en: 'AI-powered 10 game recommendations',
+    },
+    price: { krw: 3900, jpy: 430, usd: 2.99 },
+  },
+  lotto_premium: {
+    id: 'analysis_lotto_premium',
+    name: {
+      ko: '로또 프리미엄 분석',
+      ja: 'ロトプレミアム分析',
+      en: 'Premium Lotto Analysis',
+    },
+    description: {
+      ko: '백테스트 + 시뮬레이션 + 자동 당첨 대조',
+      ja: 'バックテスト + シミュレーション + 自動当選照合',
+      en: 'Backtest + Simulation + Auto winning check',
+    },
+    price: { krw: 9900, jpy: 1100, usd: 7.99 },
+    discountedPrice: { krw: 6930, jpy: 770, usd: 5.59 },
+    discountPercent: 30,
+  },
 };
 
 // QR Code Plans
