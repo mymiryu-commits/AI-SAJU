@@ -258,7 +258,8 @@ export function PaymentModal({
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
               />
               <Label htmlFor="terms" className="text-sm leading-tight cursor-pointer">
-                <span className="text-primary underline">이용약관</span>에 동의합니다
+                <a href="/legal/terms" target="_blank" className="text-primary underline hover:text-primary/80">이용약관</a> 및{' '}
+                <a href="/legal/refund" target="_blank" className="text-primary underline hover:text-primary/80">환불정책</a>에 동의합니다
               </Label>
             </div>
             <div className="flex items-start gap-2">
@@ -268,7 +269,7 @@ export function PaymentModal({
                 onCheckedChange={(checked) => setAgreedToPrivacy(checked as boolean)}
               />
               <Label htmlFor="privacy" className="text-sm leading-tight cursor-pointer">
-                <span className="text-primary underline">개인정보처리방침</span>에 동의합니다
+                <a href="/legal/privacy" target="_blank" className="text-primary underline hover:text-primary/80">개인정보처리방침</a>에 동의합니다
               </Label>
             </div>
           </div>

@@ -4,9 +4,9 @@ import {
   SUBSCRIPTION_TIERS,
   ANALYSIS_PRODUCTS,
   COIN_PACKAGES,
+  QR_CODE_PLANS,
   getCurrencyFromLocale,
   getPrice,
-  Currency,
 } from '@/lib/payment/pricing';
 
 export async function POST(request: NextRequest) {
@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
         break;
       case 'coin':
         product = COIN_PACKAGES[productId];
+        break;
+      case 'qr':
+        product = QR_CODE_PLANS[productId];
         break;
       default:
         return NextResponse.json(
