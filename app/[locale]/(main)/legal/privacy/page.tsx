@@ -186,7 +186,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-xl font-semibold mb-4">제8조 (개인정보 보호책임자)</h2>
             <div className="bg-muted/50 p-4 rounded-lg">
               <ul className="space-y-2">
-                <li><strong>성명:</strong> 이현석</li>
+                <li><strong>성명:</strong> 김형석</li>
                 <li><strong>직책:</strong> 대표이사</li>
                 <li><strong>연락처:</strong> 1588-5617</li>
                 <li><strong>이메일:</strong> mymiryu@gmail.com</li>
@@ -225,7 +225,7 @@ export default function PrivacyPolicyPage() {
             <ul className="text-sm space-y-1">
               <li>상호: 플랜엑스솔루션 주식회사</li>
               <li>사업자등록번호: 786-87-03494</li>
-              <li>대표자: 이현석</li>
+              <li>대표자: 김형석</li>
               <li>고객센터: 1588-5617</li>
               <li>이메일: mymiryu@gmail.com</li>
             </ul>
