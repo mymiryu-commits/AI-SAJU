@@ -105,11 +105,15 @@ export {
 // 데이터 로딩
 export {
   loadLottoHistory,
+  loadLottoHistoryFromDB,
   fetchLatestResults,
   fetchRoundResult,
   getCurrentRound,
+  getLatestCompletedRound,
+  getNextRound,
   getNextDrawDate,
   getTimeUntilNextDraw,
+  getDrawDateForRound,
   getNumberColor,
   getNumberColorClass,
   formatPrize,

@@ -189,6 +189,76 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
     discountedPrice: { krw: 6930, jpy: 770, usd: 6.29 },
     discountPercent: 30,
   },
+  lotto_basic: {
+    id: 'analysis_lotto_basic',
+    name: {
+      ko: '로또 기본 분석',
+      ja: 'ロト基本分析',
+      en: 'Basic Lotto Analysis',
+    },
+    description: {
+      ko: 'AI 기반 번호 추천 10게임',
+      ja: 'AI推薦番号10ゲーム',
+      en: 'AI-powered 10 game recommendations',
+    },
+    price: { krw: 3900, jpy: 430, usd: 2.99 },
+  },
+  lotto_premium: {
+    id: 'analysis_lotto_premium',
+    name: {
+      ko: '로또 프리미엄 분석',
+      ja: 'ロトプレミアム分析',
+      en: 'Premium Lotto Analysis',
+    },
+    description: {
+      ko: '백테스트 + 시뮬레이션 + 자동 당첨 대조',
+      ja: 'バックテスト + シミュレーション + 自動当選照合',
+      en: 'Backtest + Simulation + Auto winning check',
+    },
+    price: { krw: 9900, jpy: 1100, usd: 7.99 },
+    discountedPrice: { krw: 6930, jpy: 770, usd: 5.59 },
+    discountPercent: 30,
+  },
+};
+
+// QR Code Plans
+export const QR_CODE_PLANS: Record<string, ProductConfig & { monthlyLimit: number; maxSize: number }> = {
+  qr_free: {
+    id: 'qr_free',
+    name: { ko: '무료', ja: '無料', en: 'Free' },
+    description: { ko: '기본 QR코드 생성', ja: '基本QRコード生成', en: 'Basic QR code generation' },
+    price: { krw: 0, jpy: 0, usd: 0 },
+    monthlyLimit: 10,
+    maxSize: 300,
+    features: ['basic_qr', 'basic_colors'],
+  },
+  qr_basic: {
+    id: 'qr_basic',
+    name: { ko: '베이직', ja: 'ベーシック', en: 'Basic' },
+    description: { ko: '고화질 QR코드 + 색상 커스터마이징', ja: '高画質QR + カラーカスタマイズ', en: 'High-res QR + Color customization' },
+    price: { krw: 4900, jpy: 550, usd: 3.99 },
+    monthlyLimit: 100,
+    maxSize: 1000,
+    features: ['basic_qr', 'basic_colors', 'high_resolution', 'color_custom'],
+  },
+  qr_pro: {
+    id: 'qr_pro',
+    name: { ko: '프로', ja: 'プロ', en: 'Pro' },
+    description: { ko: '로고 삽입 + 대량 생성 + 스캔 분석', ja: 'ロゴ挿入 + 一括生成 + スキャン分析', en: 'Logo + Batch + Analytics' },
+    price: { krw: 9900, jpy: 1100, usd: 7.99 },
+    monthlyLimit: -1, // Unlimited
+    maxSize: 2000,
+    features: ['basic_qr', 'basic_colors', 'high_resolution', 'color_custom', 'logo_insert', 'batch_upload', 'analytics'],
+  },
+  qr_business: {
+    id: 'qr_business',
+    name: { ko: '비즈니스', ja: 'ビジネス', en: 'Business' },
+    description: { ko: '다이나믹 QR + API 접근 + 우선 지원', ja: 'ダイナミックQR + API + 優先サポート', en: 'Dynamic QR + API + Priority support' },
+    price: { krw: 29900, jpy: 3300, usd: 24.99 },
+    monthlyLimit: -1,
+    maxSize: 4000,
+    features: ['basic_qr', 'basic_colors', 'high_resolution', 'color_custom', 'logo_insert', 'batch_upload', 'analytics', 'dynamic_qr', 'api_access', 'priority_support'],
+  },
 };
 
 // Coin Packages
