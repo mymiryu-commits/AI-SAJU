@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   AnalysisResult, SajuChart, OhengBalance,
-  ELEMENT_KOREAN, PeerComparison
+  ELEMENT_KOREAN, PeerComparison, AIAnalysis
 } from '@/types/saju';
 
 interface Props {
@@ -26,7 +26,7 @@ export default function SajuResultCard({
 }: Props) {
   const [activeTab, setActiveTab] = useState<'basic' | 'scores' | 'peer' | 'premium'>('basic');
 
-  const { saju, oheng, scores, personality, peerComparison, yongsin, gisin, coreMessage } = result;
+  const { saju, oheng, scores, personality, peerComparison, yongsin, gisin, coreMessage, aiAnalysis } = result;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -153,6 +153,16 @@ export default function SajuResultCard({
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
                 성격 분석 - "{personality.coreKeyword}"
               </h3>
+
+              {/* AI 성격 분석 (있을 경우) */}
+              {aiAnalysis?.personalityReading && (
+                <div className="mb-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {aiAnalysis.personalityReading}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 {personality.sajuTraits.map((trait, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -173,6 +183,47 @@ export default function SajuResultCard({
                 </div>
               )}
             </div>
+
+            {/* AI 인생 경로 & 행운 요소 */}
+            {aiAnalysis && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 인생 경로 */}
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
+                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      인생 흐름
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {aiAnalysis.lifePath}
+                    </p>
+                  </div>
+
+                  {/* 행운 요소 */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl">
+                    <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      행운 요소
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {aiAnalysis.luckyElements}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 주의사항 */}
+                {aiAnalysis.warningAdvice && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-100 dark:border-red-800">
+                    <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
+                      주의사항
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {aiAnalysis.warningAdvice}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </motion.div>
         )}
 
@@ -193,17 +244,29 @@ export default function SajuResultCard({
                 <span className="text-4xl font-bold text-white">{scores.overall}</span>
               </div>
               <p className="mt-4 text-gray-600 dark:text-gray-400">종합 운세</p>
+              {aiAnalysis?.fortuneAdvice?.overall && (
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                  {aiAnalysis.fortuneAdvice.overall}
+                </p>
+              )}
             </div>
 
             {/* 상세 점수 */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               {[
-                { label: '재물운', score: scores.wealth, icon: TrendingUp, color: 'yellow' },
-                { label: '애정운', score: scores.love, icon: Heart, color: 'pink' },
-                { label: '직업운', score: scores.career, icon: Briefcase, color: 'blue' },
-                { label: '건강운', score: scores.health, icon: Activity, color: 'green' }
+                { key: 'wealth', label: '재물운', score: scores.wealth, icon: TrendingUp, color: 'yellow', advice: aiAnalysis?.fortuneAdvice?.wealth },
+                { key: 'love', label: '애정운', score: scores.love, icon: Heart, color: 'pink', advice: aiAnalysis?.fortuneAdvice?.love },
+                { key: 'career', label: '직업운', score: scores.career, icon: Briefcase, color: 'blue', advice: aiAnalysis?.fortuneAdvice?.career },
+                { key: 'health', label: '건강운', score: scores.health, icon: Activity, color: 'green', advice: aiAnalysis?.fortuneAdvice?.health }
               ].map(item => (
-                <ScoreBar key={item.label} {...item} />
+                <div key={item.key} className="space-y-2">
+                  <ScoreBar label={item.label} score={item.score} icon={item.icon} color={item.color} />
+                  {item.advice && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 pl-14 leading-relaxed">
+                      {item.advice}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
           </motion.div>

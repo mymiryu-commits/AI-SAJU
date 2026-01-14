@@ -124,8 +124,26 @@ export interface AnalysisResult {
   // 핵심 메시지 (고민 기반)
   coreMessage: CoreMessage;
 
+  // AI 분석 (OpenAI 생성)
+  aiAnalysis?: AIAnalysis;
+
   // 프리미엄 컨텐츠 (유료)
   premium?: PremiumContent;
+}
+
+// AI 분석 결과
+export interface AIAnalysis {
+  personalityReading: string;
+  fortuneAdvice: {
+    overall: string;
+    wealth: string;
+    love: string;
+    career: string;
+    health: string;
+  };
+  lifePath: string;
+  luckyElements: string;
+  warningAdvice: string;
 }
 
 export interface PeerComparison {
