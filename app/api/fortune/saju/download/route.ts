@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import {
   generateSajuPDF,
   generatePDFFilename,
@@ -20,7 +20,7 @@ import {
 } from '@/lib/fortune/saju/export';
 import { calculateSaju } from '@/lib/fortune/saju/calculator';
 import { analyzeOheng } from '@/lib/fortune/saju/oheng';
-import type { UserInput, SajuChart, OhengBalance, AnalysisResult, PremiumContent } from '@/types/saju';
+import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
 
 // 저장된 분석 결과에서 다운로드 (GET)
 export async function GET(request: NextRequest) {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 분석 결과 조회
-    const { data: analysis, error: fetchError } = await supabase
+    const { data: analysis, error: fetchError } = await (supabase as any)
       .from('fortune_analyses')
       .select('*')
       .eq('id', analysisId)
@@ -69,50 +69,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 프리미엄 분석 결과 조회 (있는 경우)
-    const { data: premiumAnalysis } = await supabase
-      .from('premium_analyses')
-      .select('*')
-      .eq('analysis_id', analysisId)
-      .single();
-
-    // 사용자 정보 조회
-    const { data: userData } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
     // 데이터 준비
     const userInput: UserInput = {
-      name: userData?.name || '사용자',
-      birthDate: analysis.birth_date,
-      birthTime: analysis.birth_time,
-      gender: analysis.gender || 'male',
-      careerType: userData?.career_type,
-      careerLevel: userData?.career_level,
-      yearsExp: userData?.years_exp,
-      maritalStatus: userData?.marital_status,
-      hasChildren: userData?.has_children,
-      childrenAges: userData?.children_ages,
-      interests: userData?.interests,
-      currentConcern: userData?.current_concern
+      name: (analysis as Record<string, unknown>).user_name as string || '사용자',
+      birthDate: analysis.birth_date as string,
+      birthTime: (analysis as Record<string, unknown>).birth_time as string | undefined,
+      gender: (analysis.gender as 'male' | 'female') || 'male',
+      careerType: (analysis as Record<string, unknown>).career_type as UserInput['careerType']
     };
 
-    const saju = analysis.result?.saju || calculateSaju(userInput.birthDate, userInput.birthTime);
-    const oheng = analysis.result?.oheng || analyzeOheng(saju);
-    const result: AnalysisResult = analysis.result || {};
+    const resultData = analysis.result_full as Record<string, unknown> | null;
+    const saju = (resultData?.saju as SajuChart) || calculateSaju(userInput.birthDate, userInput.birthTime);
+    const ohengResult = analyzeOheng(saju);
+    const oheng = ohengResult.balance;
+    const yongsin = ohengResult.yongsin;
+    const gisin = ohengResult.gisin;
 
-    const premium: PremiumContent | undefined = premiumAnalysis ? {
-      familyImpact: premiumAnalysis.family_impact,
-      careerAnalysis: premiumAnalysis.career_analysis,
-      interestStrategies: premiumAnalysis.interest_strategies,
-      monthlyActionPlan: premiumAnalysis.monthly_action_plan,
-      lifeTimeline: premiumAnalysis.life_timeline,
-      timingAnalysis: premiumAnalysis.timing_analysis
-    } : undefined;
-
-    const targetYear = premiumAnalysis?.target_year || new Date().getFullYear();
+    const premium: PremiumContent | undefined = resultData?.premium as PremiumContent | undefined;
+    const targetYear = (resultData?.targetYear as number) || new Date().getFullYear();
 
     if (type === 'pdf') {
       // PDF 생성
@@ -120,17 +94,15 @@ export async function GET(request: NextRequest) {
         user: userInput,
         saju,
         oheng,
-        result,
+        yongsin,
+        gisin,
         premium,
         targetYear
       });
 
       const filename = generatePDFFilename(userInput, targetYear);
 
-      // PDF URL 업데이트 (Storage에 저장하는 경우)
-      // await uploadToStorage(pdfBuffer, filename, 'pdf');
-
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
@@ -152,7 +124,8 @@ export async function GET(request: NextRequest) {
         user: userInput,
         saju,
         oheng,
-        result,
+        yongsin,
+        gisin,
         premium,
         targetYear,
         config: {
@@ -164,7 +137,7 @@ export async function GET(request: NextRequest) {
 
       const filename = generateAudioFilename(userInput, targetYear);
 
-      return new NextResponse(audioBuffer, {
+      return new NextResponse(new Uint8Array(audioBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'audio/mpeg',
@@ -186,7 +159,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, user: userInput, saju, oheng, result, premium, targetYear = 2026 } = body;
+    const {
+      type,
+      user: userInput,
+      saju,
+      oheng,
+      yongsin,
+      gisin,
+      premium,
+      targetYear = 2026
+    } = body as {
+      type: string;
+      user: UserInput;
+      saju: SajuChart;
+      oheng: OhengBalance;
+      yongsin?: Element[];
+      gisin?: Element[];
+      premium?: PremiumContent;
+      targetYear?: number;
+    };
 
     if (!type || !['pdf', 'audio', 'script'].includes(type)) {
       return NextResponse.json(
@@ -208,7 +199,8 @@ export async function POST(request: NextRequest) {
         user: userInput,
         saju,
         oheng,
-        result: result || {},
+        yongsin,
+        gisin,
         premium,
         targetYear
       });
@@ -229,14 +221,15 @@ export async function POST(request: NextRequest) {
         user: userInput,
         saju,
         oheng,
-        result: result || {},
+        yongsin,
+        gisin,
         premium,
         targetYear
       });
 
       const filename = generatePDFFilename(userInput, targetYear);
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
@@ -258,19 +251,20 @@ export async function POST(request: NextRequest) {
         user: userInput,
         saju,
         oheng,
-        result: result || {},
+        yongsin,
+        gisin,
         premium,
         targetYear,
         config: {
           provider: 'openai',
           apiKey: openaiKey,
-          voiceId: body.voiceId || 'nova'
+          voiceId: (body as Record<string, unknown>).voiceId as string || 'nova'
         }
       });
 
       const filename = generateAudioFilename(userInput, targetYear);
 
-      return new NextResponse(audioBuffer, {
+      return new NextResponse(new Uint8Array(audioBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'audio/mpeg',

@@ -222,6 +222,7 @@ export function generateCoreMessage(
   user: UserInput,
   result: AnalysisResult
 ): {
+  concern: ConcernType;
   hook: string;
   insight: string;
   urgency: string;
@@ -231,6 +232,7 @@ export function generateCoreMessage(
   const concernData = CONCERN_HOOKS[concern];
 
   return {
+    concern,
     hook: `${user.name} 님, 지금 이 고민 하고 계시죠?\n\n"${concernData.hook}"`,
     insight: `당신의 사주가 말합니다:\n\n"${concernData.insight}"`,
     urgency: concernData.urgency,

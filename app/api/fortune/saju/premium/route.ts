@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     if (analysisId) {
       // 기존 분석 업데이트
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('fortune_analyses')
         .update({
           subtype: productType,
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // 새 분석 생성
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('fortune_analyses')
         .insert(analysisRecord)
         .select('id')

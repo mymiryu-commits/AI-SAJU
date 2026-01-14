@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('fortune_analyses')
           .insert({
             user_id: user.id,

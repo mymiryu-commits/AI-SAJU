@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         userId = user.id;
 
         // 분석 결과 저장
-        const { data: analysisData, error: analysisError } = await supabase
+        const { data: analysisData, error: analysisError } = await (supabase as any)
           .from('fortune_analyses')
           .insert({
             user_id: userId,

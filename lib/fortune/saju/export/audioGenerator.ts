@@ -9,16 +9,11 @@ import type {
   UserInput,
   SajuChart,
   OhengBalance,
-  AnalysisResult,
   PremiumContent,
   MonthlyAction,
   Element
 } from '@/types/saju';
-import {
-  ELEMENT_KOREAN,
-  CAREER_KOREAN,
-  INTEREST_KOREAN
-} from '@/types/saju';
+import { ELEMENT_KOREAN, CAREER_KOREAN } from '@/types/saju';
 
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai';
@@ -35,7 +30,8 @@ interface AudioGeneratorOptions {
   user: UserInput;
   saju: SajuChart;
   oheng: OhengBalance;
-  result: AnalysisResult;
+  yongsin?: Element[];
+  gisin?: Element[];
   premium?: PremiumContent;
   targetYear?: number;
   config?: TTSConfig;
@@ -56,7 +52,7 @@ interface NarrationSection {
  * 나레이션 스크립트 생성
  */
 export function generateNarrationScript(options: AudioGeneratorOptions): NarrationScript {
-  const { user, saju, oheng, result, premium, targetYear = 2026 } = options;
+  const { user, saju, oheng, yongsin, gisin, premium, targetYear = 2026 } = options;
   const sections: NarrationSection[] = [];
 
   // 오프닝
@@ -69,7 +65,7 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
   });
 
   // 사주팔자 설명
-  const pillarsText = getSajuDescription(saju);
+  const pillarsText = getSajuDescription(saju, user.name);
   sections.push({
     title: '사주팔자',
     content: `먼저 ${user.name}님의 사주팔자를 살펴보겠습니다. ${pillarsText}`,
@@ -77,32 +73,12 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
   });
 
   // 오행 분석
-  const ohengText = getOhengDescription(oheng, result.ohengAnalysis);
+  const ohengText = getOhengDescription(oheng, yongsin, gisin);
   sections.push({
     title: '오행 분석',
     content: `오행 분석 결과입니다. ${ohengText}`,
     pauseAfter: 1000
   });
-
-  // 성격 분석
-  if (result.personalityAnalysis) {
-    const personalityText = getPersonalityDescription(result.personalityAnalysis);
-    sections.push({
-      title: '성격 분석',
-      content: `${user.name}님의 성격 특성입니다. ${personalityText}`,
-      pauseAfter: 1000
-    });
-  }
-
-  // 또래 비교
-  if (result.peerComparison) {
-    const peerText = getPeerDescription(result.peerComparison);
-    sections.push({
-      title: '또래 비교',
-      content: `또래 비교 분석입니다. ${peerText}`,
-      pauseAfter: 1000
-    });
-  }
 
   // 프리미엄 콘텐츠
   if (premium) {
@@ -315,20 +291,20 @@ export function generateAudioFilename(user: UserInput, targetYear: number = 2026
 
 // ========== 헬퍼 함수들 ==========
 
-function getSajuDescription(saju: SajuChart): string {
+function getSajuDescription(saju: SajuChart, userName: string): string {
   const parts: string[] = [];
 
-  if (saju.yearPillar) {
-    parts.push(`년주는 ${saju.yearPillar.stem}${saju.yearPillar.branch}로, ${saju.yearPillar.zodiac || ''}띠입니다`);
+  if (saju.year) {
+    parts.push(`년주는 ${saju.year.heavenlyStem}${saju.year.earthlyBranch}로, ${saju.year.zodiac || ''}띠입니다`);
   }
-  if (saju.monthPillar) {
-    parts.push(`월주는 ${saju.monthPillar.stem}${saju.monthPillar.branch}입니다`);
+  if (saju.month) {
+    parts.push(`월주는 ${saju.month.heavenlyStem}${saju.month.earthlyBranch}입니다`);
   }
-  if (saju.dayPillar) {
-    parts.push(`일주는 ${saju.dayPillar.stem}${saju.dayPillar.branch}로, 이것이 ${user.name || '본인'}님의 본명입니다`);
+  if (saju.day) {
+    parts.push(`일주는 ${saju.day.heavenlyStem}${saju.day.earthlyBranch}로, 이것이 ${userName}님의 본명입니다`);
   }
-  if (saju.hourPillar) {
-    parts.push(`시주는 ${saju.hourPillar.stem}${saju.hourPillar.branch}입니다`);
+  if (saju.time) {
+    parts.push(`시주는 ${saju.time.heavenlyStem}${saju.time.earthlyBranch}입니다`);
   }
 
   return parts.join('. ') + '.';
@@ -336,7 +312,8 @@ function getSajuDescription(saju: SajuChart): string {
 
 function getOhengDescription(
   oheng: OhengBalance,
-  analysis?: { yongsin?: Element[]; gisin?: Element[]; strong?: Element[]; weak?: Element[] }
+  yongsin?: Element[],
+  gisin?: Element[]
 ): string {
   const parts: string[] = [];
 
@@ -352,77 +329,49 @@ function getOhengDescription(
   parts.push(`오행 중 ${elements[0].name}의 기운이 ${elements[0].value?.toFixed(0)}%로 가장 강하고, ` +
              `${elements[4].name}의 기운이 ${elements[4].value?.toFixed(0)}%로 가장 약합니다`);
 
-  if (analysis?.yongsin?.length) {
-    const yongsinKo = analysis.yongsin.map(e => ELEMENT_KOREAN[e]).join(', ');
+  if (yongsin?.length) {
+    const yongsinKo = yongsin.map(e => ELEMENT_KOREAN[e]).join(', ');
     parts.push(`용신, 즉 도움이 되는 기운은 ${yongsinKo}입니다`);
   }
 
-  if (analysis?.gisin?.length) {
-    const gisinKo = analysis.gisin.map(e => ELEMENT_KOREAN[e]).join(', ');
+  if (gisin?.length) {
+    const gisinKo = gisin.map(e => ELEMENT_KOREAN[e]).join(', ');
     parts.push(`기신, 즉 피해야 할 기운은 ${gisinKo}입니다`);
   }
 
   return parts.join('. ') + '.';
 }
 
-function getPersonalityDescription(personality: any): string {
+function getFamilyDescription(family: {
+  spouseStress: 'low' | 'medium' | 'high';
+  childrenImpact: 'positive' | 'neutral' | 'negative';
+  parentCare: string;
+  recommendations?: string[];
+  financialTimeline?: { year: number; event: string; impact: string }[];
+}): string {
   const parts: string[] = [];
 
-  if (personality.coreTraits?.length) {
-    parts.push(`핵심 성격은 ${personality.coreTraits.slice(0, 3).join(', ')}입니다`);
-  }
+  const stressLevel = family.spouseStress === 'low' ? '낮은' : family.spouseStress === 'medium' ? '보통의' : '높은';
+  parts.push(`배우자와의 관계에서 ${stressLevel} 스트레스가 예상됩니다`);
 
-  if (personality.strengths?.length) {
-    parts.push(`장점으로는 ${personality.strengths.slice(0, 2).join(', ')}가 있습니다`);
-  }
+  const childImpact = family.childrenImpact === 'positive' ? '긍정적인' : family.childrenImpact === 'neutral' ? '중립적인' : '주의가 필요한';
+  parts.push(`자녀 관계는 ${childImpact} 영향이 있습니다`);
 
-  if (personality.weaknesses?.length) {
-    parts.push(`보완이 필요한 점은 ${personality.weaknesses.slice(0, 2).join(', ')}입니다`);
+  if (family.parentCare) {
+    parts.push(`부모님 돌봄: ${family.parentCare}`);
   }
 
   return parts.join('. ') + '.';
 }
 
-function getPeerDescription(peer: any): string {
-  const parts: string[] = [];
-
-  if (peer.overallRank) {
-    const percentile = 100 - peer.overallRank;
-    parts.push(`동년배 대비 종합 상위 ${percentile}%에 위치해 있습니다`);
-  }
-
-  if (peer.scores) {
-    if (peer.scores.careerMaturity) {
-      parts.push(`커리어 성숙도 점수는 ${peer.scores.careerMaturity}점입니다`);
-    }
-    if (peer.scores.wealthManagement) {
-      parts.push(`재물 관리 능력은 ${peer.scores.wealthManagement}점입니다`);
-    }
-  }
-
-  return parts.join('. ') + '.';
-}
-
-function getFamilyDescription(family: any): string {
-  const parts: string[] = [];
-
-  if (family.spouseAnalysis) {
-    parts.push(`배우자와의 관계에서 ${family.spouseAnalysis.advice || '원만한 소통이 필요합니다'}`);
-  }
-
-  if (family.childrenAnalysis?.length) {
-    parts.push(`자녀 관계에서는 ${family.childrenAnalysis[0].advice || '따뜻한 관심이 중요합니다'}`);
-  }
-
-  if (family.financialTimeline?.totalCost) {
-    const cost = Math.round(family.financialTimeline.totalCost / 10000);
-    parts.push(`향후 예상 교육비는 약 ${cost}만원입니다`);
-  }
-
-  return parts.join('. ') + '.';
-}
-
-function getCareerDescription(career: any, user: UserInput): string {
+function getCareerDescription(
+  career: {
+    matchScore: number;
+    synergy?: string[];
+    optimalDirection: string;
+  },
+  user: UserInput
+): string {
   const parts: string[] = [];
 
   if (user.careerType && career.matchScore) {
@@ -430,12 +379,12 @@ function getCareerDescription(career: any, user: UserInput): string {
     parts.push(`현재 ${careerName} 직종과의 적합도는 ${career.matchScore}점입니다`);
   }
 
-  if (career.strengths?.length) {
-    parts.push(`직업적 강점은 ${career.strengths.slice(0, 2).join(', ')}입니다`);
+  if (career.synergy?.length) {
+    parts.push(`직업적 시너지는 ${career.synergy.slice(0, 2).join(', ')}입니다`);
   }
 
-  if (career.recommendations?.length) {
-    parts.push(`추천 직종으로는 ${career.recommendations.slice(0, 2).join(', ')}가 있습니다`);
+  if (career.optimalDirection) {
+    parts.push(`최적 방향은 ${career.optimalDirection}입니다`);
   }
 
   return parts.join('. ') + '.';
@@ -450,37 +399,40 @@ function getMonthlyHighlights(monthlyPlan: MonthlyAction[], year: number): strin
   const worstMonth = sortedMonths[sortedMonths.length - 1];
 
   if (bestMonth) {
-    parts.push(`${year}년 최고의 달은 ${bestMonth.month}월로, ${bestMonth.theme}의 테마를 가지고 있습니다`);
+    parts.push(`${year}년 최고의 달은 ${bestMonth.monthName}로, 점수는 ${bestMonth.score}점입니다`);
   }
 
   if (worstMonth) {
-    parts.push(`주의가 필요한 달은 ${worstMonth.month}월입니다. ${worstMonth.warning || '신중한 판단이 필요합니다'}`);
+    parts.push(`주의가 필요한 달은 ${worstMonth.monthName}입니다. 신중한 판단이 필요합니다`);
   }
 
   return parts.join('. ') + '.';
 }
 
-function getTimingDescription(timing: any): string {
+function getTimingDescription(timing: {
+  currentWindow: {
+    isOpen: boolean;
+    remainingDays: number;
+    missedConsequence: string;
+    recoveryTime: string;
+  };
+  nextOpportunity: {
+    date: string;
+    probability: number;
+  };
+}): string {
   const parts: string[] = [];
 
-  if (timing.bestMonths?.length) {
-    parts.push(`중요한 결정을 하기 좋은 시기는 ${timing.bestMonths.join(', ')}월입니다`);
+  if (timing.currentWindow.isOpen) {
+    parts.push(`현재 기회의 창이 열려 있으며, ${timing.currentWindow.remainingDays}일 남았습니다`);
+  } else {
+    parts.push(`현재 기회의 창은 닫혀 있습니다`);
   }
 
-  if (timing.cautionMonths?.length) {
-    parts.push(`신중해야 할 시기는 ${timing.cautionMonths.join(', ')}월입니다`);
-  }
-
-  if (timing.majorDecisions?.investment) {
-    parts.push(`투자 관련해서는 ${timing.majorDecisions.investment}`);
-  }
+  parts.push(`다음 기회는 ${timing.nextOpportunity.date}이며, 성공 확률은 ${timing.nextOpportunity.probability}%입니다`);
 
   return parts.join('. ') + '.';
 }
-
-// user 변수를 전역으로 사용하기 위한 임시 해결책
-// 실제로는 getSajuDescription에 user 파라미터를 추가해야 함
-declare const user: { name?: string };
 
 export default {
   generateNarrationScript,
