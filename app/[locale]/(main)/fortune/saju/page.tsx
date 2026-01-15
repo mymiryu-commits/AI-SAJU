@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, Coins } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 // 새로 구현한 컴포넌트들
@@ -14,7 +14,7 @@ import {
 } from '@/components/fortune/saju';
 
 // 타입
-import type { UserInput, AnalysisResult, PremiumContent } from '@/types/saju';
+import type { UserInput, AnalysisResult, PRODUCTS } from '@/types/saju';
 
 interface ConversionData {
   paywallTemplate: {
@@ -42,6 +42,29 @@ export default function SajuPage() {
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 포인트 관련 상태
+  const [userPoints, setUserPoints] = useState(0);
+  const [isLoadingPoints, setIsLoadingPoints] = useState(true);
+
+  // 포인트 조회
+  useEffect(() => {
+    const fetchPoints = async () => {
+      try {
+        const response = await fetch('/api/points');
+        const data = await response.json();
+        if (data.success) {
+          setUserPoints(data.data.points);
+        }
+      } catch (err) {
+        console.error('Failed to fetch points:', err);
+      } finally {
+        setIsLoadingPoints(false);
+      }
+    };
+
+    fetchPoints();
+  }, []);
 
   const handleSubmit = async (input: UserInput) => {
     setUserInput(input);
@@ -114,8 +137,6 @@ export default function SajuPage() {
   const loadPremiumAnalysis = useCallback(async (productId: string) => {
     if (!userInput || !analysisId) return;
 
-    setIsPurchasing(true);
-
     try {
       const response = await fetch('/api/fortune/saju/premium', {
         method: 'POST',
@@ -146,20 +167,60 @@ export default function SajuPage() {
       setShowPaywall(false);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : '프리미엄 분석 로드 중 오류가 발생했습니다.');
-    } finally {
-      setIsPurchasing(false);
+      throw err;
     }
   }, [userInput, analysisId]);
 
-  // 구매 처리
+  // 포인트 차감 후 프리미엄 분석 구매
   const handlePurchase = async (productId: string) => {
-    // 실제로는 여기서 결제 API를 호출합니다
-    // 현재는 시연용으로 바로 프리미엄 분석을 로드합니다
-    console.log('Purchase initiated:', productId, analysisId);
+    setIsPurchasing(true);
+    setError(null);
 
-    // 결제 시뮬레이션 (실제 환경에서는 결제 게이트웨이 연동)
-    await loadPremiumAnalysis(productId);
+    try {
+      // PRODUCTS에서 포인트 비용 찾기
+      const { PRODUCTS } = await import('@/types/saju');
+      const product = PRODUCTS.find(p => p.id === productId);
+
+      if (!product) {
+        throw new Error('상품을 찾을 수 없습니다.');
+      }
+
+      const pointCost = product.pointCost;
+
+      // 포인트 부족 체크
+      if (userPoints < pointCost) {
+        throw new Error(`포인트가 부족합니다. (필요: ${pointCost}P, 보유: ${userPoints}P)`);
+      }
+
+      // 포인트 차감 API 호출
+      const pointResponse = await fetch('/api/points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          pointCost,
+          analysisId
+        })
+      });
+
+      const pointData = await pointResponse.json();
+
+      if (!pointResponse.ok || !pointData.success) {
+        throw new Error(pointData.error || '포인트 차감에 실패했습니다.');
+      }
+
+      // 포인트 잔액 업데이트
+      setUserPoints(pointData.data.newBalance);
+
+      // 프리미엄 분석 로드
+      await loadPremiumAnalysis(productId);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '구매 중 오류가 발생했습니다.');
+      setShowPaywall(false);
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
   // 분석 중 화면
@@ -208,7 +269,24 @@ export default function SajuPage() {
               <p className="text-muted-foreground">
                 {userInput.birthDate} | {userInput.gender === 'male' ? '남성' : '여성'}
               </p>
+
+              {/* 포인트 표시 */}
+              {!isLoadingPoints && (
+                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-full">
+                  <Coins className="w-4 h-4 text-yellow-600" />
+                  <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                    보유 포인트: <strong>{userPoints.toLocaleString()}P</strong>
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
 
             {/* 결과 카드 */}
             <SajuResultCard
@@ -231,14 +309,16 @@ export default function SajuPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="text-sm text-white/80 mb-4">
-                  {conversionData.urgencyBanner.message}
-                </p>
+                <div className="flex items-center gap-2 text-sm text-white/80 mb-4">
+                  <Coins className="w-4 h-4" />
+                  <span>포인트로 바로 구매 가능!</span>
+                </div>
                 <button
                   onClick={handleUpgrade}
-                  className="w-full py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-white/90 transition"
+                  className="w-full py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-white/90 transition flex items-center justify-center gap-2"
                 >
-                  {conversionData.paywallTemplate.cta}
+                  <Coins className="w-5 h-5" />
+                  포인트로 프리미엄 분석 받기
                 </button>
               </div>
             )}
@@ -277,6 +357,7 @@ export default function SajuPage() {
             onClose={() => setShowPaywall(false)}
             template={conversionData.paywallTemplate}
             onPurchase={handlePurchase}
+            userPoints={userPoints}
           />
         )}
 
@@ -286,7 +367,7 @@ export default function SajuPage() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center max-w-sm">
               <Loader2 className="w-12 h-12 mx-auto mb-4 text-purple-600 animate-spin" />
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                프리미엄 분석 준비 중...
+                포인트 차감 및 분석 준비 중...
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 AI가 심층 분석을 생성하고 있습니다.
@@ -310,6 +391,16 @@ export default function SajuPage() {
           </Badge>
           <h1 className="text-3xl md:text-4xl font-bold mb-4">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
+
+          {/* 포인트 표시 */}
+          {!isLoadingPoints && userPoints > 0 && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-full">
+              <Coins className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                보유 포인트: <strong>{userPoints.toLocaleString()}P</strong>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 에러 메시지 */}
