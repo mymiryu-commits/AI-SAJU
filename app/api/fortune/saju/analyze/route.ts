@@ -114,7 +114,18 @@ export async function POST(request: NextRequest) {
         fortuneAdvice: aiResult.fortuneAdvice,
         lifePath: aiResult.lifePath,
         luckyElements: aiResult.luckyElements,
-        warningAdvice: aiResult.warningAdvice
+        warningAdvice: aiResult.warningAdvice,
+        // 전문가 수준 분석 필드
+        dayMasterAnalysis: aiResult.dayMasterAnalysis,
+        tenYearFortune: aiResult.tenYearFortune,
+        yearlyFortune: aiResult.yearlyFortune,
+        monthlyFortune: aiResult.monthlyFortune,
+        relationshipAnalysis: aiResult.relationshipAnalysis,
+        careerGuidance: aiResult.careerGuidance,
+        wealthStrategy: aiResult.wealthStrategy,
+        healthAdvice: aiResult.healthAdvice,
+        spiritualGuidance: aiResult.spiritualGuidance,
+        actionPlan: aiResult.actionPlan
       };
 
       // AI 생성 메시지로 coreMessage 업데이트

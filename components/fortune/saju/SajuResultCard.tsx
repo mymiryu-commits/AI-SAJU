@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Heart, Briefcase, Activity, Sparkles,
-  Lock, ChevronRight, Users, Calendar, Target
+  Lock, ChevronRight, Users, Calendar, Target, Star,
+  Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -24,7 +25,7 @@ export default function SajuResultCard({
   onUnlockPremium,
   isPremiumUnlocked = false
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'scores' | 'peer' | 'premium'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'expert' | 'scores' | 'peer' | 'premium'>('basic');
 
   const { saju, oheng, scores, personality, peerComparison, yongsin, gisin, coreMessage, aiAnalysis } = result;
 
@@ -47,6 +48,7 @@ export default function SajuResultCard({
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {[
           { id: 'basic', label: '기본 정보', icon: Sparkles },
+          { id: 'expert', label: '전문가 분석', icon: Brain },
           { id: 'scores', label: '운세 점수', icon: TrendingUp },
           { id: 'peer', label: '또래 비교', icon: Users },
           { id: 'premium', label: '프리미엄', icon: Lock }
@@ -223,6 +225,166 @@ export default function SajuResultCard({
                   </div>
                 )}
               </>
+            )}
+          </motion.div>
+        )}
+
+        {/* 전문가 분석 탭 */}
+        {activeTab === 'expert' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-6 space-y-6"
+          >
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500" />
+              전문가 심층 분석
+            </h3>
+
+            {aiAnalysis ? (
+              <div className="space-y-6">
+                {/* 일주 분석 */}
+                {aiAnalysis.dayMasterAnalysis && (
+                  <ExpertSection
+                    icon={Compass}
+                    title="일주(日柱) 분석"
+                    content={aiAnalysis.dayMasterAnalysis}
+                    colorClass="bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                    iconColor="text-purple-600 dark:text-purple-400"
+                  />
+                )}
+
+                {/* 대운 분석 */}
+                {aiAnalysis.tenYearFortune && (
+                  <ExpertSection
+                    icon={Calendar}
+                    title="대운(大運) 분석"
+                    subtitle="10년 주기 운세"
+                    content={aiAnalysis.tenYearFortune}
+                    colorClass="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800"
+                    iconColor="text-blue-600 dark:text-blue-400"
+                  />
+                )}
+
+                {/* 2026년 세운 */}
+                {aiAnalysis.yearlyFortune && (
+                  <ExpertSection
+                    icon={Star}
+                    title="2026년 세운(歲運)"
+                    subtitle="병오년 운세"
+                    content={aiAnalysis.yearlyFortune}
+                    colorClass="bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800"
+                    iconColor="text-amber-600 dark:text-amber-400"
+                  />
+                )}
+
+                {/* 월운 */}
+                {aiAnalysis.monthlyFortune && (
+                  <ExpertSection
+                    icon={Calendar}
+                    title="월운(月運) 분석"
+                    subtitle="상반기 주요 시기"
+                    content={aiAnalysis.monthlyFortune}
+                    colorClass="bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800"
+                    iconColor="text-teal-600 dark:text-teal-400"
+                  />
+                )}
+
+                {/* 인연/관계 분석 */}
+                {aiAnalysis.relationshipAnalysis && (
+                  <ExpertSection
+                    icon={Heart}
+                    title="인연 & 관계 분석"
+                    content={aiAnalysis.relationshipAnalysis}
+                    colorClass="bg-pink-50 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800"
+                    iconColor="text-pink-600 dark:text-pink-400"
+                  />
+                )}
+
+                {/* 직업 가이드 */}
+                {aiAnalysis.careerGuidance && (
+                  <ExpertSection
+                    icon={Briefcase}
+                    title="직업 & 사업 가이드"
+                    content={aiAnalysis.careerGuidance}
+                    colorClass="bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800"
+                    iconColor="text-indigo-600 dark:text-indigo-400"
+                  />
+                )}
+
+                {/* 재물 전략 */}
+                {aiAnalysis.wealthStrategy && (
+                  <ExpertSection
+                    icon={DollarSign}
+                    title="재물 전략"
+                    content={aiAnalysis.wealthStrategy}
+                    colorClass="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
+                    iconColor="text-yellow-600 dark:text-yellow-400"
+                  />
+                )}
+
+                {/* 건강 조언 */}
+                {aiAnalysis.healthAdvice && (
+                  <ExpertSection
+                    icon={Shield}
+                    title="건강 조언"
+                    content={aiAnalysis.healthAdvice}
+                    colorClass="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800"
+                    iconColor="text-green-600 dark:text-green-400"
+                  />
+                )}
+
+                {/* 영적 가이드 */}
+                {aiAnalysis.spiritualGuidance && (
+                  <ExpertSection
+                    icon={Lightbulb}
+                    title="정신 & 영적 가이드"
+                    content={aiAnalysis.spiritualGuidance}
+                    colorClass="bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800"
+                    iconColor="text-violet-600 dark:text-violet-400"
+                  />
+                )}
+
+                {/* 액션플랜 */}
+                {aiAnalysis.actionPlan && aiAnalysis.actionPlan.length > 0 && (
+                  <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h4 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      실천 액션플랜
+                    </h4>
+                    <div className="space-y-3">
+                      {aiAnalysis.actionPlan.map((action, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                        >
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0
+                            ${idx === 0 ? 'bg-emerald-500 text-white' :
+                              idx === 1 ? 'bg-blue-500 text-white' :
+                              idx === 2 ? 'bg-purple-500 text-white' :
+                              idx === 3 ? 'bg-amber-500 text-white' :
+                              'bg-red-500 text-white'}`}
+                          >
+                            {idx + 1}
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pt-1">
+                            {action}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                  <Brain className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 dark:text-gray-400">
+                  AI 전문가 분석을 불러오는 중...
+                </p>
+              </div>
             )}
           </motion.div>
         )}
@@ -514,4 +676,40 @@ function getElementColor(element: string): string {
     water: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
   };
   return colors[element] || colors.earth;
+}
+
+// 전문가 분석 섹션 컴포넌트
+function ExpertSection({
+  icon: Icon,
+  title,
+  subtitle,
+  content,
+  colorClass,
+  iconColor
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  content: string;
+  colorClass: string;
+  iconColor: string;
+}) {
+  return (
+    <div className={`p-5 rounded-xl border ${colorClass}`}>
+      <div className="flex items-start gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-800 dark:text-white">{title}</h4>
+          {subtitle && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+        {content}
+      </p>
+    </div>
+  );
 }
