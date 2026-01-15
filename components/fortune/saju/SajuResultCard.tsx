@@ -13,6 +13,7 @@ import {
   AnalysisResult, SajuChart, OhengBalance,
   ELEMENT_KOREAN, PeerComparison, AIAnalysis
 } from '@/types/saju';
+import PremiumResultDisplay from './PremiumResultDisplay';
 
 interface Props {
   result: AnalysisResult;
@@ -480,21 +481,11 @@ export default function SajuResultCard({
             animate={{ opacity: 1 }}
             className="p-6"
           >
-            {isPremiumUnlocked ? (
-              <div className="space-y-6">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                  프리미엄 분석 결과
-                </h3>
-                {/* 프리미엄 컨텐츠 렌더링 */}
-                {result.premium?.monthlyActionPlan && (
-                  <div>
-                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      월별 액션플랜
-                    </h4>
-                    {/* ... 액션플랜 렌더링 */}
-                  </div>
-                )}
-              </div>
+            {isPremiumUnlocked && result.premium ? (
+              <PremiumResultDisplay
+                premium={result.premium}
+                userName={result.user.name}
+              />
             ) : (
               <div className="text-center py-12">
                 <div className="w-20 h-20 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
