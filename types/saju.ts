@@ -431,8 +431,8 @@ export interface ConversionTemplate {
 export interface ProductType {
   id: string;
   name: string;
-  price: number;
-  originalPrice: number;
+  pointCost: number;        // 포인트 비용
+  originalPointCost: number; // 원래 포인트 비용
   features: string[];
   recommended?: boolean;
 }
@@ -441,8 +441,8 @@ export const PRODUCTS: ProductType[] = [
   {
     id: "basic",
     name: "기본 분석",
-    price: 9900,
-    originalPrice: 12900,
+    pointCost: 500,
+    originalPointCost: 700,
     features: [
       "상세 성격 분석",
       "2026년 운세 분석",
@@ -451,35 +451,36 @@ export const PRODUCTS: ProductType[] = [
     ]
   },
   {
-    id: "family",
-    name: "가족 연결 분석",
-    price: 29900,
-    originalPrice: 39900,
+    id: "deep",
+    name: "심층 분석",
+    pointCost: 1000,
+    originalPointCost: 1300,
     features: [
       "기본 분석 포함",
-      "가족 영향 분석",
-      "자녀 교육 타이밍",
-      "가계 재정 타임라인"
-    ]
-  },
-  {
-    id: "premium",
-    name: "프리미엄 분석",
-    price: 49900,
-    originalPrice: 69900,
-    features: [
-      "가족 연결 분석 포함",
-      "인생 타임라인",
-      "골든윈도우 분석",
-      "음성 리포트"
+      "대운 흐름 분석",
+      "10년 운세 예측",
+      "월별 상세 운세"
     ],
     recommended: true
   },
   {
+    id: "premium",
+    name: "프리미엄 분석",
+    pointCost: 2000,
+    originalPointCost: 2500,
+    features: [
+      "심층 분석 포함",
+      "인생 타임라인",
+      "가족 영향 분석",
+      "골든윈도우 분석",
+      "음성 리포트"
+    ]
+  },
+  {
     id: "group",
-    name: "다자간 궁합 분석",
-    price: 39900,
-    originalPrice: 59900,
+    name: "그룹 궁합 분석",
+    pointCost: 1500,
+    originalPointCost: 2000,
     features: [
       "2~5인 동시 분석",
       "개별 궁합 분석",
@@ -490,8 +491,8 @@ export const PRODUCTS: ProductType[] = [
   {
     id: "vip",
     name: "VIP 종합 분석",
-    price: 99900,
-    originalPrice: 149900,
+    pointCost: 5000,
+    originalPointCost: 7000,
     features: [
       "모든 분석 포함",
       "다자간 궁합 포함",
