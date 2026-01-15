@@ -187,17 +187,24 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
 
       const data = await response.json();
 
+      // 모달은 항상 닫기
+      setShowSaveModal(false);
+      setProfileNickname('');
+
       if (response.ok) {
         setSaveMessage({ type: 'success', text: '프로필이 저장되었습니다.' });
-        setShowSaveModal(false);
-        setProfileNickname('');
         loadProfiles();
+        // 3초 후 메시지 제거
+        setTimeout(() => setSaveMessage(null), 3000);
       } else {
         setSaveMessage({ type: 'error', text: data.error || '저장에 실패했습니다.' });
+        setTimeout(() => setSaveMessage(null), 5000);
       }
     } catch (error) {
       console.error('프로필 저장 오류:', error);
+      setShowSaveModal(false);
       setSaveMessage({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
+      setTimeout(() => setSaveMessage(null), 5000);
     } finally {
       setSavingProfile(false);
     }
