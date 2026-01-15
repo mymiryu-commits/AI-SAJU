@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,10 +55,93 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
     interests: []
   });
 
+  // 생년월일 분리 입력
+  const [birthYear, setBirthYear] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+
+  // 자동 포커스 이동을 위한 ref
+  const monthRef = useRef<HTMLInputElement>(null);
+  const dayRef = useRef<HTMLInputElement>(null);
+
   const totalSteps = 4;
 
   const handleChange = (field: keyof UserInput, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // 생년월일을 조합하여 formData에 저장
+  const updateBirthDate = (year: string, month: string, day: string) => {
+    if (year.length === 4 && month.length >= 1 && day.length >= 1) {
+      const paddedMonth = month.padStart(2, '0');
+      const paddedDay = day.padStart(2, '0');
+      handleChange('birthDate', `${year}-${paddedMonth}-${paddedDay}`);
+    }
+  };
+
+  // 년도 입력 핸들러
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 숫자만 허용, 최대 4자리 강제 적용
+    const numericValue = value.replace(/[^0-9]/g, '');
+
+    // 4자리 초과 시 4자리로 자름
+    const limitedValue = numericValue.substring(0, 4);
+
+    // 입력값이 4자리 초과면 입력 무시
+    if (numericValue.length > 4) {
+      e.target.value = limitedValue;
+      return;
+    }
+
+    setBirthYear(limitedValue);
+
+    // 4자리 입력 완료 시 자동으로 월로 이동
+    if (limitedValue.length === 4) {
+      monthRef.current?.focus();
+    }
+
+    updateBirthDate(limitedValue, birthMonth, birthDay);
+  };
+
+  // 월 입력 핸들러
+  const handleMonthChange = (value: string) => {
+    // 숫자만 허용, 최대 2자리
+    let numericValue = value.replace(/\D/g, '').slice(0, 2);
+
+    // 월 범위 제한 (1-12)
+    if (numericValue.length === 2) {
+      const monthNum = parseInt(numericValue);
+      if (monthNum > 12) numericValue = '12';
+      if (monthNum < 1 && numericValue !== '') numericValue = '01';
+    }
+
+    setBirthMonth(numericValue);
+
+    // 2자리 입력 완료 또는 2 이상의 숫자로 시작 시 자동으로 일로 이동
+    if (numericValue.length === 2 || (numericValue.length === 1 && parseInt(numericValue) > 1)) {
+      if (numericValue.length === 2 || parseInt(numericValue) > 1) {
+        dayRef.current?.focus();
+      }
+    }
+
+    updateBirthDate(birthYear, numericValue, birthDay);
+  };
+
+  // 일 입력 핸들러
+  const handleDayChange = (value: string) => {
+    // 숫자만 허용, 최대 2자리
+    let numericValue = value.replace(/\D/g, '').slice(0, 2);
+
+    // 일 범위 제한 (1-31)
+    if (numericValue.length === 2) {
+      const dayNum = parseInt(numericValue);
+      if (dayNum > 31) numericValue = '31';
+      if (dayNum < 1 && numericValue !== '') numericValue = '01';
+    }
+
+    setBirthDay(numericValue);
+    updateBirthDate(birthYear, birthMonth, numericValue);
   };
 
   const handleInterestToggle = (interest: InterestType) => {
@@ -83,7 +166,8 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.name && formData.birthDate;
+        // 이름과 생년월일 필수 (년4자리, 월1-2자리, 일1-2자리)
+        return formData.name && birthYear.length === 4 && birthMonth.length >= 1 && birthDay.length >= 1;
       case 2:
         return true; // 직업 정보는 선택
       case 3:
@@ -149,14 +233,64 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
             </div>
 
             <div>
-              <Label htmlFor="birthDate">생년월일 <span className="text-red-500">*</span></Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={formData.birthDate || ''}
-                onChange={e => handleChange('birthDate', e.target.value)}
-                className="mt-1"
-              />
+              <Label>생년월일 <span className="text-red-500">*</span></Label>
+              <div className="flex gap-2 mt-1">
+                <div className="flex-1">
+                  <Input
+                    id="birthYear"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={birthYear}
+                    onChange={handleYearChange}
+                    onPaste={(e) => {
+                      // 붙여넣기 시에도 4자리 제한
+                      const pasted = e.clipboardData.getData('text');
+                      const numeric = pasted.replace(/[^0-9]/g, '').substring(0, 4);
+                      if (numeric !== pasted) {
+                        e.preventDefault();
+                        setBirthYear(numeric);
+                        if (numeric.length === 4) {
+                          monthRef.current?.focus();
+                        }
+                        updateBirthDate(numeric, birthMonth, birthDay);
+                      }
+                    }}
+                    placeholder="1978"
+                    maxLength={4}
+                    className="text-center"
+                  />
+                  <p className="text-xs text-gray-400 text-center mt-1">년</p>
+                </div>
+                <div className="w-16">
+                  <Input
+                    ref={monthRef}
+                    id="birthMonth"
+                    type="text"
+                    inputMode="numeric"
+                    value={birthMonth}
+                    onChange={e => handleMonthChange(e.target.value)}
+                    placeholder="02"
+                    maxLength={2}
+                    className="text-center"
+                  />
+                  <p className="text-xs text-gray-400 text-center mt-1">월</p>
+                </div>
+                <div className="w-16">
+                  <Input
+                    ref={dayRef}
+                    id="birthDay"
+                    type="text"
+                    inputMode="numeric"
+                    value={birthDay}
+                    onChange={e => handleDayChange(e.target.value)}
+                    placeholder="15"
+                    maxLength={2}
+                    className="text-center"
+                  />
+                  <p className="text-xs text-gray-400 text-center mt-1">일</p>
+                </div>
+              </div>
             </div>
 
             <div>

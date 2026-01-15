@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 // 새로 구현한 컴포넌트들
@@ -14,7 +14,7 @@ import {
 } from '@/components/fortune/saju';
 
 // 타입
-import type { UserInput, AnalysisResult } from '@/types/saju';
+import type { UserInput, AnalysisResult, PremiumContent } from '@/types/saju';
 
 interface ConversionData {
   paywallTemplate: {
@@ -39,6 +39,8 @@ export default function SajuPage() {
   const [conversionData, setConversionData] = useState<ConversionData | null>(null);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (input: UserInput) => {
@@ -99,11 +101,65 @@ export default function SajuPage() {
     setAnalysisResult(null);
     setConversionData(null);
     setAnalysisId(null);
+    setIsPremiumUnlocked(false);
+    setIsPurchasing(false);
     setError(null);
   };
 
   const handleUpgrade = () => {
     setShowPaywall(true);
+  };
+
+  // 프리미엄 분석 데이터 로드
+  const loadPremiumAnalysis = useCallback(async (productId: string) => {
+    if (!userInput || !analysisId) return;
+
+    setIsPurchasing(true);
+
+    try {
+      const response = await fetch('/api/fortune/saju/premium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: userInput,
+          productType: productId,
+          analysisId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '프리미엄 분석 로드 중 오류가 발생했습니다.');
+      }
+
+      // 분석 결과에 프리미엄 데이터 추가
+      setAnalysisResult(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          premium: data.data.premium
+        };
+      });
+
+      setIsPremiumUnlocked(true);
+      setShowPaywall(false);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '프리미엄 분석 로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [userInput, analysisId]);
+
+  // 구매 처리
+  const handlePurchase = async (productId: string) => {
+    // 실제로는 여기서 결제 API를 호출합니다
+    // 현재는 시연용으로 바로 프리미엄 분석을 로드합니다
+    console.log('Purchase initiated:', productId, analysisId);
+
+    // 결제 시뮬레이션 (실제 환경에서는 결제 게이트웨이 연동)
+    await loadPremiumAnalysis(productId);
   };
 
   // 분석 중 화면
@@ -158,10 +214,11 @@ export default function SajuPage() {
             <SajuResultCard
               result={{ ...analysisResult, user: userInput } as AnalysisResult}
               onUnlockPremium={handleUpgrade}
+              isPremiumUnlocked={isPremiumUnlocked}
             />
 
             {/* 전환 유도 영역 */}
-            {conversionData && (
+            {conversionData && !isPremiumUnlocked && (
               <div className="mt-8 p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl">
                 <h3 className="text-xl font-bold mb-2">
                   {conversionData.paywallTemplate.headline}
@@ -186,6 +243,21 @@ export default function SajuPage() {
               </div>
             )}
 
+            {/* 프리미엄 해제 완료 메시지 */}
+            {isPremiumUnlocked && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-8 h-8" />
+                  <div>
+                    <h3 className="text-xl font-bold">프리미엄 분석이 해제되었습니다!</h3>
+                    <p className="text-sm text-white/80">
+                      위의 &apos;프리미엄&apos; 탭에서 모든 분석 결과를 확인하세요.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 다시 분석하기 버튼 */}
             <div className="mt-8 text-center">
               <button
@@ -201,14 +273,26 @@ export default function SajuPage() {
         {/* 페이월 모달 */}
         {conversionData?.paywallTemplate && (
           <PaywallModal
-            isOpen={showPaywall}
+            isOpen={showPaywall && !isPurchasing}
             onClose={() => setShowPaywall(false)}
             template={conversionData.paywallTemplate}
-            onPurchase={(productId) => {
-              console.log('Purchase:', productId, analysisId);
-              setShowPaywall(false);
-            }}
+            onPurchase={handlePurchase}
           />
+        )}
+
+        {/* 구매 처리 중 오버레이 */}
+        {isPurchasing && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center max-w-sm">
+              <Loader2 className="w-12 h-12 mx-auto mb-4 text-purple-600 animate-spin" />
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                프리미엄 분석 준비 중...
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                AI가 심층 분석을 생성하고 있습니다.
+              </p>
+            </div>
+          </div>
         )}
       </>
     );
