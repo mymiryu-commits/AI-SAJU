@@ -80,17 +80,28 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
   };
 
   // 년도 입력 핸들러
-  const handleYearChange = (value: string) => {
-    // 숫자만 허용, 최대 4자리
-    const numericValue = value.replace(/\D/g, '').slice(0, 4);
-    setBirthYear(numericValue);
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 숫자만 허용, 최대 4자리 강제 적용
+    const numericValue = value.replace(/[^0-9]/g, '');
+
+    // 4자리 초과 시 4자리로 자름
+    const limitedValue = numericValue.substring(0, 4);
+
+    // 입력값이 4자리 초과면 입력 무시
+    if (numericValue.length > 4) {
+      e.target.value = limitedValue;
+      return;
+    }
+
+    setBirthYear(limitedValue);
 
     // 4자리 입력 완료 시 자동으로 월로 이동
-    if (numericValue.length === 4) {
+    if (limitedValue.length === 4) {
       monthRef.current?.focus();
     }
 
-    updateBirthDate(numericValue, birthMonth, birthDay);
+    updateBirthDate(limitedValue, birthMonth, birthDay);
   };
 
   // 월 입력 핸들러
@@ -229,8 +240,22 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     id="birthYear"
                     type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     value={birthYear}
-                    onChange={e => handleYearChange(e.target.value)}
+                    onChange={handleYearChange}
+                    onPaste={(e) => {
+                      // 붙여넣기 시에도 4자리 제한
+                      const pasted = e.clipboardData.getData('text');
+                      const numeric = pasted.replace(/[^0-9]/g, '').substring(0, 4);
+                      if (numeric !== pasted) {
+                        e.preventDefault();
+                        setBirthYear(numeric);
+                        if (numeric.length === 4) {
+                          monthRef.current?.focus();
+                        }
+                        updateBirthDate(numeric, birthMonth, birthDay);
+                      }
+                    }}
                     placeholder="1978"
                     maxLength={4}
                     className="text-center"
