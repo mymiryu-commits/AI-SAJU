@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, Shield, Users, CheckCircle, Coins, AlertCircle } from 'lucide-react';
+import { X, Clock, Shield, Users, CheckCircle, Coins, AlertCircle, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConversionTemplate, PRODUCTS } from '@/types/saju';
 import { Link } from '@/i18n/routing';
@@ -13,6 +13,7 @@ interface Props {
   template: ConversionTemplate;
   onPurchase: (productId: string) => void;
   userPoints?: number;
+  isAdmin?: boolean;
   socialProof?: string[];
 }
 
@@ -22,6 +23,7 @@ export default function PaywallModal({
   template,
   onPurchase,
   userPoints = 0,
+  isAdmin = false,
   socialProof = []
 }: Props) {
   const [timeLeft, setTimeLeft] = useState(template.discount?.expiresIn || 24);
@@ -47,7 +49,8 @@ export default function PaywallModal({
   };
 
   const selectedProductData = PRODUCTS.find(p => p.id === selectedProduct);
-  const hasEnoughPoints = userPoints >= (selectedProductData?.pointCost || 0);
+  // 관리자는 항상 구매 가능
+  const hasEnoughPoints = isAdmin || userPoints >= (selectedProductData?.pointCost || 0);
 
   const handlePurchase = () => {
     if (selectedProduct && hasEnoughPoints) {
@@ -83,12 +86,21 @@ export default function PaywallModal({
               {template.headline}
             </h2>
 
-            {/* 보유 포인트 표시 */}
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <Coins className="w-4 h-4 text-yellow-500" />
-              <span className="text-gray-600 dark:text-gray-400">보유 포인트:</span>
-              <span className="font-bold text-yellow-600">{userPoints.toLocaleString()}P</span>
-            </div>
+            {/* 관리자 배지 또는 포인트 표시 */}
+            {isAdmin ? (
+              <div className="mt-3 flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                  <Crown className="w-4 h-4 text-white" />
+                  <span className="text-sm font-bold text-white">관리자 무제한 이용</span>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                <Coins className="w-4 h-4 text-yellow-500" />
+                <span className="text-gray-600 dark:text-gray-400">보유 포인트:</span>
+                <span className="font-bold text-yellow-600">{userPoints.toLocaleString()}P</span>
+              </div>
+            )}
           </div>
 
           {/* Content */}

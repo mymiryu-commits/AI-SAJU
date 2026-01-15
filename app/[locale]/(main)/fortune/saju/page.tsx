@@ -3,8 +3,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle, Coins } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, Coins, Crown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 // 새로 구현한 컴포넌트들
 import {
@@ -32,6 +33,7 @@ interface ConversionData {
 
 export default function SajuPage() {
   const t = useTranslations('fortune.saju');
+  const { user, isAdmin } = useAuth();
   const [step, setStep] = useState<'form' | 'analyzing' | 'result'>('form');
   const [progress, setProgress] = useState(0);
   const [userInput, setUserInput] = useState<UserInput | null>(null);
@@ -171,12 +173,19 @@ export default function SajuPage() {
     }
   }, [userInput, analysisId]);
 
-  // 포인트 차감 후 프리미엄 분석 구매
+  // 포인트 차감 후 프리미엄 분석 구매 (관리자는 무료)
   const handlePurchase = async (productId: string) => {
     setIsPurchasing(true);
     setError(null);
 
     try {
+      // 관리자는 포인트 차감 없이 바로 프리미엄 분석
+      if (isAdmin) {
+        console.log('Admin user - skipping point deduction');
+        await loadPremiumAnalysis(productId);
+        return;
+      }
+
       // PRODUCTS에서 포인트 비용 찾기
       const { PRODUCTS } = await import('@/types/saju');
       const product = PRODUCTS.find(p => p.id === productId);
@@ -358,6 +367,7 @@ export default function SajuPage() {
             template={conversionData.paywallTemplate}
             onPurchase={handlePurchase}
             userPoints={userPoints}
+            isAdmin={isAdmin}
           />
         )}
 
