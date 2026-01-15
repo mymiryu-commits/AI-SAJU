@@ -16,7 +16,8 @@ import {
   generateSocialProof,
   generateProductRecommendation
 } from '@/lib/fortune/saju/newIndex';
-import type { UserInput, AnalysisResult, PersonalityAnalysis } from '@/types/saju';
+import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
+import type { UserInput, AnalysisResult, PersonalityAnalysis, AIAnalysis } from '@/types/saju';
 
 export async function POST(request: NextRequest) {
   try {
@@ -95,6 +96,48 @@ export async function POST(request: NextRequest) {
       coreMessage
     });
 
+    // 8. AI 분석 생성 (OpenAI)
+    let aiAnalysis: AIAnalysis | undefined;
+    try {
+      const aiResult = await generateAIAnalysis({
+        user: input,
+        saju,
+        oheng: ohengResult.balance,
+        yongsin: ohengResult.yongsin,
+        gisin: ohengResult.gisin,
+        scores,
+        dayMasterStrength: ohengResult.dayMasterStrength
+      });
+
+      aiAnalysis = {
+        personalityReading: aiResult.personalityReading,
+        fortuneAdvice: aiResult.fortuneAdvice,
+        lifePath: aiResult.lifePath,
+        luckyElements: aiResult.luckyElements,
+        warningAdvice: aiResult.warningAdvice,
+        // 전문가 수준 분석 필드
+        dayMasterAnalysis: aiResult.dayMasterAnalysis,
+        tenYearFortune: aiResult.tenYearFortune,
+        yearlyFortune: aiResult.yearlyFortune,
+        monthlyFortune: aiResult.monthlyFortune,
+        relationshipAnalysis: aiResult.relationshipAnalysis,
+        careerGuidance: aiResult.careerGuidance,
+        wealthStrategy: aiResult.wealthStrategy,
+        healthAdvice: aiResult.healthAdvice,
+        spiritualGuidance: aiResult.spiritualGuidance,
+        actionPlan: aiResult.actionPlan
+      };
+
+      // AI 생성 메시지로 coreMessage 업데이트
+      if (aiResult.coreMessage) {
+        coreMessage.hook = aiResult.coreMessage.hook || coreMessage.hook;
+        coreMessage.insight = aiResult.coreMessage.insight || coreMessage.insight;
+        coreMessage.urgency = aiResult.coreMessage.urgency || coreMessage.urgency;
+      }
+    } catch (aiError) {
+      console.warn('AI 분석 생성 실패:', aiError);
+    }
+
     // 결과 객체
     const result: AnalysisResult = {
       user: input,
@@ -105,7 +148,8 @@ export async function POST(request: NextRequest) {
       gisin: ohengResult.gisin,
       personality,
       peerComparison,
-      coreMessage
+      coreMessage,
+      aiAnalysis
     };
 
     // Supabase에 저장 (인증된 사용자인 경우)

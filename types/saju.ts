@@ -124,8 +124,37 @@ export interface AnalysisResult {
   // 핵심 메시지 (고민 기반)
   coreMessage: CoreMessage;
 
+  // AI 분석 (OpenAI 생성)
+  aiAnalysis?: AIAnalysis;
+
   // 프리미엄 컨텐츠 (유료)
   premium?: PremiumContent;
+}
+
+// AI 분석 결과
+export interface AIAnalysis {
+  personalityReading: string;
+  fortuneAdvice: {
+    overall: string;
+    wealth: string;
+    love: string;
+    career: string;
+    health: string;
+  };
+  lifePath: string;
+  luckyElements: string;
+  warningAdvice: string;
+  // 전문가 수준 분석 (새 필드)
+  dayMasterAnalysis?: string;      // 일주 분석
+  tenYearFortune?: string;         // 대운 분석
+  yearlyFortune?: string;          // 세운 (2026년 운세)
+  monthlyFortune?: string;         // 월운 분석
+  relationshipAnalysis?: string;   // 인연/대인관계 분석
+  careerGuidance?: string;         // 직업 가이드
+  wealthStrategy?: string;         // 재물 전략
+  healthAdvice?: string;           // 건강 조언
+  spiritualGuidance?: string;      // 영적/정신적 가이드
+  actionPlan?: string[];           // 실천 액션플랜
 }
 
 export interface PeerComparison {
