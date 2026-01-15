@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Supabase 클라이언트를 런타임에 생성하는 함수
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // 사주 프로필 타입
 interface SajuProfile {
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('saju_profiles')
       .select('*')
       .eq('user_id', userId)
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 프로필 개수 확인 (최대 20개 제한)
-    const { count } = await supabase
+    const { count } = await getSupabase()
       .from('saju_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('saju_profiles')
       .insert({
         user_id: userId,
@@ -171,7 +174,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 소유권 확인
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('saju_profiles')
       .select('id')
       .eq('id', profileId)
@@ -185,7 +188,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('saju_profiles')
       .update({
         ...updates,
@@ -236,7 +239,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('saju_profiles')
       .delete()
       .eq('id', profileId)
