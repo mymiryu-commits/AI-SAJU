@@ -178,7 +178,7 @@ export function generatePastVerifications(
   gisin: string[]
 ): PastVerification[] {
   const currentYear = new Date().getFullYear();
-  const birthYear = user.birthYear;
+  const birthYear = parseInt(user.birthDate.split('-')[0]);
   const verifications: PastVerification[] = [];
 
   // 1. 대운 전환기 찾기
@@ -188,7 +188,7 @@ export function generatePastVerifications(
   }
 
   // 2. 충(沖) 연도 찾기
-  const dayBranch = saju.dayPillar.branch.char;
+  const dayBranch = saju.day.branchKorean;
   const clashYears = findClashYears(dayBranch, birthYear, currentYear);
   for (const year of clashYears.slice(-1)) { // 최근 1개
     verifications.push(generatePastEvent(year, 'clash', { branch: dayBranch }));
