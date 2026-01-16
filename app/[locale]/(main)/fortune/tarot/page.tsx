@@ -359,7 +359,7 @@ const CardDrawing = ({
   const [shuffleCount, setShuffleCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [drawnCards, setDrawnCards] = useState<{ card: TarotCardInfo; isReversed: boolean }[]>([]);
-  const [cardsRevealed, setCardsRevealed] = useState(false);
+  const [showButton, setShowButton] = useState(false);
   const spread = SPREAD_DEFINITIONS[spreadType];
 
   // 셔플 애니메이션
@@ -382,23 +382,24 @@ const CardDrawing = ({
     setSelectedCards(newSelected);
 
     if (newSelected.length === spread.cardCount) {
-      // 모든 카드 선택 완료
+      // 모든 카드 선택 완료 - 랜덤 카드 뽑고 reveal 단계로
       const drawn = drawRandomCards(spread.cardCount);
       setDrawnCards(drawn);
-      setTimeout(() => setPhase('reveal'), 500);
+      setPhase('reveal');
     }
   };
 
-  // 카드 공개 완료 타이머
+  // reveal 단계에서 버튼 표시 (카드 애니메이션 후)
   useEffect(() => {
-    if (phase === 'reveal' && drawnCards.length > 0) {
-      const revealTime = drawnCards.length * 400 + 1000; // 카드당 400ms + 여유 1초
+    if (phase === 'reveal' && drawnCards.length > 0 && !showButton) {
+      // 카드 플립 애니메이션 시간: 카드당 400ms 딜레이 + 700ms 플립
+      const totalRevealTime = (drawnCards.length - 1) * 400 + 700 + 500;
       const timer = setTimeout(() => {
-        setCardsRevealed(true);
-      }, revealTime);
+        setShowButton(true);
+      }, totalRevealTime);
       return () => clearTimeout(timer);
     }
-  }, [phase, drawnCards.length]);
+  }, [phase, drawnCards.length, showButton]);
 
   // 분석 시작 버튼 클릭
   const handleStartAnalysis = () => {
@@ -534,32 +535,41 @@ const CardDrawing = ({
   return (
     <div className="text-center py-8">
       <h2 className="text-xl font-bold text-white mb-2">
-        {cardsRevealed ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
+        {showButton ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
       </h2>
       <p className="text-purple-200 mb-6">
-        {cardsRevealed
+        {showButton
           ? '아래 버튼을 눌러 해석을 확인하세요'
           : '잠시만 기다려주세요...'}
       </p>
-      <div className="flex justify-center gap-4 flex-wrap mb-8">
-        {drawnCards.map((drawn, i) => (
-          <div key={i} className="text-center">
-            <div className="mb-2 text-sm text-purple-200">
-              {spread.positions[i]?.korean}
+
+      {/* 카드가 없으면 로딩 표시 */}
+      {drawnCards.length === 0 ? (
+        <div className="flex justify-center items-center py-16">
+          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-purple-200">카드를 준비하는 중...</span>
+        </div>
+      ) : (
+        <div className="flex justify-center gap-4 flex-wrap mb-8">
+          {drawnCards.map((drawn, i) => (
+            <div key={i} className="text-center">
+              <div className="mb-2 text-sm text-purple-200">
+                {spread.positions[i]?.korean}
+              </div>
+              <TarotCard
+                card={drawn.card}
+                isReversed={drawn.isReversed}
+                isFlipped={true}
+                delay={i * 400}
+                size="medium"
+              />
             </div>
-            <TarotCard
-              card={drawn.card}
-              isReversed={drawn.isReversed}
-              isFlipped={true}
-              delay={i * 400}
-              size="medium"
-            />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* 분석 시작 버튼 */}
-      {cardsRevealed && (
+      {showButton && (
         <div className="animate-fade-in">
           <Button
             onClick={handleStartAnalysis}
@@ -570,6 +580,13 @@ const CardDrawing = ({
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
+      )}
+
+      {/* 버튼이 아직 안 보이면 안내 텍스트 */}
+      {!showButton && drawnCards.length > 0 && (
+        <p className="text-purple-300/60 text-sm animate-pulse">
+          카드가 모두 공개되면 버튼이 나타납니다...
+        </p>
       )}
     </div>
   );
