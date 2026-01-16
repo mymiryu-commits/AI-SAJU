@@ -152,6 +152,8 @@ const TarotCard = ({
   size?: 'small' | 'medium' | 'large';
   showMeaning?: boolean;
 }) => {
+  const [imageError, setImageError] = useState(false);
+
   const sizeClasses = {
     small: 'w-20 h-32',
     medium: 'w-28 h-44',
@@ -213,30 +215,54 @@ const TarotCard = ({
       className={`absolute inset-0 rounded-xl border-2 ${card.type === 'major' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'
         } backface-hidden rotate-y-180 overflow-hidden ${isReversed ? 'rotate-180' : ''}`}
     >
-      {/* 실제 카드 이미지 */}
       <div className={`relative w-full h-full ${isReversed ? 'rotate-180' : ''}`}>
-        <Image
-          src={getCardImageUrl(card)}
-          alt={card.korean}
-          fill
-          className="object-cover"
-          onError={(e) => {
-            // 이미지 로드 실패 시 폴백
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const fallback = target.parentElement?.querySelector('.fallback-content');
-            if (fallback) {
-              (fallback as HTMLElement).style.display = 'flex';
-            }
-          }}
-        />
-        {/* 폴백 콘텐츠 (이미지 없을 때) */}
-        <div className="fallback-content hidden absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 flex-col items-center justify-center">
-          <div className="text-4xl mb-2">
-            {card.type === 'major' ? getMajorSymbol(card.id) : SUIT_DATA[card.suit!]?.symbol}
-          </div>
-          <div className="text-xs font-bold text-center px-2">{card.korean}</div>
-        </div>
+        {/* 실제 이미지 */}
+        {!imageError && (
+          <Image
+            src={getCardImageUrl(card)}
+            alt={card.korean}
+            fill
+            className="object-cover"
+            onError={() => setImageError(true)}
+            unoptimized
+          />
+        )}
+
+        {/* 폴백 디자인 (이미지 로드 실패 시) */}
+        {imageError && (
+          <>
+            {/* 배경 그라데이션 */}
+            <div className={`absolute inset-0 ${
+              card.type === 'major'
+                ? 'bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 dark:from-amber-900/40 dark:via-yellow-900/30 dark:to-orange-900/40'
+                : card.suit === 'wands'
+                  ? 'bg-gradient-to-br from-orange-100 via-red-50 to-amber-100 dark:from-orange-900/40 dark:via-red-900/30 dark:to-amber-900/40'
+                  : card.suit === 'cups'
+                    ? 'bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 dark:from-blue-900/40 dark:via-cyan-900/30 dark:to-indigo-900/40'
+                    : card.suit === 'swords'
+                      ? 'bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-100 dark:from-slate-800 dark:via-gray-800 dark:to-zinc-800'
+                      : 'bg-gradient-to-br from-green-100 via-emerald-50 to-teal-100 dark:from-green-900/40 dark:via-emerald-900/30 dark:to-teal-900/40'
+            }`} />
+
+            {/* 카드 콘텐츠 */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+              <div className="text-3xl mb-1 drop-shadow-md">
+                {card.type === 'major' ? getMajorSymbol(card.id) : SUIT_DATA[card.suit!]?.symbol}
+              </div>
+              <div className="text-[10px] font-bold text-center text-slate-700 dark:text-slate-200 leading-tight">
+                {card.korean}
+              </div>
+              {card.type === 'minor' && (
+                <div className="text-[8px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {card.suit === 'wands' ? '완드' : card.suit === 'cups' ? '컵' : card.suit === 'swords' ? '소드' : '펜타클'}
+                </div>
+              )}
+            </div>
+
+            {/* 장식 테두리 */}
+            <div className="absolute inset-1 border border-amber-300/30 dark:border-amber-500/20 rounded-lg pointer-events-none" />
+          </>
+        )}
       </div>
 
       {/* 역방향 표시 */}
@@ -359,7 +385,6 @@ const CardDrawing = ({
   const [shuffleCount, setShuffleCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [drawnCards, setDrawnCards] = useState<{ card: TarotCardInfo; isReversed: boolean }[]>([]);
-  const [showButton, setShowButton] = useState(false);
   const spread = SPREAD_DEFINITIONS[spreadType];
 
   // 셔플 애니메이션
@@ -376,6 +401,7 @@ const CardDrawing = ({
 
   // 카드 선택
   const handleCardClick = (index: number) => {
+    if (phase !== 'draw') return;
     if (selectedCards.includes(index) || selectedCards.length >= spread.cardCount) return;
 
     const newSelected = [...selectedCards, index];
@@ -389,18 +415,6 @@ const CardDrawing = ({
     }
   };
 
-  // reveal 단계에서 버튼 표시 (카드 애니메이션 후)
-  useEffect(() => {
-    if (phase === 'reveal' && drawnCards.length > 0 && !showButton) {
-      // 카드 플립 애니메이션 시간: 카드당 400ms 딜레이 + 700ms 플립
-      const totalRevealTime = (drawnCards.length - 1) * 400 + 700 + 500;
-      const timer = setTimeout(() => {
-        setShowButton(true);
-      }, totalRevealTime);
-      return () => clearTimeout(timer);
-    }
-  }, [phase, drawnCards.length, showButton]);
-
   // 분석 시작 버튼 클릭
   const handleStartAnalysis = () => {
     const result: DrawnCard[] = drawnCards.map((d, i) => ({
@@ -411,6 +425,11 @@ const CardDrawing = ({
     }));
     onComplete(result);
   };
+
+  // 디버그용 - 콘솔에 상태 출력
+  useEffect(() => {
+    console.log('[CardDrawing] phase:', phase, 'drawnCards:', drawnCards.length, 'selectedCards:', selectedCards.length);
+  }, [phase, drawnCards.length, selectedCards.length]);
 
   if (phase === 'shuffle') {
     return (
@@ -531,25 +550,18 @@ const CardDrawing = ({
     );
   }
 
-  // reveal phase
+  // reveal phase - 버튼 항상 표시
   return (
     <div className="text-center py-8">
       <h2 className="text-xl font-bold text-white mb-2">
-        {showButton ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
+        카드가 공개되었습니다!
       </h2>
       <p className="text-purple-200 mb-6">
-        {showButton
-          ? '아래 버튼을 눌러 해석을 확인하세요'
-          : '잠시만 기다려주세요...'}
+        아래 버튼을 눌러 해석을 확인하세요
       </p>
 
-      {/* 카드가 없으면 로딩 표시 */}
-      {drawnCards.length === 0 ? (
-        <div className="flex justify-center items-center py-16">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          <span className="ml-3 text-purple-200">카드를 준비하는 중...</span>
-        </div>
-      ) : (
+      {/* 카드 표시 */}
+      {drawnCards.length > 0 ? (
         <div className="flex justify-center gap-4 flex-wrap mb-8">
           {drawnCards.map((drawn, i) => (
             <div key={i} className="text-center">
@@ -560,34 +572,31 @@ const CardDrawing = ({
                 card={drawn.card}
                 isReversed={drawn.isReversed}
                 isFlipped={true}
-                delay={i * 400}
+                delay={i * 300}
                 size="medium"
               />
             </div>
           ))}
         </div>
-      )}
-
-      {/* 분석 시작 버튼 */}
-      {showButton && (
-        <div className="animate-fade-in">
-          <Button
-            onClick={handleStartAnalysis}
-            className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 text-white shadow-lg shadow-purple-500/25 h-14 px-8 text-lg"
-          >
-            <Sparkles className="mr-2 h-5 w-5" />
-            타로 해석 보기
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+      ) : (
+        <div className="flex justify-center items-center py-16">
+          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-purple-200">카드를 준비하는 중...</span>
         </div>
       )}
 
-      {/* 버튼이 아직 안 보이면 안내 텍스트 */}
-      {!showButton && drawnCards.length > 0 && (
-        <p className="text-purple-300/60 text-sm animate-pulse">
-          카드가 모두 공개되면 버튼이 나타납니다...
-        </p>
-      )}
+      {/* 분석 시작 버튼 - 항상 표시 */}
+      <div className="mt-4">
+        <Button
+          onClick={handleStartAnalysis}
+          disabled={drawnCards.length === 0}
+          className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 text-white shadow-lg shadow-purple-500/25 h-14 px-8 text-lg disabled:opacity-50"
+        >
+          <Sparkles className="mr-2 h-5 w-5" />
+          타로 해석 보기
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 };
