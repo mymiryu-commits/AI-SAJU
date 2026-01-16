@@ -256,6 +256,7 @@ const CardDrawing = ({
   const [shuffleCount, setShuffleCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [drawnCards, setDrawnCards] = useState<{ card: TarotCardInfo; isReversed: boolean }[]>([]);
+  const [cardsRevealed, setCardsRevealed] = useState(false);
   const spread = SPREAD_DEFINITIONS[spreadType];
 
   // 셔플 애니메이션
@@ -285,21 +286,27 @@ const CardDrawing = ({
     }
   };
 
-  // 결과 전달
+  // 카드 공개 완료 타이머
   useEffect(() => {
-    if (phase === 'reveal' && drawnCards.length === spread.cardCount) {
+    if (phase === 'reveal' && drawnCards.length > 0) {
+      const revealTime = drawnCards.length * 400 + 1000; // 카드당 400ms + 여유 1초
       const timer = setTimeout(() => {
-        const result: DrawnCard[] = drawnCards.map((d, i) => ({
-          card: d.card,
-          orientation: d.isReversed ? 'reversed' : 'upright',
-          position: spread.positions[i]?.korean,
-          positionMeaning: spread.positions[i]?.description,
-        }));
-        onComplete(result);
-      }, 2000);
+        setCardsRevealed(true);
+      }, revealTime);
       return () => clearTimeout(timer);
     }
-  }, [phase, drawnCards, spread, onComplete]);
+  }, [phase, drawnCards.length]);
+
+  // 분석 시작 버튼 클릭
+  const handleStartAnalysis = () => {
+    const result: DrawnCard[] = drawnCards.map((d, i) => ({
+      card: d.card,
+      orientation: d.isReversed ? 'reversed' : 'upright',
+      position: spread.positions[i]?.korean,
+      positionMeaning: spread.positions[i]?.description,
+    }));
+    onComplete(result);
+  };
 
   if (phase === 'shuffle') {
     return (
@@ -388,11 +395,18 @@ const CardDrawing = ({
   // reveal phase
   return (
     <div className="text-center py-8">
-      <h2 className="text-xl font-bold mb-6">카드가 공개됩니다...</h2>
-      <div className="flex justify-center gap-4 flex-wrap">
+      <h2 className="text-xl font-bold text-white mb-2">
+        {cardsRevealed ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
+      </h2>
+      <p className="text-purple-200 mb-6">
+        {cardsRevealed
+          ? '아래 버튼을 눌러 해석을 확인하세요'
+          : '잠시만 기다려주세요...'}
+      </p>
+      <div className="flex justify-center gap-4 flex-wrap mb-8">
         {drawnCards.map((drawn, i) => (
           <div key={i} className="text-center">
-            <div className="mb-2 text-sm text-muted-foreground">
+            <div className="mb-2 text-sm text-purple-200">
               {spread.positions[i]?.korean}
             </div>
             <TarotCard
@@ -405,6 +419,20 @@ const CardDrawing = ({
           </div>
         ))}
       </div>
+
+      {/* 분석 시작 버튼 */}
+      {cardsRevealed && (
+        <div className="animate-fade-in">
+          <Button
+            onClick={handleStartAnalysis}
+            className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 text-white shadow-lg shadow-purple-500/25 h-14 px-8 text-lg"
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            타로 해석 보기
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
