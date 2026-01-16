@@ -35,7 +35,9 @@ import {
   interpretCard,
   generateDailyMessage,
   MAJOR_MEANINGS,
+  getCardImageUrl,
 } from '@/lib/fortune/tarot';
+import Image from 'next/image';
 
 // 신비로운 배경 효과
 const MysticBackground = () => (
@@ -150,6 +152,8 @@ const TarotCard = ({
   size?: 'small' | 'medium' | 'large';
   showMeaning?: boolean;
 }) => {
+  const [imageError, setImageError] = useState(false);
+
   const sizeClasses = {
     small: 'w-20 h-32',
     medium: 'w-28 h-44',
@@ -211,38 +215,54 @@ const TarotCard = ({
       className={`absolute inset-0 rounded-xl border-2 ${card.type === 'major' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'
         } backface-hidden rotate-y-180 overflow-hidden ${isReversed ? 'rotate-180' : ''}`}
     >
-      {/* 카드 앞면 디자인 */}
       <div className={`relative w-full h-full ${isReversed ? 'rotate-180' : ''}`}>
-        {/* 배경 그라데이션 */}
-        <div className={`absolute inset-0 ${
-          card.type === 'major'
-            ? 'bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 dark:from-amber-900/40 dark:via-yellow-900/30 dark:to-orange-900/40'
-            : card.suit === 'wands'
-              ? 'bg-gradient-to-br from-orange-100 via-red-50 to-amber-100 dark:from-orange-900/40 dark:via-red-900/30 dark:to-amber-900/40'
-              : card.suit === 'cups'
-                ? 'bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 dark:from-blue-900/40 dark:via-cyan-900/30 dark:to-indigo-900/40'
-                : card.suit === 'swords'
-                  ? 'bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-100 dark:from-slate-800 dark:via-gray-800 dark:to-zinc-800'
-                  : 'bg-gradient-to-br from-green-100 via-emerald-50 to-teal-100 dark:from-green-900/40 dark:via-emerald-900/30 dark:to-teal-900/40'
-        }`} />
+        {/* 실제 이미지 */}
+        {!imageError && (
+          <Image
+            src={getCardImageUrl(card)}
+            alt={card.korean}
+            fill
+            className="object-cover"
+            onError={() => setImageError(true)}
+            unoptimized
+          />
+        )}
 
-        {/* 카드 콘텐츠 */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-          <div className="text-3xl mb-1 drop-shadow-md">
-            {card.type === 'major' ? getMajorSymbol(card.id) : SUIT_DATA[card.suit!]?.symbol}
-          </div>
-          <div className="text-[10px] font-bold text-center text-slate-700 dark:text-slate-200 leading-tight">
-            {card.korean}
-          </div>
-          {card.type === 'minor' && (
-            <div className="text-[8px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {card.suit === 'wands' ? '완드' : card.suit === 'cups' ? '컵' : card.suit === 'swords' ? '소드' : '펜타클'}
+        {/* 폴백 디자인 (이미지 로드 실패 시) */}
+        {imageError && (
+          <>
+            {/* 배경 그라데이션 */}
+            <div className={`absolute inset-0 ${
+              card.type === 'major'
+                ? 'bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 dark:from-amber-900/40 dark:via-yellow-900/30 dark:to-orange-900/40'
+                : card.suit === 'wands'
+                  ? 'bg-gradient-to-br from-orange-100 via-red-50 to-amber-100 dark:from-orange-900/40 dark:via-red-900/30 dark:to-amber-900/40'
+                  : card.suit === 'cups'
+                    ? 'bg-gradient-to-br from-blue-100 via-cyan-50 to-indigo-100 dark:from-blue-900/40 dark:via-cyan-900/30 dark:to-indigo-900/40'
+                    : card.suit === 'swords'
+                      ? 'bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-100 dark:from-slate-800 dark:via-gray-800 dark:to-zinc-800'
+                      : 'bg-gradient-to-br from-green-100 via-emerald-50 to-teal-100 dark:from-green-900/40 dark:via-emerald-900/30 dark:to-teal-900/40'
+            }`} />
+
+            {/* 카드 콘텐츠 */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+              <div className="text-3xl mb-1 drop-shadow-md">
+                {card.type === 'major' ? getMajorSymbol(card.id) : SUIT_DATA[card.suit!]?.symbol}
+              </div>
+              <div className="text-[10px] font-bold text-center text-slate-700 dark:text-slate-200 leading-tight">
+                {card.korean}
+              </div>
+              {card.type === 'minor' && (
+                <div className="text-[8px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {card.suit === 'wands' ? '완드' : card.suit === 'cups' ? '컵' : card.suit === 'swords' ? '소드' : '펜타클'}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* 장식 테두리 */}
-        <div className="absolute inset-1 border border-amber-300/30 dark:border-amber-500/20 rounded-lg pointer-events-none" />
+            {/* 장식 테두리 */}
+            <div className="absolute inset-1 border border-amber-300/30 dark:border-amber-500/20 rounded-lg pointer-events-none" />
+          </>
+        )}
       </div>
 
       {/* 역방향 표시 */}
