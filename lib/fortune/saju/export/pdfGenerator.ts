@@ -6,6 +6,7 @@
  */
 
 import { jsPDF } from 'jspdf';
+import { createKoreanPDF } from '@/lib/fonts/koreanFont';
 import type {
   UserInput,
   SajuChart,
@@ -42,8 +43,8 @@ interface PDFSection {
 export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buffer> {
   const { user, saju, oheng, yongsin, gisin, premium, targetYear = 2026 } = options;
 
-  // PDF 생성 (A4 사이즈)
-  const doc = new jsPDF({
+  // PDF 생성 (A4 사이즈, 한글 폰트 지원)
+  const doc = await createKoreanPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4'
