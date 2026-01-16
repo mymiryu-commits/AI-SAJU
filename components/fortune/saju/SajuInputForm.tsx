@@ -862,6 +862,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     <Input
                       id="childrenAges"
                       placeholder="예: 5, 12, 18"
+                      value={formData.childrenAges?.join(', ') || ''}
                       onChange={e => {
                         const ages = e.target.value
                           .split(',')
