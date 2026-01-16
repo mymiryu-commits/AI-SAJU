@@ -36,6 +36,7 @@ import {
   generateDailyMessage,
   MAJOR_MEANINGS,
   getCardImageUrl,
+  generateEpicStorytelling,
 } from '@/lib/fortune/tarot';
 import Image from 'next/image';
 
@@ -428,18 +429,6 @@ const CardDrawing = ({
     onComplete(result);
   };
 
-  // 디버그용 - 콘솔에 상태 출력
-  useEffect(() => {
-    console.log('[CardDrawing] phase:', phase, 'drawnCards:', drawnCards.length, 'selectedCards:', selectedCards.length, 'spreadCount:', spread.cardCount);
-  }, [phase, drawnCards.length, selectedCards.length, spread.cardCount]);
-
-  // 디버그: 강제 reveal 버튼 (테스트용)
-  const forceReveal = () => {
-    const drawn = drawRandomCards(spread.cardCount);
-    setDrawnCards(drawn);
-    setPhase('reveal');
-  };
-
   if (phase === 'shuffle') {
     return (
       <div className="text-center py-16">
@@ -489,19 +478,6 @@ const CardDrawing = ({
   if (phase === 'draw') {
     return (
       <div className="text-center py-8">
-        {/* 디버그 패널 */}
-        <div className="fixed top-4 right-4 bg-black/80 text-white text-xs p-3 rounded-lg z-50 text-left">
-          <div>Phase: {phase}</div>
-          <div>Selected: {selectedCards.length}/{spread.cardCount}</div>
-          <div>DrawnCards: {drawnCards.length}</div>
-          <button
-            onClick={forceReveal}
-            className="mt-2 px-2 py-1 bg-purple-600 rounded text-xs"
-          >
-            Force Reveal
-          </button>
-        </div>
-
         {/* 헤더 */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">
@@ -575,13 +551,6 @@ const CardDrawing = ({
   // reveal phase - 버튼 항상 표시
   return (
     <div className="text-center py-8">
-      {/* 디버그 패널 */}
-      <div className="fixed top-4 right-4 bg-green-800/80 text-white text-xs p-3 rounded-lg z-50 text-left">
-        <div>Phase: {phase}</div>
-        <div>DrawnCards: {drawnCards.length}</div>
-        <div>Ready: {drawnCards.length > 0 ? 'YES' : 'NO'}</div>
-      </div>
-
       <h2 className="text-xl font-bold text-white mb-2">
         카드가 공개되었습니다!
       </h2>
@@ -738,18 +707,20 @@ const ReadingResult = ({
         </CardContent>
       </Card>
 
-      {/* 종합 메시지 */}
-      <Card>
+      {/* 대서사시 스토리텔링 */}
+      <Card className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-pink-950/40 border-purple-200 dark:border-purple-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
-            종합 메시지
+            당신을 위한 이야기
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-lg leading-relaxed">
-            {generateOverallMessage(cards)}
-          </p>
+          <div className="prose prose-purple dark:prose-invert max-w-none">
+            <div className="text-base leading-relaxed whitespace-pre-line">
+              {generateEpicStorytelling(cards, question)}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -768,28 +739,6 @@ const ReadingResult = ({
     </div>
   );
 };
-
-// 종합 메시지 생성
-function generateOverallMessage(cards: DrawnCard[]): string {
-  const majorCount = cards.filter(c => c.card.type === 'major').length;
-  const reversedCount = cards.filter(c => c.orientation === 'reversed').length;
-
-  let message = '';
-
-  if (majorCount >= cards.length / 2) {
-    message += '메이저 아르카나가 많이 등장했습니다. 이것은 인생의 중요한 전환점이나 영적 성장의 시기임을 나타냅니다. ';
-  }
-
-  if (reversedCount >= cards.length / 2) {
-    message += '많은 카드가 역방향으로 나왔습니다. 내면을 돌아보고 막힌 에너지를 풀어줄 시간이 필요합니다. ';
-  } else if (reversedCount === 0) {
-    message += '모든 카드가 정방향으로 나왔습니다. 현재 에너지가 순조롭게 흐르고 있습니다. ';
-  }
-
-  message += '카드가 전하는 메시지를 마음에 새기고, 직관을 믿으며 앞으로 나아가세요.';
-
-  return message;
-}
 
 export default function TarotPage() {
   const [step, setStep] = useState<'spread' | 'question' | 'draw' | 'result'>('spread');
