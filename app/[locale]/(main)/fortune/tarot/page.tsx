@@ -35,7 +35,9 @@ import {
   interpretCard,
   generateDailyMessage,
   MAJOR_MEANINGS,
+  getCardImageUrl,
 } from '@/lib/fortune/tarot';
+import Image from 'next/image';
 
 // 마법 파티클 배경
 const MagicParticles = () => (
@@ -110,41 +112,38 @@ const TarotCard = ({
 
   const cardFront = card ? (
     <div
-      className={`absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 rounded-xl border-2 ${card.type === 'major' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'
+      className={`absolute inset-0 rounded-xl border-2 ${card.type === 'major' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'
         } backface-hidden rotate-y-180 overflow-hidden ${isReversed ? 'rotate-180' : ''}`}
     >
-      <div className={`h-full flex flex-col ${isReversed ? 'rotate-180' : ''}`}>
-        {/* 카드 상단 */}
-        <div className="text-center py-2 px-1 bg-gradient-to-b from-white/50 to-transparent">
-          <div className="text-2xl">{card.type === 'major' ? '✨' : SUIT_DATA[card.suit!]?.symbol || '✦'}</div>
-          <div className="text-xs font-bold truncate px-1">
-            {card.korean}
-          </div>
-        </div>
-
-        {/* 카드 중앙 - 이미지 영역 (나중에 실제 이미지로 교체) */}
-        <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-purple-100/50 to-indigo-100/50 dark:from-purple-900/30 dark:to-indigo-900/30 mx-2 rounded-lg">
-          <div className="text-5xl">
+      {/* 실제 카드 이미지 */}
+      <div className={`relative w-full h-full ${isReversed ? 'rotate-180' : ''}`}>
+        <Image
+          src={getCardImageUrl(card)}
+          alt={card.korean}
+          fill
+          className="object-cover"
+          onError={(e) => {
+            // 이미지 로드 실패 시 폴백
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const fallback = target.parentElement?.querySelector('.fallback-content');
+            if (fallback) {
+              (fallback as HTMLElement).style.display = 'flex';
+            }
+          }}
+        />
+        {/* 폴백 콘텐츠 (이미지 없을 때) */}
+        <div className="fallback-content hidden absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-900 flex-col items-center justify-center">
+          <div className="text-4xl mb-2">
             {card.type === 'major' ? getMajorSymbol(card.id) : SUIT_DATA[card.suit!]?.symbol}
           </div>
-        </div>
-
-        {/* 카드 하단 */}
-        <div className="text-center py-2 px-1">
-          <div className="text-[10px] text-muted-foreground">
-            {card.type === 'major' ? `${card.number}번` : card.rank?.toUpperCase()}
-          </div>
-          {card.element && (
-            <div className="flex justify-center mt-1">
-              <ElementIcon element={card.element} className="h-3 w-3" />
-            </div>
-          )}
+          <div className="text-xs font-bold text-center px-2">{card.korean}</div>
         </div>
       </div>
 
       {/* 역방향 표시 */}
       {isReversed && (
-        <div className="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1 rounded">
+        <div className="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1 rounded z-10">
           역
         </div>
       )}

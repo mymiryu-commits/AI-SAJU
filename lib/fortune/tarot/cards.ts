@@ -369,3 +369,69 @@ export function drawFromSuit(suit: Suit, count: number, allowReversed: boolean =
     isReversed: allowReversed && Math.random() > 0.5,
   }));
 }
+
+// ===== 이미지 파일명 매핑 =====
+// 숫자를 로마 숫자로 변환
+const toRomanNumeral = (num: number): string => {
+  const romanNumerals: Record<number, string> = {
+    1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V',
+    6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X',
+  };
+  return romanNumerals[num] || num.toString();
+};
+
+// 수트명 매핑 (파일명 형식)
+const SUIT_FILENAME: Record<Suit, string> = {
+  wands: 'WANDS',
+  cups: 'CUPS',
+  swords: 'SWORDS',
+  pentacles: 'PENTACLES',
+};
+
+/**
+ * 카드 ID를 이미지 파일명으로 변환
+ * 파일명 패턴:
+ * - 메이저 아르카나: the-fool, the-magician, judgement 등 (소문자)
+ * - 에이스: ace-of-wands, ace-of-cups 등 (소문자)
+ * - 숫자 카드 2-10: WANDS-II, CUPS-X 등 (대문자 + 로마숫자)
+ * - 페이지/나이트/퀸: PAGE-OF-WANDS, KNIGHT-OF-CUPS 등 (대문자)
+ * - 킹: king-of-wands 등 (소문자)
+ */
+export function getCardImageFilename(card: TarotCardInfo): string {
+  // 메이저 아르카나
+  if (card.type === 'major') {
+    return card.id; // the-fool, the-magician, judgement 등
+  }
+
+  // 마이너 아르카나
+  const suit = card.suit!;
+  const rank = card.rank!;
+
+  // 에이스
+  if (rank === 'ace') {
+    return `ace-of-${suit}`; // ace-of-wands, ace-of-cups
+  }
+
+  // 숫자 카드 2-10 (로마 숫자 사용)
+  const numericRanks = ['2', '3', '4', '5', '6', '7', '8', '9', '10'];
+  if (numericRanks.includes(rank)) {
+    const roman = toRomanNumeral(parseInt(rank));
+    return `${SUIT_FILENAME[suit]}-${roman}`; // WANDS-II, CUPS-X
+  }
+
+  // 킹 (소문자)
+  if (rank === 'king') {
+    return `king-of-${suit}`; // king-of-wands
+  }
+
+  // 페이지, 나이트, 퀸 (대문자)
+  return `${rank.toUpperCase()}-OF-${SUIT_FILENAME[suit]}`; // PAGE-OF-WANDS, KNIGHT-OF-CUPS
+}
+
+/**
+ * 카드 이미지 URL 생성
+ */
+export function getCardImageUrl(card: TarotCardInfo, extension: string = 'jpg'): string {
+  const filename = getCardImageFilename(card);
+  return `/images/tarot/${filename}.${extension}`;
+}
