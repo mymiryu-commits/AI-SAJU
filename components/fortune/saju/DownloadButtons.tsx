@@ -94,7 +94,8 @@ export default function DownloadButtons({
             user,
             saju,
             oheng,
-            result,
+            yongsin: result.yongsin,
+            gisin: result.gisin,
             premium,
             targetYear
           })
@@ -153,7 +154,8 @@ export default function DownloadButtons({
           user,
           saju,
           oheng,
-          result,
+          yongsin: result.yongsin,
+          gisin: result.gisin,
           premium,
           targetYear
         })

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   TrendingUp, Heart, Briefcase, Activity, Sparkles,
   Lock, ChevronRight, Users, Calendar, Target, Star,
-  Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain
+  Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -14,17 +14,20 @@ import {
   ELEMENT_KOREAN, PeerComparison, AIAnalysis
 } from '@/types/saju';
 import PremiumResultDisplay from './PremiumResultDisplay';
+import DownloadButtons from './DownloadButtons';
 
 interface Props {
   result: AnalysisResult;
   onUnlockPremium: () => void;
   isPremiumUnlocked?: boolean;
+  analysisId?: string;
 }
 
 export default function SajuResultCard({
   result,
   onUnlockPremium,
-  isPremiumUnlocked = false
+  isPremiumUnlocked = false,
+  analysisId
 }: Props) {
   const [activeTab, setActiveTab] = useState<'basic' | 'expert' | 'scores' | 'peer' | 'premium'>('basic');
 
@@ -482,10 +485,32 @@ export default function SajuResultCard({
             className="p-6"
           >
             {isPremiumUnlocked && result.premium ? (
-              <PremiumResultDisplay
-                premium={result.premium}
-                userName={result.user.name}
-              />
+              <div className="space-y-6">
+                <PremiumResultDisplay
+                  premium={result.premium}
+                  userName={result.user.name}
+                />
+
+                {/* 다운로드 버튼 */}
+                <div className="border-t pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                      분석 결과 다운로드
+                    </h4>
+                  </div>
+                  <DownloadButtons
+                    user={result.user}
+                    saju={saju}
+                    oheng={oheng}
+                    result={result}
+                    premium={result.premium}
+                    analysisId={analysisId}
+                    isPremium={true}
+                    onUpgradeClick={onUnlockPremium}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="text-center py-12">
                 <div className="w-20 h-20 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">

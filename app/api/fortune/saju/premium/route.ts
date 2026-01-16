@@ -15,7 +15,14 @@ import {
   generateTimingAnalysis,
   generateInterestStrategies
 } from '@/lib/fortune/saju/newIndex';
+import {
+  generateStorytellingAnalysis,
+  generateCardDeck,
+  generatePastVerifications,
+  generateYearlyTimeline
+} from '@/lib/fortune/saju/cards';
 import type { UserInput, PremiumContent } from '@/types/saju';
+import type { StorytellingAnalysis } from '@/types/cards';
 
 export async function POST(request: NextRequest) {
   try {
@@ -102,6 +109,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 스토리텔링 분석 (모든 프리미엄 상품에 포함)
+    // 주요 십신 결정 (간단하게 일간 기준)
+    const dominantSipsin = getDominantSipsin(saju);
+
+    const storytelling = generateStorytellingAnalysis(
+      input,
+      saju,
+      ohengResult.balance,
+      ohengResult.yongsin,
+      ohengResult.gisin,
+      dominantSipsin,
+      targetYear
+    );
+
+    premiumContent.storytelling = storytelling;
+
     // 분석 결과 저장 (기존 분석 업데이트 또는 새로 생성)
     const analysisRecord = {
       user_id: user.id,
@@ -184,4 +207,45 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// 주요 십신 결정 헬퍼 함수
+function getDominantSipsin(saju: { day: { heavenlyStem: string }; month: { heavenlyStem: string } }): string {
+  // 일간과 월간의 관계로 주요 십신 판단
+  const dayStem = saju.day.heavenlyStem;
+  const monthStem = saju.month.heavenlyStem;
+
+  // 천간 오행 매핑
+  const stemElement: Record<string, string> = {
+    '甲': '목', '乙': '목',
+    '丙': '화', '丁': '화',
+    '戊': '토', '己': '토',
+    '庚': '금', '辛': '금',
+    '壬': '수', '癸': '수'
+  };
+
+  const dayElement = stemElement[dayStem] || '목';
+  const monthElement = stemElement[monthStem] || '화';
+
+  // 상생/상극 관계로 십신 판단 (간략화)
+  const generating: Record<string, string> = {
+    '목': '화', '화': '토', '토': '금', '금': '수', '수': '목'
+  };
+  const controlling: Record<string, string> = {
+    '목': '토', '화': '금', '토': '수', '금': '목', '수': '화'
+  };
+
+  if (dayElement === monthElement) {
+    return '비견';
+  } else if (generating[dayElement] === monthElement) {
+    return '식신';
+  } else if (generating[monthElement] === dayElement) {
+    return '정인';
+  } else if (controlling[dayElement] === monthElement) {
+    return '편재';
+  } else if (controlling[monthElement] === dayElement) {
+    return '편관';
+  }
+
+  return '식신'; // 기본값
 }

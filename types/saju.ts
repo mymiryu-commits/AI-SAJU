@@ -216,6 +216,9 @@ export interface PremiumContent {
 
   // 다자간 궁합 (새 기능)
   groupCompatibility?: GroupCompatibility;
+
+  // 스토리텔링 분석 (6장 카드덱 + 과거검증 + 타임라인)
+  storytelling?: import('@/types/cards').StorytellingAnalysis;
 }
 
 export interface FamilyImpact {
