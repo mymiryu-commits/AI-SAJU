@@ -137,9 +137,15 @@ export default function SajuPage() {
 
   // 프리미엄 분석 데이터 로드
   const loadPremiumAnalysis = useCallback(async (productId: string) => {
-    if (!userInput || !analysisId) return;
+    console.log('loadPremiumAnalysis called:', { productId, userInput: !!userInput, analysisId });
+
+    if (!userInput || !analysisId) {
+      console.error('Missing userInput or analysisId');
+      throw new Error('분석 데이터가 없습니다. 먼저 무료 분석을 진행해주세요.');
+    }
 
     try {
+      console.log('Calling premium API...');
       const response = await fetch('/api/fortune/saju/premium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,11 +157,14 @@ export default function SajuPage() {
       });
 
       const data = await response.json();
+      console.log('Premium API response:', { ok: response.ok, success: data.success });
 
       if (!response.ok || !data.success) {
+        console.error('Premium API error:', data.error);
         throw new Error(data.error || '프리미엄 분석 로드 중 오류가 발생했습니다.');
       }
 
+      console.log('Updating analysis result with premium data...');
       // 분석 결과에 프리미엄 데이터 추가
       setAnalysisResult(prev => {
         if (!prev) return prev;
@@ -175,6 +184,7 @@ export default function SajuPage() {
 
   // 포인트 차감 후 프리미엄 분석 구매 (관리자는 무료)
   const handlePurchase = async (productId: string) => {
+    console.log('handlePurchase called with productId:', productId);
     setIsPurchasing(true);
     setError(null);
 
@@ -182,7 +192,13 @@ export default function SajuPage() {
       // 관리자는 포인트 차감 없이 바로 프리미엄 분석
       if (isAdmin) {
         console.log('Admin user - skipping point deduction');
-        await loadPremiumAnalysis(productId);
+        try {
+          await loadPremiumAnalysis(productId);
+          console.log('Premium analysis loaded successfully for admin');
+        } catch (adminErr) {
+          console.error('Admin premium analysis error:', adminErr);
+          throw adminErr;
+        }
         return;
       }
 
