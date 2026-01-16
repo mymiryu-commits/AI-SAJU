@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 // 메인 네비게이션 링크
 const mainNavLinks = [
   { href: '/ranking', key: 'aiRanking', icon: '📊' },
-  { href: '/store', key: 'aiStore', icon: '🛒' },
+  { href: '/marketplace', key: 'aiStore', icon: '🛒' },
 ] as const;
 
 // 운세 서브메뉴
@@ -33,7 +33,7 @@ const fortuneSubMenu = [
 // 기타 링크
 const otherNavLinks = [
   { href: '/lotto', key: 'lotto', icon: '🎱' },
-  { href: '/qr', key: 'qr', icon: '📱' },
+  { href: '/tools/qrcode', key: 'qr', icon: '📱' },
 ] as const;
 
 const languages = [
