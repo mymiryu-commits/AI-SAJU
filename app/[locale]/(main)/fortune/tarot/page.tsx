@@ -39,24 +39,84 @@ import {
 } from '@/lib/fortune/tarot';
 import Image from 'next/image';
 
-// 마법 파티클 배경
-const MagicParticles = () => (
+// 신비로운 배경 효과
+const MysticBackground = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    {Array.from({ length: 30 }).map((_, i) => (
+    {/* 별빛 파티클 - 작은 별들 */}
+    {Array.from({ length: 50 }).map((_, i) => (
       <div
-        key={i}
-        className="absolute w-1 h-1 bg-purple-400 rounded-full animate-float"
+        key={`star-${i}`}
+        className="absolute rounded-full bg-white animate-twinkle"
         style={{
+          width: `${1 + Math.random() * 2}px`,
+          height: `${1 + Math.random() * 2}px`,
           top: `${Math.random() * 100}%`,
           left: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 5}s`,
-          animationDuration: `${3 + Math.random() * 4}s`,
-          opacity: 0.3 + Math.random() * 0.5,
+          animationDelay: `${Math.random() * 3}s`,
+          animationDuration: `${2 + Math.random() * 2}s`,
         }}
       />
     ))}
+
+    {/* 큰 빛나는 별들 */}
+    {Array.from({ length: 8 }).map((_, i) => (
+      <div
+        key={`glow-${i}`}
+        className="absolute animate-pulse-slow"
+        style={{
+          top: `${10 + Math.random() * 80}%`,
+          left: `${10 + Math.random() * 80}%`,
+          animationDelay: `${Math.random() * 4}s`,
+        }}
+      >
+        <div className="w-1 h-1 bg-yellow-200 rounded-full shadow-[0_0_10px_4px_rgba(253,224,71,0.4)]" />
+      </div>
+    ))}
+
+    {/* 마법 오브 */}
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div
+        key={`orb-${i}`}
+        className="absolute rounded-full animate-float-slow opacity-20"
+        style={{
+          width: `${100 + Math.random() * 150}px`,
+          height: `${100 + Math.random() * 150}px`,
+          background: `radial-gradient(circle, ${
+            ['rgba(147,51,234,0.3)', 'rgba(59,130,246,0.3)', 'rgba(236,72,153,0.3)', 'rgba(99,102,241,0.3)'][i % 4]
+          } 0%, transparent 70%)`,
+          top: `${Math.random() * 100}%`,
+          left: `${Math.random() * 100}%`,
+          animationDelay: `${Math.random() * 5}s`,
+          animationDuration: `${8 + Math.random() * 4}s`,
+        }}
+      />
+    ))}
+
+    {/* 성좌 연결선 */}
+    <svg className="absolute inset-0 w-full h-full opacity-10">
+      <defs>
+        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="100%" stopColor="#3b82f6" />
+        </linearGradient>
+      </defs>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <line
+          key={i}
+          x1={`${20 + Math.random() * 30}%`}
+          y1={`${20 + Math.random() * 30}%`}
+          x2={`${50 + Math.random() * 30}%`}
+          y2={`${50 + Math.random() * 30}%`}
+          stroke="url(#lineGradient)"
+          strokeWidth="1"
+        />
+      ))}
+    </svg>
   </div>
 );
+
+// 마법 파티클 배경 (기존 호환)
+const MagicParticles = () => <MysticBackground />;
 
 // 원소 아이콘
 const ElementIcon = ({ element, className = '' }: { element?: string; className?: string }) => {
@@ -99,14 +159,52 @@ const TarotCard = ({
   };
 
   const cardBack = (
-    <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-950 rounded-xl border-2 border-purple-500/50 flex items-center justify-center backface-hidden">
-      <div className="text-center">
-        <div className="text-4xl mb-2">🌙</div>
-        <div className="text-xs text-purple-300">AI SAJU</div>
+    <div className="absolute inset-0 rounded-xl overflow-hidden backface-hidden">
+      {/* 메인 배경 그라데이션 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950" />
+
+      {/* 골드 테두리 */}
+      <div className="absolute inset-0 rounded-xl border-2 border-amber-500/60 shadow-[inset_0_0_20px_rgba(251,191,36,0.1)]" />
+      <div className="absolute inset-[3px] rounded-lg border border-amber-600/40" />
+
+      {/* 마법진 패턴 */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {/* 외곽 원 */}
+        <div className="absolute w-[85%] h-[85%] border border-amber-500/20 rounded-full" />
+        <div className="absolute w-[70%] h-[70%] border border-purple-400/30 rounded-full animate-spin-slow" />
+        <div className="absolute w-[55%] h-[55%] border border-indigo-400/20 rounded-full" />
+
+        {/* 별 패턴 */}
+        <svg className="absolute w-[60%] h-[60%] opacity-30" viewBox="0 0 100 100">
+          <polygon
+            points="50,5 61,40 98,40 68,62 79,97 50,75 21,97 32,62 2,40 39,40"
+            fill="none"
+            stroke="url(#starGradient)"
+            strokeWidth="0.5"
+          />
+          <defs>
+            <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#a855f7" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* 중앙 심볼 */}
+        <div className="relative z-10 text-center">
+          <div className="text-3xl mb-1 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">✦</div>
+          <div className="text-[8px] text-amber-300/80 font-serif tracking-widest">TAROT</div>
+        </div>
       </div>
-      {/* 카드 뒷면 패턴 */}
-      <div className="absolute inset-2 border border-purple-500/30 rounded-lg" />
-      <div className="absolute inset-4 border border-purple-500/20 rounded-lg" />
+
+      {/* 코너 장식 */}
+      <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-amber-500/50 rounded-tl" />
+      <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-amber-500/50 rounded-tr" />
+      <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-amber-500/50 rounded-bl" />
+      <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-amber-500/50 rounded-br" />
+
+      {/* 빛나는 효과 */}
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
   );
 
@@ -159,13 +257,18 @@ const TarotCard = ({
 
   return (
     <div
-      className={`${sizeClasses[size]} perspective-1000 cursor-pointer group`}
+      className={`${sizeClasses[size]} perspective-1000 cursor-pointer group relative`}
       onClick={onClick}
       style={{ animationDelay: `${delay}ms` }}
     >
+      {/* 호버 글로우 효과 */}
+      {onClick && (
+        <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-amber-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-amber-500/20 group-hover:via-purple-500/30 group-hover:to-pink-500/20 blur-xl transition-all duration-500 opacity-0 group-hover:opacity-100" />
+      )}
+
       <div
-        className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''
-          } ${onClick ? 'group-hover:scale-105' : ''}`}
+        className={`relative w-full h-full transition-all duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''
+          } ${onClick ? 'group-hover:scale-110 group-hover:-translate-y-3 group-hover:shadow-[0_20px_40px_rgba(168,85,247,0.4)]' : ''}`}
       >
         {cardBack}
         {cardFront}
@@ -256,7 +359,7 @@ const CardDrawing = ({
   const [shuffleCount, setShuffleCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [drawnCards, setDrawnCards] = useState<{ card: TarotCardInfo; isReversed: boolean }[]>([]);
-  const [cardsRevealed, setCardsRevealed] = useState(false);
+  const [showButton, setShowButton] = useState(false);
   const spread = SPREAD_DEFINITIONS[spreadType];
 
   // 셔플 애니메이션
@@ -279,23 +382,24 @@ const CardDrawing = ({
     setSelectedCards(newSelected);
 
     if (newSelected.length === spread.cardCount) {
-      // 모든 카드 선택 완료
+      // 모든 카드 선택 완료 - 랜덤 카드 뽑고 reveal 단계로
       const drawn = drawRandomCards(spread.cardCount);
       setDrawnCards(drawn);
-      setTimeout(() => setPhase('reveal'), 500);
+      setPhase('reveal');
     }
   };
 
-  // 카드 공개 완료 타이머
+  // reveal 단계에서 버튼 표시 (카드 애니메이션 후)
   useEffect(() => {
-    if (phase === 'reveal' && drawnCards.length > 0) {
-      const revealTime = drawnCards.length * 400 + 1000; // 카드당 400ms + 여유 1초
+    if (phase === 'reveal' && drawnCards.length > 0 && !showButton) {
+      // 카드 플립 애니메이션 시간: 카드당 400ms 딜레이 + 700ms 플립
+      const totalRevealTime = (drawnCards.length - 1) * 400 + 700 + 500;
       const timer = setTimeout(() => {
-        setCardsRevealed(true);
-      }, revealTime);
+        setShowButton(true);
+      }, totalRevealTime);
       return () => clearTimeout(timer);
     }
-  }, [phase, drawnCards.length]);
+  }, [phase, drawnCards.length, showButton]);
 
   // 분석 시작 버튼 클릭
   const handleStartAnalysis = () => {
@@ -311,11 +415,18 @@ const CardDrawing = ({
   if (phase === 'shuffle') {
     return (
       <div className="text-center py-16">
+        {/* 셔플 애니메이션 영역 */}
         <div className="relative w-40 h-56 mx-auto mb-8">
+          {/* 마법진 배경 */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute w-64 h-64 border border-purple-500/20 rounded-full animate-spin-slow" />
+            <div className="absolute w-48 h-48 border border-amber-500/20 rounded-full animate-spin-slow" style={{ animationDirection: 'reverse' }} />
+          </div>
+
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className={`absolute inset-0 transition-all duration-500 ${shuffleCount > i ? 'opacity-0 scale-90' : ''
+              className={`absolute inset-0 transition-all duration-500 ${shuffleCount > i ? 'opacity-0 scale-90 rotate-180' : ''
                 }`}
               style={{
                 transform: `rotate(${(i - 1) * 15}deg) translateX(${(i - 1) * 20}px)`,
@@ -325,15 +436,20 @@ const CardDrawing = ({
             </div>
           ))}
         </div>
-        <h2 className="text-2xl font-bold mb-2">카드를 섞고 있습니다...</h2>
-        <p className="text-muted-foreground">
+
+        <h2 className="text-2xl font-bold text-white mb-2">카드를 섞고 있습니다...</h2>
+        <p className="text-purple-200/70">
           마음을 가다듬고 질문에 집중하세요
         </p>
-        <div className="flex justify-center gap-2 mt-4">
+
+        {/* 진행 인디케이터 */}
+        <div className="flex justify-center gap-3 mt-6">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className={`w-3 h-3 rounded-full transition-all ${shuffleCount > i ? 'bg-purple-500' : 'bg-muted'
+              className={`w-3 h-3 rounded-full transition-all duration-500 ${shuffleCount > i
+                ? 'bg-gradient-to-r from-amber-400 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'
+                : 'bg-white/20'
                 }`}
             />
           ))}
@@ -345,28 +461,51 @@ const CardDrawing = ({
   if (phase === 'draw') {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-bold mb-2">
-          {spread.cardCount}장의 카드를 선택하세요
-        </h2>
-        <p className="text-muted-foreground mb-6">
-          직감을 따라 카드를 선택하세요 ({selectedCards.length}/{spread.cardCount})
-        </p>
+        {/* 헤더 */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-2">
+            {spread.cardCount}장의 카드를 선택하세요
+          </h2>
+          <p className="text-purple-200/80 mb-4">
+            마음이 끌리는 카드를 직감에 따라 선택하세요
+          </p>
+
+          {/* 선택 진행 바 */}
+          <div className="max-w-xs mx-auto">
+            <div className="flex justify-between text-xs text-purple-300 mb-2">
+              <span>선택</span>
+              <span>{selectedCards.length} / {spread.cardCount}</span>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-400 via-purple-500 to-pink-500 transition-all duration-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                style={{ width: `${(selectedCards.length / spread.cardCount) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* 카드 그리드 */}
-        <div className="relative max-w-4xl mx-auto">
-          <div className="flex flex-wrap justify-center gap-2">
+        <div className="relative max-w-4xl mx-auto px-4">
+          {/* 테이블 표면 효과 */}
+          <div className="absolute inset-0 -top-10 -bottom-10 bg-gradient-to-b from-transparent via-purple-900/20 to-transparent rounded-3xl" />
+
+          <div className="relative flex flex-wrap justify-center gap-3 md:gap-4">
             {Array.from({ length: 22 }).map((_, i) => (
               <div
                 key={i}
-                className={`transition-all duration-300 ${selectedCards.includes(i)
-                  ? 'scale-90 opacity-50'
-                  : 'hover:scale-105 hover:-translate-y-2'
+                className={`transition-all duration-500 ${selectedCards.includes(i)
+                  ? 'scale-75 opacity-30 blur-[1px] pointer-events-none'
+                  : ''
                   }`}
+                style={{
+                  animationDelay: `${i * 50}ms`,
+                }}
               >
                 <TarotCard
                   isFlipped={false}
                   onClick={() => handleCardClick(i)}
-                  delay={i * 50}
+                  delay={i * 30}
                   size="small"
                 />
               </div>
@@ -375,16 +514,16 @@ const CardDrawing = ({
         </div>
 
         {/* 선택된 위치 표시 */}
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-10 flex justify-center gap-3 flex-wrap px-4">
           {spread.positions.map((pos, i) => (
             <div
               key={pos.id}
-              className={`px-4 py-2 rounded-lg border-2 ${i < selectedCards.length
-                ? 'border-purple-500 bg-purple-100 dark:bg-purple-900/30'
-                : 'border-dashed border-muted'
+              className={`px-4 py-2 rounded-xl border-2 transition-all duration-300 ${i < selectedCards.length
+                ? 'border-amber-400/60 bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-white shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                : 'border-dashed border-white/20 text-white/50'
                 }`}
             >
-              <span className="text-sm">{pos.korean}</span>
+              <span className="text-sm font-medium">{pos.korean}</span>
             </div>
           ))}
         </div>
@@ -396,32 +535,41 @@ const CardDrawing = ({
   return (
     <div className="text-center py-8">
       <h2 className="text-xl font-bold text-white mb-2">
-        {cardsRevealed ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
+        {showButton ? '카드가 공개되었습니다!' : '카드가 공개됩니다...'}
       </h2>
       <p className="text-purple-200 mb-6">
-        {cardsRevealed
+        {showButton
           ? '아래 버튼을 눌러 해석을 확인하세요'
           : '잠시만 기다려주세요...'}
       </p>
-      <div className="flex justify-center gap-4 flex-wrap mb-8">
-        {drawnCards.map((drawn, i) => (
-          <div key={i} className="text-center">
-            <div className="mb-2 text-sm text-purple-200">
-              {spread.positions[i]?.korean}
+
+      {/* 카드가 없으면 로딩 표시 */}
+      {drawnCards.length === 0 ? (
+        <div className="flex justify-center items-center py-16">
+          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-purple-200">카드를 준비하는 중...</span>
+        </div>
+      ) : (
+        <div className="flex justify-center gap-4 flex-wrap mb-8">
+          {drawnCards.map((drawn, i) => (
+            <div key={i} className="text-center">
+              <div className="mb-2 text-sm text-purple-200">
+                {spread.positions[i]?.korean}
+              </div>
+              <TarotCard
+                card={drawn.card}
+                isReversed={drawn.isReversed}
+                isFlipped={true}
+                delay={i * 400}
+                size="medium"
+              />
             </div>
-            <TarotCard
-              card={drawn.card}
-              isReversed={drawn.isReversed}
-              isFlipped={true}
-              delay={i * 400}
-              size="medium"
-            />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* 분석 시작 버튼 */}
-      {cardsRevealed && (
+      {showButton && (
         <div className="animate-fade-in">
           <Button
             onClick={handleStartAnalysis}
@@ -432,6 +580,13 @@ const CardDrawing = ({
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
+      )}
+
+      {/* 버튼이 아직 안 보이면 안내 텍스트 */}
+      {!showButton && drawnCards.length > 0 && (
+        <p className="text-purple-300/60 text-sm animate-pulse">
+          카드가 모두 공개되면 버튼이 나타납니다...
+        </p>
       )}
     </div>
   );
