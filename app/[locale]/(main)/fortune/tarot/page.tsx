@@ -389,13 +389,15 @@ const CardDrawing = ({
 
   // 셔플 애니메이션
   useEffect(() => {
-    if (phase === 'shuffle' && shuffleCount < 3) {
-      const timer = setTimeout(() => {
-        setShuffleCount((prev) => prev + 1);
-      }, 600);
-      return () => clearTimeout(timer);
-    } else if (shuffleCount >= 3) {
-      setPhase('draw');
+    if (phase === 'shuffle') {
+      if (shuffleCount < 3) {
+        const timer = setTimeout(() => {
+          setShuffleCount((prev) => prev + 1);
+        }, 600);
+        return () => clearTimeout(timer);
+      } else {
+        setPhase('draw');
+      }
     }
   }, [phase, shuffleCount]);
 
