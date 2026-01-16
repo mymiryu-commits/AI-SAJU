@@ -74,8 +74,8 @@ export function generateYearlyTimeline(
   yongsin: string[],
   targetYear: number
 ): YearlyTimeline {
-  const dayMaster = saju.dayPillar.stem.char;
-  const dayElement = saju.dayPillar.stem.element;
+  const dayMaster = saju.day.stemKorean;
+  const dayElement = saju.day.element;
 
   // 월별 에너지 매핑
   const monthlyEnergy: Record<number, { element: string; phase: TimelinePeriod['phase'] }> = {
@@ -215,7 +215,7 @@ export function generateFullStory(
   cardDeck: CardDeck,
   timeline: YearlyTimeline
 ): StorytellingAnalysis['fullStory'] {
-  const dayMaster = saju.dayPillar.stem.char;
+  const dayMaster = saju.day.stemKorean;
   const flower = cardDeck.essence.flowerKorean;
   const animal = cardDeck.energy.animalKorean;
 
@@ -287,7 +287,7 @@ export function generateStorytellingAnalysis(
   );
 
   // 4. 한 줄 운명 생성
-  const dayMaster = saju.dayPillar.stem.char;
+  const dayMaster = saju.day.stemKorean;
   const destinyLine = generateDestinyLine(dayMaster);
 
   // 5. 전체 스토리 생성

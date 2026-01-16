@@ -39,7 +39,7 @@ function determineCardStyle(birthYear: number): CardStyle {
 
 // 본질 카드 (꽃) 생성 - 일간 기반
 function generateEssenceCard(saju: SajuChart): EssenceCard {
-  const dayMaster = saju.dayPillar.stem.char;
+  const dayMaster = saju.day.stemKorean;
   const cardData = ESSENCE_CARDS[dayMaster] || ESSENCE_CARDS['갑'];
 
   return {
@@ -55,7 +55,8 @@ function generateEnergyCard(yongsin: string[], user: UserInput): EnergyCard {
 
   // 연령에 따라 보조 동물 선택
   const currentYear = new Date().getFullYear();
-  const age = currentYear - user.birthYear;
+  const birthYear = parseInt(user.birthDate.split('-')[0]);
+  const age = currentYear - birthYear;
   const animalVariant = age < 35 ? 'young' : 'mature';
 
   return {
@@ -137,7 +138,7 @@ function generateFortuneCard(
   saju: SajuChart,
   yongsin: string[]
 ): FortuneCard {
-  const dayElement = saju.dayPillar.stem.element;
+  const dayElement = saju.day.element;
   const primaryYongsin = yongsin[0] || '목';
 
   // 행운의 숫자: 일간 오행 + 용신 오행
@@ -181,7 +182,7 @@ function generateGuardianCard(
   saju: SajuChart,
   yongsin: string[]
 ): GuardianCard {
-  const dayMaster = saju.dayPillar.stem.char;
+  const dayMaster = saju.day.stemKorean;
   const primaryYongsin = yongsin[0] || '목';
 
   const mainGem = MAIN_GEM_BY_YONGSIN[primaryYongsin] || MAIN_GEM_BY_YONGSIN['목'];
@@ -211,7 +212,8 @@ export function generateCardDeck(
   dominantSipsin: string,
   targetYear: number = new Date().getFullYear()
 ): CardDeck {
-  const style = determineCardStyle(user.birthYear);
+  const birthYear = parseInt(user.birthDate.split('-')[0]);
+  const style = determineCardStyle(birthYear);
 
   return {
     essence: generateEssenceCard(saju),
