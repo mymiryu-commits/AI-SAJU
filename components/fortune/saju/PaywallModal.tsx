@@ -53,8 +53,12 @@ export default function PaywallModal({
   const hasEnoughPoints = isAdmin || userPoints >= (selectedProductData?.pointCost || 0);
 
   const handlePurchase = () => {
+    console.log('PaywallModal handlePurchase called:', { selectedProduct, hasEnoughPoints, isAdmin });
     if (selectedProduct && hasEnoughPoints) {
+      console.log('Calling onPurchase with:', selectedProduct);
       onPurchase(selectedProduct);
+    } else {
+      console.log('Purchase blocked:', { selectedProduct, hasEnoughPoints });
     }
   };
 
