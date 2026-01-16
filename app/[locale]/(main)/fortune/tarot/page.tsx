@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -588,10 +588,10 @@ export default function TarotPage() {
     setStep('draw');
   };
 
-  const handleDrawComplete = (cards: DrawnCard[]) => {
+  const handleDrawComplete = useCallback((cards: DrawnCard[]) => {
     setDrawnCards(cards);
     setStep('result');
-  };
+  }, []);
 
   const handleReset = () => {
     setStep('spread');
