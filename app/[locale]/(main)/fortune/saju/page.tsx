@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, CheckCircle, Coins, Crown } from 'lucide-react';
@@ -48,6 +48,21 @@ export default function SajuPage() {
   // 포인트 관련 상태
   const [userPoints, setUserPoints] = useState(0);
   const [isLoadingPoints, setIsLoadingPoints] = useState(true);
+
+  // Refs to track latest values (for closure issues)
+  const userInputRef = useRef<UserInput | null>(null);
+  const analysisIdRef = useRef<string | null>(null);
+
+  // Sync refs with state
+  useEffect(() => {
+    userInputRef.current = userInput;
+    console.log('userInputRef updated:', userInput?.name || 'null');
+  }, [userInput]);
+
+  useEffect(() => {
+    analysisIdRef.current = analysisId;
+    console.log('analysisIdRef updated:', analysisId || 'null');
+  }, [analysisId]);
 
   // 포인트 조회
   useEffect(() => {
@@ -137,22 +152,35 @@ export default function SajuPage() {
 
   // 프리미엄 분석 데이터 로드
   const loadPremiumAnalysis = useCallback(async (productId: string) => {
-    console.log('loadPremiumAnalysis called:', { productId, userInput: !!userInput, analysisId });
+    // Use refs to get the latest values (avoid stale closures)
+    const currentUserInput = userInputRef.current;
+    const currentAnalysisId = analysisIdRef.current;
 
-    if (!userInput || !analysisId) {
-      console.error('Missing userInput or analysisId');
+    console.log('loadPremiumAnalysis called:', {
+      productId,
+      hasUserInput: !!currentUserInput,
+      userInputName: currentUserInput?.name,
+      analysisId: currentAnalysisId || 'null (will create new)',
+      // Also log state values for debugging
+      stateUserInput: !!userInput,
+      stateAnalysisId: analysisId
+    });
+
+    // userInput만 필수, analysisId는 선택 (없으면 새로 생성됨)
+    if (!currentUserInput) {
+      console.error('Missing userInput - free analysis required first');
       throw new Error('분석 데이터가 없습니다. 먼저 무료 분석을 진행해주세요.');
     }
 
     try {
-      console.log('Calling premium API...');
+      console.log('Calling premium API with input:', currentUserInput.name);
       const response = await fetch('/api/fortune/saju/premium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: userInput,
+          input: currentUserInput,
           productType: productId,
-          analysisId
+          analysisId: currentAnalysisId || undefined  // null이면 undefined로 전달
         })
       });
 
@@ -173,6 +201,11 @@ export default function SajuPage() {
           premium: data.data.premium
         };
       });
+
+      // 새로 생성된 analysisId가 있으면 저장
+      if (data.meta?.analysisId && !currentAnalysisId) {
+        setAnalysisId(data.meta.analysisId);
+      }
 
       setIsPremiumUnlocked(true);
       setShowPaywall(false);
