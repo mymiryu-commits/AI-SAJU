@@ -1,46 +1,59 @@
 /**
  * Korean Font Loader for jsPDF
  *
- * Noto Sans KR 폰트를 동적으로 로드하여 jsPDF에서 사용
+ * 한글 폰트를 jsPDF에서 사용하기 위한 유틸리티
+ * 고령 사용자를 위해 안정적인 한글 출력 보장
  */
 
 import { jsPDF } from 'jspdf';
 
-// 폰트 캐시
-let fontCache: ArrayBuffer | null = null;
+// 폰트 캐시 (Base64 문자열)
+let fontCacheBase64: string | null = null;
+
+// 나눔고딕 폰트 URL (여러 CDN 폴백)
+const FONT_URLS = [
+  'https://cdn.jsdelivr.net/gh/nicecode-dev/NanumFontFiles@main/NanumGothic/NanumGothic-Regular.ttf',
+  'https://fastly.jsdelivr.net/gh/nicecode-dev/NanumFontFiles@main/NanumGothic/NanumGothic-Regular.ttf',
+  'https://raw.githubusercontent.com/nicecode-dev/NanumFontFiles/main/NanumGothic/NanumGothic-Regular.ttf'
+];
 
 /**
- * Noto Sans KR 폰트 URL (Google Fonts CDN)
- * Regular weight subset for common Korean characters
+ * 폰트 파일을 가져와서 Base64로 변환
+ * 여러 CDN 폴백 지원
  */
-const NOTO_SANS_KR_URL =
-  'https://fonts.gstatic.com/s/notosanskr/v36/PbyxFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoyeLGC5nYm.woff2';
+async function fetchFontAsBase64(): Promise<string> {
+  let lastError: Error | null = null;
 
-// Fallback: 경량 한글 폰트 (나눔고딕 subset)
-const NANUM_GOTHIC_URL =
-  'https://cdn.jsdelivr.net/gh/nicecode-dev/NanumFontFiles@main/NanumGothic/NanumGothic-Regular.ttf';
+  for (const url of FONT_URLS) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-/**
- * 폰트 파일을 ArrayBuffer로 가져오기
- */
-async function fetchFont(url: string): Promise<ArrayBuffer> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch font: ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+
+      // Node.js와 브라우저 모두 지원하는 Base64 변환
+      if (typeof Buffer !== 'undefined') {
+        // Node.js 환경
+        return Buffer.from(arrayBuffer).toString('base64');
+      } else {
+        // 브라우저 환경
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`Font fetch failed from ${url}:`, error);
+      continue;
+    }
   }
-  return response.arrayBuffer();
-}
 
-/**
- * ArrayBuffer를 Base64 문자열로 변환
- */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  throw new Error(`All font sources failed. Last error: ${lastError?.message}`);
 }
 
 /**
@@ -49,24 +62,24 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 export async function addKoreanFontToPDF(doc: jsPDF): Promise<void> {
   try {
     // 캐시된 폰트가 있으면 사용
-    if (!fontCache) {
-      // NanumGothic TTF 사용 (더 안정적)
-      fontCache = await fetchFont(NANUM_GOTHIC_URL);
+    if (!fontCacheBase64) {
+      fontCacheBase64 = await fetchFontAsBase64();
     }
 
-    const fontBase64 = arrayBufferToBase64(fontCache);
-
     // jsPDF VFS에 폰트 파일 추가
-    doc.addFileToVFS('NanumGothic-Regular.ttf', fontBase64);
+    doc.addFileToVFS('NanumGothic-Regular.ttf', fontCacheBase64);
 
     // 폰트 등록
     doc.addFont('NanumGothic-Regular.ttf', 'NanumGothic', 'normal');
 
     // 기본 폰트로 설정
     doc.setFont('NanumGothic');
+
+    console.log('Korean font loaded successfully');
   } catch (error) {
     console.error('Failed to load Korean font:', error);
-    // 폰트 로드 실패 시 기본 폰트 사용 (한글이 깨질 수 있음)
+    // 폰트 로드 실패 시 에러 발생 (한글 출력이 필수이므로)
+    throw new Error('한글 폰트 로드에 실패했습니다. PDF를 생성할 수 없습니다.');
   }
 }
 
@@ -93,7 +106,7 @@ export async function createKoreanPDF(options?: {
  * 폰트 캐시 초기화 (메모리 정리용)
  */
 export function clearFontCache(): void {
-  fontCache = null;
+  fontCacheBase64 = null;
 }
 
 export default {
