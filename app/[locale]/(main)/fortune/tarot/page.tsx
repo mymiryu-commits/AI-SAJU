@@ -428,8 +428,15 @@ const CardDrawing = ({
 
   // 디버그용 - 콘솔에 상태 출력
   useEffect(() => {
-    console.log('[CardDrawing] phase:', phase, 'drawnCards:', drawnCards.length, 'selectedCards:', selectedCards.length);
-  }, [phase, drawnCards.length, selectedCards.length]);
+    console.log('[CardDrawing] phase:', phase, 'drawnCards:', drawnCards.length, 'selectedCards:', selectedCards.length, 'spreadCount:', spread.cardCount);
+  }, [phase, drawnCards.length, selectedCards.length, spread.cardCount]);
+
+  // 디버그: 강제 reveal 버튼 (테스트용)
+  const forceReveal = () => {
+    const drawn = drawRandomCards(spread.cardCount);
+    setDrawnCards(drawn);
+    setPhase('reveal');
+  };
 
   if (phase === 'shuffle') {
     return (
@@ -480,6 +487,19 @@ const CardDrawing = ({
   if (phase === 'draw') {
     return (
       <div className="text-center py-8">
+        {/* 디버그 패널 */}
+        <div className="fixed top-4 right-4 bg-black/80 text-white text-xs p-3 rounded-lg z-50 text-left">
+          <div>Phase: {phase}</div>
+          <div>Selected: {selectedCards.length}/{spread.cardCount}</div>
+          <div>DrawnCards: {drawnCards.length}</div>
+          <button
+            onClick={forceReveal}
+            className="mt-2 px-2 py-1 bg-purple-600 rounded text-xs"
+          >
+            Force Reveal
+          </button>
+        </div>
+
         {/* 헤더 */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">
@@ -553,6 +573,13 @@ const CardDrawing = ({
   // reveal phase - 버튼 항상 표시
   return (
     <div className="text-center py-8">
+      {/* 디버그 패널 */}
+      <div className="fixed top-4 right-4 bg-green-800/80 text-white text-xs p-3 rounded-lg z-50 text-left">
+        <div>Phase: {phase}</div>
+        <div>DrawnCards: {drawnCards.length}</div>
+        <div>Ready: {drawnCards.length > 0 ? 'YES' : 'NO'}</div>
+      </div>
+
       <h2 className="text-xl font-bold text-white mb-2">
         카드가 공개되었습니다!
       </h2>
