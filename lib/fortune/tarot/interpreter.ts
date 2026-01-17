@@ -525,28 +525,167 @@ export function generateDailyMessage(card: TarotCardInfo, orientation: CardOrien
 // ===== 대서사시 스토리텔링 =====
 
 // 스토리 도입부 생성
-function generateStoryOpening(cards: DrawnCard[]): string {
+function generateStoryOpening(cards: DrawnCard[], question?: string): string {
   const majorCount = cards.filter(c => c.card.type === 'major').length;
   const reversedCount = cards.filter(c => c.orientation === 'reversed').length;
 
-  const openings = [
-    '고대의 지혜가 담긴 카드들이 당신 앞에 펼쳐졌습니다.',
-    '운명의 실이 엮이며, 카드들이 당신의 이야기를 속삭입니다.',
-    '신비로운 힘이 카드를 통해 당신에게 메시지를 전합니다.',
-    '별빛 아래 펼쳐진 카드들이 당신만을 위한 이야기를 들려줍니다.',
-  ];
+  let opening = '';
 
-  let opening = openings[Math.floor(Math.random() * openings.length)];
+  if (question) {
+    opening = `당신이 품고 있는 질문, "${question}"에 대해 카드들이 답을 내놓았습니다.\n\n`;
+  }
+
+  opening += '자, 이제 펼쳐진 카드들의 이야기를 들어보시겠습니까?\n\n';
 
   if (majorCount >= 2) {
-    opening += ' 메이저 아르카나가 여러 장 등장했다는 것은, 이것이 당신 인생의 중대한 전환점임을 의미합니다.';
+    opening += '흥미롭군요. 메이저 아르카나가 여러 장 나왔습니다. 이것은 단순한 일상의 문제가 아닌, 당신 인생에서 중요한 의미를 가진 시기라는 것을 암시합니다. ';
   }
 
   if (reversedCount > cards.length / 2) {
-    opening += ' 많은 카드가 역방향으로 나타났습니다. 이는 내면의 성찰과 변화가 필요한 시기임을 암시합니다.';
+    opening += '역방향 카드가 많이 보이는군요. 이것은 지금 당신 내면에서 무언가가 정리되지 않았거나, 막혀있는 에너지가 있다는 신호입니다. 하지만 걱정하지 마세요. 이런 시기는 오히려 자신을 돌아보고 성장할 수 있는 기회이기도 합니다.';
+  } else if (reversedCount === 0 && cards.length > 1) {
+    opening += '모든 카드가 정방향으로 나왔네요. 에너지의 흐름이 순조롭습니다. 지금 당신이 가고 있는 방향이 옳다는 것을 카드가 확인해주고 있어요.';
   }
 
   return opening;
+}
+
+// 싱글 카드 스토리
+function generateSingleCardStory(drawnCard: DrawnCard): string {
+  const { card, orientation } = drawnCard;
+  const meaning = MAJOR_MEANINGS[card.id];
+  const isReversed = orientation === 'reversed';
+
+  const parts: string[] = [];
+
+  parts.push(`오늘 당신에게 온 카드는 「${card.korean}」입니다${isReversed ? ', 그것도 역방향으로요' : ''}.`);
+  parts.push('');
+
+  if (meaning?.story) {
+    parts.push(meaning.story);
+    parts.push('');
+  }
+
+  if (meaning) {
+    const interp = isReversed ? meaning.reversed : meaning.upright;
+    parts.push(`이 카드가 ${isReversed ? '역방향으로' : '정방향으로'} 나타났다는 것은 중요한 메시지를 담고 있습니다.`);
+    parts.push('');
+    parts.push(interp.general);
+    parts.push('');
+    parts.push(`제가 드리고 싶은 조언은 이것입니다: ${interp.advice}`);
+  } else {
+    parts.push(`${card.keywords.join(', ')}의 에너지가 지금 당신 주변을 맴돌고 있습니다. 이 기운을 어떻게 활용하느냐는 당신의 선택에 달려 있어요.`);
+  }
+
+  return parts.join('\n');
+}
+
+// 3장 카드 스토리 (과거-현재-미래)
+function generateThreeCardStory(cards: DrawnCard[]): string {
+  const [past, present, future] = cards;
+  const parts: string[] = [];
+
+  // 과거
+  const pastMeaning = MAJOR_MEANINGS[past.card.id];
+  const pastReversed = past.orientation === 'reversed';
+
+  parts.push(`먼저 과거를 나타내는 첫 번째 카드, 「${past.card.korean}」${pastReversed ? '(역방향)' : ''}을 보겠습니다.`);
+  parts.push('');
+
+  if (pastMeaning?.story) {
+    parts.push(pastMeaning.story.split('.').slice(0, 2).join('.') + '.');
+    parts.push('');
+  }
+
+  const pastInterp = pastReversed ? pastMeaning?.reversed : pastMeaning?.upright;
+  if (pastInterp) {
+    parts.push(`이 카드는 당신의 과거에 ${pastInterp.general.split('.')[0]}의 경험이 있었음을 보여줍니다.`);
+  } else {
+    parts.push(`당신은 ${past.card.keywords.slice(0, 2).join('과 ')}의 에너지 속에서 지나온 시간들이 있었군요.`);
+  }
+  parts.push('이 경험이 지금의 당신을 만들었습니다.');
+  parts.push('');
+
+  // 현재
+  const presentMeaning = MAJOR_MEANINGS[present.card.id];
+  const presentReversed = present.orientation === 'reversed';
+
+  parts.push(`자, 이제 현재를 나타내는 두 번째 카드를 보겠습니다. 「${present.card.korean}」${presentReversed ? '(역방향)' : ''}이 나왔네요.`);
+  parts.push('');
+
+  if (presentMeaning?.story) {
+    parts.push(presentMeaning.story.split('.').slice(0, 2).join('.') + '.');
+    parts.push('');
+  }
+
+  const presentInterp = presentReversed ? presentMeaning?.reversed : presentMeaning?.upright;
+  if (presentInterp) {
+    parts.push(`지금 당신은 ${presentInterp.general}`);
+    parts.push('');
+    parts.push(`현재 상황에서 기억해야 할 것은: ${presentInterp.advice}`);
+  } else {
+    parts.push(`현재 당신 주변에는 ${present.card.keywords.slice(0, 2).join('과 ')}의 에너지가 흐르고 있습니다.`);
+  }
+  parts.push('');
+
+  // 미래
+  const futureMeaning = MAJOR_MEANINGS[future.card.id];
+  const futureReversed = future.orientation === 'reversed';
+
+  parts.push(`마지막으로 미래를 나타내는 세 번째 카드입니다. 「${future.card.korean}」${futureReversed ? '(역방향)' : ''}이 기다리고 있군요.`);
+  parts.push('');
+
+  if (futureMeaning?.story) {
+    parts.push(futureMeaning.story.split('.').slice(0, 2).join('.') + '.');
+    parts.push('');
+  }
+
+  const futureInterp = futureReversed ? futureMeaning?.reversed : futureMeaning?.upright;
+  if (futureInterp) {
+    parts.push(`앞으로 당신에게 펼쳐질 가능성은 이렇습니다: ${futureInterp.general}`);
+    parts.push('');
+    if (futureReversed) {
+      parts.push(`역방향으로 나왔으니, 주의가 필요합니다. ${futureInterp.advice}`);
+    } else {
+      parts.push(`좋은 흐름이 예상됩니다. ${futureInterp.advice}`);
+    }
+  } else {
+    parts.push(`미래에는 ${future.card.keywords.slice(0, 2).join('과 ')}의 에너지가 당신을 기다리고 있습니다.`);
+  }
+
+  return parts.join('\n');
+}
+
+// 다중 카드 스토리
+function generateMultiCardStory(cards: DrawnCard[]): string {
+  const parts: string[] = [];
+
+  parts.push(`${cards.length}장의 카드가 펼쳐졌습니다. 하나씩 천천히 읽어보겠습니다.`);
+  parts.push('');
+
+  cards.forEach((drawnCard, index) => {
+    const { card, orientation, position } = drawnCard;
+    const meaning = MAJOR_MEANINGS[card.id];
+    const isReversed = orientation === 'reversed';
+    const interp = isReversed ? meaning?.reversed : meaning?.upright;
+
+    const positionLabel = position || `${index + 1}번째 자리`;
+    parts.push(`【${positionLabel}】 ${card.korean}${isReversed ? ' (역방향)' : ''}`);
+
+    if (meaning?.story) {
+      const storyFragment = meaning.story.split('.')[0] + '.';
+      parts.push(storyFragment);
+    }
+
+    if (interp) {
+      parts.push(interp.general.split('.').slice(0, 2).join('.') + '.');
+    } else {
+      parts.push(`${card.keywords.join(', ')}의 에너지가 이 위치에서 작용합니다.`);
+    }
+    parts.push('');
+  });
+
+  return parts.join('\n');
 }
 
 // 카드들 간의 연결 스토리 생성
@@ -560,187 +699,134 @@ function generateCardNarrative(cards: DrawnCard[]): string {
   }
 }
 
-// 싱글 카드 스토리
-function generateSingleCardStory(drawnCard: DrawnCard): string {
-  const { card, orientation } = drawnCard;
-  const meaning = MAJOR_MEANINGS[card.id];
-  const isReversed = orientation === 'reversed';
+// 카드 간 연결 해석
+function generateCardConnection(cards: DrawnCard[]): string {
+  if (cards.length < 2) return '';
 
-  if (meaning?.story) {
-    return `\n\n${meaning.story}\n\n이 카드가 ${isReversed ? '역방향으로' : '정방향으로'} 당신에게 왔다는 것은, ${isReversed ? meaning.reversed.advice : meaning.upright.advice}`;
-  }
-
-  return `\n\n「${card.korean}」의 에너지가 당신의 길을 밝히고 있습니다. ${card.keywords.join(', ')}의 기운이 당신과 함께합니다.`;
-}
-
-// 3장 카드 스토리 (과거-현재-미래)
-function generateThreeCardStory(cards: DrawnCard[]): string {
-  const [past, present, future] = cards;
   const parts: string[] = [];
+  parts.push('---');
+  parts.push('');
+  parts.push('【카드들의 연결】');
+  parts.push('');
 
-  // 과거
-  const pastMeaning = MAJOR_MEANINGS[past.card.id];
-  parts.push(`\n\n⏳ **과거의 장**`);
-  parts.push(`당신의 여정은 「${past.card.korean}」${past.orientation === 'reversed' ? '(역방향)' : ''}에서 시작되었습니다.`);
-  if (pastMeaning?.story) {
-    parts.push(pastMeaning.story.split('.')[0] + '.');
-  }
-  parts.push(`과거의 ${past.card.keywords.slice(0, 2).join('과 ')}의 경험이 오늘의 당신을 만들었습니다.`);
+  // 메이저/마이너 비율 분석
+  const majorCards = cards.filter(c => c.card.type === 'major');
+  const minorCards = cards.filter(c => c.card.type === 'minor');
 
-  // 현재
-  const presentMeaning = MAJOR_MEANINGS[present.card.id];
-  parts.push(`\n\n⚡ **현재의 장**`);
-  parts.push(`지금 당신 앞에는 「${present.card.korean}」${present.orientation === 'reversed' ? '(역방향)' : ''}이 놓여 있습니다.`);
-  if (presentMeaning?.story) {
-    parts.push(presentMeaning.story.split('.')[0] + '.');
-  }
-  const presentAdvice = present.orientation === 'upright' ? presentMeaning?.upright.advice : presentMeaning?.reversed.advice;
-  if (presentAdvice) {
-    parts.push(presentAdvice);
-  }
-
-  // 미래
-  const futureMeaning = MAJOR_MEANINGS[future.card.id];
-  parts.push(`\n\n🌟 **미래의 장**`);
-  parts.push(`당신의 길 끝에는 「${future.card.korean}」${future.orientation === 'reversed' ? '(역방향)' : ''}이 기다리고 있습니다.`);
-  if (futureMeaning?.story) {
-    parts.push(futureMeaning.story.split('.')[0] + '.');
-  }
-  parts.push(`${future.card.keywords.slice(0, 2).join('과 ')}의 에너지가 당신의 미래를 비추고 있습니다.`);
-
-  return parts.join('\n');
-}
-
-// 다중 카드 스토리
-function generateMultiCardStory(cards: DrawnCard[]): string {
-  const parts: string[] = [];
-
-  parts.push(`\n\n📖 **운명의 서사**`);
-  parts.push(`${cards.length}장의 카드가 엮어내는 당신만의 이야기가 펼쳐집니다.\n`);
-
-  // 각 카드의 역할 분석
-  cards.forEach((drawnCard, index) => {
-    const { card, orientation, position } = drawnCard;
-    const meaning = MAJOR_MEANINGS[card.id];
-    const isReversed = orientation === 'reversed';
-
-    const positionLabel = position || `${index + 1}번째 카드`;
-    parts.push(`**${positionLabel}: ${card.korean}${isReversed ? ' (역방향)' : ''}**`);
-
-    if (meaning?.story) {
-      // 스토리의 첫 문장만 추출
-      const storyFragment = meaning.story.split('.')[0] + '.';
-      parts.push(storyFragment);
-    }
-
-    const advice = isReversed ? meaning?.reversed.advice : meaning?.upright.advice;
-    if (advice) {
-      parts.push(`→ ${advice}`);
-    } else {
-      parts.push(`→ ${card.keywords.join(', ')}의 에너지가 이 위치에서 작용하고 있습니다.`);
-    }
+  if (majorCards.length > 0 && minorCards.length > 0) {
+    parts.push(`이 리딩에서 메이저 아르카나 ${majorCards.length}장과 마이너 아르카나 ${minorCards.length}장이 함께 나왔습니다. 이것은 큰 인생의 흐름(메이저)과 일상의 구체적인 상황(마이너)이 서로 얽혀있음을 보여줍니다.`);
     parts.push('');
-  });
+  }
 
-  return parts.join('\n');
-}
-
-// 원소 분석 스토리
-function generateElementAnalysis(cards: DrawnCard[]): string {
+  // 원소 분석
   const elements = cards.map(c => c.card.element).filter(Boolean) as string[];
-  if (elements.length === 0) return '';
-
   const elementCounts: Record<string, number> = {};
   elements.forEach(el => {
     elementCounts[el] = (elementCounts[el] || 0) + 1;
   });
 
-  const sortedElements = Object.entries(elementCounts)
-    .sort((a, b) => b[1] - a[1])
-    .filter(([_, count]) => count > 0);
+  const sortedElements = Object.entries(elementCounts).sort((a, b) => b[1] - a[1]);
+  if (sortedElements.length > 0 && sortedElements[0][1] >= 2) {
+    const [dominantElement, count] = sortedElements[0];
+    const elementNames: Record<string, string> = {
+      fire: '불',
+      water: '물',
+      air: '공기',
+      earth: '땅',
+    };
+    const elementDescriptions: Record<string, string> = {
+      fire: '열정, 행동, 창조적 에너지',
+      water: '감정, 직관, 관계',
+      air: '생각, 소통, 결정',
+      earth: '현실, 물질, 안정',
+    };
 
-  if (sortedElements.length === 0) return '';
-
-  const elementStories: Record<string, string> = {
-    fire: '🔥 불의 원소가 타오르고 있습니다. 열정과 행동, 창조의 에너지가 당신을 이끕니다. 두려움 없이 앞으로 나아갈 때입니다.',
-    water: '💧 물의 원소가 흐르고 있습니다. 감정과 직관, 깊은 연결의 에너지가 당신을 감싸고 있습니다. 마음의 소리에 귀 기울이세요.',
-    air: '💨 공기의 원소가 불어옵니다. 사고와 소통, 명확한 판단의 에너지가 당신과 함께합니다. 지혜로운 결정을 내릴 때입니다.',
-    earth: '🌍 땅의 원소가 단단합니다. 안정과 현실, 풍요의 에너지가 당신의 기반을 다지고 있습니다. 실질적인 행동이 결실을 맺을 것입니다.',
-  };
-
-  const dominant = sortedElements[0];
-  if (dominant[1] >= 2) {
-    return `\n\n**원소의 흐름**\n${elementStories[dominant[0]] || ''}`;
+    parts.push(`${elementNames[dominantElement]}의 원소가 ${count}장이나 나왔네요. 지금 당신의 상황에서 ${elementDescriptions[dominantElement]}가 중심 테마라는 것을 알 수 있습니다.`);
+    parts.push('');
   }
 
-  return '';
+  // 정방향/역방향 비율
+  const uprightCount = cards.filter(c => c.orientation === 'upright').length;
+  const reversedCount = cards.length - uprightCount;
+
+  if (reversedCount === 0) {
+    parts.push('모든 카드가 정방향입니다. 에너지가 막힘없이 흐르고 있어요. 지금 가고 있는 방향을 신뢰하셔도 좋습니다.');
+  } else if (reversedCount > uprightCount) {
+    parts.push(`역방향 카드가 ${reversedCount}장으로 더 많습니다. 지금은 외부로 나아가기보다 내면을 돌아보고 정리하는 시간이 필요해 보입니다. 서두르지 마세요.`);
+  } else if (reversedCount > 0) {
+    parts.push(`${reversedCount}장의 역방향 카드가 있습니다. 전체적으로 좋은 흐름이지만, 몇 가지 주의해야 할 부분이 있다는 신호입니다.`);
+  }
+
+  return parts.join('\n');
 }
 
-// 종합 클라이맥스 생성
-function generateStoryClimax(cards: DrawnCard[]): string {
+// 종합 조언
+function generateFinalAdvice(cards: DrawnCard[]): string {
+  const parts: string[] = [];
+  parts.push('');
+  parts.push('---');
+  parts.push('');
+  parts.push('【종합 조언】');
+  parts.push('');
+
   const majorCards = cards.filter(c => c.card.type === 'major');
   const positiveCount = cards.filter(c => c.orientation === 'upright').length;
   const totalCards = cards.length;
 
-  const parts: string[] = [];
-  parts.push(`\n\n✨ **운명의 결론**`);
-
-  // 전체적인 흐름 분석
-  if (positiveCount >= totalCards * 0.7) {
-    parts.push(`밝은 기운이 당신의 길을 비추고 있습니다. 카드들은 한 목소리로 말합니다: "용기를 가지고 앞으로 나아가라. 우주가 당신을 지지하고 있다."`);
-  } else if (positiveCount <= totalCards * 0.3) {
-    parts.push(`도전의 시기가 다가오고 있습니다. 하지만 기억하세요 - 모든 시련은 성장의 기회입니다. 카드들은 말합니다: "폭풍 속에서도 배는 항해할 수 있다. 내면의 나침반을 믿어라."`);
-  } else {
-    parts.push(`빛과 그림자가 공존하는 복잡한 시기입니다. 카드들은 말합니다: "균형을 찾아라. 삶은 흑백이 아닌 무지개빛 스펙트럼이다."`);
-  }
-
-  // 주요 카드 기반 메시지
+  // 핵심 메시지
   if (majorCards.length > 0) {
     const keyCard = majorCards[0];
     const keyMeaning = MAJOR_MEANINGS[keyCard.card.id];
     if (keyMeaning) {
       const advice = keyCard.orientation === 'upright' ? keyMeaning.upright.advice : keyMeaning.reversed.advice;
-      parts.push(`\n특히 「${keyCard.card.korean}」가 핵심 메시지를 전합니다:\n"${advice}"`);
+      parts.push(`이 리딩에서 가장 중요한 카드는 「${keyCard.card.korean}」입니다.`);
+      parts.push(`이 카드가 전하는 핵심 메시지는: "${advice}"`);
+      parts.push('');
     }
+  }
+
+  // 전체 흐름에 따른 조언
+  if (positiveCount >= totalCards * 0.7) {
+    parts.push('전체적으로 긍정적인 에너지가 흐르고 있습니다. 지금은 적극적으로 행동해도 좋은 시기예요. 기회가 온다면 주저하지 마세요.');
+  } else if (positiveCount <= totalCards * 0.3) {
+    parts.push('지금은 도전적인 시기입니다. 하지만 기억하세요, 모든 어려움에는 배움이 있습니다. 이 시기를 잘 견디면 더 강해진 당신을 만나게 될 거예요. 무리하지 말고, 필요하다면 도움을 구하세요.');
+  } else {
+    parts.push('빛과 그림자가 공존하는 복잡한 시기네요. 어떤 일은 잘 풀리고, 어떤 일은 주의가 필요합니다. 유연하게 대처하면서 균형을 찾아가세요.');
   }
 
   return parts.join('\n');
 }
 
 // 마무리 메시지
-function generateStoryEnding(): string {
-  const endings = [
-    '\n\n🌙 카드의 메시지는 여기서 끝나지만, 당신의 이야기는 계속됩니다. 운명은 정해진 것이 아니라 만들어가는 것입니다.',
-    '\n\n🌙 별들이 길을 비추고 카드가 지혜를 전했습니다. 이제 선택은 당신의 몫입니다. 당신 안의 빛을 믿으세요.',
-    '\n\n🌙 고대의 지혜가 현재를 비추었습니다. 이 메시지를 가슴에 담고, 자신만의 길을 걸어가세요.',
-    '\n\n🌙 카드는 가능성의 거울입니다. 거울에 비친 것은 당신이 이미 알고 있던 진실일지도 모릅니다.',
+function generateClosing(): string {
+  const closings = [
+    '\n\n타로는 정해진 운명을 보여주는 것이 아닙니다. 가능성의 지도를 보여줄 뿐이에요. 어떤 길을 선택할지는 언제나 당신에게 달려 있습니다. 오늘 읽어드린 카드의 메시지가 당신의 선택에 작은 등불이 되길 바랍니다.',
+    '\n\n카드는 당신이 이미 마음 깊은 곳에서 알고 있던 것을 비춰주는 거울 같은 것입니다. 오늘의 리딩이 당신 내면의 목소리를 듣는 데 도움이 되었기를 바랍니다.',
+    '\n\n이것으로 리딩을 마치겠습니다. 카드가 전해준 메시지를 마음에 담되, 결국 당신의 인생을 만들어가는 것은 당신 자신이라는 것을 잊지 마세요. 좋은 일들이 가득하길 바랍니다.',
   ];
-  return endings[Math.floor(Math.random() * endings.length)];
+  return closings[Math.floor(Math.random() * closings.length)];
 }
 
 // 대서사시 스토리텔링 메인 함수
 export function generateEpicStorytelling(cards: DrawnCard[], question?: string): string {
   const parts: string[] = [];
 
-  // 질문이 있다면 시작
-  if (question) {
-    parts.push(`📜 **당신의 질문**: "${question}"\n`);
-  }
-
   // 도입부
-  parts.push(generateStoryOpening(cards));
+  parts.push(generateStoryOpening(cards, question));
 
   // 카드 서사
   parts.push(generateCardNarrative(cards));
 
-  // 원소 분석
-  parts.push(generateElementAnalysis(cards));
+  // 카드 간 연결 (2장 이상일 때)
+  if (cards.length >= 2) {
+    parts.push(generateCardConnection(cards));
+  }
 
-  // 클라이맥스
-  parts.push(generateStoryClimax(cards));
+  // 종합 조언
+  parts.push(generateFinalAdvice(cards));
 
   // 마무리
-  parts.push(generateStoryEnding());
+  parts.push(generateClosing());
 
-  return parts.join('');
+  return parts.join('\n');
 }
