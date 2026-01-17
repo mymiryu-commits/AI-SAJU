@@ -90,6 +90,94 @@ const MONTHLY_UNIQUE_ADVICE: Record<number, {
   }
 };
 
+// 오행별 건강/재물/관계 영향 데이터
+const ELEMENT_LIFE_IMPACT: Record<Element, {
+  health: { organ: string; risk: string; tip: string };
+  wealth: { strength: string; advice: string };
+  relationship: { style: string; tip: string };
+}> = {
+  wood: {
+    health: { organ: '간/담낭/눈', risk: '스트레스로 인한 두통, 눈 피로', tip: '녹색 채소 섭취, 숲 산책 추천' },
+    wealth: { strength: '창업과 성장에 유리', advice: '새로운 사업 기회를 적극 탐색하세요' },
+    relationship: { style: '진취적이고 리더십 있음', tip: '상대방의 의견도 경청하는 자세 필요' }
+  },
+  fire: {
+    health: { organ: '심장/소장/혀', risk: '과로로 인한 심장 부담', tip: '충분한 휴식과 명상 추천' },
+    wealth: { strength: '투자와 확장에 유리', advice: '열정을 활용하되 신중한 판단 필요' },
+    relationship: { style: '열정적이고 표현력 풍부', tip: '감정 조절로 관계 안정화' }
+  },
+  earth: {
+    health: { organ: '위/비장/입술', risk: '소화기 문제 주의', tip: '규칙적인 식사와 제철 음식 섭취' },
+    wealth: { strength: '안정적인 자산 관리에 유리', advice: '꾸준한 저축과 장기 투자 추천' },
+    relationship: { style: '신뢰감 있고 포용력 있음', tip: '변화에 유연하게 대처하기' }
+  },
+  metal: {
+    health: { organ: '폐/대장/피부', risk: '호흡기와 피부 문제 주의', tip: '맑은 공기와 충분한 수분 섭취' },
+    wealth: { strength: '절제와 축적에 유리', advice: '지출을 줄이고 알찬 투자에 집중' },
+    relationship: { style: '원칙적이고 정의로움', tip: '융통성을 발휘하면 관계 개선' }
+  },
+  water: {
+    health: { organ: '신장/방광/귀', risk: '피로 누적과 면역력 저하 주의', tip: '충분한 수면과 따뜻한 음식 섭취' },
+    wealth: { strength: '유연한 재테크에 유리', advice: '흐름을 읽고 적응력 있게 대처' },
+    relationship: { style: '지혜롭고 깊은 통찰력', tip: '감정을 솔직하게 표현하기' }
+  }
+};
+
+// 연간 운세 요약 생성
+function generateYearSummary(
+  oheng: OhengBalance,
+  yongsin?: Element[],
+  premium?: PremiumContent
+): { overallScore: number; highlights: string[]; challenges: string[]; luckyMonths: number[] } {
+  // 전체 점수 계산 (월별 평균)
+  const monthlyScores = premium?.monthlyActionPlan?.map(m => m.score) || [];
+  const overallScore = monthlyScores.length > 0
+    ? Math.round(monthlyScores.reduce((a, b) => a + b, 0) / monthlyScores.length)
+    : 75;
+
+  // 상위 3개월 찾기
+  const luckyMonths = monthlyScores
+    .map((score, idx) => ({ month: idx + 1, score }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(m => m.month);
+
+  // 하이라이트 생성
+  const highlights: string[] = [];
+  const challenges: string[] = [];
+
+  if (yongsin?.length) {
+    highlights.push(`용신 ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}의 기운을 활용하면 운세 상승`);
+  }
+
+  // 오행 균형 분석
+  const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+  const sortedElements = elements
+    .map(e => ({ element: e, value: oheng[e] || 0 }))
+    .sort((a, b) => b.value - a.value);
+
+  const strongestElement = sortedElements[0];
+  const weakestElement = sortedElements[sortedElements.length - 1];
+
+  if (strongestElement.value > 30) {
+    highlights.push(`${ELEMENT_KOREAN[strongestElement.element]}(${strongestElement.value.toFixed(0)}%)의 강한 기운이 핵심 동력`);
+  }
+
+  if (weakestElement.value < 10) {
+    challenges.push(`${ELEMENT_KOREAN[weakestElement.element]} 기운 부족으로 관련 영역 보완 필요`);
+  }
+
+  if (premium?.lifeTimeline?.goldenWindows?.length) {
+    highlights.push('황금 기회의 시기가 다가오고 있습니다');
+  }
+
+  if (premium?.careerAnalysis?.matchScore && premium.careerAnalysis.matchScore >= 70) {
+    highlights.push('현재 직업과의 궁합이 좋은 해입니다');
+  }
+
+  return { overallScore, highlights, challenges, luckyMonths };
+}
+
 // 스토리텔링 생성 함수
 function generateMonthlyStory(
   monthNum: number,
@@ -209,6 +297,51 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.text(`발행일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, 250, { align: 'center' });
   doc.text('AI-SAJU Premium Service', pageWidth / 2, 260, { align: 'center' });
 
+  // ========== Executive Summary ==========
+  doc.addPage();
+  yPos = margin;
+
+  const summary = generateYearSummary(oheng, yongsin, premium);
+
+  addSectionTitle(`${targetYear}년 운세 핵심 요약`);
+
+  // 전체 점수 표시
+  addSubSection(`${user.name}님의 ${targetYear}년 종합 운세`);
+  const scoreBar = '★'.repeat(Math.round(summary.overallScore / 20)) + '☆'.repeat(5 - Math.round(summary.overallScore / 20));
+  addText(`종합 점수: ${summary.overallScore}점 ${scoreBar}`);
+  yPos += 5;
+
+  // 행운의 달
+  if (summary.luckyMonths.length > 0) {
+    addText(`행운의 달: ${summary.luckyMonths.map(m => m + '월').join(', ')}`);
+    yPos += 3;
+  }
+
+  // 핵심 하이라이트
+  if (summary.highlights.length > 0) {
+    addSubSection('올해의 기회');
+    summary.highlights.forEach(h => addText(`✓ ${h}`));
+    yPos += 3;
+  }
+
+  // 도전 과제
+  if (summary.challenges.length > 0) {
+    addSubSection('주의할 점');
+    summary.challenges.forEach(c => addText(`△ ${c}`));
+    yPos += 3;
+  }
+
+  // Top 5 액션 아이템
+  addSubSection('올해 꼭 실천할 5가지');
+  const top5Actions = [
+    yongsin?.length ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 활용 - ${ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth.advice || '적극적으로 활용하세요'}` : '긍정적인 마음가짐 유지',
+    '건강 관리 - 규칙적인 운동과 충분한 수면',
+    '인간관계 - 소중한 사람들과 소통 강화',
+    '재정 관리 - 계획적인 저축과 투자',
+    '자기 계발 - 새로운 기술이나 지식 습득'
+  ];
+  top5Actions.forEach((action, idx) => addText(`${idx + 1}. ${action}`));
+
   // ========== 본문 시작 ==========
   doc.addPage();
   yPos = margin;
@@ -247,19 +380,74 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     addSubSection('용신/기신 분석');
     if (yongsin?.length) {
       addText(`용신(用神): ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
-      addText('- 용신은 당신에게 이로운 기운으로, 이 오행을 활용하면 운이 좋아집니다.');
+      addText('- 용신은 당신의 사주에서 부족하거나 필요한 기운입니다.');
+      addText('- 이 오행과 관련된 색상, 방향, 활동을 활용하면 운이 상승합니다.');
+      yongsin.forEach(e => {
+        const impact = ELEMENT_LIFE_IMPACT[e];
+        if (impact) {
+          addText(`  ▸ ${ELEMENT_KOREAN[e]} 활용법: ${impact.wealth.advice}`);
+        }
+      });
     }
     if (gisin?.length) {
       addText(`기신(忌神): ${gisin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
-      addText('- 기신은 피해야 할 기운으로, 이 오행을 피하면 흉함을 줄일 수 있습니다.');
+      addText('- 기신은 사주에 이미 과한 기운으로, 피하면 균형을 유지할 수 있습니다.');
     }
   }
 
-  // 3. 프리미엄 콘텐츠 (있는 경우)
+  // 3. 건강/재물/관계 분석 (오행 기반)
+  addSectionTitle('3. 건강·재물·관계 분석');
+
+  // 오행 균형으로 가장 강한/약한 요소 찾기
+  const sortedOheng = elements
+    .map(e => ({ element: e, value: oheng[e] || 0 }))
+    .sort((a, b) => b.value - a.value);
+  const strongestEl = sortedOheng[0];
+  const weakestEl = sortedOheng[sortedOheng.length - 1];
+
+  addSubSection('건강 운세');
+  addText(`${user.name}님의 건강 핵심 오행: ${ELEMENT_KOREAN[strongestEl.element]}`);
+  const healthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.health;
+  if (healthImpact) {
+    addText(`관련 신체 부위: ${healthImpact.organ}`);
+    addText(`주의할 점: ${healthImpact.risk}`);
+    addText(`건강 팁: ${healthImpact.tip}`);
+  }
+  if (weakestEl.value < 10) {
+    const weakHealth = ELEMENT_LIFE_IMPACT[weakestEl.element]?.health;
+    if (weakHealth) {
+      addText(`\n${ELEMENT_KOREAN[weakestEl.element]} 부족 시 주의: ${weakHealth.risk}`);
+    }
+  }
+  yPos += 3;
+
+  addSubSection('재물 운세');
+  const wealthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.wealth;
+  if (wealthImpact) {
+    addText(`재물 성향: ${wealthImpact.strength}`);
+    addText(`재테크 조언: ${wealthImpact.advice}`);
+  }
+  if (yongsin?.length) {
+    const yongsinWealth = ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth;
+    if (yongsinWealth) {
+      addText(`용신 활용 전략: ${yongsinWealth.advice}`);
+    }
+  }
+  yPos += 3;
+
+  addSubSection('인간관계 운세');
+  const relationImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.relationship;
+  if (relationImpact) {
+    addText(`관계 스타일: ${relationImpact.style}`);
+    addText(`관계 개선 팁: ${relationImpact.tip}`);
+  }
+  yPos += 5;
+
+  // 4. 프리미엄 콘텐츠 (있는 경우)
   if (premium) {
     // 가족 영향 분석
     if (premium.familyImpact) {
-      addSectionTitle('3. 가족 관계 분석');
+      addSectionTitle('4. 가족 관계 분석');
       const family = premium.familyImpact;
 
       addSubSection('가족 상황');
@@ -280,7 +468,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
     // 직업 분석
     if (premium.careerAnalysis) {
-      addSectionTitle('4. 직업 및 커리어 분석');
+      addSectionTitle('5. 직업 및 커리어 분석');
       const career = premium.careerAnalysis;
 
       addSubSection('현재 직업 적합도');
@@ -310,7 +498,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
     // 월별 액션플랜
     if (premium.monthlyActionPlan?.length) {
-      addSectionTitle('5. 월별 행운 액션플랜');
+      addSectionTitle('6. 월별 행운 액션플랜');
 
       premium.monthlyActionPlan.forEach((action: MonthlyAction, index: number) => {
         const monthNum = index + 1;
@@ -356,7 +544,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
     // 인생 타임라인
     if (premium.lifeTimeline) {
-      addSectionTitle('6. 인생 타임라인');
+      addSectionTitle('7. 인생 타임라인');
 
       const timeline = premium.lifeTimeline;
       addText(`현재 나이: ${timeline.currentAge}세`);
@@ -392,7 +580,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
     // 타이밍 분석
     if (premium.timingAnalysis) {
-      addSectionTitle('7. 최적 타이밍 분석');
+      addSectionTitle('8. 최적 타이밍 분석');
 
       const timing = premium.timingAnalysis;
 
@@ -409,7 +597,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
     // 관심사별 전략
     if (premium.interestStrategies?.length) {
-      addSectionTitle('8. 관심사별 맞춤 전략');
+      addSectionTitle('9. 관심사별 맞춤 전략');
 
       premium.interestStrategies.forEach(strategy => {
         addSubSection(INTEREST_KOREAN[strategy.interest] || strategy.interest);
@@ -429,28 +617,52 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 마무리 페이지 ==========
   doc.addPage();
-  yPos = 100;
+  yPos = 60;
 
-  doc.setFontSize(16);
-  doc.text('분석을 마치며', pageWidth / 2, yPos, { align: 'center' });
-  yPos += 20;
+  doc.setFontSize(18);
+  doc.text(`${user.name}님께 드리는 메시지`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 25;
 
   doc.setFontSize(11);
+
+  // 개인화된 마무리 메시지
+  const personalizedClosing = yongsin?.length
+    ? `${user.name}님의 ${targetYear}년은 ${ELEMENT_KOREAN[yongsin[0]]}의 기운을 잘 활용하면 큰 성과를 거둘 수 있는 해입니다.`
+    : `${user.name}님의 ${targetYear}년은 새로운 가능성이 열리는 해입니다.`;
+
   const closingText = [
-    '이 분석 리포트는 사주팔자를 기반으로 한 참고 자료입니다.',
-    '운명은 정해진 것이 아니라 자신의 선택과 노력에 따라 바뀔 수 있습니다.',
-    '좋은 운은 준비된 자에게 찾아옵니다.',
+    personalizedClosing,
     '',
-    '더 자세한 상담이 필요하시면 프리미엄 서비스를 이용해 주세요.',
+    '사주는 운명의 청사진이지만, 그것을 어떻게 활용하느냐는',
+    '전적으로 당신의 선택에 달려 있습니다.',
     '',
-    `분석 생성일: ${new Date().toLocaleDateString('ko-KR')}`,
-    'AI-SAJU - Your Fortune, Your Choice'
+    '이 리포트가 당신의 한 해를 계획하고',
+    '더 나은 결정을 내리는 데 도움이 되길 바랍니다.',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '자기 성찰 질문:',
+    `1. ${targetYear}년 가장 이루고 싶은 목표는 무엇인가요?`,
+    '2. 용신의 기운을 어떻게 일상에서 활용할 수 있을까요?',
+    '3. 도전 과제를 극복하기 위해 어떤 노력을 할 수 있을까요?',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
   ];
 
   closingText.forEach(line => {
     doc.text(line, pageWidth / 2, yPos, { align: 'center' });
     yPos += 8;
   });
+
+  yPos += 10;
+  doc.setFontSize(10);
+  doc.text(`분석 생성일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+  doc.setFontSize(12);
+  doc.text('AI-SAJU Premium Service', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 8;
+  doc.setFontSize(10);
+  doc.text('Your Fortune, Your Choice', pageWidth / 2, yPos, { align: 'center' });
 
   // PDF를 Buffer로 반환
   const pdfOutput = doc.output('arraybuffer');
