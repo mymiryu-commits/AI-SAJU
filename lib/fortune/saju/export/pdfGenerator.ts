@@ -22,6 +22,96 @@ import {
   INTEREST_KOREAN
 } from '@/types/saju';
 
+// 월별 고유 조언 데이터
+const MONTHLY_UNIQUE_ADVICE: Record<number, {
+  theme: string;
+  wisdom: string;
+  actionTip: string;
+}> = {
+  1: {
+    theme: '새로운 시작의 달',
+    wisdom: '겨울의 끝자락에서 봄을 준비하듯, 이 달은 내면의 계획을 다듬는 시기입니다.',
+    actionTip: '올해의 큰 그림을 그리고, 첫 발걸음을 내딛으세요.'
+  },
+  2: {
+    theme: '인내와 축적의 달',
+    wisdom: '아직 땅은 차갑지만, 씨앗은 이미 싹틀 준비를 합니다.',
+    actionTip: '조급함을 버리고 기초를 다지는 데 집중하세요.'
+  },
+  3: {
+    theme: '도약의 달',
+    wisdom: '봄바람이 불어오듯, 새로운 기회의 문이 열리기 시작합니다.',
+    actionTip: '망설이던 일을 시작하기에 좋은 시기입니다.'
+  },
+  4: {
+    theme: '성장의 달',
+    wisdom: '꽃이 피어나듯, 당신의 노력도 눈에 보이는 결과로 나타납니다.',
+    actionTip: '인맥을 넓히고 협력 관계를 강화하세요.'
+  },
+  5: {
+    theme: '결실 준비의 달',
+    wisdom: '열매를 맺기 위해서는 꾸준한 관리가 필요합니다.',
+    actionTip: '진행 중인 프로젝트의 완성도를 높이세요.'
+  },
+  6: {
+    theme: '전환의 달',
+    wisdom: '한 해의 절반이 지나는 시점, 방향을 점검할 때입니다.',
+    actionTip: '상반기를 돌아보고 하반기 전략을 수정하세요.'
+  },
+  7: {
+    theme: '도전의 달',
+    wisdom: '뜨거운 여름처럼 열정을 불태울 시기입니다.',
+    actionTip: '두려움을 떨치고 새로운 도전에 나서세요.'
+  },
+  8: {
+    theme: '수확의 달',
+    wisdom: '그동안 뿌린 씨앗이 열매를 맺는 시기입니다.',
+    actionTip: '노력의 결과를 인정받을 기회를 놓치지 마세요.'
+  },
+  9: {
+    theme: '정리의 달',
+    wisdom: '가을의 시작과 함께 불필요한 것을 정리할 때입니다.',
+    actionTip: '관계와 업무를 점검하고 효율을 높이세요.'
+  },
+  10: {
+    theme: '완성의 달',
+    wisdom: '한 해의 프로젝트를 마무리할 최적의 시기입니다.',
+    actionTip: '미루던 일을 끝내고 성취감을 느끼세요.'
+  },
+  11: {
+    theme: '성찰의 달',
+    wisdom: '겨울을 앞두고 내면을 돌아보는 시간입니다.',
+    actionTip: '올해의 성과를 정리하고 감사함을 나누세요.'
+  },
+  12: {
+    theme: '마무리와 재충전의 달',
+    wisdom: '한 해를 마감하며 새해를 위한 에너지를 모으세요.',
+    actionTip: '휴식과 재충전으로 내년을 준비하세요.'
+  }
+};
+
+// 스토리텔링 생성 함수
+function generateMonthlyStory(
+  monthNum: number,
+  score: number,
+  yongsin?: Element[],
+  userName?: string
+): string {
+  const advice = MONTHLY_UNIQUE_ADVICE[monthNum];
+  if (!advice) return '';
+
+  const scoreDescription = score >= 80 ? '매우 좋은 기운이 흐르는'
+    : score >= 60 ? '안정적인 기운이 감도는'
+    : score >= 40 ? '조심스럽게 나아가야 할'
+    : '신중함이 필요한';
+
+  const yongsinAdvice = yongsin?.length
+    ? `특히 ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}의 기운을 활용하면 더욱 좋은 결과를 얻을 수 있습니다.`
+    : '';
+
+  return `${userName ? userName + '님에게 ' : ''}${monthNum}월은 ${scoreDescription} 시기입니다. ${advice.wisdom} ${yongsinAdvice}`;
+}
+
 interface PDFGeneratorOptions {
   user: UserInput;
   saju: SajuChart;
@@ -222,26 +312,45 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     if (premium.monthlyActionPlan?.length) {
       addSectionTitle('5. 월별 행운 액션플랜');
 
-      premium.monthlyActionPlan.forEach((action: MonthlyAction) => {
-        checkNewPage(30);
-        addSubSection(`${action.monthName} (점수: ${action.score}점)`);
+      premium.monthlyActionPlan.forEach((action: MonthlyAction, index: number) => {
+        const monthNum = index + 1;
+        const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
+
+        checkNewPage(50);
+        addSubSection(`${action.monthName} - ${monthAdvice?.theme || ''} (점수: ${action.score}점)`);
+
+        // 스토리텔링 문구 추가
+        const story = generateMonthlyStory(monthNum, action.score, yongsin, user.name);
+        if (story) {
+          addText(story);
+          yPos += 3;
+        }
+
+        // 이달의 핵심 조언
+        if (monthAdvice?.actionTip) {
+          addText(`💡 이달의 핵심: ${monthAdvice.actionTip}`);
+          yPos += 2;
+        }
 
         if (action.mustDo?.length) {
+          addText('▸ 실천 항목:');
           action.mustDo.forEach(item => {
-            addText(`[${item.category}] ${item.action}`);
+            addText(`  • [${item.category}] ${item.action}`);
             if (item.optimalDays?.length) {
-              addText(`  추천일: ${item.optimalDays.join(', ')}일 / 시간: ${item.optimalTime}`);
+              addText(`    추천일: ${item.optimalDays.join(', ')}일 / 시간: ${item.optimalTime}`);
             }
           });
         }
 
         if (action.mustAvoid?.length) {
-          addText(`주의사항: ${action.mustAvoid.join(', ')}`);
+          addText(`▸ 주의사항: ${action.mustAvoid.join(', ')}`);
         }
 
         if (action.luckyElements) {
-          addText(`행운 색상: ${action.luckyElements.color} | 숫자: ${action.luckyElements.number} | 방향: ${action.luckyElements.direction}`);
+          addText(`▸ 행운 요소: 색상(${action.luckyElements.color}) | 숫자(${action.luckyElements.number}) | 방향(${action.luckyElements.direction})`);
         }
+
+        yPos += 5;
       });
     }
 
