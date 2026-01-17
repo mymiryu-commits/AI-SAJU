@@ -1,5 +1,9 @@
-// 스토리텔링 내러티브 생성기
-// 이야기를 들려주듯 몰입감 높은 분석을 제공
+/**
+ * 스토리텔링 내러티브 생성기
+ * 전문 사주 상담사의 어조로 자연스럽고 몰입감 높은 분석을 제공
+ *
+ * v2.0 - 전문가 톤 강화, 데이터 기반 인사이트 추가
+ */
 
 import type { UserInput, SajuChart, OhengBalance } from '@/types/saju';
 import type { StorytellingAnalysis, YearlyTimeline, TimelinePeriod, CardDeck } from '@/types/cards';
@@ -208,7 +212,7 @@ function generateTimelineStory(
     `다만, 씨앗을 심지 않으면 거둘 것도 없습니다. 지금이 바로 그 때입니다.`;
 }
 
-// 4막 구조 전체 스토리 생성
+// 4막 구조 전체 스토리 생성 (v2.0 - 전문가 톤)
 export function generateFullStory(
   user: UserInput,
   saju: SajuChart,
@@ -218,33 +222,20 @@ export function generateFullStory(
   const dayMaster = saju.day.stemKorean;
   const flower = cardDeck.essence.flowerKorean;
   const animal = cardDeck.energy.animalKorean;
+  const userName = user.name || '고객';
+  const currentAge = calculateAge(user.birthDate);
 
-  // 1막: 과거 (신뢰 형성)
-  const opening = `당신의 사주를 펼쳐보았습니다. ` +
-    `${flower}의 본질을 가진 당신, 지금까지 참 많은 길을 걸어오셨네요. ` +
-    `때로는 힘들었고, 때로는 빛났던 그 시간들... 사주는 모두 알고 있었습니다. ` +
-    `당신이 어떤 선택을 할 때 흔들렸는지, 어떤 순간에 가장 빛났는지. ` +
-    `과거가 맞았다면, 미래도 믿어주세요.`;
+  // 1막: 과거 (데이터 기반 신뢰 형성)
+  const opening = generateProfessionalOpening(userName, dayMaster, flower, currentAge, saju);
 
-  // 2막: 현재 (공감)
-  const development = `지금 당신은 어떤 고민을 안고 계신가요? ` +
-    `${animal}의 기운이 필요한 시기입니다. ${cardDeck.energy.story} ` +
-    `모든 것이 막혀있는 것 같아도, 실은 물밑에서 많은 것이 움직이고 있습니다. ` +
-    `당신이 느끼는 답답함은 '정체'가 아니라 '전환'의 신호입니다.`;
+  // 2막: 현재 (구체적 분석과 공감)
+  const development = generateProfessionalDevelopment(userName, animal, cardDeck, saju);
 
-  // 3막: 미래 (가치)
-  const climax = timeline.story + ` ` +
-    `당신의 ${cardDeck.talent.treeKorean} 재능이 빛을 발할 때가 왔습니다. ` +
-    `${cardDeck.talent.story} ` +
-    `행운의 숫자 ${cardDeck.fortune.luckyNumbers.join(', ')}을 기억하세요. ` +
-    `${cardDeck.fortune.luckyMonths.map(m => m + '월').join(', ')}에 중요한 기회가 옵니다.`;
+  // 3막: 미래 (데이터 기반 예측)
+  const climax = generateProfessionalClimax(userName, cardDeck, timeline, saju);
 
-  // 4막: 행동 (CTA)
-  const resolution = `이제 무엇을 해야 할지 아시겠죠? ` +
-    `${cardDeck.guardian.mainGemKorean}와 ${cardDeck.guardian.subGemKorean}가 당신을 지켜줄 것입니다. ` +
-    `${cardDeck.guardian.story} ` +
-    `당신의 운명 카드를 간직하세요. 힘들 때마다 꺼내보세요. ` +
-    `당신은 이미 답을 알고 있습니다. 이제 실행할 시간입니다.`;
+  // 4막: 행동 (구체적 액션 플랜)
+  const resolution = generateProfessionalResolution(userName, cardDeck, timeline);
 
   return {
     opening,
@@ -252,6 +243,174 @@ export function generateFullStory(
     climax,
     resolution
   };
+}
+
+/**
+ * 현재 나이 계산
+ */
+function calculateAge(birthDate: string): number {
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * 전문가 톤의 오프닝 생성
+ */
+function generateProfessionalOpening(
+  userName: string,
+  dayMaster: string,
+  flower: string,
+  age: number,
+  saju: SajuChart
+): string {
+  const yearStem = saju.year.stemKorean;
+  const decadePhase = Math.floor(age / 10) * 10;
+
+  return `${userName}님, 사주 분석을 시작하겠습니다.\n\n` +
+    `태어난 해의 ${yearStem}과 일간 ${dayMaster}의 조합을 보면, ` +
+    `당신은 ${flower}의 본질을 가진 분이십니다. ` +
+    `${decadePhase}대를 지나온 여정을 보면, 특정 시기에 큰 전환점이 있었을 것입니다.\n\n` +
+    `특히 끝자리가 ${getSignificantYears(dayMaster)}인 해에 중요한 일이 있었다면, ` +
+    `이 분석의 정확도는 더욱 높아집니다. ` +
+    `과거의 패턴이 맞다면, 앞으로의 예측도 신뢰해 주세요.`;
+}
+
+/**
+ * 일간별 중요 연도 끝자리
+ */
+function getSignificantYears(dayMaster: string): string {
+  const yearMap: Record<string, string> = {
+    '갑': '4, 9',
+    '을': '5, 0',
+    '병': '6, 1',
+    '정': '7, 2',
+    '무': '8, 3',
+    '기': '9, 4',
+    '경': '0, 5',
+    '신': '1, 6',
+    '임': '2, 7',
+    '계': '3, 8'
+  };
+  return yearMap[dayMaster] || '0, 5';
+}
+
+/**
+ * 전문가 톤의 전개부 생성
+ */
+function generateProfessionalDevelopment(
+  userName: string,
+  animal: string,
+  cardDeck: CardDeck,
+  saju: SajuChart
+): string {
+  const dayElement = saju.day.element;
+  const elementKorean = getElementKorean(dayElement);
+
+  return `현재 ${userName}님의 상황을 분석해 보겠습니다.\n\n` +
+    `${animal}의 기운이 필요한 시기입니다. ${cardDeck.energy.story}\n\n` +
+    `일간이 ${elementKorean}인 당신은, ` +
+    `${getElementCharacteristic(dayElement)}하는 특성이 있습니다. ` +
+    `지금 느끼는 답답함이나 막막함은 '정체'가 아닌 '전환'의 신호입니다.\n\n` +
+    `실제로 물밑에서는 많은 것이 움직이고 있습니다. ` +
+    `중요한 것은 이 흐름을 읽고 적절히 대응하는 것입니다.`;
+}
+
+/**
+ * 오행 한글명
+ */
+function getElementKorean(element: string): string {
+  const map: Record<string, string> = {
+    wood: '목(木)',
+    fire: '화(火)',
+    earth: '토(土)',
+    metal: '금(金)',
+    water: '수(水)'
+  };
+  return map[element] || '토(土)';
+}
+
+/**
+ * 오행별 특성
+ */
+function getElementCharacteristic(element: string): string {
+  const characteristics: Record<string, string> = {
+    wood: '새로운 것을 시작하고 성장을 추구',
+    fire: '열정적으로 표현하고 인정받기를 원',
+    earth: '안정적인 기반을 다지고 신뢰를 중시',
+    metal: '결단력 있게 마무리하고 완성을 추구',
+    water: '유연하게 흐르며 지혜로 대처'
+  };
+  return characteristics[element] || '균형을 추구';
+}
+
+/**
+ * 전문가 톤의 클라이맥스 생성
+ */
+function generateProfessionalClimax(
+  userName: string,
+  cardDeck: CardDeck,
+  timeline: YearlyTimeline,
+  saju: SajuChart
+): string {
+  const highlightPeriods = timeline.periods.filter(p => p.highlight);
+  const highlightMonths = highlightPeriods.map(p => p.months).join(', ');
+
+  return `${timeline.year}년 ${userName}님의 운세를 구체적으로 살펴보겠습니다.\n\n` +
+    `${timeline.story}\n\n` +
+    `특히 주목해야 할 시기는 ${highlightMonths}입니다. ` +
+    `이 시기에 ${cardDeck.talent.treeKorean}의 재능이 빛을 발할 수 있습니다. ` +
+    `${cardDeck.talent.story}\n\n` +
+    `데이터 기반 분석 결과:\n` +
+    `• 행운의 숫자: ${cardDeck.fortune.luckyNumbers.join(', ')}\n` +
+    `• 집중해야 할 달: ${cardDeck.fortune.luckyMonths.map(m => m + '월').join(', ')}\n` +
+    `• 주의가 필요한 달: ${getChallengingMonths(timeline)}`;
+}
+
+/**
+ * 어려운 달 추출
+ */
+function getChallengingMonths(timeline: YearlyTimeline): string {
+  const lowScorePeriods = timeline.periods.filter(p => p.score < 50);
+  if (lowScorePeriods.length === 0) {
+    return '특별히 주의가 필요한 달은 없습니다';
+  }
+  return lowScorePeriods.map(p => p.months).join(', ');
+}
+
+/**
+ * 전문가 톤의 결론부 생성
+ */
+function generateProfessionalResolution(
+  userName: string,
+  cardDeck: CardDeck,
+  timeline: YearlyTimeline
+): string {
+  return `${userName}님을 위한 맞춤 전략을 정리해 드리겠습니다.\n\n` +
+    `수호 에너지: ${cardDeck.guardian.mainGemKorean}와 ${cardDeck.guardian.subGemKorean}가 ` +
+    `당신의 부족한 기운을 보완해 줄 것입니다. ${cardDeck.guardian.story}\n\n` +
+    `핵심 실행 포인트:\n` +
+    `1. ${timeline.periods.find(p => p.highlight)?.actions[0] || '목표 설정과 실행'}\n` +
+    `2. ${getKeyAction(cardDeck)}\n` +
+    `3. 월별 액션플랜을 참고하여 체계적으로 실행\n\n` +
+    `이 분석은 고정된 운명이 아닌 '가능성의 지도'입니다. ` +
+    `흐름을 알고 대비하면, 더 나은 결과를 만들 수 있습니다. ` +
+    `${userName}님의 앞날에 좋은 기운이 함께하길 바랍니다.`;
+}
+
+/**
+ * 핵심 액션 추출
+ */
+function getKeyAction(cardDeck: CardDeck): string {
+  if (cardDeck.fortune.luckyMonths.length > 0) {
+    return `${cardDeck.fortune.luckyMonths[0]}월에 중요한 결정이나 시작을 집중`;
+  }
+  return '기회가 왔을 때 주저하지 말고 실행';
 }
 
 // 스토리텔링 분석 전체 생성 (메인 함수)
