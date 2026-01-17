@@ -2,6 +2,7 @@
 
 import { Link } from '@/i18n/routing';
 import { Phone, Mail, Building2 } from 'lucide-react';
+import { VersionBadge } from '@/components/ui/version-badge';
 
 export function Footer() {
   return (
@@ -124,6 +125,9 @@ export function Footer() {
           <p className="text-xs mt-2">
             본 서비스의 사주분석, 운세 정보는 참고용이며, 중요한 결정은 전문가와 상담하시기 바랍니다.
           </p>
+          <div className="mt-3">
+            <VersionBadge />
+          </div>
         </div>
       </div>
     </footer>

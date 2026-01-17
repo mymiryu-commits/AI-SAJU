@@ -1,6 +1,7 @@
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
+import { VersionBadge } from '@/components/ui/version-badge';
 import {
   ArrowRight,
   Sparkles,
@@ -125,14 +126,17 @@ export default async function HomePage({
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
             {/* Top Badge */}
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 border border-amber-200/50 dark:border-amber-700/50 rounded-full px-5 py-2.5 mb-8 animate-fade-in-up shadow-lg shadow-amber-500/10">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gradient-to-r from-amber-500 to-orange-500" />
-              </span>
-              <span className="text-amber-800 dark:text-amber-200 text-sm font-medium">
-                오늘 <span className="font-bold text-amber-900 dark:text-amber-100">12,847명</span>이 AI로 수익 창출 중
-              </span>
+            <div className="flex flex-col items-center gap-2 mb-8 animate-fade-in-up">
+              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 border border-amber-200/50 dark:border-amber-700/50 rounded-full px-5 py-2.5 shadow-lg shadow-amber-500/10">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gradient-to-r from-amber-500 to-orange-500" />
+                </span>
+                <span className="text-amber-800 dark:text-amber-200 text-sm font-medium">
+                  오늘 <span className="font-bold text-amber-900 dark:text-amber-100">12,847명</span>이 AI로 수익 창출 중
+                </span>
+              </div>
+              <VersionBadge variant="hero" />
             </div>
 
             {/* Main Headline */}
