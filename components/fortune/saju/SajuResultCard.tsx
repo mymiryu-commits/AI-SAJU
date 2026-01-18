@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Heart, Briefcase, Activity, Sparkles,
   Lock, ChevronRight, Calendar, Target, Star,
   Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain, Download,
-  Flower2, Trees, Gem, Zap, Clock, Layers, ArrowRight, Crown
+  Flower2, Trees, Gem, Zap, Clock, Layers, ArrowRight, Crown, Sun
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -14,12 +14,13 @@ import {
   AnalysisResult, SajuChart, OhengBalance,
   ELEMENT_KOREAN, PeerComparison, AIAnalysis, Element
 } from '@/types/saju';
+import { generateZodiacAnalysis, type ZodiacAnalysis } from '@/lib/fortune/saju/analysis/zodiacAnalysis';
 import { CardDeck, RootCard } from '@/types/cards';
 import PremiumResultDisplay from './PremiumResultDisplay';
 import DownloadButtons from './DownloadButtons';
 
 // 탭 타입 정의 (새 구조: 또래 비교 제거, 새 탭 추가)
-type TabType = 'destiny' | 'elements' | 'monthly' | 'timeline' | 'premium';
+type TabType = 'destiny' | 'elements' | 'zodiac' | 'monthly' | 'timeline' | 'premium';
 
 // 상품 레벨 타입
 type ProductLevel = 'free' | 'basic' | 'deep' | 'premium' | 'vip';
@@ -77,6 +78,17 @@ export default function SajuResultCard({
     personality: sixtyJiazi?.personality || cardDeck?.root?.personality || coreMessage.insight,
     color: sixtyJiazi?.color || cardDeck?.root?.color || '#9333EA'
   };
+
+  // 별자리 분석 (useMemo로 최적화)
+  const zodiacAnalysis = useMemo(() => {
+    // 오행에서 가장 강한 요소 찾기
+    const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+    const dominantElement = elements.reduce((max, el) =>
+      (oheng[el] || 0) > (oheng[max] || 0) ? el : max
+    , 'wood' as Element);
+
+    return generateZodiacAnalysis(result.user.birthDate, dominantElement, 2026);
+  }, [result.user.birthDate, oheng]);
 
   // 6장 카드 배열 구성
   const sixCards = cardDeck ? [
@@ -237,6 +249,7 @@ export default function SajuResultCard({
         {[
           { id: 'destiny' as TabType, label: '운명', icon: Layers },
           { id: 'elements' as TabType, label: '오행', icon: Sparkles },
+          { id: 'zodiac' as TabType, label: '별자리', icon: Sun },
           { id: 'monthly' as TabType, label: '월운', icon: Calendar },
           { id: 'timeline' as TabType, label: '타임라인', icon: TrendingUp },
           { id: 'premium' as TabType, label: '프리미엄', icon: isPremiumUnlocked ? Star : Lock }
@@ -516,6 +529,149 @@ export default function SajuResultCard({
                   onUnlock={onUnlockPremium}
                 />
               )}
+            </motion.div>
+          )}
+
+          {/* ========== 별자리 분석 탭 ========== */}
+          {activeTab === 'zodiac' && (
+            <motion.div
+              key="zodiac"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6 space-y-6"
+            >
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <Sun className="w-5 h-5 text-yellow-500" />
+                별자리 × 사주 통합 분석
+              </h3>
+
+              {/* 별자리 카드 */}
+              <div className="p-5 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-2xl text-white relative overflow-hidden">
+                {/* 배경 별 장식 */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-4 right-4 w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <div className="absolute top-12 right-12 w-1 h-1 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="absolute top-8 left-8 w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+                  <div className="absolute bottom-8 right-20 w-1 h-1 bg-white rounded-full animate-pulse" style={{ animationDelay: '1.5s' }} />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl">{zodiacAnalysis.sign.symbol}</span>
+                    <div>
+                      <h4 className="text-xl font-bold">{zodiacAnalysis.sign.name}</h4>
+                      <p className="text-sm text-purple-200">{zodiacAnalysis.sign.english} • {zodiacAnalysis.sign.dateRange}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-200 leading-relaxed mb-4">
+                    {zodiacAnalysis.sign.personality}
+                  </p>
+
+                  {/* 별자리 키워드 */}
+                  <div className="flex flex-wrap gap-2">
+                    {zodiacAnalysis.sign.keywords.map((keyword, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-white/20 rounded-full text-xs">
+                        #{keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 별자리 × 사주 조화 */}
+              <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    사주와의 조화
+                  </h4>
+                  <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold">
+                    {zodiacAnalysis.harmony.score}점
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {zodiacAnalysis.harmony.description}
+                </p>
+              </div>
+
+              {/* 통합 인사이트 */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-yellow-500" />
+                  통합 인사이트
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {zodiacAnalysis.integratedInsight}
+                </p>
+              </div>
+
+              {/* 2026년 별자리 운세 */}
+              <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                <h4 className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-2">
+                  2026년 별자리 운세
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {zodiacAnalysis.yearForecast}
+                </p>
+              </div>
+
+              {/* 강점 & 주의점 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
+                    강점
+                  </h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    {zodiacAnalysis.sign.strengths.map((s, idx) => (
+                      <li key={idx}>• {s}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                  <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
+                    주의할 점
+                  </h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    {zodiacAnalysis.sign.weaknesses.map((w, idx) => (
+                      <li key={idx}>• {w}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* 행운 요소 */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  행운의 요소
+                </h4>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">행운의 색</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.luckyColor}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">행운의 숫자</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.luckyNumber.join(', ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">수호성</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.ruler}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 궁합 좋은 별자리 */}
+              <div className="p-4 bg-pink-50 dark:bg-pink-900/20 rounded-xl border border-pink-200 dark:border-pink-800">
+                <h4 className="text-sm font-medium text-pink-700 dark:text-pink-400 mb-2 flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  궁합 좋은 별자리
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {zodiacAnalysis.sign.compatibility.join(', ')}
+                </p>
+              </div>
             </motion.div>
           )}
 

@@ -37,6 +37,7 @@ import {
   type MBTIType
 } from '../mappings';
 import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
+import { generateZodiacAnalysis, getZodiacInfo, type ZodiacAnalysis } from '../analysis/zodiacAnalysis';
 
 // ========== 연령별 분기 시스템 ==========
 type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
@@ -1717,6 +1718,79 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       }
     }
   }
+
+  // ========== 별자리(Zodiac) 분석 페이지 ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 오행에서 가장 강한 요소 찾기
+  const dominantElement = elements.reduce((max, el) =>
+    (oheng[el] || 0) > (oheng[max] || 0) ? el : max
+  , 'wood' as Element);
+
+  // 별자리 분석 생성
+  const zodiacAnalysis = generateZodiacAnalysis(user.birthDate, dominantElement, targetYear);
+  const zodiacSign = zodiacAnalysis.sign;
+
+  addSectionTitle('14. 별자리 × 사주 통합 분석');
+
+  // 별자리 기본 정보
+  addSubSection(`${zodiacSign.name} (${zodiacSign.english}) ${zodiacSign.symbol}`);
+  addText(`기간: ${zodiacSign.dateRange}`);
+  addText(`원소: ${zodiacSign.element} | 수호성: ${zodiacSign.ruler} | 특성: ${zodiacSign.quality}`);
+  yPos += 3;
+
+  // 성격 특성
+  addSubSection('별자리 성격');
+  addText(zodiacSign.personality);
+  yPos += 3;
+
+  // 강점
+  addSubSection('강점');
+  addText(`• ${zodiacSign.strengths.join(', ')}`);
+  yPos += 3;
+
+  // 주의할 점
+  addSubSection('주의할 성향');
+  addText(`• ${zodiacSign.weaknesses.join(', ')}`);
+  yPos += 3;
+
+  // 궁합 좋은 별자리
+  addSubSection('궁합 좋은 별자리');
+  addText(`• ${zodiacSign.compatibility.join(', ')}`);
+  yPos += 3;
+
+  // 사주와의 조화 분석
+  addSubSection('별자리 × 사주 조화');
+  addText(`조화도: ${zodiacAnalysis.harmony.score}점`);
+  addText(zodiacAnalysis.harmony.description);
+  yPos += 3;
+
+  // 통합 인사이트
+  addSubSection('통합 인사이트');
+  const insightLines = doc.splitTextToSize(zodiacAnalysis.integratedInsight, contentWidth);
+  insightLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 올해 운세 예측
+  addSubSection(`${targetYear}년 별자리 운세`);
+  addText(zodiacAnalysis.yearForecast);
+  yPos += 3;
+
+  // 행운의 요소
+  addSubSection('행운의 요소');
+  addText(`행운의 색: ${zodiacSign.luckyColor}`);
+  addText(`행운의 숫자: ${zodiacSign.luckyNumber.join(', ')}`);
+  addText(`관련 신체 부위: ${zodiacSign.bodyPart}`);
+  yPos += 5;
+
+  // 키워드
+  addSubSection('핵심 키워드');
+  addText(`#${zodiacSign.keywords.join(' #')}`);
 
   // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
   doc.addPage();

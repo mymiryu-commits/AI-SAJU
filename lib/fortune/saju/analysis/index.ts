@@ -33,3 +33,14 @@ export {
   generateTimingAnalysis,
   generateInterestStrategies
 } from './actionGenerator';
+
+// 별자리 분석
+export {
+  getZodiacSign,
+  getZodiacInfo,
+  analyzeZodiacSajuHarmony,
+  generateZodiacAnalysis,
+  ZODIAC_SIGNS,
+  type ZodiacSign,
+  type ZodiacAnalysis
+} from './zodiacAnalysis';
