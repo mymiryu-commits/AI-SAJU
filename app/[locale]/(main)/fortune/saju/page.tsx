@@ -31,6 +31,9 @@ interface ConversionData {
   productRecommendation: { productId: string; reason: string };
 }
 
+// 상품 레벨 타입
+type ProductLevel = 'free' | 'basic' | 'deep' | 'premium' | 'vip';
+
 export default function SajuPage() {
   const t = useTranslations('fortune.saju');
   const { user, isAdmin } = useAuth();
@@ -42,6 +45,7 @@ export default function SajuPage() {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+  const [productLevel, setProductLevel] = useState<ProductLevel>('free');  // 구매한 상품 레벨
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -142,6 +146,7 @@ export default function SajuPage() {
     setConversionData(null);
     setAnalysisId(null);
     setIsPremiumUnlocked(false);
+    setProductLevel('free');  // 상품 레벨 초기화
     setIsPurchasing(false);
     setError(null);
   };
@@ -227,6 +232,8 @@ export default function SajuPage() {
         console.log('Admin user - skipping point deduction');
         try {
           await loadPremiumAnalysis(productId);
+          // 구매한 상품 레벨 설정
+          setProductLevel(productId as ProductLevel);
           console.log('Premium analysis loaded successfully for admin');
         } catch (adminErr) {
           console.error('Admin premium analysis error:', adminErr);
@@ -272,6 +279,9 @@ export default function SajuPage() {
 
       // 프리미엄 분석 로드
       await loadPremiumAnalysis(productId);
+
+      // 구매한 상품 레벨 설정
+      setProductLevel(productId as ProductLevel);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : '구매 중 오류가 발생했습니다.');
@@ -351,6 +361,7 @@ export default function SajuPage() {
               result={{ ...analysisResult, user: userInput } as AnalysisResult}
               onUnlockPremium={handleUpgrade}
               isPremiumUnlocked={isPremiumUnlocked}
+              productLevel={productLevel}
             />
 
             {/* 전환 유도 영역 */}

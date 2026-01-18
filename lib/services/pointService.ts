@@ -6,15 +6,70 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-// 상품별 포인트 비용
+// 상품별 포인트 비용 (1P = 1원)
 export const PRODUCT_COSTS = {
-  basic: 0,           // 무료 기본 분석
-  premium: 500,       // 프리미엄 분석
-  deep: 1000,         // 심층 분석
-  vip: 2000,          // VIP 분석
+  free: 0,            // 무료 분석 (2장 카드: 근본, 본질)
+  basic: 500,         // 베이직 분석 (4장 카드: +에너지, 재능)
+  deep: 1000,         // 심층 분석 (6장 카드: +흐름, 수호) - 권장
+  premium: 2000,      // 프리미엄 분석 (전체 + 타임라인, 가족영향)
+  vip: 5000,          // VIP 종합 분석 (모든 분석 + 전문가 상담)
   pdf: 200,           // PDF 다운로드
   voice: 300,         // 음성 생성
   group: 1500,        // 그룹 분석
+} as const;
+
+// 상품별 해금 카드 (누적)
+export const PRODUCT_CARDS = {
+  free: ['root', 'essence'],                                      // 근본, 본질
+  basic: ['root', 'essence', 'energy', 'talent'],                 // + 에너지, 재능
+  deep: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'], // + 흐름, 수호
+  premium: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'], // 전체
+  vip: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'],    // 전체
+} as const;
+
+// 상품별 콘텐츠 레벨
+export const PRODUCT_FEATURES = {
+  free: {
+    cards: 2,
+    monthlyFortune: 1,      // 1개월 힌트만
+    aiAnalysis: false,
+    timeline: false,
+    familyImpact: false,
+    pdf: false,
+  },
+  basic: {
+    cards: 4,
+    monthlyFortune: 3,      // 3개월
+    aiAnalysis: false,
+    timeline: false,
+    familyImpact: false,
+    pdf: false,
+  },
+  deep: {
+    cards: 6,
+    monthlyFortune: 12,     // 12개월
+    aiAnalysis: true,
+    timeline: false,
+    familyImpact: false,
+    pdf: true,
+  },
+  premium: {
+    cards: 6,
+    monthlyFortune: 12,
+    aiAnalysis: true,
+    timeline: true,         // 인생 타임라인
+    familyImpact: true,     // 가족 영향
+    pdf: true,
+  },
+  vip: {
+    cards: 6,
+    monthlyFortune: 12,
+    aiAnalysis: true,
+    timeline: true,
+    familyImpact: true,
+    pdf: true,
+    consultation: true,     // 전문가 상담
+  },
 } as const;
 
 export type ProductType = keyof typeof PRODUCT_COSTS;
@@ -134,7 +189,11 @@ export async function deductPoints(
   // 현재 포인트 조회
   const balance = await getPointBalance(userId);
   if (!balance) {
-    return { success: false, error: '사용자를 찾을 수 없습니다', errorCode: 'USER_NOT_FOUND' };
+    return {
+      success: false,
+      error: '로그인이 필요하거나 프로필 정보를 불러올 수 없습니다. 다시 로그인해주세요.',
+      errorCode: 'USER_NOT_FOUND'
+    };
   }
 
   // 포인트 부족 체크
@@ -294,7 +353,7 @@ export async function chargePoints(
   // 현재 포인트 조회
   const balance = await getPointBalance(userId);
   if (!balance) {
-    return { success: false, error: '사용자를 찾을 수 없습니다' };
+    return { success: false, error: '프로필 정보를 불러올 수 없습니다. 다시 로그인해주세요.' };
   }
 
   const newPoints = balance.points + totalPoints;
