@@ -108,9 +108,12 @@ interface PointDeductionResult {
 
 /**
  * 사용자 포인트 잔액 조회
+ * Service Role 사용하여 RLS 우회
  */
 export async function getPointBalance(userId: string): Promise<PointBalance | null> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
 
   const { data: profile, error } = await (supabase as any)
     .from('profiles')
@@ -203,6 +206,7 @@ async function createProfile(userId: string): Promise<boolean> {
 
 /**
  * 포인트 차감
+ * Service Role 사용하여 RLS 우회
  */
 export async function deductPoints(
   userId: string,
@@ -210,7 +214,9 @@ export async function deductPoints(
   referenceId?: string,
   description?: string
 ): Promise<PointDeductionResult> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
   const cost = PRODUCT_COSTS[productType];
 
   if (cost === 0) {
@@ -275,9 +281,11 @@ export async function deductPoints(
 
 /**
  * 무료 분석 횟수 증가
+ * Service Role 사용하여 RLS 우회
  */
 export async function incrementFreeAnalysis(userId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
   const today = new Date().toISOString().split('T')[0];
 
   // 현재 상태 조회
@@ -371,6 +379,7 @@ export async function canUseFreeAnalysis(userId: string | null): Promise<{
 
 /**
  * 포인트 충전 (결제 완료 후 호출)
+ * Service Role 사용하여 RLS 우회
  */
 export async function chargePoints(
   userId: string,
@@ -378,7 +387,8 @@ export async function chargePoints(
   bonusPoints: number = 0,
   paymentId?: string
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
-  const supabase = await createClient();
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
   const totalPoints = points + bonusPoints;
 
   // 현재 포인트 조회
