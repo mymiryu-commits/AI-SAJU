@@ -212,7 +212,7 @@ function generateTimelineStory(
     `다만, 씨앗을 심지 않으면 거둘 것도 없습니다. 지금이 바로 그 때입니다.`;
 }
 
-// 4막 구조 전체 스토리 생성 (v2.0 - 전문가 톤)
+// 4막 구조 전체 스토리 생성 (v2.0 - 60갑자, MBTI, 시적 표현 통합)
 export function generateFullStory(
   user: UserInput,
   saju: SajuChart,
@@ -225,16 +225,16 @@ export function generateFullStory(
   const userName = user.name || '고객';
   const currentAge = calculateAge(user.birthDate);
 
-  // 1막: 과거 (데이터 기반 신뢰 형성)
-  const opening = generateProfessionalOpening(userName, dayMaster, flower, currentAge, saju);
+  // 1막: 과거 (데이터 기반 신뢰 형성) - v2.0: 60갑자 root card 전달
+  const opening = generateProfessionalOpening(userName, dayMaster, flower, currentAge, saju, cardDeck.root);
 
-  // 2막: 현재 (구체적 분석과 공감)
+  // 2막: 현재 (구체적 분석과 공감) - v2.0: 시적 표현, MBTI 인사이트 포함
   const development = generateProfessionalDevelopment(userName, animal, cardDeck, saju);
 
   // 3막: 미래 (데이터 기반 예측)
   const climax = generateProfessionalClimax(userName, cardDeck, timeline, saju);
 
-  // 4막: 행동 (구체적 액션 플랜)
+  // 4막: 행동 (구체적 액션 플랜) - v2.0: 60갑자 에필로그 포함
   const resolution = generateProfessionalResolution(userName, cardDeck, timeline);
 
   return {
@@ -260,19 +260,27 @@ function calculateAge(birthDate: string): number {
 }
 
 /**
- * 전문가 톤의 오프닝 생성
+ * 전문가 톤의 오프닝 생성 - v2.0: 60갑자(root card) 통합
  */
 function generateProfessionalOpening(
   userName: string,
   dayMaster: string,
   flower: string,
   age: number,
-  saju: SajuChart
+  saju: SajuChart,
+  rootCard?: CardDeck['root']
 ): string {
   const yearStem = saju.year.stemKorean;
   const decadePhase = Math.floor(age / 10) * 10;
 
+  // v2.0: 60갑자 기반 인트로 (root card가 있으면)
+  const jiaziIntro = rootCard
+    ? `${rootCard.animalKorean}의 해에 태어난 ${userName}님은 ${rootCard.nature}의 기운을 타고났습니다. ` +
+      `${rootCard.personality}\n\n`
+    : '';
+
   return `${userName}님, 사주 분석을 시작하겠습니다.\n\n` +
+    jiaziIntro +
     `태어난 해의 ${yearStem}과 일간 ${dayMaster}의 조합을 보면, ` +
     `당신은 ${flower}의 본질을 가진 분이십니다. ` +
     `${decadePhase}대를 지나온 여정을 보면, 특정 시기에 큰 전환점이 있었을 것입니다.\n\n` +
@@ -301,7 +309,7 @@ function getSignificantYears(dayMaster: string): string {
 }
 
 /**
- * 전문가 톤의 전개부 생성
+ * 전문가 톤의 전개부 생성 - v2.0: 시적 표현 통합
  */
 function generateProfessionalDevelopment(
   userName: string,
@@ -312,13 +320,24 @@ function generateProfessionalDevelopment(
   const dayElement = saju.day.element;
   const elementKorean = getElementKorean(dayElement);
 
+  // v2.0: 오행 시적 표현 추가
+  const poetryAddition = cardDeck.elementPoetry
+    ? `\n\n${cardDeck.elementPoetry.poeticPhrase} ${cardDeck.elementPoetry.balanceAdvice}`
+    : '';
+
+  // v2.0: MBTI 인사이트 추가
+  const mbtiAddition = cardDeck.mbtiInsight
+    ? `\n\n${cardDeck.mbtiInsight.personalizedAdvice}`
+    : '';
+
   return `현재 ${userName}님의 상황을 분석해 보겠습니다.\n\n` +
     `${animal}의 기운이 필요한 시기입니다. ${cardDeck.energy.story}\n\n` +
     `일간이 ${elementKorean}인 당신은, ` +
     `${getElementCharacteristic(dayElement)}하는 특성이 있습니다. ` +
     `지금 느끼는 답답함이나 막막함은 '정체'가 아닌 '전환'의 신호입니다.\n\n` +
     `실제로 물밑에서는 많은 것이 움직이고 있습니다. ` +
-    `중요한 것은 이 흐름을 읽고 적절히 대응하는 것입니다.`;
+    `중요한 것은 이 흐름을 읽고 적절히 대응하는 것입니다.` +
+    poetryAddition + mbtiAddition;
 }
 
 /**
@@ -384,23 +403,35 @@ function getChallengingMonths(timeline: YearlyTimeline): string {
 }
 
 /**
- * 전문가 톤의 결론부 생성
+ * 전문가 톤의 결론부 생성 - v2.0: 60갑자 에필로그 통합
  */
 function generateProfessionalResolution(
   userName: string,
   cardDeck: CardDeck,
   timeline: YearlyTimeline
 ): string {
+  // v2.0: 60갑자 에필로그가 있으면 사용
+  const epilogueText = cardDeck.root?.epilogueText
+    ? `\n\n${cardDeck.root.epilogueText}`
+    : '';
+
+  // v2.0: 60갑자 운명 메시지가 있으면 추가
+  const destinyMessage = cardDeck.root?.destiny
+    ? `\n\n[타고난 운명] ${cardDeck.root.destiny}`
+    : '';
+
   return `${userName}님을 위한 맞춤 전략을 정리해 드리겠습니다.\n\n` +
     `수호 에너지: ${cardDeck.guardian.mainGemKorean}와 ${cardDeck.guardian.subGemKorean}가 ` +
     `당신의 부족한 기운을 보완해 줄 것입니다. ${cardDeck.guardian.story}\n\n` +
     `핵심 실행 포인트:\n` +
     `1. ${timeline.periods.find(p => p.highlight)?.actions[0] || '목표 설정과 실행'}\n` +
     `2. ${getKeyAction(cardDeck)}\n` +
-    `3. 월별 액션플랜을 참고하여 체계적으로 실행\n\n` +
+    `3. 월별 액션플랜을 참고하여 체계적으로 실행` +
+    destinyMessage + `\n\n` +
     `이 분석은 고정된 운명이 아닌 '가능성의 지도'입니다. ` +
     `흐름을 알고 대비하면, 더 나은 결과를 만들 수 있습니다. ` +
-    `${userName}님의 앞날에 좋은 기운이 함께하길 바랍니다.`;
+    `${userName}님의 앞날에 좋은 기운이 함께하길 바랍니다.` +
+    epilogueText;
 }
 
 /**

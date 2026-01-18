@@ -79,8 +79,28 @@ export interface GuardianCard {
   color: string;
 }
 
+// v2.0: 근본 카드 (60갑자 기반)
+export interface RootCard {
+  id: string;
+  yearJiazi: string;          // 년간지 (예: "甲子")
+  yearKorean: string;         // 한글 (예: "갑자")
+  animal: string;             // 상징 동물 (예: "청서")
+  animalKorean: string;       // 동물 한글명 (예: "청서(靑鼠) - 푸른 쥐")
+  nature: string;             // 자연 특성 (예: "새벽 숲의 첫 번째 빛")
+  keywords: string[];         // 핵심 키워드 3개
+  personality: string;        // 성격 분석
+  destiny: string;            // 운명 분석
+  story: string;              // 스토리텔링 설명
+  prologueText: string;       // 프롤로그 텍스트
+  epilogueText: string;       // 에필로그 텍스트
+  imageKey: string;
+  color: string;
+}
+
 // 전체 카드 덱
 export interface CardDeck {
+  // v2.0: 근본 카드 (60갑자 기반) - 선택적
+  root?: RootCard;            // 근본 (60갑자)
   essence: EssenceCard;       // 본질 (꽃)
   energy: EnergyCard;         // 에너지 (동물)
   talent: TalentCard;         // 재능 (나무)
@@ -89,6 +109,18 @@ export interface CardDeck {
   guardian: GuardianCard;     // 수호 (보석)
   generatedAt: string;        // 생성 시간
   style: CardStyle;           // 카드 스타일
+  // v2.0: MBTI 통합 분석 (선택적)
+  mbtiInsight?: {
+    mbti: string;
+    isThinkingType: boolean;
+    personalizedAdvice: string;
+  };
+  // v2.0: 오행 시적 표현 (선택적)
+  elementPoetry?: {
+    dominantElement: string;
+    poeticPhrase: string;
+    balanceAdvice: string;
+  };
 }
 
 // 과거 검증 시스템

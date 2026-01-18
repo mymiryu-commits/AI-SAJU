@@ -1,5 +1,5 @@
 // 카드 덱 생성기
-// 사주 정보를 기반으로 6장의 심볼 카드 덱 생성
+// 사주 정보를 기반으로 7장의 심볼 카드 덱 생성 (v2.0: 60갑자 근본 카드 추가)
 
 import type { UserInput, SajuChart, OhengBalance } from '@/types/saju';
 import type {
@@ -10,6 +10,7 @@ import type {
   FlowCard,
   FortuneCard,
   GuardianCard,
+  RootCard,
   CardStyle
 } from '@/types/cards';
 
@@ -26,6 +27,25 @@ import {
   generateGuardianStory
 } from './cardData';
 
+// v2.0: 60갑자 매핑
+import {
+  getSixtyJiaziInfo,
+  generateJiaziPrologue,
+  generateJiaziEpilogue,
+} from '../mappings/sixtyJiazi';
+
+// v2.0: MBTI 매핑
+import {
+  analyzeMBTISajuMatch,
+  type MBTIType,
+} from '../mappings/mbtiIntegration';
+
+// v2.0: 시적 표현 매핑
+import {
+  generateElementBalancePoetry,
+  ELEMENT_INFO,
+} from '../mappings/poeticExpressions';
+
 // 연령대별 카드 스타일 결정
 function determineCardStyle(birthYear: number): CardStyle {
   const currentYear = new Date().getFullYear();
@@ -35,6 +55,46 @@ function determineCardStyle(birthYear: number): CardStyle {
   if (age < 35) return 'fantasy';
   if (age < 45) return 'traditional';
   return 'luxury';
+}
+
+// v2.0: 근본 카드 (60갑자) 생성 - 년간지 기반
+function generateRootCard(saju: SajuChart): RootCard | null {
+  const yearStem = saju.year?.heavenlyStem || '甲';
+  const yearBranch = saju.year?.earthlyBranch || '子';
+  const jiaziInfo = getSixtyJiaziInfo(yearStem, yearBranch);
+
+  if (!jiaziInfo) {
+    return null;
+  }
+
+  // 일간 오행으로 에필로그 생성
+  const dayElement = saju.day?.element || 'wood';
+  const dayElementKorean: Record<string, string> = {
+    'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수'
+  };
+  const epilogueText = generateJiaziEpilogue(jiaziInfo, dayElementKorean[dayElement] || '목');
+  const prologueText = generateJiaziPrologue(jiaziInfo);
+
+  // 스토리 생성
+  const story = `${jiaziInfo.animalKorean}의 해에 태어난 당신은 ${jiaziInfo.nature}과 같습니다. ` +
+    `${jiaziInfo.personality} ${jiaziInfo.destiny}`;
+
+  return {
+    id: `root-${jiaziInfo.jiazi}`,
+    yearJiazi: jiaziInfo.jiazi,
+    yearKorean: jiaziInfo.korean,
+    animal: jiaziInfo.animal,
+    animalKorean: jiaziInfo.animalKorean,
+    nature: jiaziInfo.nature,
+    keywords: jiaziInfo.keywords,
+    personality: jiaziInfo.personality,
+    destiny: jiaziInfo.destiny,
+    story,
+    prologueText,
+    epilogueText,
+    imageKey: `root-${jiaziInfo.animal}`,
+    color: jiaziInfo.color
+  };
 }
 
 // 본질 카드 (꽃) 생성 - 일간 기반
@@ -203,7 +263,7 @@ function generateGuardianCard(
   };
 }
 
-// 전체 카드 덱 생성 (메인 함수)
+// 전체 카드 덱 생성 (메인 함수) - v2.0: 60갑자, MBTI, 시적 표현 통합
 export function generateCardDeck(
   user: UserInput,
   saju: SajuChart,
@@ -215,7 +275,47 @@ export function generateCardDeck(
   const birthYear = parseInt(user.birthDate.split('-')[0]);
   const style = determineCardStyle(birthYear);
 
+  // v2.0: 근본 카드 (60갑자 기반)
+  const rootCard = generateRootCard(saju);
+
+  // v2.0: MBTI 통합 인사이트
+  let mbtiInsight: CardDeck['mbtiInsight'];
+  if (user.mbti) {
+    const mbtiUpper = user.mbti.toUpperCase();
+    const validMBTIs = ['INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP',
+                        'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'];
+    if (validMBTIs.includes(mbtiUpper)) {
+      const dayMaster = saju.day.stemKorean;
+      const matchResult = analyzeMBTISajuMatch(dayMaster, mbtiUpper as MBTIType);
+      const isThinkingType = mbtiUpper.includes('T');
+
+      mbtiInsight = {
+        mbti: mbtiUpper,
+        isThinkingType,
+        personalizedAdvice: isThinkingType
+          ? `논리적인 ${mbtiUpper} 유형과 ${dayMaster}일간의 조합으로, 체계적인 계획과 분석이 강점입니다. 감정적 판단도 때로는 필요합니다.`
+          : `감성적인 ${mbtiUpper} 유형과 ${dayMaster}일간의 조합으로, 공감 능력과 직관이 강점입니다. 객관적 분석도 가끔 활용하세요.`
+      };
+    }
+  }
+
+  // v2.0: 오행 시적 표현
+  const primaryYongsin = yongsin[0] || '목';
+  const ohengKorean: Record<string, number> = {
+    '목': oheng.wood, '화': oheng.fire, '토': oheng.earth, '금': oheng.metal, '수': oheng.water
+  };
+  const dominantElement = Object.entries(ohengKorean).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+  const poeticPhrase = generateElementBalancePoetry(ohengKorean);
+  const elementInfo = ELEMENT_INFO[dominantElement];
+
+  const elementPoetry: CardDeck['elementPoetry'] = {
+    dominantElement: `${dominantElement}(${elementInfo?.korean || dominantElement})`,
+    poeticPhrase,
+    balanceAdvice: `${elementInfo?.poeticName || dominantElement}의 기운이 강한 당신, ${primaryYongsin}의 기운을 더해 균형을 맞추세요.`
+  };
+
   return {
+    root: rootCard || undefined,
     essence: generateEssenceCard(saju),
     energy: generateEnergyCard(yongsin, user),
     talent: generateTalentCard(dominantSipsin),
@@ -223,25 +323,61 @@ export function generateCardDeck(
     fortune: generateFortuneCard(saju, yongsin),
     guardian: generateGuardianCard(saju, yongsin),
     generatedAt: new Date().toISOString(),
-    style
+    style,
+    // v2.0: 새 필드
+    mbtiInsight,
+    elementPoetry
   };
 }
 
-// 카드 덱 요약 텍스트 생성
+// 카드 덱 요약 텍스트 생성 - v2.0: 60갑자, MBTI, 시적 표현 반영
 export function generateCardDeckSummary(cardDeck: CardDeck): string {
-  return `${cardDeck.essence.flowerKorean}의 본질, ` +
+  // v2.0: 근본 카드가 있으면 60갑자 정보 포함
+  const rootIntro = cardDeck.root
+    ? `${cardDeck.root.animalKorean}의 해에 태어난 당신은 ${cardDeck.root.nature}의 기운을 타고났습니다. `
+    : '';
+
+  const baseSummary = `${cardDeck.essence.flowerKorean}의 본질, ` +
     `${cardDeck.energy.animalKorean}의 에너지, ` +
     `${cardDeck.talent.treeKorean}의 재능을 가진 당신. ` +
     `${cardDeck.flow.phenomenonKorean}의 시기를 지나고 있으며, ` +
     `${cardDeck.guardian.mainGemKorean}가 당신을 지켜줍니다.`;
+
+  // v2.0: 오행 시적 표현 추가
+  const poetryAddition = cardDeck.elementPoetry
+    ? ` ${cardDeck.elementPoetry.poeticPhrase}`
+    : '';
+
+  // v2.0: MBTI 인사이트 추가
+  const mbtiAddition = cardDeck.mbtiInsight
+    ? ` (${cardDeck.mbtiInsight.mbti} 유형)`
+    : '';
+
+  return rootIntro + baseSummary + poetryAddition + mbtiAddition;
 }
 
-// 개별 카드 설명 생성
+// 개별 카드 설명 생성 - v2.0: root 카드 추가
 export function getCardDescription(
-  cardType: 'essence' | 'energy' | 'talent' | 'flow' | 'fortune' | 'guardian',
+  cardType: 'root' | 'essence' | 'energy' | 'talent' | 'flow' | 'fortune' | 'guardian',
   cardDeck: CardDeck
 ): { title: string; subtitle: string; description: string; keywords: string[] } {
   switch (cardType) {
+    // v2.0: 근본 카드 (60갑자)
+    case 'root':
+      if (!cardDeck.root) {
+        return {
+          title: '근본 카드',
+          subtitle: '년간지 정보 없음',
+          description: '60갑자 정보를 가져올 수 없습니다.',
+          keywords: ['근본', '운명', '시작']
+        };
+      }
+      return {
+        title: '근본 카드',
+        subtitle: `${cardDeck.root.yearKorean}년 ${cardDeck.root.animal}`,
+        description: cardDeck.root.story,
+        keywords: cardDeck.root.keywords
+      };
     case 'essence':
       return {
         title: '본질 카드',
@@ -283,6 +419,13 @@ export function getCardDescription(
         subtitle: `${cardDeck.guardian.mainGemKorean} & ${cardDeck.guardian.subGemKorean}`,
         description: cardDeck.guardian.story,
         keywords: cardDeck.guardian.keywords
+      };
+    default:
+      return {
+        title: '알 수 없는 카드',
+        subtitle: '',
+        description: '',
+        keywords: []
       };
   }
 }
