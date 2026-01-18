@@ -662,14 +662,28 @@ export default function SajuResultCard({
                 </div>
               </div>
 
-              {/* 궁합 좋은 별자리 */}
+              {/* 궁합 분석 (성격 기반) */}
               <div className="p-4 bg-pink-50 dark:bg-pink-900/20 rounded-xl border border-pink-200 dark:border-pink-800">
                 <h4 className="text-sm font-medium text-pink-700 dark:text-pink-400 mb-2 flex items-center gap-2">
                   <Heart className="w-4 h-4" />
-                  궁합 좋은 별자리
+                  나와 잘 맞는 사람
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  {zodiacAnalysis.sign.compatibilityDesc}
+                </p>
+                <p className="text-xs text-pink-600 dark:text-pink-400">
+                  궁합 좋은 별자리: {zodiacAnalysis.sign.compatibility.join(', ')}
+                </p>
+              </div>
+
+              {/* 이상적인 배우자/파트너 (20~30대 결혼 콘텐츠) */}
+              <div className="p-4 bg-gradient-to-br from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/20 rounded-xl border border-rose-200 dark:border-rose-800">
+                <h4 className="text-sm font-medium text-rose-700 dark:text-rose-400 mb-2 flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  이상적인 배우자
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {zodiacAnalysis.sign.compatibility.join(', ')}
+                  {zodiacAnalysis.sign.idealPartner}
                 </p>
               </div>
             </motion.div>

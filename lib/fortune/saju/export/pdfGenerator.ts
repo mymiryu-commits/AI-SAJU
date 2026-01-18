@@ -1755,9 +1755,25 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   addText(`• ${zodiacSign.weaknesses.join(', ')}`);
   yPos += 3;
 
-  // 궁합 좋은 별자리
-  addSubSection('궁합 좋은 별자리');
-  addText(`• ${zodiacSign.compatibility.join(', ')}`);
+  // 나와 잘 맞는 사람 (성격 기반 궁합)
+  addSubSection('나와 잘 맞는 사람');
+  const compatLines = doc.splitTextToSize(zodiacSign.compatibilityDesc, contentWidth);
+  compatLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  addText(`궁합 좋은 별자리: ${zodiacSign.compatibility.join(', ')}`);
+  yPos += 3;
+
+  // 이상적인 배우자/파트너
+  addSubSection('이상적인 배우자');
+  const partnerLines = doc.splitTextToSize(zodiacSign.idealPartner, contentWidth);
+  partnerLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
   yPos += 3;
 
   // 사주와의 조화 분석
