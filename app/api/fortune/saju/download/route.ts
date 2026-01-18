@@ -6,6 +6,9 @@
  * GET /api/fortune/saju/download?type=pdf&analysisId=xxx
  * GET /api/fortune/saju/download?type=audio&analysisId=xxx
  * POST /api/fortune/saju/download (실시간 생성)
+ *
+ * 무료 사용자: 블라인드 처리된 PDF 다운로드 가능
+ * 프리미엄 사용자: 전체 PDF 및 음성 다운로드 가능
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,6 +23,12 @@ import {
 } from '@/lib/fortune/saju/export';
 import { calculateSaju } from '@/lib/fortune/saju/calculator';
 import { analyzeOheng } from '@/lib/fortune/saju/oheng';
+import {
+  deductPoints,
+  getPointBalance,
+  PRODUCT_COSTS
+} from '@/lib/services/pointService';
+import { blindPremiumContent } from '@/lib/services/analysisService';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
 
 // 저장된 분석 결과에서 다운로드 (GET)
@@ -88,7 +97,25 @@ export async function GET(request: NextRequest) {
     const premium: PremiumContent | undefined = resultData?.premium as PremiumContent | undefined;
     const targetYear = (resultData?.targetYear as number) || new Date().getFullYear();
 
+    // 포인트 잔액 및 프리미엄 상태 확인
+    const pointBalance = await getPointBalance(user.id);
+    const isPremiumUser = pointBalance?.isPremium || false;
+    const isAnalysisPremium = analysis.is_premium === true;
+
     if (type === 'pdf') {
+      // PDF는 무료 사용자도 다운로드 가능하지만, 무료 버전은 블라인드 처리
+      let pdfPremium = premium;
+      let isBlindedPDF = false;
+
+      // 프리미엄 사용자이거나, 이 분석이 프리미엄인 경우 전체 PDF 제공
+      if (!isPremiumUser && !isAnalysisPremium) {
+        // 무료 사용자: 블라인드 처리된 PDF 생성
+        if (premium) {
+          pdfPremium = blindPremiumContent(premium);
+        }
+        isBlindedPDF = true;
+      }
+
       // PDF 생성
       const pdfBuffer = await generateSajuPDF({
         user: userInput,
@@ -96,22 +123,36 @@ export async function GET(request: NextRequest) {
         oheng,
         yongsin,
         gisin,
-        premium,
+        premium: pdfPremium,
         targetYear
       });
 
-      const filename = generatePDFFilename(userInput, targetYear);
+      const filename = isBlindedPDF
+        ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
+        : generatePDFFilename(userInput, targetYear);
 
       return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': pdfBuffer.length.toString()
+          'Content-Length': pdfBuffer.length.toString(),
+          'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full'
         }
       });
     } else {
-      // 음성 생성
+      // 음성 생성 - 프리미엄 전용
+      if (!isPremiumUser && !isAnalysisPremium) {
+        return NextResponse.json(
+          {
+            error: '음성 생성은 프리미엄 서비스입니다.',
+            errorCode: 'PREMIUM_REQUIRED',
+            upgradeRequired: true
+          },
+          { status: 402 }
+        );
+      }
+
       const openaiKey = process.env.OPENAI_API_KEY;
       if (!openaiKey) {
         return NextResponse.json(
@@ -191,6 +232,33 @@ export async function POST(request: NextRequest) {
         { error: '필수 데이터가 누락되었습니다.' },
         { status: 400 }
       );
+    }
+
+    // 음성 생성은 프리미엄 전용 - 인증 및 프리미엄 확인
+    if (type === 'audio') {
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: '음성 생성은 로그인이 필요합니다.' },
+          { status: 401 }
+        );
+      }
+
+      const pointBalance = await getPointBalance(user.id);
+      const isPremiumUser = pointBalance?.isPremium || false;
+
+      if (!isPremiumUser) {
+        return NextResponse.json(
+          {
+            error: '음성 생성은 프리미엄 서비스입니다.',
+            errorCode: 'PREMIUM_REQUIRED',
+            upgradeRequired: true
+          },
+          { status: 402 }
+        );
+      }
     }
 
     // script 타입은 나레이션 텍스트만 반환 (미리보기용)

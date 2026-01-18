@@ -1,0 +1,46 @@
+/**
+ * 사주 매핑 시스템 통합 인덱스
+ *
+ * 60갑자, MBTI 연동, 시적 표현 시스템을 내보냅니다.
+ */
+
+// 60갑자 시스템
+export {
+  SIXTY_JIAZI_MAPPING,
+  HEAVENLY_STEMS,
+  HEAVENLY_STEMS_KOREAN,
+  EARTHLY_BRANCHES,
+  EARTHLY_BRANCHES_KOREAN,
+  ZODIAC_ANIMALS,
+  getSixtyJiaziInfo,
+  getYearJiaziInfo,
+  generateJiaziPrologue,
+  generateJiaziEpilogue,
+  type SixtyJiaziInfo
+} from './sixtyJiazi';
+
+// MBTI 연동 시스템
+export {
+  DAYMASTER_MBTI_MATCH,
+  MBTI_DESCRIPTIONS,
+  analyzeMBTISajuMatch,
+  getMBTIDescription,
+  generateIntegratedAnalysis,
+  type MBTIType,
+  type MBTIDayMasterMatch,
+  type MBTISajuMatch
+} from './mbtiIntegration';
+
+// 시적 표현 시스템
+export {
+  ELEMENT_INFO,
+  GENERATING_RELATIONS,
+  CONTROLLING_RELATIONS,
+  analyzeElementRelation,
+  generateElementBalancePoetry,
+  generatePrologue,
+  generateEpilogue,
+  type ElementInfo,
+  type GeneratingRelation,
+  type ControllingRelation
+} from './poeticExpressions';

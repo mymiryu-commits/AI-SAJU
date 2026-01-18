@@ -21,6 +21,22 @@ import {
   CAREER_KOREAN,
   INTEREST_KOREAN
 } from '@/types/saju';
+import {
+  getSixtyJiaziInfo,
+  generateJiaziPrologue,
+  generateJiaziEpilogue,
+  analyzeMBTISajuMatch,
+  generateIntegratedAnalysis,
+  getMBTIDescription,
+  generateElementBalancePoetry,
+  generatePrologue,
+  generateEpilogue,
+  GENERATING_RELATIONS,
+  CONTROLLING_RELATIONS,
+  ELEMENT_INFO,
+  type MBTIType
+} from '../mappings';
+import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
 
 // ========== 연령별 분기 시스템 ==========
 type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
@@ -36,6 +52,35 @@ function getAgeGroup(birthDate: string, targetYear: number = new Date().getFullY
   if (age <= 22) return { group: 'youth', age };
   if (age <= 45) return { group: 'adult', age };
   return { group: 'senior', age };
+}
+
+// 천간 한글 변환
+function getDayMasterKorean(heavenlyStem: string): string {
+  const mapping: Record<string, string> = {
+    '甲': '갑', '乙': '을', '丙': '병', '丁': '정', '戊': '무',
+    '己': '기', '庚': '경', '辛': '신', '壬': '임', '癸': '계'
+  };
+  return mapping[heavenlyStem] || '갑';
+}
+
+// 오행 한글 변환
+function getElementKorean(element: string): string {
+  const mapping: Record<string, string> = {
+    'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수',
+    '목': '목', '화': '화', '토': '토', '금': '금', '수': '수'
+  };
+  return mapping[element] || '목';
+}
+
+// OhengBalance를 Record<string, number>로 변환
+function convertOhengToRecord(oheng: OhengBalance): Record<string, number> {
+  return {
+    '목': oheng.wood || 0,
+    '화': oheng.fire || 0,
+    '토': oheng.earth || 0,
+    '금': oheng.metal || 0,
+    '수': oheng.water || 0
+  };
 }
 
 // 연령별 콘텐츠 라벨
@@ -886,6 +931,88 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.text(`발행일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, 250, { align: 'center' });
   doc.text('AI-SAJU Premium Service', pageWidth / 2, 260, { align: 'center' });
 
+  // ========== 프롤로그 페이지 (60갑자 + 시적 도입부) ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 60갑자 정보 가져오기
+  const yearStem = saju.year?.heavenlyStem || '甲';
+  const yearBranch = saju.year?.earthlyBranch || '子';
+  const jiaziInfo = getSixtyJiaziInfo(yearStem, yearBranch);
+
+  // 일간 정보로 꽃/동물 카드 가져오기
+  const dayMasterKorean = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+  const essenceCard = ESSENCE_CARDS[dayMasterKorean];
+  const primaryYongsin = yongsin?.[0] || 'wood';
+  const yongsinKorean = getElementKorean(primaryYongsin);
+  const energyCard = ENERGY_CARDS[yongsinKorean];
+
+  // 프롤로그 제목
+  doc.setFontSize(16);
+  doc.text('✧ 당신의 운명 이야기 ✧', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 60갑자 정보
+  if (jiaziInfo) {
+    doc.setFontSize(12);
+    doc.text(`${jiaziInfo.korean}년 ${jiaziInfo.animalKorean}`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+
+    doc.setFontSize(10);
+    const prologueLines = doc.splitTextToSize(generateJiaziPrologue(jiaziInfo), contentWidth - 20);
+    prologueLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 6;
+    });
+    yPos += 10;
+  }
+
+  // 본질 카드 (꽃)
+  if (essenceCard) {
+    doc.setFontSize(11);
+    doc.text(`🌸 본질의 꽃: ${essenceCard.flowerKorean}`, margin, yPos);
+    yPos += 8;
+    doc.setFontSize(9);
+    const essenceLines = doc.splitTextToSize(essenceCard.story, contentWidth);
+    essenceLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 8;
+  }
+
+  // 에너지 카드 (동물)
+  if (energyCard) {
+    doc.setFontSize(11);
+    doc.text(`🐾 에너지 동물: ${energyCard.animalKorean}`, margin, yPos);
+    yPos += 8;
+    doc.setFontSize(9);
+    const energyLines = doc.splitTextToSize(energyCard.story, contentWidth);
+    energyLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 10;
+  }
+
+  // 오행 시적 해석
+  const elementPoetry = generateElementBalancePoetry(convertOhengToRecord(oheng));
+  if (elementPoetry) {
+    doc.setFontSize(11);
+    doc.text('✦ 오행의 조화 ✦', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+    doc.setFontSize(9);
+    const poetryLines = doc.splitTextToSize(elementPoetry, contentWidth - 10);
+    poetryLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin + 5, yPos);
+      yPos += 5;
+    });
+  }
+
   // ========== Executive Summary ==========
   doc.addPage();
   yPos = margin;
@@ -1411,6 +1538,68 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
         }
       }
     }
+
+    // ========== MBTI 연동 분석 (MBTI 정보가 있는 경우) ==========
+    if (user.mbti) {
+      addSectionTitle('11. MBTI × 사주 통합 분석');
+
+      const mbtiType = user.mbti.toUpperCase() as MBTIType;
+      const dayMasterStr = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+      const mbtiMatch = analyzeMBTISajuMatch(dayMasterStr, mbtiType);
+
+      addSubSection(`${mbtiType} 유형과 사주의 조화`);
+      addText(`일치도: ${mbtiMatch.matchScore}%`);
+      addText(mbtiMatch.summary);
+      yPos += 3;
+
+      if (mbtiMatch.strengths.length > 0) {
+        addSubSection('통합 강점');
+        mbtiMatch.strengths.forEach(s => addText(`• ${s}`));
+      }
+
+      if (mbtiMatch.growthAreas.length > 0) {
+        addSubSection('성장 영역');
+        mbtiMatch.growthAreas.forEach(g => addText(`• ${g}`));
+      }
+
+      addSubSection('통합 조언');
+      addText(mbtiMatch.advice);
+
+      // MBTI와 용신 통합 분석
+      if (yongsin?.length) {
+        yPos += 5;
+        const integratedAnalysis = generateIntegratedAnalysis(dayMasterStr, mbtiType, yongsin);
+        const analysisLines = doc.splitTextToSize(integratedAnalysis, contentWidth);
+        analysisLines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, margin, yPos);
+          yPos += 5;
+        });
+      }
+    }
+  }
+
+  // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 60갑자 에필로그
+  if (jiaziInfo) {
+    const dayElement = getElementKorean(saju.day?.element || 'wood');
+    const epilogueText = generateJiaziEpilogue(jiaziInfo, dayElement);
+
+    doc.setFontSize(12);
+    doc.text('✧ 에필로그 ✧', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    doc.setFontSize(10);
+    const epilogueLines = doc.splitTextToSize(epilogueText, contentWidth - 20);
+    epilogueLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 6;
+    });
+    yPos += 15;
   }
 
   // ========== 마무리 페이지 ==========
