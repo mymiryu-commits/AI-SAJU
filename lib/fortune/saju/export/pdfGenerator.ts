@@ -21,19 +21,66 @@ import {
   CAREER_KOREAN,
   INTEREST_KOREAN
 } from '@/types/saju';
+import {
+  getSixtyJiaziInfo,
+  generateJiaziPrologue,
+  generateJiaziEpilogue,
+  analyzeMBTISajuMatch,
+  generateIntegratedAnalysis,
+  getMBTIDescription,
+  generateElementBalancePoetry,
+  generatePrologue,
+  generateEpilogue,
+  GENERATING_RELATIONS,
+  CONTROLLING_RELATIONS,
+  ELEMENT_INFO,
+  type MBTIType
+} from '../mappings';
+import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
 
 // ========== 연령별 분기 시스템 ==========
 type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
 
-function getAgeGroup(birthDate: string): { group: AgeGroup; age: number } {
+function getAgeGroup(birthDate: string, targetYear: number = new Date().getFullYear()): { group: AgeGroup; age: number } {
   const birth = new Date(birthDate);
-  const today = new Date();
-  const age = today.getFullYear() - birth.getFullYear();
+
+  // 정확한 만 나이 계산 (목표 연도 말 기준 - 그 해에 도달하는 나이)
+  // 예: 1978년생 → 2026년 = 48세 (2026 - 1978 = 48)
+  const age = targetYear - birth.getFullYear();
 
   if (age <= 12) return { group: 'child', age };
   if (age <= 22) return { group: 'youth', age };
   if (age <= 45) return { group: 'adult', age };
   return { group: 'senior', age };
+}
+
+// 천간 한글 변환
+function getDayMasterKorean(heavenlyStem: string): string {
+  const mapping: Record<string, string> = {
+    '甲': '갑', '乙': '을', '丙': '병', '丁': '정', '戊': '무',
+    '己': '기', '庚': '경', '辛': '신', '壬': '임', '癸': '계'
+  };
+  return mapping[heavenlyStem] || '갑';
+}
+
+// 오행 한글 변환
+function getElementKorean(element: string): string {
+  const mapping: Record<string, string> = {
+    'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수',
+    '목': '목', '화': '화', '토': '토', '금': '금', '수': '수'
+  };
+  return mapping[element] || '목';
+}
+
+// OhengBalance를 Record<string, number>로 변환
+function convertOhengToRecord(oheng: OhengBalance): Record<string, number> {
+  return {
+    '목': oheng.wood || 0,
+    '화': oheng.fire || 0,
+    '토': oheng.earth || 0,
+    '금': oheng.metal || 0,
+    '수': oheng.water || 0
+  };
 }
 
 // 연령별 콘텐츠 라벨
@@ -249,6 +296,313 @@ const LUCKY_ELEMENTS_POOL: Record<Element, {
     directions: ['북쪽', '북동쪽'],
     foods: ['검은콩', '미역', '생선', '물'],
     activities: ['수영', '명상', '독서', '음악 감상']
+  }
+};
+
+// ========== 월별 맥락화된 주의사항 (우유부단함 등 반복 방지) ==========
+const MONTHLY_CONTEXTUALIZED_WARNINGS: Record<number, {
+  water: string;  // 수 기운 관련 맥락화된 조언
+  general: string;  // 일반 주의사항
+}> = {
+  1: {
+    water: '새해 계획을 세울 때 지나친 고민보다 직관을 믿으세요. 수 기운의 지혜가 빛납니다.',
+    general: '새해 목표 설정 시 현실적인 범위로 시작하세요.'
+  },
+  2: {
+    water: '아직 때가 아니라면 기다리는 것도 전략입니다. 입춘까지 내면을 다듬으세요.',
+    general: '조급한 결정보다 충분한 준비가 중요한 시기입니다.'
+  },
+  3: {
+    water: '봄바람에 흔들리지 말고 핵심에 집중하세요. 명확한 우선순위가 힘이 됩니다.',
+    general: '새로운 기회가 많지만 모두 잡으려 하지 마세요.'
+  },
+  4: {
+    water: '인간관계에서 감정보다 논리로 접근하면 오해를 줄일 수 있습니다.',
+    general: '대인 관계에서 명확한 커뮤니케이션이 필요합니다.'
+  },
+  5: {
+    water: '가정과 일의 균형에서 양쪽 모두에 욕심내지 마세요. 선택과 집중이 필요합니다.',
+    general: '가정의 달, 업무와 가족 시간의 균형을 조절하세요.'
+  },
+  6: {
+    water: '상반기 성과에 집착하지 말고, 하반기 전략을 냉정하게 수정하세요.',
+    general: '중간 점검의 시기, 방향 전환이 필요하면 과감하게.'
+  },
+  7: {
+    water: '더위에 지치기 쉬운 시기, 중요한 결정은 충분한 휴식 후에 내리세요.',
+    general: '휴가 계획 시 완전한 휴식에 집중하세요.'
+  },
+  8: {
+    water: '열정적인 도전도 좋지만, 안전망 없이 뛰어들지는 마세요.',
+    general: '새로운 시도 전 충분한 검토가 필요합니다.'
+  },
+  9: {
+    water: '관계 정리가 필요한 시기, 명확한 기준으로 결단하세요.',
+    general: '불필요한 것을 정리하고 핵심에 집중하세요.'
+  },
+  10: {
+    water: '연말 목표 달성을 위해 집중력을 발휘하세요. 분산하지 마세요.',
+    general: '마무리해야 할 일들의 우선순위를 정하세요.'
+  },
+  11: {
+    water: '한 해를 돌아보며 감정에 치우치지 않고 객관적으로 평가하세요.',
+    general: '성과와 부족한 점을 냉정하게 분석하는 시기입니다.'
+  },
+  12: {
+    water: '새해 준비에 너무 많은 것을 담지 마세요. 핵심 목표 3개로 압축하세요.',
+    general: '휴식과 재충전, 과도한 계획보다 회복에 집중하세요.'
+  }
+};
+
+// ========== 경영자/사업가 특화 콘텐츠 ==========
+const EXECUTIVE_CONTENT: Record<Element, {
+  leadershipStyle: string;
+  businessStrength: string;
+  riskFactor: string;
+  teamManagement: string;
+  growthStrategy: string;
+}> = {
+  wood: {
+    leadershipStyle: '비전 제시형 - 성장과 확장을 이끄는 리더',
+    businessStrength: '신사업 개척, 스타트업, 혁신 주도',
+    riskFactor: '너무 빠른 확장으로 인한 관리 부실 주의',
+    teamManagement: '팀원들에게 성장 기회를 제공하면 충성도 상승',
+    growthStrategy: '신규 시장 진출과 제품/서비스 다양화에 유리'
+  },
+  fire: {
+    leadershipStyle: '열정 주도형 - 동기부여와 추진력의 리더',
+    businessStrength: '마케팅, 영업, 대외 활동에 강점',
+    riskFactor: '과도한 열정으로 인한 번아웃과 팀 피로 주의',
+    teamManagement: '명확한 비전과 인정으로 팀 사기 고취',
+    growthStrategy: '브랜딩 강화와 적극적인 홍보 활동이 효과적'
+  },
+  earth: {
+    leadershipStyle: '안정 추구형 - 신뢰와 지속성의 리더',
+    businessStrength: '운영 관리, 고객 관계, 장기 계획에 강점',
+    riskFactor: '변화에 대한 저항으로 기회 상실 주의',
+    teamManagement: '안정적인 환경과 명확한 역할 부여로 팀 안정',
+    growthStrategy: '기존 고객 유지와 점진적 확장이 안전하고 효과적'
+  },
+  metal: {
+    leadershipStyle: '원칙 중시형 - 효율과 품질의 리더',
+    businessStrength: '시스템 구축, 품질 관리, 재무 관리에 강점',
+    riskFactor: '지나친 완벽주의로 속도 저하 주의',
+    teamManagement: '명확한 기준과 공정한 평가로 팀 신뢰 확보',
+    growthStrategy: '프로세스 최적화와 비용 절감으로 경쟁력 확보'
+  },
+  water: {
+    leadershipStyle: '전략 지향형 - 통찰력과 적응력의 리더',
+    businessStrength: '시장 분석, 위기 관리, 네트워킹에 강점',
+    riskFactor: '결정 지연으로 기회 상실 주의 - 분석 마비 경계',
+    teamManagement: '유연한 조직 문화와 자율성 부여로 창의성 발휘',
+    growthStrategy: '트렌드 파악과 타이밍 포착이 핵심, 기회 포착 시 과감하게'
+  }
+};
+
+// ========== 관심사별 구체적 전략 풀 ==========
+const INTEREST_SPECIFIC_STRATEGIES: Record<string, {
+  doList: string[];
+  dontList: string[];
+  monthlyTip: Record<number, string>;
+}> = {
+  health: {
+    doList: ['정기 건강검진 예약', '수면 패턴 일정하게 유지', '하루 30분 이상 움직이기'],
+    dontList: ['야식 습관', '과도한 음주', '수면 부족'],
+    monthlyTip: {
+      1: '신년 건강 목표 설정 - 달성 가능한 수준으로',
+      2: '면역력 강화 - 환절기 대비',
+      3: '봄 야외 활동 시작 - 가벼운 산책부터',
+      4: '꽃가루 알레르기 주의 - 실내 운동 병행',
+      5: '가정의 달 스트레스 관리',
+      6: '하지 건강 점검 - 상반기 피로 해소',
+      7: '더위로 인한 체력 저하 주의',
+      8: '말복 보양식으로 기력 회복',
+      9: '환절기 면역 관리',
+      10: '가을 운동 적기 - 활동량 늘리기',
+      11: '겨울 대비 건강 점검',
+      12: '연말 피로 해소와 충분한 휴식'
+    }
+  },
+  investment: {
+    doList: ['월별 예산 계획 수립', '비상금 확보', '분산 투자 원칙 지키기'],
+    dontList: ['충동 구매', '고위험 투자 올인', '보험 미가입'],
+    monthlyTip: {
+      1: '연간 재무 계획 수립',
+      2: '설 연휴 지출 관리',
+      3: '1분기 결산 및 조정',
+      4: '세금 관련 사항 점검',
+      5: '가정의 달 지출 대비',
+      6: '상반기 재무 점검',
+      7: '휴가 예산 관리',
+      8: '추석 자금 준비',
+      9: '하반기 투자 전략 조정',
+      10: '연말 정산 준비 시작',
+      11: '연말 지출 계획',
+      12: '내년 재무 목표 설정'
+    }
+  },
+  career: {
+    doList: ['분기별 성과 정리', '네트워킹 활동', '역량 개발 투자'],
+    dontList: ['이직 충동적 결정', '인간관계 소홀', '자기계발 중단'],
+    monthlyTip: {
+      1: '연간 커리어 목표 설정',
+      2: '상반기 프로젝트 준비',
+      3: '봄 채용 시즌 기회 탐색',
+      4: '1분기 성과 정리',
+      5: '상반기 중간 점검',
+      6: '하반기 계획 수립',
+      7: '휴가 중 자기계발 계획',
+      8: '하반기 프로젝트 착수',
+      9: '가을 채용 시즌 활용',
+      10: '연말 성과 마무리',
+      11: '내년 커리어 계획 수립',
+      12: '올해 성과 정리 및 포트폴리오 업데이트'
+    }
+  },
+  relationship: {
+    doList: ['정기적 가족 시간', '감사 표현하기', '경청하는 습관'],
+    dontList: ['일 핑계로 소통 미루기', '감정적 대응', '비교하는 말'],
+    monthlyTip: {
+      1: '새해 가족 목표 공유',
+      2: '발렌타인/설 가족 시간',
+      3: '봄나들이 계획',
+      4: '소중한 사람과 꽃구경',
+      5: '가정의 달 감사 표현',
+      6: '상반기 관계 점검',
+      7: '여름 휴가 함께 계획',
+      8: '추석 가족 모임 준비',
+      9: '추석 연휴 소통의 시간',
+      10: '가을 데이트 계획',
+      11: '감사함 나누기',
+      12: '연말 따뜻한 마무리'
+    }
+  },
+  study: {
+    doList: ['학습 계획 수립', '규칙적 복습', '질문하는 습관'],
+    dontList: ['벼락치기', '비교로 인한 스트레스', '수면 시간 줄이기'],
+    monthlyTip: {
+      1: '학년/학기 목표 설정',
+      2: '새 학기 준비',
+      3: '새 학기 적응 기간',
+      4: '중간고사 대비',
+      5: '1학기 중간 점검',
+      6: '기말고사 및 학기 마무리',
+      7: '방학 중 보충 학습',
+      8: '2학기 준비',
+      9: '2학기 안정기',
+      10: '중간고사 대비',
+      11: '기말고사 준비 시작',
+      12: '학년 마무리 및 다음 학년 준비'
+    }
+  },
+  realestate: {
+    doList: ['시장 동향 모니터링', '입지 분석', '전문가 상담'],
+    dontList: ['무리한 대출', '검증 없는 투자', '단기 시세 차익 집착'],
+    monthlyTip: {
+      1: '연간 부동산 계획 수립',
+      2: '봄 이사 시즌 준비',
+      3: '이사 성수기 - 물건 탐색',
+      4: '계약 시 세부 사항 확인',
+      5: '5월 매물 탐색 적기',
+      6: '상반기 시장 동향 분석',
+      7: '하반기 투자 전략 수립',
+      8: '가을 이사 시즌 대비',
+      9: '추석 전후 매물 탐색',
+      10: '연말 매물 협상 유리',
+      11: '내년 부동산 계획 수립',
+      12: '연말 세금 관련 정리'
+    }
+  },
+  // 추가 관심사 전략
+  selfdev: {
+    doList: ['독서 목표 설정', '온라인 강의 수강', '멘토 찾기'],
+    dontList: ['너무 많은 목표', '비교로 인한 조급함', '실천 없는 계획'],
+    monthlyTip: {
+      1: '연간 자기계발 목표 설정',
+      2: '새로운 습관 형성 시작',
+      3: '1분기 학습 점검',
+      4: '새로운 스킬 도전',
+      5: '중간 점검 및 조정',
+      6: '상반기 성과 정리',
+      7: '휴가 중 독서/학습',
+      8: '하반기 계획 재정비',
+      9: '자격증/시험 준비',
+      10: '연말 목표 달성 추진',
+      11: '내년 계획 수립',
+      12: '올해 성장 정리'
+    }
+  },
+  startup: {
+    doList: ['시장 조사', '사업 계획서 정비', '네트워킹 확대'],
+    dontList: ['검증 없는 확장', '자금 관리 소홀', '원맨 쇼'],
+    monthlyTip: {
+      1: '연간 사업 목표 설정',
+      2: '1분기 전략 수립',
+      3: '마케팅 강화',
+      4: '1분기 성과 분석',
+      5: '파트너십 구축',
+      6: '상반기 결산',
+      7: '하반기 준비',
+      8: '신제품/서비스 기획',
+      9: '4분기 전략 수립',
+      10: '연말 프로모션',
+      11: '내년 사업 계획',
+      12: '연말 결산 및 세무 준비'
+    }
+  },
+  romance: {
+    doList: ['자기 자신 가꾸기', '새로운 만남에 열린 마음', '소통 연습'],
+    dontList: ['과거에 집착', '상대방 이상화', '성급한 결정'],
+    monthlyTip: {
+      1: '새해 연애 운 점검',
+      2: '발렌타인 데이 준비',
+      3: '봄 소개팅 시즌',
+      4: '벚꽃 데이트',
+      5: '가정의 달 가족 소개',
+      6: '관계 점검',
+      7: '여름 휴가 계획',
+      8: '추석 전 관계 정리',
+      9: '결혼 시즌 준비',
+      10: '가을 데이트',
+      11: '연말 계획 공유',
+      12: '연말 프로포즈 시즌'
+    }
+  },
+  parenting: {
+    doList: ['자녀와 대화 시간 확보', '칭찬 습관화', '일관된 훈육'],
+    dontList: ['과도한 비교', '감정적 훈육', '약속 어기기'],
+    monthlyTip: {
+      1: '새 학년 준비',
+      2: '방학 마무리 학습',
+      3: '새 학기 적응 지원',
+      4: '중간고사 관리',
+      5: '가정의 달 가족 활동',
+      6: '기말고사 및 1학기 마무리',
+      7: '방학 계획 수립',
+      8: '2학기 준비',
+      9: '추석 가족 시간',
+      10: '중간고사 관리',
+      11: '기말고사 준비',
+      12: '연말 가족 시간'
+    }
+  },
+  family: {
+    doList: ['정기적 가족 식사', '부모님 건강 챙기기', '형제간 소통'],
+    dontList: ['금전 문제로 갈등', '과거 문제 들춰내기', '비교하기'],
+    monthlyTip: {
+      1: '새해 가족 모임',
+      2: '설 연휴 준비',
+      3: '부모님 건강 검진',
+      4: '봄나들이',
+      5: '어버이날 감사 표현',
+      6: '상반기 가족 점검',
+      7: '여름 휴가 함께',
+      8: '추석 준비',
+      9: '추석 가족 모임',
+      10: '가을 여행',
+      11: '연말 모임 계획',
+      12: '연말 가족 시간'
+    }
   }
 };
 
@@ -478,8 +832,8 @@ interface PDFSection {
 export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buffer> {
   const { user, saju, yongsin, gisin, premium, targetYear = 2026 } = options;
 
-  // 연령 그룹 판정
-  const { group: ageGroup, age: userAge } = getAgeGroup(user.birthDate);
+  // 연령 그룹 판정 (목표 연도 기준 정확한 만 나이 계산)
+  const { group: ageGroup, age: userAge } = getAgeGroup(user.birthDate, targetYear);
   const ageLabels = AGE_GROUP_LABELS[ageGroup];
 
   // 오행 정규화 (합계 100%)
@@ -576,6 +930,102 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.setFontSize(10);
   doc.text(`발행일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, 250, { align: 'center' });
   doc.text('AI-SAJU Premium Service', pageWidth / 2, 260, { align: 'center' });
+
+  // ========== 프롤로그 페이지 (60갑자 + 시적 도입부) ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 60갑자 정보 가져오기 (v2.0: premium.sixtyJiazi 우선 사용)
+  const yearStem = saju.year?.heavenlyStem || '甲';
+  const yearBranch = saju.year?.earthlyBranch || '子';
+  // premium.sixtyJiazi는 SixtyJiaziAnalysis 타입 (이미 생성된 분석 콘텐츠)
+  const sixtyJiaziAnalysis = premium?.sixtyJiazi;
+  // getSixtyJiaziInfo는 SixtyJiaziInfo 타입 (원본 매핑 데이터) - 폴백용
+  const jiaziInfo = getSixtyJiaziInfo(yearStem, yearBranch);
+
+  // 일간 정보로 꽃/동물 카드 가져오기
+  const dayMasterKorean = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+  const essenceCard = ESSENCE_CARDS[dayMasterKorean];
+  const primaryYongsin = yongsin?.[0] || 'wood';
+  const yongsinKorean = getElementKorean(primaryYongsin);
+  const energyCard = ENERGY_CARDS[yongsinKorean];
+
+  // 프롤로그 제목
+  doc.setFontSize(16);
+  doc.text('✧ 당신의 운명 이야기 ✧', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // v2.0: premium.prologue 또는 premium.sixtyJiazi 사용
+  const prologueText = premium?.prologue
+    || sixtyJiaziAnalysis?.prologueText
+    || (jiaziInfo ? generateJiaziPrologue(jiaziInfo) : null);
+
+  if (prologueText) {
+    // 60갑자 제목
+    if (premium?.sixtyJiazi) {
+      doc.setFontSize(12);
+      doc.text(`${premium.sixtyJiazi.yearKorean}년 ${premium.sixtyJiazi.animalDescription}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    } else if (jiaziInfo && 'korean' in jiaziInfo && 'animalKorean' in jiaziInfo) {
+      doc.setFontSize(12);
+      doc.text(`${(jiaziInfo as any).korean}년 ${(jiaziInfo as any).animalKorean}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    }
+
+    doc.setFontSize(10);
+    const prologueLines = doc.splitTextToSize(prologueText, contentWidth - 20);
+    prologueLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 6;
+    });
+    yPos += 10;
+  }
+
+  // 본질 카드 (꽃)
+  if (essenceCard) {
+    doc.setFontSize(11);
+    doc.text(`🌸 본질의 꽃: ${essenceCard.flowerKorean}`, margin, yPos);
+    yPos += 8;
+    doc.setFontSize(9);
+    const essenceLines = doc.splitTextToSize(essenceCard.story, contentWidth);
+    essenceLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 8;
+  }
+
+  // 에너지 카드 (동물)
+  if (energyCard) {
+    doc.setFontSize(11);
+    doc.text(`🐾 에너지 동물: ${energyCard.animalKorean}`, margin, yPos);
+    yPos += 8;
+    doc.setFontSize(9);
+    const energyLines = doc.splitTextToSize(energyCard.story, contentWidth);
+    energyLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 10;
+  }
+
+  // 오행 시적 해석
+  const elementPoetry = generateElementBalancePoetry(convertOhengToRecord(oheng));
+  if (elementPoetry) {
+    doc.setFontSize(11);
+    doc.text('✦ 오행의 조화 ✦', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+    doc.setFontSize(9);
+    const poetryLines = doc.splitTextToSize(elementPoetry, contentWidth - 10);
+    poetryLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin + 5, yPos);
+      yPos += 5;
+    });
+  }
 
   // ========== Executive Summary ==========
   doc.addPage();
@@ -898,8 +1348,15 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
           });
         }
 
-        if (action.mustAvoid?.length) {
-          addText(`▸ 주의사항: ${action.mustAvoid.join(', ')}`);
+        // 월별 맥락화된 주의사항 (반복 방지)
+        const contextWarning = MONTHLY_CONTEXTUALIZED_WARNINGS[monthNum];
+        if (contextWarning) {
+          // 용신이 수(水)인 경우 수 기운 관련 맥락화된 조언
+          if (yongsin?.includes('water')) {
+            addText(`▸ 이달의 조언: ${contextWarning.water}`);
+          } else {
+            addText(`▸ 이달의 조언: ${contextWarning.general}`);
+          }
         }
 
         // 행운 요소 다양화 (용신 기반 + 월별 변화)
@@ -976,24 +1433,320 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       addText(`확률: ${timing.nextOpportunity.probability}%`);
     }
 
-    // 관심사별 전략
+    // 관심사별 전략 (차별화된 조언)
     if (premium.interestStrategies?.length) {
       addSectionTitle('9. 관심사별 맞춤 전략');
 
-      premium.interestStrategies.forEach(strategy => {
+      // 현재 월 기준 월별 팁 제공
+      const currentMonth = new Date().getMonth() + 1;
+
+      premium.interestStrategies.forEach((strategy, strategyIdx) => {
         addSubSection(INTEREST_KOREAN[strategy.interest] || strategy.interest);
         addText(`적합도: ${strategy.sajuAlignment}점 | 최적 시기: ${strategy.timing}`);
         addText(`우선순위: ${strategy.priority}순위`);
 
-        if (strategy.doList?.length) {
-          addText(`해야 할 것: ${strategy.doList.join(', ')}`);
+        // 차별화된 전략 가져오기
+        const specificStrategy = INTEREST_SPECIFIC_STRATEGIES[strategy.interest];
+
+        if (specificStrategy) {
+          // 관심사별 구체적인 해야 할 것
+          addText('✓ 실천 항목:');
+          specificStrategy.doList.forEach(item => addText(`  • ${item}`));
+
+          // 관심사별 구체적인 피해야 할 것
+          addText('✗ 주의 항목:');
+          specificStrategy.dontList.forEach(item => addText(`  • ${item}`));
+
+          // 월별 맞춤 팁 (각 관심사마다 다른 월별 조언)
+          const monthlyTip = specificStrategy.monthlyTip[currentMonth];
+          if (monthlyTip) {
+            addText(`📅 ${currentMonth}월 팁: ${monthlyTip}`);
+          }
+        } else {
+          // 기존 방식 fallback
+          if (strategy.doList?.length) {
+            addText(`해야 할 것: ${strategy.doList.join(', ')}`);
+          }
+          if (strategy.dontList?.length) {
+            addText(`피해야 할 것: ${strategy.dontList.join(', ')}`);
+          }
         }
-        if (strategy.dontList?.length) {
-          addText(`피해야 할 것: ${strategy.dontList.join(', ')}`);
+
+        // 용신 기반 맞춤 조언 (관심사별로 다르게)
+        if (yongsin?.length) {
+          const yongsinElement = yongsin[0];
+          const elementImpact = ELEMENT_LIFE_IMPACT[yongsinElement];
+          if (elementImpact) {
+            let specificAdvice = '';
+            switch(strategy.interest) {
+              case 'health':
+              case 'mentalhealth':
+                specificAdvice = elementImpact.health.tip;
+                break;
+              case 'investment':
+              case 'realestate':
+              case 'retirement':
+                specificAdvice = elementImpact.wealth.advice;
+                break;
+              case 'relationship':
+              case 'romance':
+              case 'family':
+              case 'parenting':
+                specificAdvice = elementImpact.relationship.tip;
+                break;
+              case 'career':
+              case 'study':
+              case 'selfdev':
+              case 'startup':
+                specificAdvice = `${ELEMENT_KOREAN[yongsinElement]} 기운을 활용하면 ${elementImpact.wealth.strength}`;
+                break;
+              default:
+                specificAdvice = strategy.specificAdvice;
+            }
+            addText(`💡 ${ELEMENT_KOREAN[yongsinElement]} 기운 활용: ${specificAdvice}`);
+          }
+        } else if (strategy.specificAdvice) {
+          addText(`조언: ${strategy.specificAdvice}`);
         }
-        addText(`조언: ${strategy.specificAdvice}`);
+
+        yPos += 3;
       });
     }
+
+    // 경영자/사업가 특화 섹션 (해당되는 경우)
+    if (user.careerType && ['executive', 'business', 'entrepreneur', 'ceo', 'owner'].some(type =>
+      user.careerType?.toLowerCase().includes(type))) {
+      addSectionTitle('10. 경영자 특화 분석');
+
+      const primaryElement = strongestEl.element;
+      const execContent = EXECUTIVE_CONTENT[primaryElement];
+
+      if (execContent) {
+        addSubSection('리더십 스타일');
+        addText(execContent.leadershipStyle);
+        yPos += 2;
+
+        addSubSection('사업 강점');
+        addText(execContent.businessStrength);
+        yPos += 2;
+
+        addSubSection('리스크 관리');
+        addText(`⚠️ ${execContent.riskFactor}`);
+        yPos += 2;
+
+        addSubSection('팀 관리 전략');
+        addText(execContent.teamManagement);
+        yPos += 2;
+
+        addSubSection(`${targetYear}년 성장 전략`);
+        addText(execContent.growthStrategy);
+
+        // 용신 기반 추가 조언
+        if (yongsin?.length) {
+          const yongsinExec = EXECUTIVE_CONTENT[yongsin[0]];
+          if (yongsinExec && yongsin[0] !== primaryElement) {
+            yPos += 5;
+            addSubSection('용신 활용 보완 전략');
+            addText(`${ELEMENT_KOREAN[yongsin[0]]} 기운 활용: ${yongsinExec.growthStrategy}`);
+          }
+        }
+      }
+    }
+
+    // ========== MBTI 연동 분석 (MBTI 정보가 있는 경우) ==========
+    if (user.mbti) {
+      addSectionTitle('11. MBTI × 사주 통합 분석');
+
+      // v2.0: premium.mbtiIntegration 사용 (있으면)
+      if (premium?.mbtiIntegration) {
+        const mbtiData = premium.mbtiIntegration;
+
+        addSubSection(`${mbtiData.mbti} 유형과 사주의 조화`);
+        addText(`일치도: ${mbtiData.matchScore}%`);
+        addText(mbtiData.isBestMatch ? '✓ 최적의 조합입니다!' : mbtiData.isChallengingMatch ? '△ 도전적이지만 성장 가능한 조합입니다.' : '○ 보완적인 조합입니다.');
+        yPos += 5;
+
+        // T/F 분기 분석
+        const isThinkingType = mbtiData.mbti.includes('T');
+        addSubSection(isThinkingType ? 'T(사고형) 관점 강점' : 'F(감정형) 관점 강점');
+        addText(isThinkingType ? mbtiData.strengthsWithT : mbtiData.strengthsWithF);
+        yPos += 3;
+
+        addSubSection('맞춤 조언');
+        addText(isThinkingType ? mbtiData.adviceForT : mbtiData.adviceForF);
+        yPos += 3;
+
+        // 통합 분석
+        addSubSection('통합 분석');
+        const analysisLines = doc.splitTextToSize(mbtiData.integratedAnalysis, contentWidth);
+        analysisLines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, margin, yPos);
+          yPos += 5;
+        });
+        yPos += 5;
+
+        // 발전 제안
+        if (mbtiData.developmentSuggestions?.length > 0) {
+          addSubSection('발전 제안');
+          mbtiData.developmentSuggestions.forEach(s => addText(`• ${s}`));
+        }
+      } else {
+        // 기존 로직 (fallback)
+        const mbtiType = user.mbti.toUpperCase() as MBTIType;
+        const dayMasterStr = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+        const mbtiMatch = analyzeMBTISajuMatch(dayMasterStr, mbtiType);
+
+        addSubSection(`${mbtiType} 유형과 사주의 조화`);
+        addText(`일치도: ${mbtiMatch.matchScore}%`);
+        addText(mbtiMatch.summary);
+        yPos += 3;
+
+        if (mbtiMatch.strengths.length > 0) {
+          addSubSection('통합 강점');
+          mbtiMatch.strengths.forEach(s => addText(`• ${s}`));
+        }
+
+        if (mbtiMatch.growthAreas.length > 0) {
+          addSubSection('성장 영역');
+          mbtiMatch.growthAreas.forEach(g => addText(`• ${g}`));
+        }
+
+        addSubSection('통합 조언');
+        addText(mbtiMatch.advice);
+
+        // MBTI와 용신 통합 분석
+        if (yongsin?.length) {
+          yPos += 5;
+          const integratedAnalysis = generateIntegratedAnalysis(dayMasterStr, mbtiType, yongsin);
+          const analysisLines = doc.splitTextToSize(integratedAnalysis, contentWidth);
+          analysisLines.forEach((line: string) => {
+            checkNewPage();
+            doc.text(line, margin, yPos);
+            yPos += 5;
+          });
+        }
+      }
+    }
+
+    // ========== 6장 운명 카드 (v2.0) ==========
+    if (premium?.destinyCards && premium.destinyCards.cards.length > 0) {
+      doc.addPage();
+      yPos = margin;
+
+      addSectionTitle('12. 운명의 6장 카드');
+
+      // 핵심 메시지
+      addText(premium.destinyCards.coreMessage);
+      yPos += 8;
+
+      // 각 카드 출력
+      premium.destinyCards.cards.forEach((card, idx) => {
+        checkNewPage(40);
+        addSubSection(`${card.typeKorean} 카드: ${card.title}`);
+        addText(`상징: ${card.symbol}`);
+        addText(`키워드: ${card.keywords.join(', ')}`);
+
+        const storyLines = doc.splitTextToSize(card.story, contentWidth - 10);
+        storyLines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, margin + 5, yPos);
+          yPos += 5;
+        });
+
+        addText(`조언: ${card.advice}`);
+        yPos += 5;
+      });
+
+      // 전체 요약
+      yPos += 5;
+      addSubSection('카드 종합 해석');
+      const summaryLines = doc.splitTextToSize(premium.destinyCards.summary, contentWidth);
+      summaryLines.forEach((line: string) => {
+        checkNewPage();
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+    }
+
+    // ========== 오행 시적 해석 (v2.0) ==========
+    if (premium?.elementPoetry) {
+      doc.addPage();
+      yPos = margin;
+
+      addSectionTitle('13. 오행 관계의 시적 해석');
+
+      // 전체 조화 분석
+      addSubSection('오행의 조화');
+      const harmonyLines = doc.splitTextToSize(premium.elementPoetry.overallHarmony, contentWidth);
+      harmonyLines.forEach((line: string) => {
+        checkNewPage();
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+
+      // 강한 오행
+      addSubSection(`강한 기운: ${premium.elementPoetry.dominantElement.korean}`);
+      addText(premium.elementPoetry.dominantElement.poeticDescription);
+      yPos += 3;
+
+      // 약한 오행
+      addSubSection(`보완이 필요한 기운: ${premium.elementPoetry.weakElement.korean}`);
+      addText(premium.elementPoetry.weakElement.poeticDescription);
+      yPos += 5;
+
+      // 상생 관계
+      if (premium.elementPoetry.generatingRelations.length > 0) {
+        addSubSection('상생(相生) 관계');
+        premium.elementPoetry.generatingRelations.forEach(rel => {
+          addText(`${rel.relationName}: ${rel.poeticExpression}`);
+          addText(`→ ${rel.advice}`);
+          yPos += 3;
+        });
+      }
+
+      // 상극 관계
+      if (premium.elementPoetry.controllingRelations.length > 0) {
+        addSubSection('상극(相剋) 관계');
+        premium.elementPoetry.controllingRelations.forEach(rel => {
+          addText(`${rel.relationName}: ${rel.poeticExpression}`);
+          addText(`→ ${rel.advice}`);
+          yPos += 3;
+        });
+      }
+    }
+  }
+
+  // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
+  doc.addPage();
+  yPos = margin;
+
+  // v2.0: premium.epilogue 또는 premium.sixtyJiazi 사용
+  const epilogueText = premium?.epilogue
+    || premium?.sixtyJiazi?.epilogueText
+    || (jiaziInfo ? generateJiaziEpilogue(jiaziInfo, getElementKorean(saju.day?.element || 'wood')) : null);
+
+  if (epilogueText) {
+    doc.setFontSize(12);
+    doc.text('✧ 에필로그 ✧', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    // 60갑자 정보 표시 (있는 경우)
+    if (premium?.sixtyJiazi) {
+      doc.setFontSize(11);
+      doc.text(`${premium.sixtyJiazi.yearKorean}년 ${premium.sixtyJiazi.animalDescription}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    }
+
+    doc.setFontSize(10);
+    const epilogueLines = doc.splitTextToSize(epilogueText, contentWidth - 20);
+    epilogueLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 6;
+    });
+    yPos += 15;
   }
 
   // ========== 마무리 페이지 ==========

@@ -1,20 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Heart, Briefcase, Activity, Sparkles,
-  Lock, ChevronRight, Users, Calendar, Target, Star,
-  Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain, Download
+  Lock, ChevronRight, Calendar, Target, Star,
+  Compass, DollarSign, Shield, Lightbulb, CheckCircle2, Brain, Download,
+  Flower2, Trees, Gem, Zap, Clock, Layers, ArrowRight, Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   AnalysisResult, SajuChart, OhengBalance,
-  ELEMENT_KOREAN, PeerComparison, AIAnalysis
+  ELEMENT_KOREAN, PeerComparison, AIAnalysis, Element
 } from '@/types/saju';
+import { CardDeck, RootCard } from '@/types/cards';
 import PremiumResultDisplay from './PremiumResultDisplay';
 import DownloadButtons from './DownloadButtons';
+
+// 탭 타입 정의 (새 구조: 또래 비교 제거, 새 탭 추가)
+type TabType = 'destiny' | 'elements' | 'monthly' | 'timeline' | 'premium';
 
 interface Props {
   result: AnalysisResult;
@@ -29,545 +34,762 @@ export default function SajuResultCard({
   isPremiumUnlocked = false,
   analysisId
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'expert' | 'scores' | 'peer' | 'premium'>('basic');
+  const [activeTab, setActiveTab] = useState<TabType>('destiny');
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
-  const { saju, oheng, scores, personality, peerComparison, yongsin, gisin, coreMessage, aiAnalysis } = result;
+  const { saju, oheng, scores, personality, yongsin, gisin, coreMessage, aiAnalysis } = result;
+
+  // 스토리텔링 데이터 (카드덱 포함)
+  const storytelling = result.premium?.storytelling;
+  const cardDeck = storytelling?.cardDeck;
+  const sixtyJiazi = result.premium?.sixtyJiazi;
+  const elementPoetry = result.premium?.elementPoetry;
+
+  // 60갑자 기반 히어로 데이터
+  const heroData = {
+    jiazi: sixtyJiazi?.yearKorean || cardDeck?.root?.yearKorean || '갑자',
+    animal: sixtyJiazi?.animalDescription || cardDeck?.root?.animalKorean || '청서(靑鼠)',
+    nature: sixtyJiazi?.nature || cardDeck?.root?.nature || '새벽 숲의 첫 번째 빛',
+    personality: sixtyJiazi?.personality || cardDeck?.root?.personality || coreMessage.insight,
+    color: sixtyJiazi?.color || cardDeck?.root?.color || '#9333EA'
+  };
+
+  // 6장 카드 배열 구성
+  const sixCards = cardDeck ? [
+    {
+      type: 'root',
+      typeKorean: '근본',
+      icon: Crown,
+      data: cardDeck.root,
+      color: 'from-amber-500 to-orange-600',
+      description: '60갑자가 말하는 당신의 뿌리'
+    },
+    {
+      type: 'essence',
+      typeKorean: '본질',
+      icon: Flower2,
+      data: cardDeck.essence,
+      color: 'from-pink-500 to-rose-600',
+      description: '일간이 그려낸 당신의 꽃'
+    },
+    {
+      type: 'energy',
+      typeKorean: '에너지',
+      icon: Zap,
+      data: cardDeck.energy,
+      color: 'from-yellow-500 to-amber-600',
+      description: '용신이 불어넣은 생명력'
+    },
+    {
+      type: 'talent',
+      typeKorean: '재능',
+      icon: Trees,
+      data: cardDeck.talent,
+      color: 'from-green-500 to-emerald-600',
+      description: '십신이 키워낸 재능의 나무'
+    },
+    {
+      type: 'flow',
+      typeKorean: '흐름',
+      icon: Clock,
+      data: cardDeck.flow,
+      color: 'from-blue-500 to-cyan-600',
+      description: '2026년 당신의 자연현상'
+    },
+    {
+      type: 'guardian',
+      typeKorean: '수호',
+      icon: Gem,
+      data: cardDeck.guardian,
+      color: 'from-purple-500 to-violet-600',
+      description: '당신을 지키는 보석'
+    }
+  ] : [];
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* 핵심 메시지 (고민 기반) */}
+      {/* ============================================ */}
+      {/* 히어로 섹션 - 60갑자 + 6장 카드 기반 시적 표현 */}
+      {/* ============================================ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-purple-600 to-pink-600 text-white p-6 rounded-2xl mb-6"
+        className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6 rounded-3xl mb-6"
       >
-        <p className="text-sm opacity-80 mb-2">당신의 사주가 말합니다</p>
-        <p className="text-lg font-medium whitespace-pre-line">{coreMessage.hook}</p>
-        <div className="mt-4 p-4 bg-white/10 rounded-xl">
-          <p className="text-sm whitespace-pre-line">{coreMessage.insight}</p>
+        {/* 배경 장식 */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10">
+          {/* 60갑자 배지 */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full text-amber-300 text-sm font-medium">
+              {heroData.jiazi}년생
+            </span>
+            <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-300 text-sm">
+              {heroData.animal}
+            </span>
+          </div>
+
+          {/* 시적 타이틀 */}
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-amber-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+              {heroData.nature}
+            </span>
+          </h1>
+
+          {/* 서브 메시지 */}
+          <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+            {coreMessage.hook}
+          </p>
+
+          {/* 6장 카드 미니 프리뷰 */}
+          {cardDeck && (
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2 -mx-2 px-2">
+              {sixCards.slice(0, 6).map((card, idx) => (
+                <motion.div
+                  key={card.type}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className={`flex-shrink-0 w-14 h-20 rounded-lg bg-gradient-to-br ${card.color}
+                    flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform`}
+                  onClick={() => {
+                    setActiveTab('destiny');
+                    setSelectedCard(card.type);
+                  }}
+                >
+                  <card.icon className="w-5 h-5 text-white/90 mb-1" />
+                  <span className="text-[10px] text-white/80">{card.typeKorean}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* 핵심 인사이트 (접힌 상태) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10"
+          >
+            <p className="text-sm text-gray-200 leading-relaxed">
+              {heroData.personality}
+            </p>
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* 탭 네비게이션 */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      {/* ============================================ */}
+      {/* 탭 네비게이션 (새 구조: 또래 비교 제거) */}
+      {/* ============================================ */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         {[
-          { id: 'basic', label: '기본 정보', icon: Sparkles },
-          { id: 'expert', label: '전문가 분석', icon: Brain },
-          { id: 'scores', label: '운세 점수', icon: TrendingUp },
-          { id: 'peer', label: '또래 비교', icon: Users },
-          { id: 'premium', label: '프리미엄', icon: Lock }
+          { id: 'destiny' as TabType, label: '나의 운명', icon: Layers, badge: '6장 카드' },
+          { id: 'elements' as TabType, label: '오행 분석', icon: Sparkles },
+          { id: 'monthly' as TabType, label: '월별 운세', icon: Calendar, badge: '3개월 무료' },
+          { id: 'timeline' as TabType, label: '인생 타임라인', icon: TrendingUp },
+          { id: 'premium' as TabType, label: '프리미엄', icon: isPremiumUnlocked ? Star : Lock }
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all
               ${activeTab === tab.id
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'}`}
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
+            {tab.badge && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-1
+                ${activeTab === tab.id
+                  ? 'bg-white/20 text-white'
+                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'}`}>
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* ============================================ */}
       {/* 탭 콘텐츠 */}
+      {/* ============================================ */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
-        {/* 기본 정보 탭 */}
-        {activeTab === 'basic' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-6 space-y-6"
-          >
-            {/* 사주 원국 */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                사주 원국 (四柱)
-              </h3>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { label: '년주', pillar: saju.year, sub: '年柱' },
-                  { label: '월주', pillar: saju.month, sub: '月柱' },
-                  { label: '일주', pillar: saju.day, sub: '日柱' },
-                  { label: '시주', pillar: saju.time, sub: '時柱' }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center"
-                  >
-                    <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-                    {item.pillar ? (
-                      <>
-                        <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                          {item.pillar.heavenlyStem}{item.pillar.earthlyBranch}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {item.pillar.stemKorean}{item.pillar.branchKorean}
-                        </p>
-                        <div className={`mt-2 px-2 py-1 rounded-full text-xs inline-block
-                          ${getElementColor(item.pillar.element)}`}>
-                          {ELEMENT_KOREAN[item.pillar.element]}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-xl text-gray-400">-</p>
-                    )}
+        <AnimatePresence mode="wait">
+          {/* ========== 나의 운명 탭 (6장 카드 시스템) ========== */}
+          {activeTab === 'destiny' && (
+            <motion.div
+              key="destiny"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6 space-y-6"
+            >
+              {/* 사주 원국 미니 */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-purple-500" />
+                  나의 운명 카드
+                </h3>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {saju.day?.stemKorean}{saju.day?.branchKorean}일주
+                </span>
+              </div>
+
+              {/* 6장 카드 그리드 */}
+              {cardDeck ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {sixCards.map((card, idx) => (
+                    <DestinyCardItem
+                      key={card.type}
+                      card={card}
+                      index={idx}
+                      isSelected={selectedCard === card.type}
+                      onClick={() => setSelectedCard(selectedCard === card.type ? null : card.type)}
+                      isPremium={!isPremiumUnlocked && idx > 1}
+                    />
+                  ))}
+                </div>
+              ) : (
+                /* 카드덱이 없을 때 기본 정보 표시 */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: '년주', pillar: saju.year },
+                      { label: '월주', pillar: saju.month },
+                      { label: '일주', pillar: saju.day },
+                      { label: '시주', pillar: saju.time }
+                    ].map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center"
+                      >
+                        <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+                        {item.pillar ? (
+                          <>
+                            <p className="text-xl font-bold text-gray-800 dark:text-white">
+                              {item.pillar.heavenlyStem}{item.pillar.earthlyBranch}
+                            </p>
+                            <div className={`mt-2 px-2 py-0.5 rounded-full text-xs inline-block
+                              ${getElementColor(item.pillar.element)}`}>
+                              {ELEMENT_KOREAN[item.pillar.element]}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xl text-gray-400">-</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
 
-            {/* 오행 분포 */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                오행 분포
-              </h3>
-              <OhengChart balance={oheng} />
-            </div>
+              {/* 선택된 카드 상세 */}
+              <AnimatePresence>
+                {selectedCard && cardDeck && (
+                  <SelectedCardDetail
+                    card={sixCards.find(c => c.type === selectedCard)}
+                    cardDeck={cardDeck}
+                    isPremiumUnlocked={isPremiumUnlocked}
+                    onUnlockPremium={onUnlockPremium}
+                  />
+                )}
+              </AnimatePresence>
 
-            {/* 용신/기신 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-xl">
-                <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-                  용신 (用神) - 나에게 좋은 기운
+              {/* MBTI 통합 분석 */}
+              {cardDeck?.mbtiInsight && (
+                <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+                      MBTI 통합 분석 ({cardDeck.mbtiInsight.mbti})
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {cardDeck.mbtiInsight.personalizedAdvice}
+                  </p>
+                </div>
+              )}
+
+              {/* 성격 핵심 키워드 */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  {personality.coreKeyword}
                 </h4>
-                <div className="flex gap-2">
-                  {yongsin.map(el => (
-                    <span key={el} className="px-3 py-1 bg-green-100 dark:bg-green-800 rounded-full text-sm text-green-800 dark:text-green-200">
-                      {ELEMENT_KOREAN[el]}
+                <div className="flex flex-wrap gap-2">
+                  {personality.sajuTraits.slice(0, 3).map((trait, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm"
+                    >
+                      {trait}
                     </span>
                   ))}
                 </div>
               </div>
-              <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl">
-                <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
-                  기신 (忌神) - 주의할 기운
-                </h4>
-                <div className="flex gap-2">
-                  {gisin.map(el => (
-                    <span key={el} className="px-3 py-1 bg-red-100 dark:bg-red-800 rounded-full text-sm text-red-800 dark:text-red-200">
-                      {ELEMENT_KOREAN[el]}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
 
-            {/* 성격 분석 */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                성격 분석 - "{personality.coreKeyword}"
+              {/* 프리미엄 유도 (잠겨있을 때) */}
+              {!isPremiumUnlocked && (
+                <FOMOSection
+                  title="6장 운명 카드의 비밀"
+                  description="4장의 숨겨진 카드가 당신만의 특별한 기회를 알려드립니다"
+                  features={['재능 카드: 당신이 빛나는 분야', '흐름 카드: 2026년 최적의 타이밍', '수호 카드: 당신을 지키는 힘']}
+                  onUnlock={onUnlockPremium}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {/* ========== 오행 분석 탭 (상생/상극 시각화) ========== */}
+          {activeTab === 'elements' && (
+            <motion.div
+              key="elements"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6 space-y-6"
+            >
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                오행 에너지 분석
               </h3>
 
-              {/* AI 성격 분석 (있을 경우) */}
-              {aiAnalysis?.personalityReading && (
-                <div className="mb-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+              {/* 오행 오각형 시각화 */}
+              <OhengPentagonChart balance={oheng} yongsin={yongsin} gisin={gisin} />
+
+              {/* 오행 분포 바 차트 */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  오행 분포
+                </h4>
+                <OhengChart balance={oheng} />
+              </div>
+
+              {/* 용신/기신 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    용신 (用神)
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">나에게 좋은 기운</p>
+                  <div className="flex flex-wrap gap-2">
+                    {yongsin.map(el => (
+                      <span key={el} className="px-3 py-1.5 bg-green-100 dark:bg-green-800 rounded-lg text-sm font-medium text-green-800 dark:text-green-200">
+                        {ELEMENT_KOREAN[el]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                  <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-500 rounded-full" />
+                    기신 (忌神)
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">주의할 기운</p>
+                  <div className="flex flex-wrap gap-2">
+                    {gisin.map(el => (
+                      <span key={el} className="px-3 py-1.5 bg-red-100 dark:bg-red-800 rounded-lg text-sm font-medium text-red-800 dark:text-red-200">
+                        {ELEMENT_KOREAN[el]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 오행 시적 표현 */}
+              {(elementPoetry || cardDeck?.elementPoetry) && (
+                <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <h4 className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    오행의 시적 해석
+                  </h4>
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {aiAnalysis.personalityReading}
+                    {cardDeck?.elementPoetry?.poeticPhrase || elementPoetry?.balancePoetry}
                   </p>
+                  {(cardDeck?.elementPoetry?.balanceAdvice || elementPoetry?.overallHarmony) && (
+                    <p className="mt-3 text-sm text-purple-600 dark:text-purple-400">
+                      {cardDeck?.elementPoetry?.balanceAdvice || elementPoetry?.overallHarmony}
+                    </p>
+                  )}
                 </div>
               )}
 
-              <div className="space-y-2">
-                {personality.sajuTraits.map((trait, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                    {trait}
-                  </div>
-                ))}
-              </div>
-
-              {personality.mbtiTraits && (
-                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
-                  <p className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-2">
-                    MBTI 교차 분석 (일치도: {personality.crossAnalysis.matchRate}%)
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {personality.crossAnalysis.synergy}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* AI 인생 경로 & 행운 요소 */}
-            {aiAnalysis && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 인생 경로 */}
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
-                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      인생 흐름
+              {/* 상생/상극 관계 (프리미엄) */}
+              {isPremiumUnlocked && elementPoetry ? (
+                <div className="space-y-4">
+                  {/* 상생 관계 */}
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                      🌊 상생 관계 (서로 살리는 힘)
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {aiAnalysis.lifePath}
-                    </p>
-                  </div>
-
-                  {/* 행운 요소 */}
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl">
-                    <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      행운 요소
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {aiAnalysis.luckyElements}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 주의사항 */}
-                {aiAnalysis.warningAdvice && (
-                  <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-100 dark:border-red-800">
-                    <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
-                      주의사항
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {aiAnalysis.warningAdvice}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </motion.div>
-        )}
-
-        {/* 전문가 분석 탭 */}
-        {activeTab === 'expert' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-6 space-y-6"
-          >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <Star className="w-5 h-5 text-amber-500" />
-              전문가 심층 분석
-            </h3>
-
-            {aiAnalysis ? (
-              <div className="space-y-6">
-                {/* 일주 분석 */}
-                {aiAnalysis.dayMasterAnalysis && (
-                  <ExpertSection
-                    icon={Compass}
-                    title="일주(日柱) 분석"
-                    content={aiAnalysis.dayMasterAnalysis}
-                    colorClass="bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800"
-                    iconColor="text-purple-600 dark:text-purple-400"
-                  />
-                )}
-
-                {/* 대운 분석 */}
-                {aiAnalysis.tenYearFortune && (
-                  <ExpertSection
-                    icon={Calendar}
-                    title="대운(大運) 분석"
-                    subtitle="10년 주기 운세"
-                    content={aiAnalysis.tenYearFortune}
-                    colorClass="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800"
-                    iconColor="text-blue-600 dark:text-blue-400"
-                  />
-                )}
-
-                {/* 2026년 세운 */}
-                {aiAnalysis.yearlyFortune && (
-                  <ExpertSection
-                    icon={Star}
-                    title="2026년 세운(歲運)"
-                    subtitle="병오년 운세"
-                    content={aiAnalysis.yearlyFortune}
-                    colorClass="bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800"
-                    iconColor="text-amber-600 dark:text-amber-400"
-                  />
-                )}
-
-                {/* 월운 */}
-                {aiAnalysis.monthlyFortune && (
-                  <ExpertSection
-                    icon={Calendar}
-                    title="월운(月運) 분석"
-                    subtitle="상반기 주요 시기"
-                    content={aiAnalysis.monthlyFortune}
-                    colorClass="bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800"
-                    iconColor="text-teal-600 dark:text-teal-400"
-                  />
-                )}
-
-                {/* 인연/관계 분석 */}
-                {aiAnalysis.relationshipAnalysis && (
-                  <ExpertSection
-                    icon={Heart}
-                    title="인연 & 관계 분석"
-                    content={aiAnalysis.relationshipAnalysis}
-                    colorClass="bg-pink-50 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800"
-                    iconColor="text-pink-600 dark:text-pink-400"
-                  />
-                )}
-
-                {/* 직업 가이드 */}
-                {aiAnalysis.careerGuidance && (
-                  <ExpertSection
-                    icon={Briefcase}
-                    title="직업 & 사업 가이드"
-                    content={aiAnalysis.careerGuidance}
-                    colorClass="bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800"
-                    iconColor="text-indigo-600 dark:text-indigo-400"
-                  />
-                )}
-
-                {/* 재물 전략 */}
-                {aiAnalysis.wealthStrategy && (
-                  <ExpertSection
-                    icon={DollarSign}
-                    title="재물 전략"
-                    content={aiAnalysis.wealthStrategy}
-                    colorClass="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
-                    iconColor="text-yellow-600 dark:text-yellow-400"
-                  />
-                )}
-
-                {/* 건강 조언 */}
-                {aiAnalysis.healthAdvice && (
-                  <ExpertSection
-                    icon={Shield}
-                    title="건강 조언"
-                    content={aiAnalysis.healthAdvice}
-                    colorClass="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800"
-                    iconColor="text-green-600 dark:text-green-400"
-                  />
-                )}
-
-                {/* 영적 가이드 */}
-                {aiAnalysis.spiritualGuidance && (
-                  <ExpertSection
-                    icon={Lightbulb}
-                    title="정신 & 영적 가이드"
-                    content={aiAnalysis.spiritualGuidance}
-                    colorClass="bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800"
-                    iconColor="text-violet-600 dark:text-violet-400"
-                  />
-                )}
-
-                {/* 액션플랜 */}
-                {aiAnalysis.actionPlan && aiAnalysis.actionPlan.length > 0 && (
-                  <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      실천 액션플랜
-                    </h4>
-                    <div className="space-y-3">
-                      {aiAnalysis.actionPlan.map((action, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
-                        >
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0
-                            ${idx === 0 ? 'bg-emerald-500 text-white' :
-                              idx === 1 ? 'bg-blue-500 text-white' :
-                              idx === 2 ? 'bg-purple-500 text-white' :
-                              idx === 3 ? 'bg-amber-500 text-white' :
-                              'bg-red-500 text-white'}`}
-                          >
-                            {idx + 1}
-                          </div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pt-1">
-                            {action}
-                          </p>
+                    <div className="space-y-2">
+                      {elementPoetry.generatingRelations?.slice(0, 2).map((rel, idx) => (
+                        <div key={idx} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                          <p className="font-medium text-gray-800 dark:text-white text-sm">{rel.relationName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rel.poeticExpression}</p>
                         </div>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                  <Brain className="w-8 h-8 text-gray-400" />
+
+                  {/* 상극 관계 */}
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                    <h4 className="text-sm font-medium text-orange-700 dark:text-orange-400 mb-3">
+                      ⚔️ 상극 관계 (균형을 잡는 힘)
+                    </h4>
+                    <div className="space-y-2">
+                      {elementPoetry.controllingRelations?.slice(0, 2).map((rel, idx) => (
+                        <div key={idx} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                          <p className="font-medium text-gray-800 dark:text-white text-sm">{rel.relationName}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rel.poeticExpression}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-500 dark:text-gray-400">
-                  AI 전문가 분석을 불러오는 중...
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* 운세 점수 탭 */}
-        {activeTab === 'scores' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-6 space-y-6"
-          >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-              2026년 운세 점수
-            </h3>
-
-            {/* 종합 점수 */}
-            <div className="text-center py-6">
-              <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
-                <span className="text-4xl font-bold text-white">{scores.overall}</span>
-              </div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">종합 운세</p>
-              {aiAnalysis?.fortuneAdvice?.overall && (
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  {aiAnalysis.fortuneAdvice.overall}
-                </p>
+              ) : !isPremiumUnlocked && (
+                <FOMOSection
+                  title="오행의 숨겨진 관계"
+                  description="상생과 상극의 에너지 흐름을 이해하면 인생의 파도를 탈 수 있습니다"
+                  features={['상생 관계: 당신을 성장시키는 에너지', '상극 관계: 균형을 잡아주는 힘', '맞춤 균형 조언']}
+                  onUnlock={onUnlockPremium}
+                />
               )}
-            </div>
+            </motion.div>
+          )}
 
-            {/* 상세 점수 */}
-            <div className="space-y-6">
-              {[
-                { key: 'wealth', label: '재물운', score: scores.wealth, icon: TrendingUp, color: 'yellow', advice: aiAnalysis?.fortuneAdvice?.wealth },
-                { key: 'love', label: '애정운', score: scores.love, icon: Heart, color: 'pink', advice: aiAnalysis?.fortuneAdvice?.love },
-                { key: 'career', label: '직업운', score: scores.career, icon: Briefcase, color: 'blue', advice: aiAnalysis?.fortuneAdvice?.career },
-                { key: 'health', label: '건강운', score: scores.health, icon: Activity, color: 'green', advice: aiAnalysis?.fortuneAdvice?.health }
-              ].map(item => (
-                <div key={item.key} className="space-y-2">
-                  <ScoreBar label={item.label} score={item.score} icon={item.icon} color={item.color} />
-                  {item.advice && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 pl-14 leading-relaxed">
-                      {item.advice}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* 또래 비교 탭 */}
-        {activeTab === 'peer' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-6 space-y-6"
-          >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-              동년배 비교 분석
-            </h3>
-
-            <PeerComparisonChart comparison={peerComparison} />
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {peerComparison.summary}
-              </p>
-            </div>
-
-            {/* 프리미엄 유도 */}
-            <div className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <Lock className="w-5 h-5 text-purple-500" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  상위 15%가 하고 있는 것이 궁금하시다면?
+          {/* ========== 월별 운세 탭 (무료 3개월 + 시적 표현) ========== */}
+          {activeTab === 'monthly' && (
+            <motion.div
+              key="monthly"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6 space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                  2026년 월별 운세
+                </h3>
+                <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full">
+                  3개월 무료
                 </span>
               </div>
-              <Button
-                onClick={onUnlockPremium}
-                variant="outline"
-                className="w-full border-purple-500 text-purple-600"
-              >
-                프리미엄 분석 보기
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
 
-        {/* 프리미엄 탭 */}
-        {activeTab === 'premium' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-6"
-          >
-            {isPremiumUnlocked && result.premium ? (
-              <div className="space-y-6">
-                <PremiumResultDisplay
-                  premium={result.premium}
-                  userName={result.user.name}
-                />
-
-                {/* 다운로드 버튼 */}
-                <div className="border-t pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <h4 className="font-medium text-gray-700 dark:text-gray-300">
-                      분석 결과 다운로드
-                    </h4>
+              {/* 종합 점수 서클 */}
+              <div className="flex items-center justify-center py-4">
+                <div className="relative">
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <span className="text-3xl font-bold text-white">{scores.overall}</span>
                   </div>
-                  <DownloadButtons
-                    user={result.user}
-                    saju={saju}
-                    oheng={oheng}
-                    result={result}
-                    premium={result.premium}
-                    analysisId={analysisId}
-                    isPremium={true}
-                    onUpgradeClick={onUnlockPremium}
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-medium text-gray-600 dark:text-gray-400 shadow">
+                    종합운세
+                  </span>
+                </div>
+              </div>
+
+              {/* 4대 운세 점수 */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'wealth', label: '재물운', score: scores.wealth, icon: DollarSign, color: 'amber' },
+                  { id: 'love', label: '애정운', score: scores.love, icon: Heart, color: 'pink' },
+                  { id: 'career', label: '직업운', score: scores.career, icon: Briefcase, color: 'blue' },
+                  { id: 'health', label: '건강운', score: scores.health, icon: Activity, color: 'green' }
+                ].map(item => (
+                  <MiniScoreCard key={item.id} label={item.label} score={item.score} icon={item.icon} color={item.color} />
+                ))}
+              </div>
+
+              {/* 월별 운세 카드 (무료 3개월) */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  상반기 월별 흐름
+                </h4>
+                {getMonthlyFortune(result).map((month, idx) => (
+                  <MonthlyFortuneCard
+                    key={month.month}
+                    month={month}
+                    isLocked={idx >= 3 && !isPremiumUnlocked}
+                    delay={idx * 0.1}
                   />
-                </div>
+                ))}
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                  <Lock className="w-10 h-10 text-purple-500" />
+
+              {/* 월별 흐름 시적 해석 */}
+              {cardDeck?.flow && (
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {cardDeck.flow.phenomenonKorean}의 해
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {cardDeck.flow.story}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                  프리미엄 분석
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  더 상세한 분석과 맞춤 전략을 확인하세요
+              )}
+
+              {/* 프리미엄 유도 */}
+              {!isPremiumUnlocked && (
+                <FOMOSection
+                  title="남은 9개월의 기회"
+                  description="4월부터 12월까지의 상세 운세와 최적의 행동 타이밍을 확인하세요"
+                  features={['월별 최적 행동일', '피해야 할 시기', '행운의 색상/숫자']}
+                  onUnlock={onUnlockPremium}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {/* ========== 인생 타임라인 탭 ========== */}
+          {activeTab === 'timeline' && (
+            <motion.div
+              key="timeline"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6 space-y-6"
+            >
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+                인생 타임라인
+              </h3>
+
+              {/* 현재 시기 표시 */}
+              <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white">
+                <p className="text-sm opacity-80 mb-1">현재 당신의 시기</p>
+                <p className="text-lg font-bold">
+                  {result.premium?.lifeTimeline?.phases?.[0]?.phase || '성장기'}
                 </p>
+                <p className="text-sm mt-2 opacity-90">
+                  {aiAnalysis?.lifePath || '지금은 내면의 힘을 키우는 시기입니다.'}
+                </p>
+              </div>
 
-                <div className="space-y-3 text-left max-w-sm mx-auto mb-6">
-                  {[
-                    '월별 상세 액션플랜',
-                    '인생 타임라인 분석',
-                    '가족 영향 분석',
-                    '직업 매칭 분석',
-                    '골든윈도우 타이밍'
-                  ].map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <div className="w-5 h-5 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                        <Target className="w-3 h-3 text-purple-600" />
-                      </div>
-                      {feature}
+              {/* 대운 흐름 프리뷰 */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  대운 흐름 미리보기
+                </h4>
+                {/* 무료: 현재 대운만 표시 */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                      NOW
                     </div>
-                  ))}
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-white">현재 대운</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {aiAnalysis?.tenYearFortune?.slice(0, 50)}...
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <Button
-                  onClick={onUnlockPremium}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600"
-                >
-                  프리미엄 분석 받기
-                </Button>
+                {/* 잠긴 타임라인 */}
+                {[
+                  { label: '다음 대운', years: '향후 10년' },
+                  { label: '인생 전환점', years: '중요 시기' },
+                  { label: '골든윈도우', years: '최적의 기회' }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-xl border relative overflow-hidden
+                      ${isPremiumUnlocked
+                        ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                        : 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'}`}
+                  >
+                    {!isPremiumUnlocked && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-white dark:via-gray-900/80 dark:to-gray-900 flex items-center justify-end pr-4">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                        ${idx === 0 ? 'bg-amber-100 text-amber-700' :
+                          idx === 1 ? 'bg-purple-100 text-purple-700' :
+                          'bg-green-100 text-green-700'}`}
+                      >
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-white">{item.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.years}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </motion.div>
-        )}
+
+              {/* 프리미엄 유도 */}
+              {!isPremiumUnlocked && (
+                <FOMOSection
+                  title="당신의 인생 지도"
+                  description="대운의 흐름, 전환점, 골든윈도우까지 한눈에 파악하세요"
+                  features={['10년 주기 대운 분석', '인생 전환점 예측', '최적의 결정 타이밍']}
+                  onUnlock={onUnlockPremium}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {/* ========== 프리미엄 탭 (개선된 FOMO) ========== */}
+          {activeTab === 'premium' && (
+            <motion.div
+              key="premium"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6"
+            >
+              {isPremiumUnlocked && result.premium ? (
+                <div className="space-y-6">
+                  <PremiumResultDisplay
+                    premium={result.premium}
+                    userName={result.user.name}
+                  />
+
+                  {/* 다운로드 버튼 */}
+                  <div className="border-t pt-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                        분석 결과 다운로드
+                      </h4>
+                    </div>
+                    <DownloadButtons
+                      user={result.user}
+                      saju={saju}
+                      oheng={oheng}
+                      result={result}
+                      premium={result.premium}
+                      analysisId={analysisId}
+                      isPremium={true}
+                      onUpgradeClick={onUnlockPremium}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* 기회 기반 헤드라인 */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl shadow-lg shadow-amber-500/30">
+                      <Crown className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                      당신만의 특별한 기회
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      2026년, 당신에게 열린 가능성을 발견하세요
+                    </p>
+                  </div>
+
+                  {/* 기회 카드 (FOMO - 기회 기반) */}
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      {
+                        icon: Star,
+                        title: '6장 운명 카드 전체',
+                        description: '숨겨진 4장의 카드가 당신의 재능과 기회를 알려드립니다',
+                        color: 'from-amber-500 to-orange-500'
+                      },
+                      {
+                        icon: Calendar,
+                        title: '12개월 상세 운세',
+                        description: '매달의 최적 타이밍과 행운의 요소를 확인하세요',
+                        color: 'from-blue-500 to-cyan-500'
+                      },
+                      {
+                        icon: TrendingUp,
+                        title: '인생 타임라인',
+                        description: '대운의 흐름과 인생 전환점을 미리 파악하세요',
+                        color: 'from-purple-500 to-pink-500'
+                      },
+                      {
+                        icon: Sparkles,
+                        title: '오행 관계 심층 분석',
+                        description: '상생과 상극의 에너지를 활용하는 방법',
+                        color: 'from-green-500 to-emerald-500'
+                      }
+                    ].map((item, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                      >
+                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0`}>
+                          <item.icon className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-white text-sm">{item.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.description}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* CTA 버튼 */}
+                  <div className="pt-4">
+                    <Button
+                      onClick={onUnlockPremium}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-6 text-lg font-medium shadow-lg shadow-purple-500/30"
+                    >
+                      나의 기회 확인하기
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                    <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+                      지금 확인하면 PDF 리포트를 무료로 제공해 드립니다
+                    </p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* CTA */}
+      {/* ============================================ */}
+      {/* 하단 CTA (기회 기반 FOMO) */}
+      {/* ============================================ */}
       {!isPremiumUnlocked && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mt-6 p-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl text-white text-center"
+          className="mt-6 p-6 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl text-white relative overflow-hidden"
         >
-          <p className="text-sm opacity-80 mb-2">{coreMessage.urgency}</p>
-          <Button
-            onClick={onUnlockPremium}
-            variant="secondary"
-            className="mt-4 bg-white text-purple-600 hover:bg-gray-100"
-          >
-            {coreMessage.cta}
-          </Button>
+          {/* 배경 장식 */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-3xl" />
+          </div>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 justify-center mb-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span className="text-sm text-amber-300 font-medium">특별한 기회</span>
+            </div>
+            <p className="text-center text-lg font-medium mb-2">
+              {sixtyJiazi?.nature || heroData.nature}
+            </p>
+            <p className="text-center text-sm opacity-80 mb-4">
+              2026년, 당신만의 골든타임을 놓치지 마세요
+            </p>
+            <Button
+              onClick={onUnlockPremium}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-5"
+            >
+              {coreMessage.cta || '나의 기회 확인하기'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </motion.div>
       )}
     </div>
@@ -728,4 +950,432 @@ function ExpertSection({
       </p>
     </div>
   );
+}
+
+// ============================================
+// 새로운 컴포넌트들
+// ============================================
+
+// 6장 운명 카드 아이템
+function DestinyCardItem({
+  card,
+  index,
+  isSelected,
+  onClick,
+  isPremium
+}: {
+  card: {
+    type: string;
+    typeKorean: string;
+    icon: React.ElementType;
+    data: unknown;
+    color: string;
+    description: string;
+  };
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+  isPremium: boolean;
+}) {
+  const Icon = card.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      onClick={!isPremium ? onClick : undefined}
+      className={`relative p-4 rounded-xl cursor-pointer transition-all
+        ${isSelected
+          ? 'ring-2 ring-purple-500 shadow-lg'
+          : 'hover:shadow-md'}
+        ${isPremium
+          ? 'bg-gray-100 dark:bg-gray-800/50'
+          : `bg-gradient-to-br ${card.color} text-white`}`}
+    >
+      {isPremium && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-200/80 to-gray-300/80 dark:from-gray-700/80 dark:to-gray-800/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
+          <Lock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </div>
+      )}
+
+      <div className="flex flex-col items-center text-center">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2
+          ${isPremium ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white/20'}`}>
+          <Icon className={`w-6 h-6 ${isPremium ? 'text-gray-400' : 'text-white'}`} />
+        </div>
+        <p className={`font-bold text-sm ${isPremium ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+          {card.typeKorean}
+        </p>
+        <p className={`text-xs mt-1 ${isPremium ? 'text-gray-400' : 'text-white/80'}`}>
+          {card.description.slice(0, 12)}...
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+// 선택된 카드 상세 정보
+function SelectedCardDetail({
+  card,
+  cardDeck,
+  isPremiumUnlocked,
+  onUnlockPremium
+}: {
+  card?: {
+    type: string;
+    typeKorean: string;
+    icon: React.ElementType;
+    color: string;
+    description: string;
+  };
+  cardDeck: CardDeck;
+  isPremiumUnlocked: boolean;
+  onUnlockPremium: () => void;
+}) {
+  if (!card) return null;
+
+  const getCardData = () => {
+    switch (card.type) {
+      case 'root':
+        return cardDeck.root;
+      case 'essence':
+        return cardDeck.essence;
+      case 'energy':
+        return cardDeck.energy;
+      case 'talent':
+        return cardDeck.talent;
+      case 'flow':
+        return cardDeck.flow;
+      case 'guardian':
+        return cardDeck.guardian;
+      default:
+        return null;
+    }
+  };
+
+  const data = getCardData();
+  if (!data) return null;
+
+  const Icon = card.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      className={`p-5 rounded-xl bg-gradient-to-br ${card.color} text-white overflow-hidden`}
+    >
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+          <Icon className="w-7 h-7" />
+        </div>
+        <div className="flex-1">
+          <h4 className="font-bold text-lg">{card.typeKorean} 카드</h4>
+          <p className="text-sm text-white/80 mt-1">{card.description}</p>
+
+          {/* 카드 키워드 */}
+          {'keywords' in data && data.keywords && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {(data.keywords as string[]).map((kw, idx) => (
+                <span key={idx} className="px-2 py-1 bg-white/20 rounded-full text-xs">
+                  {kw}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 카드 스토리 */}
+          {'story' in data && data.story && (
+            <p className="mt-3 text-sm text-white/90 leading-relaxed">
+              {(data.story as string).slice(0, 100)}...
+            </p>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// FOMO 섹션 (기회 기반)
+function FOMOSection({
+  title,
+  description,
+  features,
+  onUnlock
+}: {
+  title: string;
+  description: string;
+  features: string[];
+  onUnlock: () => void;
+}) {
+  return (
+    <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shrink-0">
+          <Sparkles className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-800 dark:text-white">{title}</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{description}</p>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-4">
+        {features.map((feature, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <CheckCircle2 className="w-4 h-4 text-purple-500 shrink-0" />
+            {feature}
+          </div>
+        ))}
+      </div>
+
+      <Button
+        onClick={onUnlock}
+        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+      >
+        지금 확인하기
+        <ArrowRight className="w-4 h-4 ml-2" />
+      </Button>
+    </div>
+  );
+}
+
+// 오행 오각형 차트
+function OhengPentagonChart({
+  balance,
+  yongsin,
+  gisin
+}: {
+  balance: OhengBalance;
+  yongsin: Element[];
+  gisin: Element[];
+}) {
+  const elements = [
+    { key: 'wood' as const, label: '목', angle: -90, color: '#22c55e' },
+    { key: 'fire' as const, label: '화', angle: -18, color: '#ef4444' },
+    { key: 'earth' as const, label: '토', angle: 54, color: '#eab308' },
+    { key: 'metal' as const, label: '금', angle: 126, color: '#9ca3af' },
+    { key: 'water' as const, label: '수', angle: 198, color: '#3b82f6' }
+  ];
+
+  const maxValue = Math.max(...Object.values(balance), 5);
+  const center = 80;
+  const maxRadius = 60;
+
+  const getPoint = (angle: number, value: number) => {
+    const rad = (angle * Math.PI) / 180;
+    const radius = (value / maxValue) * maxRadius;
+    return {
+      x: center + radius * Math.cos(rad),
+      y: center + radius * Math.sin(rad)
+    };
+  };
+
+  const pathPoints = elements.map(el => getPoint(el.angle, balance[el.key]));
+  const pathD = pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+
+  return (
+    <div className="flex justify-center py-4">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        {/* 배경 오각형 가이드 */}
+        {[0.2, 0.4, 0.6, 0.8, 1].map((scale, idx) => (
+          <polygon
+            key={idx}
+            points={elements.map(el => {
+              const p = getPoint(el.angle, maxValue * scale);
+              return `${p.x},${p.y}`;
+            }).join(' ')}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="0.5"
+            className="text-gray-200 dark:text-gray-700"
+          />
+        ))}
+
+        {/* 축 라인 */}
+        {elements.map(el => {
+          const p = getPoint(el.angle, maxValue);
+          return (
+            <line
+              key={el.key}
+              x1={center}
+              y1={center}
+              x2={p.x}
+              y2={p.y}
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-gray-200 dark:text-gray-700"
+            />
+          );
+        })}
+
+        {/* 데이터 영역 */}
+        <motion.path
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          d={pathD}
+          fill="url(#pentagonGradient)"
+          fillOpacity="0.3"
+          stroke="url(#pentagonGradient)"
+          strokeWidth="2"
+        />
+
+        {/* 그라데이션 정의 */}
+        <defs>
+          <linearGradient id="pentagonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#9333EA" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+
+        {/* 라벨 */}
+        {elements.map(el => {
+          const labelRadius = maxRadius + 20;
+          const rad = (el.angle * Math.PI) / 180;
+          const x = center + labelRadius * Math.cos(rad);
+          const y = center + labelRadius * Math.sin(rad);
+          const isYongsin = yongsin.includes(el.key);
+          const isGisin = gisin.includes(el.key);
+
+          return (
+            <g key={el.key}>
+              <circle
+                cx={x}
+                cy={y}
+                r="14"
+                fill={isYongsin ? '#22c55e' : isGisin ? '#ef4444' : el.color}
+                fillOpacity={isYongsin || isGisin ? 1 : 0.2}
+              />
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className={`text-xs font-bold ${isYongsin || isGisin ? 'fill-white' : 'fill-gray-600 dark:fill-gray-400'}`}
+              >
+                {el.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// 미니 점수 카드
+function MiniScoreCard({
+  label,
+  score,
+  icon: Icon,
+  color
+}: {
+  label: string;
+  score: number;
+  icon: React.ElementType;
+  color: string;
+}) {
+  const colorStyles: Record<string, string> = {
+    amber: 'from-amber-400 to-orange-500 text-amber-900',
+    pink: 'from-pink-400 to-rose-500 text-pink-900',
+    blue: 'from-blue-400 to-indigo-500 text-blue-900',
+    green: 'from-green-400 to-emerald-500 text-green-900'
+  };
+
+  return (
+    <div className={`p-3 rounded-xl bg-gradient-to-br ${colorStyles[color]} relative overflow-hidden`}>
+      <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="relative z-10 flex items-center gap-2">
+        <Icon className="w-4 h-4 opacity-80" />
+        <span className="text-xs font-medium opacity-80">{label}</span>
+      </div>
+      <p className="relative z-10 text-2xl font-bold mt-1">{score}<span className="text-sm font-normal">점</span></p>
+    </div>
+  );
+}
+
+// 월별 운세 카드
+function MonthlyFortuneCard({
+  month,
+  isLocked,
+  delay
+}: {
+  month: {
+    month: number;
+    monthName: string;
+    score: number;
+    keyword: string;
+    advice: string;
+  };
+  isLocked: boolean;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay }}
+      className={`p-4 rounded-xl border relative overflow-hidden
+        ${isLocked
+          ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-white dark:via-gray-900/60 dark:to-gray-900 flex items-center justify-end pr-4">
+          <Lock className="w-4 h-4 text-gray-400" />
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold
+          ${getMonthColor(month.score)}`}>
+          {month.month}월
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium text-gray-800 dark:text-white">{month.keyword}</span>
+            <span className="text-xs text-gray-500">{month.score}점</span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+            {month.advice}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// 월별 색상 헬퍼
+function getMonthColor(score: number): string {
+  if (score >= 80) return 'bg-gradient-to-br from-amber-400 to-orange-500 text-white';
+  if (score >= 60) return 'bg-gradient-to-br from-green-400 to-emerald-500 text-white';
+  if (score >= 40) return 'bg-gradient-to-br from-blue-400 to-cyan-500 text-white';
+  return 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-700';
+}
+
+// 월별 운세 데이터 생성
+function getMonthlyFortune(result: AnalysisResult) {
+  const monthlyPlan = result.premium?.monthlyActionPlan;
+
+  if (monthlyPlan && monthlyPlan.length > 0) {
+    return monthlyPlan.slice(0, 6).map(m => ({
+      month: m.month,
+      monthName: m.monthName,
+      score: m.score,
+      keyword: m.mustDo?.[0]?.category || '성장',
+      advice: m.mustDo?.[0]?.action || '이 달의 운세를 확인하세요'
+    }));
+  }
+
+  // 기본 데이터
+  const baseScore = result.scores.overall;
+  return [
+    { month: 1, monthName: '1월', score: Math.min(100, baseScore + 5), keyword: '새로운 시작', advice: '올해의 계획을 세우기 좋은 시기입니다' },
+    { month: 2, monthName: '2월', score: Math.min(100, baseScore + 10), keyword: '준비와 성장', advice: '기반을 다지는 시기입니다' },
+    { month: 3, monthName: '3월', score: Math.min(100, baseScore + 15), keyword: '도약의 기회', advice: '적극적으로 움직이세요' },
+    { month: 4, monthName: '4월', score: Math.min(100, baseScore), keyword: '안정과 조정', advice: '프리미엄에서 확인하세요' },
+    { month: 5, monthName: '5월', score: Math.min(100, baseScore - 5), keyword: '성장의 시기', advice: '프리미엄에서 확인하세요' },
+    { month: 6, monthName: '6월', score: Math.min(100, baseScore + 8), keyword: '수확의 시작', advice: '프리미엄에서 확인하세요' }
+  ];
 }
