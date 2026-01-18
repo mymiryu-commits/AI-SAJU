@@ -130,11 +130,14 @@ export async function POST(request: NextRequest) {
 
     const serviceSupabase = getServiceSupabase();
     if (!serviceSupabase) {
+      console.error('Service Role key not configured');
       return NextResponse.json(
-        { error: '서버 설정 오류' },
+        { error: '서버 설정 오류: Service Role 키가 설정되지 않았습니다.' },
         { status: 500 }
       );
     }
+
+    console.log('Granting points:', { userId, points, reason });
 
     // 현재 포인트 조회
     const { data: profile } = await serviceSupabase
@@ -147,20 +150,47 @@ export async function POST(request: NextRequest) {
     const newPoints = currentPoints + points;
 
     // 프로필 업데이트 또는 생성
+    const now = new Date().toISOString();
     const { error: upsertError } = await serviceSupabase
       .from('profiles')
       .upsert({
         id: userId,
         points: newPoints,
-        updated_at: new Date().toISOString(),
+        created_at: profile ? undefined : now, // 새 레코드일 때만
+        updated_at: now,
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
       });
 
     if (upsertError) {
       console.error('Points update error:', upsertError);
-      return NextResponse.json(
-        { error: '포인트 부여 실패' },
-        { status: 500 }
-      );
+
+      // upsert 실패 시 update 시도
+      const { error: updateError } = await serviceSupabase
+        .from('profiles')
+        .update({ points: newPoints, updated_at: now })
+        .eq('id', userId);
+
+      if (updateError) {
+        // update도 실패하면 insert 시도
+        const { error: insertError } = await serviceSupabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            points: newPoints,
+            created_at: now,
+            updated_at: now,
+          });
+
+        if (insertError) {
+          console.error('Points insert error:', insertError);
+          return NextResponse.json(
+            { error: `포인트 부여 실패: ${insertError.message}` },
+            { status: 500 }
+          );
+        }
+      }
     }
 
     // 포인트 이력 기록 (선택적)
