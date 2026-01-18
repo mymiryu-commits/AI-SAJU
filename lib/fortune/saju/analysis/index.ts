@@ -44,3 +44,11 @@ export {
   type ZodiacSign,
   type ZodiacAnalysis
 } from './zodiacAnalysis';
+
+// 종합 분석 (혈액형+MBTI+사주+별자리)
+export {
+  generateComprehensiveAnalysis,
+  BLOOD_TYPE_TRAITS,
+  DAY_MASTER_TRAITS,
+  type ComprehensiveAnalysis
+} from './comprehensiveAnalysis';
