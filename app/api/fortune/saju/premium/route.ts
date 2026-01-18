@@ -1,6 +1,11 @@
 /**
  * 프리미엄 사주 분석 API
  * POST /api/fortune/saju/premium
+ *
+ * 포인트 차감 후 프리미엄 분석 제공
+ * - premium: 500P
+ * - deep: 1000P
+ * - vip: 2000P
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,15 +26,35 @@ import {
   generatePastVerifications,
   generateYearlyTimeline
 } from '@/lib/fortune/saju/cards';
+import {
+  deductPoints,
+  getPointBalance,
+  PRODUCT_COSTS,
+  type ProductType as PointProductType,
+} from '@/lib/services/pointService';
+import {
+  integrateZodiacAnalysis,
+} from '@/lib/services/analysisService';
 import type { UserInput, PremiumContent } from '@/types/saju';
 import type { StorytellingAnalysis } from '@/types/cards';
+import type { ZodiacAnalysis } from '@/lib/fortune/zodiac/types';
+
+// 상품 유형별 포인트 비용 매핑
+const PRODUCT_TO_POINT_TYPE: Record<string, PointProductType> = {
+  'basic': 'basic',
+  'family': 'premium',
+  'premium': 'premium',
+  'deep': 'deep',
+  'vip': 'vip',
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const { input, productType, analysisId } = await request.json() as {
+    const { input, productType, analysisId, skipPayment } = await request.json() as {
       input: UserInput;
-      productType: 'basic' | 'family' | 'premium' | 'vip';
+      productType: 'basic' | 'family' | 'premium' | 'deep' | 'vip';
       analysisId?: string;
+      skipPayment?: boolean; // 이미 결제된 경우 (블라인드 해제 등)
     };
 
     // 인증 확인
@@ -43,8 +68,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 결제 확인 (실제로는 결제 상태 체크)
-    // TODO: 결제 시스템 연동 시 구현
+    // 포인트 차감 (이미 결제된 경우 제외)
+    if (!skipPayment && productType !== 'basic') {
+      const pointProductType = PRODUCT_TO_POINT_TYPE[productType] || 'premium';
+      const deductResult = await deductPoints(
+        user.id,
+        pointProductType,
+        analysisId,
+        `프리미엄 분석 (${productType})`
+      );
+
+      if (!deductResult.success) {
+        const balance = await getPointBalance(user.id);
+        return NextResponse.json({
+          success: false,
+          error: deductResult.error,
+          errorCode: deductResult.errorCode,
+          data: {
+            currentPoints: balance?.points || 0,
+            requiredPoints: PRODUCT_COSTS[pointProductType],
+            shortfall: (PRODUCT_COSTS[pointProductType]) - (balance?.points || 0),
+          }
+        }, { status: 402 }); // Payment Required
+      }
+    }
 
     // 사주 계산
     const saju = calculateSaju(
@@ -125,6 +172,18 @@ export async function POST(request: NextRequest) {
 
     premiumContent.storytelling = storytelling;
 
+    // 별자리 분석 통합
+    let zodiacAnalysis: ZodiacAnalysis | null = null;
+    try {
+      zodiacAnalysis = integrateZodiacAnalysis(input.birthDate);
+    } catch (error) {
+      console.warn('별자리 분석 통합 실패:', error);
+    }
+
+    // 45일 후 만료일 계산
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 45);
+
     // 분석 결과 저장 (기존 분석 업데이트 또는 새로 생성)
     const analysisRecord = {
       user_id: user.id,
@@ -139,30 +198,51 @@ export async function POST(request: NextRequest) {
           time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null
         },
         productType,
-        targetYear
+        targetYear,
+        zodiac: zodiacAnalysis?.sign || null
       },
       result_full: {
         saju,
         oheng: ohengResult,
-        premium: premiumContent
+        premium: premiumContent,
+        zodiac: zodiacAnalysis
       },
       keywords: [
         saju.day.element,
         productType,
         ...ohengResult.yongsin,
+        zodiacAnalysis?.sign || 'unknown',
         input.currentConcern || 'none'
-      ]
+      ],
+      scores: {
+        overall: premiumContent.monthlyActionPlan?.[0]?.score || 70,
+        love: zodiacAnalysis?.dailyFortune?.love || 70,
+        career: zodiacAnalysis?.dailyFortune?.career || 70,
+        money: zodiacAnalysis?.dailyFortune?.money || 70,
+        health: zodiacAnalysis?.dailyFortune?.health || 70
+      },
+      is_premium: true,
+      is_blinded: false,
+      expires_at: expiresAt.toISOString(),
+      zodiac_included: !!zodiacAnalysis,
+      zodiac_data: zodiacAnalysis
     };
 
     let savedAnalysisId = analysisId;
 
     if (analysisId) {
-      // 기존 분석 업데이트
+      // 기존 분석 업데이트 (프리미엄으로 업그레이드)
       const { error } = await (supabase as any)
         .from('fortune_analyses')
         .update({
           subtype: productType,
-          result_full: analysisRecord.result_full
+          result_full: analysisRecord.result_full,
+          scores: analysisRecord.scores,
+          is_premium: true,
+          is_blinded: false,
+          expires_at: analysisRecord.expires_at,
+          zodiac_included: analysisRecord.zodiac_included,
+          zodiac_data: analysisRecord.zodiac_data
         })
         .eq('id', analysisId)
         .eq('user_id', user.id);
@@ -183,6 +263,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 현재 포인트 잔액 조회
+    const currentBalance = await getPointBalance(user.id);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -190,13 +273,19 @@ export async function POST(request: NextRequest) {
         saju,
         oheng: ohengResult.balance,
         yongsin: ohengResult.yongsin,
-        gisin: ohengResult.gisin
+        gisin: ohengResult.gisin,
+        zodiac: zodiacAnalysis
       },
       meta: {
         analysisId: savedAnalysisId,
         productType,
         targetYear,
+        expiresAt: expiresAt.toISOString(),
         timestamp: new Date().toISOString()
+      },
+      pointBalance: {
+        current: currentBalance?.points || 0,
+        isPremium: currentBalance?.isPremium || false
       }
     });
 

@@ -1,6 +1,9 @@
 /**
  * 사주 분석 API
  * POST /api/fortune/saju/analyze
+ *
+ * 무료 분석: 블라인드 처리된 결과 제공
+ * 프리미엄 분석: 포인트 차감 후 전체 결과 제공
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,6 +20,17 @@ import {
   generateProductRecommendation
 } from '@/lib/fortune/saju/newIndex';
 import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
+import {
+  canUseFreeAnalysis,
+  incrementFreeAnalysis,
+  getPointBalance,
+  PRODUCT_COSTS,
+} from '@/lib/services/pointService';
+import {
+  blindFreeAnalysis,
+  integrateZodiacAnalysis,
+  saveAnalysisResult,
+} from '@/lib/services/analysisService';
 import type { UserInput, AnalysisResult, PersonalityAnalysis, AIAnalysis } from '@/types/saju';
 
 export async function POST(request: NextRequest) {
@@ -138,6 +152,9 @@ export async function POST(request: NextRequest) {
       console.warn('AI 분석 생성 실패:', aiError);
     }
 
+    // 9. 별자리 분석 통합
+    const zodiacAnalysis = integrateZodiacAnalysis(input.birthDate);
+
     // 결과 객체
     const result: AnalysisResult = {
       user: input,
@@ -153,8 +170,11 @@ export async function POST(request: NextRequest) {
     };
 
     // Supabase에 저장 (인증된 사용자인 경우)
-    let userId = null;
-    let analysisId = null;
+    let userId: string | null = null;
+    let analysisId: string | null = null;
+    let pointBalance = null;
+    let freeAnalysisStatus = { canUse: true, remaining: 3, limit: 3 };
+    let isBlinded = true; // 무료 분석은 기본적으로 블라인드
 
     try {
       const supabase = await createClient();
@@ -163,51 +183,59 @@ export async function POST(request: NextRequest) {
       if (user) {
         userId = user.id;
 
-        // 분석 결과 저장
-        const { data: analysisData, error: analysisError } = await (supabase as any)
-          .from('fortune_analyses')
-          .insert({
-            user_id: userId,
-            type: 'saju',
-            subtype: 'basic',
-            input_data: input,
-            result_summary: {
-              saju: {
-                year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
-                month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
-                day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
-                time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null
-              },
-              scores,
-              zodiac: saju.year.zodiac,
-              dayMaster: saju.day.heavenlyStem,
-              dayMasterStrength: ohengResult.dayMasterStrength
-            },
-            result_full: result,
-            keywords: [
-              saju.day.element,
-              saju.year.zodiac,
-              ...ohengResult.yongsin,
-              input.currentConcern || 'none'
-            ],
-            scores: scores
-          })
-          .select('id')
-          .single();
+        // 포인트 잔액 조회
+        pointBalance = await getPointBalance(userId);
 
-        if (!analysisError && analysisData) {
-          analysisId = analysisData.id;
+        // 무료 분석 횟수 확인
+        freeAnalysisStatus = await canUseFreeAnalysis(userId);
+
+        if (!freeAnalysisStatus.canUse) {
+          return NextResponse.json({
+            success: false,
+            error: '오늘의 무료 분석 횟수를 모두 사용했습니다.',
+            data: {
+              freeAnalysisStatus,
+              pointBalance,
+              upgradeCost: PRODUCT_COSTS.premium,
+            }
+          }, { status: 429 });
         }
+
+        // 무료 분석 횟수 증가
+        await incrementFreeAnalysis(userId);
+
+        // 분석 결과 저장 (45일 유지, 블라인드 처리)
+        const saveResult = await saveAnalysisResult(userId, result, {
+          isPremium: false,
+          isBlinded: true,
+          productType: 'basic',
+          pointsPaid: 0,
+          zodiacData: zodiacAnalysis,
+        });
+
+        if (saveResult.id) {
+          analysisId = saveResult.id;
+        }
+
+        // 포인트 잔액 업데이트
+        pointBalance = await getPointBalance(userId);
+        freeAnalysisStatus = await canUseFreeAnalysis(userId);
       }
     } catch (dbError) {
-      console.warn('DB 저장 실패 (비로그인 사용자):', dbError);
+      console.warn('DB 저장 실패:', dbError);
     }
+
+    // 무료 분석은 일부 콘텐츠 블라인드 처리
+    const blindedResult = blindFreeAnalysis(result);
 
     return NextResponse.json({
       success: true,
       data: {
-        result,
+        result: blindedResult,
+        fullResult: null, // 프리미엄에서만 제공
         ohengActions,
+        zodiacAnalysis, // 별자리 분석 포함
+        isBlinded: true,
         conversion: {
           paywallTemplate,
           urgencyBanner,
@@ -218,7 +246,17 @@ export async function POST(request: NextRequest) {
       meta: {
         userId,
         analysisId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        pointBalance: pointBalance ? {
+          current: pointBalance.points,
+          isPremium: pointBalance.isPremium,
+        } : null,
+        freeAnalysis: freeAnalysisStatus,
+        upgradeCost: {
+          premium: PRODUCT_COSTS.premium,
+          deep: PRODUCT_COSTS.deep,
+          vip: PRODUCT_COSTS.vip,
+        }
       }
     });
 
