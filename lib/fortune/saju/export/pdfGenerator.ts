@@ -22,6 +22,236 @@ import {
   INTEREST_KOREAN
 } from '@/types/saju';
 
+// ========== 연령별 분기 시스템 ==========
+type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
+
+function getAgeGroup(birthDate: string): { group: AgeGroup; age: number } {
+  const birth = new Date(birthDate);
+  const today = new Date();
+  const age = today.getFullYear() - birth.getFullYear();
+
+  if (age <= 12) return { group: 'child', age };
+  if (age <= 22) return { group: 'youth', age };
+  if (age <= 45) return { group: 'adult', age };
+  return { group: 'senior', age };
+}
+
+// 연령별 콘텐츠 라벨
+const AGE_GROUP_LABELS: Record<AgeGroup, {
+  title: string;
+  careerLabel: string;
+  wealthLabel: string;
+  relationLabel: string;
+}> = {
+  child: {
+    title: '잠재력 분석',
+    careerLabel: '추천 활동/교육',
+    wealthLabel: '교육 자금 설계',
+    relationLabel: '친구/가족 관계'
+  },
+  youth: {
+    title: '진로 분석',
+    careerLabel: '학업/진로 방향',
+    wealthLabel: '용돈 관리/저축 습관',
+    relationLabel: '또래 관계/연애'
+  },
+  adult: {
+    title: '커리어 분석',
+    careerLabel: '직업/사업 적합도',
+    wealthLabel: '재테크/투자',
+    relationLabel: '인간관계/결혼'
+  },
+  senior: {
+    title: '인생 2막 분석',
+    careerLabel: '은퇴 설계/제2직업',
+    wealthLabel: '자산 보전/상속',
+    relationLabel: '가족/건강 관리'
+  }
+};
+
+// ========== 오행 정규화 함수 ==========
+function normalizeOheng(oheng: OhengBalance): OhengBalance {
+  const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+  const total = elements.reduce((sum, el) => sum + (oheng[el] || 0), 0);
+
+  if (total === 0) {
+    return { wood: 20, fire: 20, earth: 20, metal: 20, water: 20 };
+  }
+
+  const normalized: OhengBalance = {} as OhengBalance;
+  elements.forEach(el => {
+    normalized[el] = Math.round(((oheng[el] || 0) / total) * 1000) / 10; // 소수점 1자리
+  });
+
+  return normalized;
+}
+
+// ========== 아동용 재능 DNA 분석 ==========
+const CHILD_TALENT_CATEGORIES: Record<Element, {
+  talent: string;
+  activities: string[];
+  education: string[];
+}> = {
+  wood: {
+    talent: '창의성과 성장 잠재력',
+    activities: ['미술/그림', '자연 탐구', '레고/블록', '정원 가꾸기'],
+    education: ['예술 교육', '환경 교육', '창의력 개발']
+  },
+  fire: {
+    talent: '표현력과 리더십',
+    activities: ['연극/뮤지컬', '스포츠', '발표/토론', '댄스'],
+    education: ['언어 교육', '리더십 캠프', '예체능']
+  },
+  earth: {
+    talent: '안정감과 포용력',
+    activities: ['요리', '만들기', '동물 돌봄', '텃밭 가꾸기'],
+    education: ['과학 실험', '생활 기술', '사회성 교육']
+  },
+  metal: {
+    talent: '집중력과 분석력',
+    activities: ['피아노/악기', '퍼즐', '코딩', '수학 게임'],
+    education: ['음악 교육', '논리 사고', 'STEM 교육']
+  },
+  water: {
+    talent: '지혜와 적응력',
+    activities: ['수영', '독서', '명상/요가', '외국어'],
+    education: ['언어 학습', '철학적 사고', '창의 글쓰기']
+  }
+};
+
+// ========== 월별 차별화된 용신 활용법 ==========
+const MONTHLY_YONGSIN_TIPS: Record<number, Record<Element, string>> = {
+  1: {
+    wood: '새해 목표 세우기, 실내 화분 관리로 목 기운 보충',
+    fire: '따뜻한 색상 인테리어, 가족과 온기 나누기',
+    earth: '안정적인 루틴 시작, 영양가 있는 음식 섭취',
+    metal: '새해 계획 정리정돈, 불필요한 것 정리',
+    water: '충분한 수면과 휴식, 따뜻한 차 마시기'
+  },
+  2: {
+    wood: '봄맞이 준비, 새싹 기르기 시작',
+    fire: '실내 운동으로 체온 유지, 양초 명상',
+    earth: '겨울 음식 마무리, 봄 식단 계획',
+    metal: '겨울 옷 정리, 봄 옷 준비',
+    water: '입춘 전후 충분한 휴식, 족욕'
+  },
+  3: {
+    wood: '야외 활동 시작, 산책/등산으로 목 기운 충전',
+    fire: '봄 햇살 쬐기, 활동적 취미 시작',
+    earth: '봄나물 섭취, 텃밭 시작',
+    metal: '환절기 건강 관리, 깨끗한 공기 마시기',
+    water: '꽃비 맞으며 산책, 수분 섭취 늘리기'
+  },
+  4: {
+    wood: '꽃구경, 녹색 식물 곁에서 시간 보내기',
+    fire: '야외 운동, 사람들과 적극 교류',
+    earth: '봄 농사 시작, 흙 만지는 활동',
+    metal: '봄 대청소, 공기청정기 관리',
+    water: '비 오는 날 독서, 차분한 명상'
+  },
+  5: {
+    wood: '신록의 계절 숲 체험, 원예 활동',
+    fire: '어린이날/가정의달 가족 활동, 즐거운 이벤트',
+    earth: '가족 요리, 피크닉',
+    metal: '봄 정리 마무리, 여름 준비',
+    water: '계곡 물소리 듣기, 온천'
+  },
+  6: {
+    wood: '장마 전 야외 활동 마무리, 실내 정원 가꾸기',
+    fire: '하지 양기 활용, 활동적 운동',
+    earth: '제철 과일 섭취, 건강식',
+    metal: '에어컨 정비, 실내 공기 관리',
+    water: '물놀이 시작, 수영장'
+  },
+  7: {
+    wood: '나무 그늘에서 휴식, 시원한 숲 산책',
+    fire: '열정적 활동, 여름 축제 참여',
+    earth: '보양식 섭취, 체력 관리',
+    metal: '시원한 실내 활동, 냉방 관리',
+    water: '물놀이, 해변/계곡 여행'
+  },
+  8: {
+    wood: '말복 이후 야외 활동 재개, 나무 아래 독서',
+    fire: '여름 마무리 에너지 발산, 캠핑',
+    earth: '가을 준비, 추석 준비 시작',
+    metal: '여름 정리, 가을 옷 꺼내기',
+    water: '물놀이 마무리, 피서 여행'
+  },
+  9: {
+    wood: '단풍 시작, 숲 산책으로 기운 충전',
+    fire: '추석 가족 모임, 따뜻한 대화',
+    earth: '추수의 계절 풍요로운 음식, 감사 나누기',
+    metal: '가을 옷 정리, 환절기 건강 관리',
+    water: '가을비 감상, 차분한 독서'
+  },
+  10: {
+    wood: '단풍놀이, 가을 숲 체험',
+    fire: '야외 활동 적극 참여, 따뜻한 옷차림',
+    earth: '수확의 계절 맛있는 음식, 저장 음식 준비',
+    metal: '청명한 공기 마시기, 대청소',
+    water: '온천 여행, 따뜻한 음료'
+  },
+  11: {
+    wood: '낙엽 밟기 산책, 실내 화분 관리',
+    fire: '따뜻한 실내 모임, 캔들 명상',
+    earth: '김장, 겨울 음식 준비',
+    metal: '겨울 준비 정리, 난방기 점검',
+    water: '입동 전후 충분한 휴식, 따뜻한 목욕'
+  },
+  12: {
+    wood: '연말 계획 세우기, 새해 목표 구상',
+    fire: '따뜻한 연말 모임, 감사 표현하기',
+    earth: '연말 음식 나누기, 가족 식사',
+    metal: '한 해 정리, 새해 계획 정돈',
+    water: '동지 휴식, 충분한 수면으로 기력 회복'
+  }
+};
+
+// ========== 행운 요소 다양화 풀 ==========
+const LUCKY_ELEMENTS_POOL: Record<Element, {
+  colors: string[];
+  numbers: number[];
+  directions: string[];
+  foods: string[];
+  activities: string[];
+}> = {
+  wood: {
+    colors: ['녹색', '청록색', '연두색', '민트색'],
+    numbers: [3, 8, 13, 18],
+    directions: ['동쪽', '동남쪽'],
+    foods: ['녹색 채소', '신 과일', '새싹', '나물'],
+    activities: ['숲 산책', '등산', '원예', '요가']
+  },
+  fire: {
+    colors: ['빨간색', '주황색', '보라색', '핑크색'],
+    numbers: [2, 7, 12, 17],
+    directions: ['남쪽', '남동쪽'],
+    foods: ['고추', '토마토', '딸기', '양고기'],
+    activities: ['운동', '댄스', '캠핑', '바베큐']
+  },
+  earth: {
+    colors: ['노란색', '베이지', '갈색', '황토색'],
+    numbers: [5, 10, 15, 20],
+    directions: ['중앙', '남서쪽', '북동쪽'],
+    foods: ['곡물', '감자', '호박', '된장'],
+    activities: ['요리', '도예', '정원 가꾸기', '명상']
+  },
+  metal: {
+    colors: ['흰색', '은색', '금색', '회색'],
+    numbers: [4, 9, 14, 19],
+    directions: ['서쪽', '북서쪽'],
+    foods: ['흰쌀', '배', '무', '닭고기'],
+    activities: ['악기 연주', '독서', '정리정돈', '공예']
+  },
+  water: {
+    colors: ['검정색', '남색', '파란색', '하늘색'],
+    numbers: [1, 6, 11, 16],
+    directions: ['북쪽', '북동쪽'],
+    foods: ['검은콩', '미역', '생선', '물'],
+    activities: ['수영', '명상', '독서', '음악 감상']
+  }
+};
+
 // 월별 고유 조언 데이터
 const MONTHLY_UNIQUE_ADVICE: Record<number, {
   theme: string;
@@ -178,26 +408,53 @@ function generateYearSummary(
   return { overallScore, highlights, challenges, luckyMonths };
 }
 
-// 스토리텔링 생성 함수
+// 스토리텔링 생성 함수 (연령별 맞춤)
 function generateMonthlyStory(
   monthNum: number,
   score: number,
   yongsin?: Element[],
-  userName?: string
+  userName?: string,
+  ageGroup?: AgeGroup
 ): string {
   const advice = MONTHLY_UNIQUE_ADVICE[monthNum];
   if (!advice) return '';
 
-  const scoreDescription = score >= 80 ? '매우 좋은 기운이 흐르는'
-    : score >= 60 ? '안정적인 기운이 감도는'
-    : score >= 40 ? '조심스럽게 나아가야 할'
-    : '신중함이 필요한';
+  // 점수별 감성 표현
+  const scoreEmoji = score >= 90 ? '🌟' : score >= 80 ? '✨' : score >= 70 ? '💫' : score >= 60 ? '🌙' : '🌱';
+  const scoreStars = '★'.repeat(Math.round(score / 20)) + '☆'.repeat(5 - Math.round(score / 20));
 
-  const yongsinAdvice = yongsin?.length
-    ? `특히 ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}의 기운을 활용하면 더욱 좋은 결과를 얻을 수 있습니다.`
-    : '';
+  // 연령별 스토리텔링
+  let storyOpening = '';
+  if (ageGroup === 'child') {
+    storyOpening = score >= 80
+      ? `${userName || '아이'}에게 ${monthNum}월은 마법처럼 반짝이는 시간이에요!`
+      : score >= 60
+        ? `${userName || '아이'}에게 ${monthNum}월은 차근차근 성장하는 시기예요.`
+        : `${userName || '아이'}에게 ${monthNum}월은 조금 쉬어가며 힘을 모으는 때예요.`;
+  } else if (ageGroup === 'youth') {
+    storyOpening = score >= 80
+      ? `${userName}님, ${monthNum}월은 꿈을 향해 달려가기 좋은 때입니다!`
+      : score >= 60
+        ? `${userName}님, ${monthNum}월은 기초를 다지며 준비하는 시기입니다.`
+        : `${userName}님, ${monthNum}월은 잠시 멈춰 방향을 점검할 때입니다.`;
+  } else {
+    storyOpening = score >= 80
+      ? `${userName}님에게 ${monthNum}월은 풍요로운 기운이 감도는 시기입니다.`
+      : score >= 60
+        ? `${userName}님에게 ${monthNum}월은 안정 속에서 발전을 이루는 시기입니다.`
+        : `${userName}님에게 ${monthNum}월은 신중하게 기회를 엿보는 시기입니다.`;
+  }
 
-  return `${userName ? userName + '님에게 ' : ''}${monthNum}월은 ${scoreDescription} 시기입니다. ${advice.wisdom} ${yongsinAdvice}`;
+  // 용신 활용 조언 (월별 차별화)
+  let yongsinTip = '';
+  if (yongsin?.length) {
+    const monthTips = MONTHLY_YONGSIN_TIPS[monthNum];
+    if (monthTips && monthTips[yongsin[0]]) {
+      yongsinTip = `\n${ELEMENT_KOREAN[yongsin[0]]} 기운 활용법: ${monthTips[yongsin[0]]}`;
+    }
+  }
+
+  return `${scoreEmoji} 점수: ${score}점 ${scoreStars}\n\n${storyOpening}\n\n${advice.wisdom}${yongsinTip}`;
 }
 
 interface PDFGeneratorOptions {
@@ -219,7 +476,14 @@ interface PDFSection {
  * 사주 분석 PDF 문서 생성
  */
 export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buffer> {
-  const { user, saju, oheng, yongsin, gisin, premium, targetYear = 2026 } = options;
+  const { user, saju, yongsin, gisin, premium, targetYear = 2026 } = options;
+
+  // 연령 그룹 판정
+  const { group: ageGroup, age: userAge } = getAgeGroup(user.birthDate);
+  const ageLabels = AGE_GROUP_LABELS[ageGroup];
+
+  // 오행 정규화 (합계 100%)
+  const oheng = normalizeOheng(options.oheng);
 
   // PDF 생성 (A4 사이즈, 한글 폰트 지원)
   const doc = await createKoreanPDF({
@@ -280,18 +544,34 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 표지 ==========
   doc.setFontSize(28);
-  doc.text('사주팔자 분석 리포트', pageWidth / 2, 80, { align: 'center' });
+  doc.text('사주팔자 분석 리포트', pageWidth / 2, 70, { align: 'center' });
 
   doc.setFontSize(16);
-  doc.text(`${targetYear}년 운세 분석`, pageWidth / 2, 100, { align: 'center' });
+  const reportSubtitle = ageGroup === 'child'
+    ? `${targetYear}년 성장 가이드`
+    : ageGroup === 'youth'
+      ? `${targetYear}년 진로·학업 운세`
+      : `${targetYear}년 운세 분석`;
+  doc.text(reportSubtitle, pageWidth / 2, 90, { align: 'center' });
 
   doc.setFontSize(14);
-  doc.text(`성명: ${user.name}`, pageWidth / 2, 130, { align: 'center' });
-  doc.text(`생년월일: ${user.birthDate}`, pageWidth / 2, 140, { align: 'center' });
+  doc.text(`성명: ${user.name}`, pageWidth / 2, 120, { align: 'center' });
+  doc.text(`생년월일: ${user.birthDate} (만 ${userAge}세)`, pageWidth / 2, 130, { align: 'center' });
   if (user.birthTime) {
-    doc.text(`출생시간: ${user.birthTime}`, pageWidth / 2, 150, { align: 'center' });
+    doc.text(`출생시간: ${user.birthTime}`, pageWidth / 2, 140, { align: 'center' });
   }
-  doc.text(`성별: ${user.gender === 'male' ? '남성' : '여성'}`, pageWidth / 2, 160, { align: 'center' });
+  doc.text(`성별: ${user.gender === 'male' ? '남성' : '여성'}`, pageWidth / 2, 150, { align: 'center' });
+
+  // 연령별 맞춤 안내
+  doc.setFontSize(11);
+  const targetAudience = ageGroup === 'child'
+    ? '※ 이 리포트는 부모님을 위한 양육 가이드입니다.'
+    : ageGroup === 'youth'
+      ? '※ 학업과 진로 설계에 도움이 되는 리포트입니다.'
+      : '';
+  if (targetAudience) {
+    doc.text(targetAudience, pageWidth / 2, 170, { align: 'center' });
+  }
 
   doc.setFontSize(10);
   doc.text(`발행일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, 250, { align: 'center' });
@@ -331,15 +611,45 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     yPos += 3;
   }
 
-  // Top 5 액션 아이템
-  addSubSection('올해 꼭 실천할 5가지');
-  const top5Actions = [
-    yongsin?.length ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 활용 - ${ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth.advice || '적극적으로 활용하세요'}` : '긍정적인 마음가짐 유지',
-    '건강 관리 - 규칙적인 운동과 충분한 수면',
-    '인간관계 - 소중한 사람들과 소통 강화',
-    '재정 관리 - 계획적인 저축과 투자',
-    '자기 계발 - 새로운 기술이나 지식 습득'
-  ];
+  // Top 5 액션 아이템 (연령별 맞춤)
+  const top5Title = ageGroup === 'child' ? '올해 부모님이 챙겨주실 5가지' : '올해 꼭 실천할 5가지';
+  addSubSection(top5Title);
+
+  let top5Actions: string[];
+  if (ageGroup === 'child') {
+    const childTalent = yongsin?.length ? CHILD_TALENT_CATEGORIES[yongsin[0]] : null;
+    top5Actions = [
+      childTalent ? `${ELEMENT_KOREAN[yongsin![0]]} 기운 활용 - ${childTalent.activities[0]} 권장` : '아이의 관심사 발견하고 지지해주기',
+      '규칙적인 생활 리듬 - 충분한 수면과 균형 잡힌 식사',
+      '친구 관계 - 또래와 어울리는 시간 충분히 확보',
+      '자연 체험 - 야외 활동으로 오행 균형 맞추기',
+      '칭찬과 격려 - 작은 성취도 인정해주기'
+    ];
+  } else if (ageGroup === 'youth') {
+    top5Actions = [
+      yongsin?.length ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 활용 - 집중력 향상에 도움` : '자신의 강점 발견하기',
+      '학업 관리 - 효율적인 시간 관리와 집중력 강화',
+      '진로 탐색 - 관심 분야 체험과 정보 수집',
+      '건강 관리 - 수면과 운동 균형',
+      '또래 관계 - 긍정적인 친구 관계 유지'
+    ];
+  } else if (ageGroup === 'senior') {
+    top5Actions = [
+      yongsin?.length ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 활용 - ${ELEMENT_LIFE_IMPACT[yongsin[0]]?.health.tip || '건강 관리에 집중'}` : '건강 최우선으로 관리',
+      '건강 검진 - 정기적인 건강 체크',
+      '가족 관계 - 자녀/손주와 소통 강화',
+      '자산 관리 - 안정적인 자산 운용',
+      '취미 생활 - 삶의 활력 유지'
+    ];
+  } else {
+    top5Actions = [
+      yongsin?.length ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 활용 - ${ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth.advice || '적극적으로 활용하세요'}` : '긍정적인 마음가짐 유지',
+      '건강 관리 - 규칙적인 운동과 충분한 수면',
+      '인간관계 - 소중한 사람들과 소통 강화',
+      '재정 관리 - 계획적인 저축과 투자',
+      '자기 계발 - 새로운 기술이나 지식 습득'
+    ];
+  }
   top5Actions.forEach((action, idx) => addText(`${idx + 1}. ${action}`));
 
   // ========== 본문 시작 ==========
@@ -395,9 +705,6 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     }
   }
 
-  // 3. 건강/재물/관계 분석 (오행 기반)
-  addSectionTitle('3. 건강·재물·관계 분석');
-
   // 오행 균형으로 가장 강한/약한 요소 찾기
   const sortedOheng = elements
     .map(e => ({ element: e, value: oheng[e] || 0 }))
@@ -405,43 +712,98 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   const strongestEl = sortedOheng[0];
   const weakestEl = sortedOheng[sortedOheng.length - 1];
 
-  addSubSection('건강 운세');
-  addText(`${user.name}님의 건강 핵심 오행: ${ELEMENT_KOREAN[strongestEl.element]}`);
-  const healthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.health;
-  if (healthImpact) {
-    addText(`관련 신체 부위: ${healthImpact.organ}`);
-    addText(`주의할 점: ${healthImpact.risk}`);
-    addText(`건강 팁: ${healthImpact.tip}`);
-  }
-  if (weakestEl.value < 10) {
-    const weakHealth = ELEMENT_LIFE_IMPACT[weakestEl.element]?.health;
-    if (weakHealth) {
-      addText(`\n${ELEMENT_KOREAN[weakestEl.element]} 부족 시 주의: ${weakHealth.risk}`);
-    }
-  }
-  yPos += 3;
+  // 3. 아동용: 재능 DNA 분석 / 성인용: 건강·재물·관계 분석
+  if (ageGroup === 'child') {
+    addSectionTitle('3. 타고난 재능 DNA 분석');
 
-  addSubSection('재물 운세');
-  const wealthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.wealth;
-  if (wealthImpact) {
-    addText(`재물 성향: ${wealthImpact.strength}`);
-    addText(`재테크 조언: ${wealthImpact.advice}`);
-  }
-  if (yongsin?.length) {
-    const yongsinWealth = ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth;
-    if (yongsinWealth) {
-      addText(`용신 활용 전략: ${yongsinWealth.advice}`);
-    }
-  }
-  yPos += 3;
+    addSubSection(`${user.name}의 핵심 재능`);
+    const primaryTalent = CHILD_TALENT_CATEGORIES[strongestEl.element];
+    if (primaryTalent) {
+      addText(`핵심 오행: ${ELEMENT_KOREAN[strongestEl.element]} (${strongestEl.value.toFixed(0)}%)`);
+      addText(`타고난 재능: ${primaryTalent.talent}`);
+      yPos += 3;
 
-  addSubSection('인간관계 운세');
-  const relationImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.relationship;
-  if (relationImpact) {
-    addText(`관계 스타일: ${relationImpact.style}`);
-    addText(`관계 개선 팁: ${relationImpact.tip}`);
+      addText('추천 활동:');
+      primaryTalent.activities.forEach(act => addText(`  • ${act}`));
+      yPos += 3;
+
+      addText('추천 교육 방향:');
+      primaryTalent.education.forEach(edu => addText(`  • ${edu}`));
+    }
+    yPos += 5;
+
+    if (yongsin?.length) {
+      const yongsinTalent = CHILD_TALENT_CATEGORIES[yongsin[0]];
+      if (yongsinTalent) {
+        addSubSection('보완하면 좋은 영역 (용신 기반)');
+        addText(`보완 오행: ${ELEMENT_KOREAN[yongsin[0]]}`);
+        addText(`발전 가능성: ${yongsinTalent.talent}`);
+        addText('추천 활동:');
+        yongsinTalent.activities.slice(0, 2).forEach(act => addText(`  • ${act}`));
+      }
+      yPos += 5;
+    }
+
+    addSubSection('부모님께 드리는 양육 팁');
+    const parentTips = [
+      `${user.name}은(는) ${ELEMENT_KOREAN[strongestEl.element]} 기운이 강해 ${primaryTalent?.talent || '창의성'}이 뛰어납니다.`,
+      '이 아이의 장점을 인정하고 격려해주세요.',
+      weakestEl.value < 10 ? `${ELEMENT_KOREAN[weakestEl.element]} 기운 보충을 위해 관련 활동을 권장합니다.` : '균형 잡힌 오행으로 다양한 활동에 적합합니다.',
+      '비교보다는 개인의 성장에 집중해주세요.'
+    ];
+    parentTips.forEach(tip => addText(`• ${tip}`));
+    yPos += 5;
+
+  } else {
+    // 성인용: 기존 건강·재물·관계 분석
+    addSectionTitle(`3. ${ageLabels.title}`);
+
+    addSubSection('건강 운세');
+    addText(`${user.name}님의 건강 핵심 오행: ${ELEMENT_KOREAN[strongestEl.element]}`);
+    const healthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.health;
+    if (healthImpact) {
+      addText(`관련 신체 부위: ${healthImpact.organ}`);
+      addText(`주의할 점: ${healthImpact.risk}`);
+      addText(`건강 팁: ${healthImpact.tip}`);
+    }
+    if (weakestEl.value < 10) {
+      const weakHealth = ELEMENT_LIFE_IMPACT[weakestEl.element]?.health;
+      if (weakHealth) {
+        addText(`${ELEMENT_KOREAN[weakestEl.element]} 부족 시 주의: ${weakHealth.risk}`);
+      }
+    }
+    yPos += 3;
+
+    addSubSection(ageLabels.wealthLabel);
+    const wealthImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.wealth;
+    if (wealthImpact) {
+      if (ageGroup === 'youth') {
+        addText(`학업 성향: ${wealthImpact.strength.replace('사업', '학업').replace('투자', '노력')}`);
+        addText(`학습 조언: 꾸준한 노력과 계획적인 시간 관리가 중요합니다.`);
+      } else if (ageGroup === 'senior') {
+        addText(`자산 성향: ${wealthImpact.strength}`);
+        addText(`자산 관리 조언: 안정적인 자산 보전과 가족과의 소통이 중요합니다.`);
+      } else {
+        addText(`재물 성향: ${wealthImpact.strength}`);
+        addText(`재테크 조언: ${wealthImpact.advice}`);
+      }
+    }
+    if (yongsin?.length) {
+      const yongsinWealth = ELEMENT_LIFE_IMPACT[yongsin[0]]?.wealth;
+      if (yongsinWealth) {
+        addText(`용신 활용 전략: ${yongsinWealth.advice}`);
+      }
+    }
+    yPos += 3;
+
+    addSubSection(ageLabels.relationLabel);
+    const relationImpact = ELEMENT_LIFE_IMPACT[strongestEl.element]?.relationship;
+    if (relationImpact) {
+      addText(`관계 스타일: ${relationImpact.style}`);
+      addText(`관계 개선 팁: ${relationImpact.tip}`);
+    }
+    yPos += 5;
   }
-  yPos += 5;
 
   // 4. 프리미엄 콘텐츠 (있는 경우)
   if (premium) {
@@ -507,22 +869,28 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
         checkNewPage(50);
         addSubSection(`${action.monthName} - ${monthAdvice?.theme || ''} (점수: ${action.score}점)`);
 
-        // 스토리텔링 문구 추가
-        const story = generateMonthlyStory(monthNum, action.score, yongsin, user.name);
+        // 스토리텔링 문구 추가 (연령별 맞춤)
+        const story = generateMonthlyStory(monthNum, action.score, yongsin, user.name, ageGroup);
         if (story) {
           addText(story);
           yPos += 3;
         }
 
-        // 이달의 핵심 조언
+        // 이달의 핵심 조언 (연령별 맞춤)
         if (monthAdvice?.actionTip) {
-          addText(`💡 이달의 핵심: ${monthAdvice.actionTip}`);
+          const tipLabel = ageGroup === 'child' ? '부모님 팁' : '이달의 핵심';
+          addText(`💡 ${tipLabel}: ${monthAdvice.actionTip}`);
           yPos += 2;
         }
 
         if (action.mustDo?.length) {
-          addText('▸ 실천 항목:');
+          const doLabel = ageGroup === 'child' ? '추천 활동:' : '▸ 실천 항목:';
+          addText(doLabel);
           action.mustDo.forEach(item => {
+            // 아동용: 부적절한 카테고리 필터링
+            if (ageGroup === 'child' && ['재테크', '부동산', '투자', '사업'].includes(item.category)) {
+              return; // 아동에게 부적절한 항목 스킵
+            }
             addText(`  • [${item.category}] ${item.action}`);
             if (item.optimalDays?.length) {
               addText(`    추천일: ${item.optimalDays.join(', ')}일 / 시간: ${item.optimalTime}`);
@@ -534,7 +902,20 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
           addText(`▸ 주의사항: ${action.mustAvoid.join(', ')}`);
         }
 
-        if (action.luckyElements) {
+        // 행운 요소 다양화 (용신 기반 + 월별 변화)
+        if (yongsin?.length) {
+          const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
+          if (luckyPool) {
+            const colorIdx = (monthNum - 1) % luckyPool.colors.length;
+            const numberIdx = (monthNum - 1) % luckyPool.numbers.length;
+            const dirIdx = (monthNum - 1) % luckyPool.directions.length;
+            const foodIdx = (monthNum - 1) % luckyPool.foods.length;
+            addText(`▸ 행운 요소: 색상(${luckyPool.colors[colorIdx]}) | 숫자(${luckyPool.numbers[numberIdx]}) | 방향(${luckyPool.directions[dirIdx]})`);
+            if (ageGroup === 'child') {
+              addText(`▸ 추천 음식: ${luckyPool.foods[foodIdx]}`);
+            }
+          }
+        } else if (action.luckyElements) {
           addText(`▸ 행운 요소: 색상(${action.luckyElements.color}) | 숫자(${action.luckyElements.number}) | 방향(${action.luckyElements.direction})`);
         }
 
@@ -620,34 +1001,79 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   yPos = 60;
 
   doc.setFontSize(18);
-  doc.text(`${user.name}님께 드리는 메시지`, pageWidth / 2, yPos, { align: 'center' });
+  const closingTitle = ageGroup === 'child'
+    ? `${user.name} 부모님께 드리는 메시지`
+    : `${user.name}님께 드리는 메시지`;
+  doc.text(closingTitle, pageWidth / 2, yPos, { align: 'center' });
   yPos += 25;
 
   doc.setFontSize(11);
 
-  // 개인화된 마무리 메시지
-  const personalizedClosing = yongsin?.length
-    ? `${user.name}님의 ${targetYear}년은 ${ELEMENT_KOREAN[yongsin[0]]}의 기운을 잘 활용하면 큰 성과를 거둘 수 있는 해입니다.`
-    : `${user.name}님의 ${targetYear}년은 새로운 가능성이 열리는 해입니다.`;
+  // 연령별 개인화된 마무리 메시지
+  let closingText: string[];
 
-  const closingText = [
-    personalizedClosing,
-    '',
-    '사주는 운명의 청사진이지만, 그것을 어떻게 활용하느냐는',
-    '전적으로 당신의 선택에 달려 있습니다.',
-    '',
-    '이 리포트가 당신의 한 해를 계획하고',
-    '더 나은 결정을 내리는 데 도움이 되길 바랍니다.',
-    '',
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    '',
-    '자기 성찰 질문:',
-    `1. ${targetYear}년 가장 이루고 싶은 목표는 무엇인가요?`,
-    '2. 용신의 기운을 어떻게 일상에서 활용할 수 있을까요?',
-    '3. 도전 과제를 극복하기 위해 어떤 노력을 할 수 있을까요?',
-    '',
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-  ];
+  if (ageGroup === 'child') {
+    const childTalent = yongsin?.length ? CHILD_TALENT_CATEGORIES[yongsin[0]] : null;
+    closingText = [
+      `${user.name}은(는) ${ELEMENT_KOREAN[strongestEl.element]}의 기운을 타고난`,
+      `${childTalent?.talent || '무한한 가능성'}을 가진 아이입니다.`,
+      '',
+      '아이의 타고난 기질을 이해하고 존중해주세요.',
+      '비교보다는 개인의 성장 속도를 인정해주세요.',
+      '작은 성취에도 충분한 칭찬과 격려를 아끼지 마세요.',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '부모님을 위한 성찰 질문:',
+      `1. ${user.name}의 가장 빛나는 순간은 언제인가요?`,
+      '2. 아이의 관심사를 어떻게 지지해줄 수 있을까요?',
+      '3. 오늘 아이에게 해주고 싶은 칭찬은 무엇인가요?',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    ];
+  } else if (ageGroup === 'youth') {
+    closingText = [
+      yongsin?.length
+        ? `${user.name}님, ${targetYear}년은 ${ELEMENT_KOREAN[yongsin[0]]}의 기운을 활용해 꿈에 한 걸음 다가갈 수 있는 해입니다.`
+        : `${user.name}님, ${targetYear}년은 자신의 길을 찾아가는 중요한 해입니다.`,
+      '',
+      '지금 하는 모든 노력은 미래의 자산이 됩니다.',
+      '조급해하지 말고, 자신만의 속도로 나아가세요.',
+      '실패는 성장의 밑거름입니다.',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '자기 성찰 질문:',
+      `1. ${targetYear}년 가장 도전해보고 싶은 것은?`,
+      '2. 나의 강점을 어떻게 활용할 수 있을까?',
+      '3. 10년 후 나는 어떤 모습이길 바라는가?',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    ];
+  } else {
+    const personalizedClosing = yongsin?.length
+      ? `${user.name}님의 ${targetYear}년은 ${ELEMENT_KOREAN[yongsin[0]]}의 기운을 잘 활용하면 큰 성과를 거둘 수 있는 해입니다.`
+      : `${user.name}님의 ${targetYear}년은 새로운 가능성이 열리는 해입니다.`;
+
+    closingText = [
+      personalizedClosing,
+      '',
+      '사주는 운명의 청사진이지만, 그것을 어떻게 활용하느냐는',
+      '전적으로 당신의 선택에 달려 있습니다.',
+      '',
+      '이 리포트가 당신의 한 해를 계획하고',
+      '더 나은 결정을 내리는 데 도움이 되길 바랍니다.',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '자기 성찰 질문:',
+      `1. ${targetYear}년 가장 이루고 싶은 목표는 무엇인가요?`,
+      '2. 용신의 기운을 어떻게 일상에서 활용할 수 있을까요?',
+      '3. 도전 과제를 극복하기 위해 어떤 노력을 할 수 있을까요?',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    ];
+  }
 
   closingText.forEach(line => {
     doc.text(line, pageWidth / 2, yPos, { align: 'center' });
