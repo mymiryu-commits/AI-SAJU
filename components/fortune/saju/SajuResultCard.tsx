@@ -185,32 +185,24 @@ export default function SajuResultCard({
       {/* ============================================ */}
       {/* 탭 네비게이션 (새 구조: 또래 비교 제거) */}
       {/* ============================================ */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-1.5 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         {[
-          { id: 'destiny' as TabType, label: '나의 운명', icon: Layers, badge: '6장 카드' },
-          { id: 'elements' as TabType, label: '오행 분석', icon: Sparkles },
-          { id: 'monthly' as TabType, label: '월별 운세', icon: Calendar, badge: '3개월 무료' },
-          { id: 'timeline' as TabType, label: '인생 타임라인', icon: TrendingUp },
+          { id: 'destiny' as TabType, label: '운명', icon: Layers },
+          { id: 'elements' as TabType, label: '오행', icon: Sparkles },
+          { id: 'monthly' as TabType, label: '월운', icon: Calendar },
+          { id: 'timeline' as TabType, label: '타임라인', icon: TrendingUp },
           { id: 'premium' as TabType, label: '프리미엄', icon: isPremiumUnlocked ? Star : Lock }
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap transition-all text-sm
               ${activeTab === tab.id
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
-            {tab.badge && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-1
-                ${activeTab === tab.id
-                  ? 'bg-white/20 text-white'
-                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'}`}>
-                {tab.badge}
-              </span>
-            )}
           </button>
         ))}
       </div>

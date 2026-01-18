@@ -134,7 +134,11 @@ export async function deductPoints(
   // 현재 포인트 조회
   const balance = await getPointBalance(userId);
   if (!balance) {
-    return { success: false, error: '사용자를 찾을 수 없습니다', errorCode: 'USER_NOT_FOUND' };
+    return {
+      success: false,
+      error: '로그인이 필요하거나 프로필 정보를 불러올 수 없습니다. 다시 로그인해주세요.',
+      errorCode: 'USER_NOT_FOUND'
+    };
   }
 
   // 포인트 부족 체크
@@ -294,7 +298,7 @@ export async function chargePoints(
   // 현재 포인트 조회
   const balance = await getPointBalance(userId);
   if (!balance) {
-    return { success: false, error: '사용자를 찾을 수 없습니다' };
+    return { success: false, error: '프로필 정보를 불러올 수 없습니다. 다시 로그인해주세요.' };
   }
 
   const newPoints = balance.points + totalPoints;
