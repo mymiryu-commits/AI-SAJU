@@ -5,6 +5,20 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Service Role 클라이언트 (RLS 우회 - 프로필 생성용)
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    console.warn('Service role credentials not available, using regular client');
+    return null;
+  }
+
+  return createSupabaseClient(url, key);
+}
 
 // 상품별 포인트 비용 (1P = 1원)
 export const PRODUCT_COSTS = {
@@ -107,16 +121,22 @@ export async function getPointBalance(userId: string): Promise<PointBalance | nu
   if (error) {
     // 프로필이 없으면 생성
     if (error.code === 'PGRST116') {
-      await createProfile(userId);
-      return {
-        points: 500, // 가입 보너스
-        totalEarned: 500,
-        totalSpent: 0,
-        freeAnalysesToday: 0,
-        freeAnalysesLimit: 3,
-        isPremium: false,
-        premiumUntil: null,
-      };
+      console.log('Profile not found, creating new profile for user:', userId);
+      const created = await createProfile(userId);
+      if (created) {
+        return {
+          points: 500, // 가입 보너스
+          totalEarned: 500,
+          totalSpent: 0,
+          freeAnalysesToday: 0,
+          freeAnalysesLimit: 3,
+          isPremium: false,
+          premiumUntil: null,
+        };
+      }
+      console.error('Failed to create profile for user:', userId);
+    } else {
+      console.error('Profile fetch error:', error);
     }
     return null;
   }
@@ -142,11 +162,14 @@ export async function getPointBalance(userId: string): Promise<PointBalance | nu
 
 /**
  * 프로필 생성 (가입 보너스 포함)
+ * Service Role 사용하여 RLS 우회
  */
-async function createProfile(userId: string): Promise<void> {
-  const supabase = await createClient();
+async function createProfile(userId: string): Promise<boolean> {
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
 
-  await (supabase as any)
+  const { error: insertError } = await (supabase as any)
     .from('profiles')
     .insert({
       id: userId,
@@ -156,6 +179,11 @@ async function createProfile(userId: string): Promise<void> {
       free_analyses_today: 0,
       free_analyses_limit: 3,
     });
+
+  if (insertError) {
+    console.error('Profile creation failed:', insertError);
+    return false;
+  }
 
   // 가입 보너스 거래 기록
   await (supabase as any)
@@ -168,6 +196,9 @@ async function createProfile(userId: string): Promise<void> {
       description: '회원가입 보너스',
       reference_type: 'signup_bonus',
     });
+
+  console.log('Profile created successfully for user:', userId);
+  return true;
 }
 
 /**

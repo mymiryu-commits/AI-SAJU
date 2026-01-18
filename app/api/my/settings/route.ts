@@ -22,18 +22,30 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용자 정보 조회
-    const { data: userData } = await (supabase as any)
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    let userData: any = null;
+    try {
+      const { data } = await (supabase as any)
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      userData = data;
+    } catch (e) {
+      console.log('Users table not found or empty, using auth data');
+    }
 
     // 사용자 설정 조회
-    const { data: settingsData } = await (supabase as any)
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    let settingsData: any = null;
+    try {
+      const { data } = await (supabase as any)
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      settingsData = data;
+    } catch (e) {
+      console.log('User settings table not found or empty');
+    }
 
     // 프로필 정보 구성
     const profile = {
@@ -96,16 +108,20 @@ export async function PATCH(request: NextRequest) {
       if (profile.gender !== undefined) userUpdate.gender = profile.gender;
 
       if (Object.keys(userUpdate).length > 0) {
-        const { error: userError } = await (supabase as any)
-          .from('users')
-          .upsert({
-            id: user.id,
-            ...userUpdate,
-            updated_at: new Date().toISOString(),
-          });
+        try {
+          const { error: userError } = await (supabase as any)
+            .from('users')
+            .upsert({
+              id: user.id,
+              ...userUpdate,
+              updated_at: new Date().toISOString(),
+            });
 
-        if (userError) {
-          console.error('User update error:', userError);
+          if (userError) {
+            console.error('User update error:', userError);
+          }
+        } catch (e) {
+          console.log('Users table not available for update');
         }
       }
 
@@ -115,16 +131,20 @@ export async function PATCH(request: NextRequest) {
         if (profile.locale !== undefined) settingsUpdate.locale = profile.locale;
         if (profile.timezone !== undefined) settingsUpdate.timezone = profile.timezone;
 
-        const { error: settingsError } = await (supabase as any)
-          .from('user_settings')
-          .upsert({
-            user_id: user.id,
-            ...settingsUpdate,
-            updated_at: new Date().toISOString(),
-          });
+        try {
+          const { error: settingsError } = await (supabase as any)
+            .from('user_settings')
+            .upsert({
+              user_id: user.id,
+              ...settingsUpdate,
+              updated_at: new Date().toISOString(),
+            });
 
-        if (settingsError) {
-          console.error('Settings update error:', settingsError);
+          if (settingsError) {
+            console.error('Settings update error:', settingsError);
+          }
+        } catch (e) {
+          console.log('User settings table not available for update');
         }
       }
     }
@@ -146,16 +166,20 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (Object.keys(settingsUpdate).length > 0) {
-        const { error: settingsError } = await (supabase as any)
-          .from('user_settings')
-          .upsert({
-            user_id: user.id,
-            ...settingsUpdate,
-            updated_at: new Date().toISOString(),
-          });
+        try {
+          const { error: settingsError } = await (supabase as any)
+            .from('user_settings')
+            .upsert({
+              user_id: user.id,
+              ...settingsUpdate,
+              updated_at: new Date().toISOString(),
+            });
 
-        if (settingsError) {
-          console.error('Settings update error:', settingsError);
+          if (settingsError) {
+            console.error('Settings update error:', settingsError);
+          }
+        } catch (e) {
+          console.log('User settings table not available for notification update');
         }
       }
     }

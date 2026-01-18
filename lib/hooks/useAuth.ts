@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-// Admin emails list
-const ADMIN_EMAILS = ['mymiryu@naver.com', 'mymiryu@gmail.com'];
+// Admin emails list (only mymiryu@gmail.com)
+const ADMIN_EMAILS = ['mymiryu@gmail.com'];
 
 export interface AuthState {
   user: User | null;

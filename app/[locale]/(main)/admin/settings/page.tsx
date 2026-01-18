@@ -19,6 +19,8 @@ import {
   Plus,
   Save,
   RotateCcw,
+  Users,
+  Coins,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
@@ -283,9 +285,30 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
+        {/* User Management Link */}
+        <Link href="/admin/users">
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-300">회원 관리</h3>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">가입 회원 목록 조회 및 포인트 부여</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-amber-500" />
+                <ArrowRight className="h-5 w-5 text-blue-500 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* AI Tool Logos Link */}
         <Link href="/admin/tool-logos">
-          <div className="mt-8 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+          <div className="mt-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
