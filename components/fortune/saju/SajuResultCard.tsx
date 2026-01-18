@@ -21,10 +21,33 @@ import DownloadButtons from './DownloadButtons';
 // 탭 타입 정의 (새 구조: 또래 비교 제거, 새 탭 추가)
 type TabType = 'destiny' | 'elements' | 'monthly' | 'timeline' | 'premium';
 
+// 상품 레벨 타입
+type ProductLevel = 'free' | 'basic' | 'deep' | 'premium' | 'vip';
+
+// 상품별 해금 카드 (누적)
+const PRODUCT_CARDS: Record<ProductLevel, string[]> = {
+  free: ['root', 'essence'],                                         // 근본, 본질
+  basic: ['root', 'essence', 'energy', 'talent'],                    // + 에너지, 재능
+  deep: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'], // + 흐름, 수호
+  premium: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'],
+  vip: ['root', 'essence', 'energy', 'talent', 'flow', 'guardian'],
+};
+
+// 카드 타입별 한글명
+const CARD_NAMES: Record<string, string> = {
+  root: '근본',
+  essence: '본질',
+  energy: '에너지',
+  talent: '재능',
+  flow: '흐름',
+  guardian: '수호',
+};
+
 interface Props {
   result: AnalysisResult;
   onUnlockPremium: () => void;
   isPremiumUnlocked?: boolean;
+  productLevel?: ProductLevel;  // 구매한 상품 레벨
   analysisId?: string;
 }
 
@@ -32,6 +55,7 @@ export default function SajuResultCard({
   result,
   onUnlockPremium,
   isPremiumUnlocked = false,
+  productLevel = 'free',
   analysisId
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('destiny');
@@ -105,6 +129,30 @@ export default function SajuResultCard({
       description: '당신을 지키는 보석'
     }
   ] : [];
+
+  // 카드 잠금 여부 확인 (productLevel 기반)
+  const isCardUnlocked = (cardType: string): boolean => {
+    // isPremiumUnlocked가 true면 모든 카드 해금 (기존 호환성)
+    if (isPremiumUnlocked) return true;
+    return PRODUCT_CARDS[productLevel].includes(cardType);
+  };
+
+  // 다음 티어 정보 (업그레이드 유도용)
+  const getNextTier = (): { level: ProductLevel; price: number; cardsToUnlock: string[] } | null => {
+    if (productLevel === 'free') {
+      return { level: 'basic', price: 500, cardsToUnlock: ['에너지', '재능'] };
+    }
+    if (productLevel === 'basic') {
+      return { level: 'deep', price: 1000, cardsToUnlock: ['흐름', '수호'] };
+    }
+    if (productLevel === 'deep') {
+      return { level: 'premium', price: 2000, cardsToUnlock: [] };
+    }
+    return null;
+  };
+
+  const nextTier = getNextTier();
+  const unlockedCardCount = PRODUCT_CARDS[productLevel].length;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -232,6 +280,21 @@ export default function SajuResultCard({
                 </span>
               </div>
 
+              {/* 해금 카드 상태 표시 */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {unlockedCardCount}/6장 해금됨
+                </span>
+                {nextTier && (
+                  <button
+                    onClick={onUnlockPremium}
+                    className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                  >
+                    +{nextTier.cardsToUnlock.join(', ')} 해금하기 →
+                  </button>
+                )}
+              </div>
+
               {/* 6장 카드 그리드 */}
               {cardDeck ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -242,7 +305,7 @@ export default function SajuResultCard({
                       index={idx}
                       isSelected={selectedCard === card.type}
                       onClick={() => setSelectedCard(selectedCard === card.type ? null : card.type)}
-                      isPremium={!isPremiumUnlocked && idx > 1}
+                      isPremium={!isCardUnlocked(card.type)}
                     />
                   ))}
                 </div>
@@ -286,8 +349,9 @@ export default function SajuResultCard({
                   <SelectedCardDetail
                     card={sixCards.find(c => c.type === selectedCard)}
                     cardDeck={cardDeck}
-                    isPremiumUnlocked={isPremiumUnlocked}
+                    isUnlocked={selectedCard ? isCardUnlocked(selectedCard) : false}
                     onUnlockPremium={onUnlockPremium}
+                    nextTier={nextTier}
                   />
                 )}
               </AnimatePresence>
@@ -469,8 +533,14 @@ export default function SajuResultCard({
                   <Calendar className="w-5 h-5 text-blue-500" />
                   2026년 월별 운세
                 </h3>
-                <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full">
-                  3개월 무료
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  productLevel === 'free'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    : productLevel === 'basic'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                }`}>
+                  {productLevel === 'free' ? '1개월 힌트' : productLevel === 'basic' ? '3개월' : '12개월 전체'}
                 </span>
               </div>
 
@@ -498,19 +568,25 @@ export default function SajuResultCard({
                 ))}
               </div>
 
-              {/* 월별 운세 카드 (무료 3개월) */}
+              {/* 월별 운세 카드 (티어별 해금) */}
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  상반기 월별 흐름
+                  월별 흐름
                 </h4>
-                {getMonthlyFortune(result).map((month, idx) => (
-                  <MonthlyFortuneCard
-                    key={month.month}
-                    month={month}
-                    isLocked={idx >= 3 && !isPremiumUnlocked}
-                    delay={idx * 0.1}
-                  />
-                ))}
+                {getMonthlyFortune(result).map((month, idx) => {
+                  // 티어별 해금 개월수: free=1, basic=3, deep+=12
+                  const unlockedMonths = productLevel === 'free' ? 1 : productLevel === 'basic' ? 3 : 12;
+                  const isLocked = idx >= unlockedMonths && !isPremiumUnlocked;
+
+                  return (
+                    <MonthlyFortuneCard
+                      key={month.month}
+                      month={month}
+                      isLocked={isLocked}
+                      delay={idx * 0.1}
+                    />
+                  );
+                })}
               </div>
 
               {/* 월별 흐름 시적 해석 */}
@@ -526,13 +602,18 @@ export default function SajuResultCard({
                 </div>
               )}
 
-              {/* 프리미엄 유도 */}
-              {!isPremiumUnlocked && (
+              {/* 업그레이드 유도 */}
+              {productLevel !== 'deep' && productLevel !== 'premium' && productLevel !== 'vip' && !isPremiumUnlocked && (
                 <FOMOSection
-                  title="남은 9개월의 기회"
-                  description="4월부터 12월까지의 상세 운세와 최적의 행동 타이밍을 확인하세요"
-                  features={['월별 최적 행동일', '피해야 할 시기', '행운의 색상/숫자']}
+                  title={productLevel === 'free' ? "2개월 이후의 운세가 궁금하다면" : "4월 이후의 운세가 궁금하다면"}
+                  description={productLevel === 'free'
+                    ? "베이직 분석으로 3개월 운세를, 심층 분석으로 12개월 전체를 확인하세요"
+                    : "심층 분석으로 12개월 전체 운세와 최적의 행동 타이밍을 확인하세요"}
+                  features={productLevel === 'free'
+                    ? ['3개월 상세 운세', '에너지/재능 카드 해금']
+                    : ['12개월 전체 운세', '흐름/수호 카드 해금', 'AI 맞춤 분석']}
                   onUnlock={onUnlockPremium}
+                  price={productLevel === 'free' ? 500 : 1000}
                 />
               )}
             </motion.div>
@@ -1011,8 +1092,9 @@ function DestinyCardItem({
 function SelectedCardDetail({
   card,
   cardDeck,
-  isPremiumUnlocked,
-  onUnlockPremium
+  isUnlocked,
+  onUnlockPremium,
+  nextTier
 }: {
   card?: {
     type: string;
@@ -1022,8 +1104,9 @@ function SelectedCardDetail({
     description: string;
   };
   cardDeck: CardDeck;
-  isPremiumUnlocked: boolean;
+  isUnlocked: boolean;
   onUnlockPremium: () => void;
+  nextTier: { level: string; price: number; cardsToUnlock: string[] } | null;
 }) {
   if (!card) return null;
 
@@ -1050,6 +1133,43 @@ function SelectedCardDetail({
   if (!data) return null;
 
   const Icon = card.icon;
+
+  // 잠긴 카드 표시
+  if (!isUnlocked) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        className="p-5 rounded-xl bg-gradient-to-br from-gray-700 to-gray-800 text-white overflow-hidden"
+      >
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+            <Lock className="w-7 h-7 text-gray-400" />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-bold text-lg text-gray-300">{card.typeKorean} 카드 🔒</h4>
+            <p className="text-sm text-gray-400 mt-1">{card.description}</p>
+
+            {/* 해금 유도 */}
+            {nextTier && (
+              <div className="mt-4 p-3 bg-purple-600/30 rounded-lg">
+                <p className="text-sm text-purple-200 mb-2">
+                  이 카드를 해금하려면 <strong>{nextTier.level}</strong> 분석이 필요합니다
+                </p>
+                <button
+                  onClick={onUnlockPremium}
+                  className="w-full py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition"
+                >
+                  {nextTier.price}P로 업그레이드
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -1094,12 +1214,14 @@ function FOMOSection({
   title,
   description,
   features,
-  onUnlock
+  onUnlock,
+  price
 }: {
   title: string;
   description: string;
   features: string[];
   onUnlock: () => void;
+  price?: number;
 }) {
   return (
     <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
@@ -1126,7 +1248,7 @@ function FOMOSection({
         onClick={onUnlock}
         className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
       >
-        지금 확인하기
+        {price ? `${price}P로 업그레이드` : '지금 확인하기'}
         <ArrowRight className="w-4 h-4 ml-2" />
       </Button>
     </div>

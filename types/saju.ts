@@ -537,14 +537,14 @@ export interface ProductType {
 export const PRODUCTS: ProductType[] = [
   {
     id: "basic",
-    name: "기본 분석",
+    name: "베이직 분석",
     pointCost: 500,
     originalPointCost: 700,
     features: [
-      "상세 성격 분석",
-      "2026년 운세 분석",
-      "월별 액션플랜",
-      "PDF 리포트"
+      "4장 운명 카드 해금",
+      "에너지 카드 (용신)",
+      "재능 카드 (십신)",
+      "3개월 운세 예측"
     ]
   },
   {
@@ -553,10 +553,11 @@ export const PRODUCTS: ProductType[] = [
     pointCost: 1000,
     originalPointCost: 1300,
     features: [
-      "기본 분석 포함",
-      "대운 흐름 분석",
-      "10년 운세 예측",
-      "월별 상세 운세"
+      "6장 운명 카드 전체",
+      "흐름 카드 (대운/세운)",
+      "수호 카드 (보완 오행)",
+      "12개월 상세 운세",
+      "AI 맞춤 분석"
     ],
     recommended: true
   },
@@ -570,7 +571,7 @@ export const PRODUCTS: ProductType[] = [
       "인생 타임라인",
       "가족 영향 분석",
       "골든윈도우 분석",
-      "음성 리포트"
+      "PDF 리포트"
     ]
   },
   {
