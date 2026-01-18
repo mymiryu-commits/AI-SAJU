@@ -4,10 +4,10 @@
  * GET /api/my/dashboard - 사용자 대시보드 데이터 조회
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -20,26 +20,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 사용자 정보 조회
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
+    // profiles 테이블에서 포인트 정보 조회
+    const { data: profileData } = await (supabase as any)
+      .from('profiles')
       .select('*')
       .eq('id', authUser.id)
       .single();
 
-    if (userError) {
-      console.error('User fetch error:', userError);
-      // 사용자 정보가 없으면 기본값 반환
-    }
-
-    // 구독 정보 조회
-    const { data: subscriptionData } = await (supabase as any)
-      .from('subscriptions')
+    // users 테이블에서 사용자 정보 조회 (선택적)
+    const { data: userData } = await (supabase as any)
+      .from('users')
       .select('*')
-      .eq('user_id', authUser.id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .eq('id', authUser.id)
       .single();
 
     // 최근 분석 결과 조회 (최대 5개)
@@ -50,35 +42,70 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    // 출석 스트릭 조회
-    const { data: checkinData } = await (supabase as any)
-      .from('checkins')
-      .select('streak_count')
-      .eq('user_id', authUser.id)
-      .order('checked_at', { ascending: false })
-      .limit(1)
-      .single();
+    // 구독 정보 조회 (있으면)
+    let subscriptionData = null;
+    try {
+      const { data: subscription } = await (supabase as any)
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      subscriptionData = subscription;
+    } catch {
+      // subscriptions 테이블이 없거나 데이터가 없음 - 무시
+    }
 
-    // 리퍼럴 정보 조회
-    const { data: referrals } = await (supabase as any)
-      .from('referrals')
-      .select('id')
-      .eq('referrer_id', authUser.id);
+    // 출석 스트릭 조회 (있으면)
+    let checkinData = null;
+    try {
+      const { data: checkin } = await (supabase as any)
+        .from('checkins')
+        .select('streak_count')
+        .eq('user_id', authUser.id)
+        .order('checked_at', { ascending: false })
+        .limit(1)
+        .single();
+      checkinData = checkin;
+    } catch {
+      // checkins 테이블이 없거나 데이터가 없음 - 무시
+    }
 
-    // 응답 데이터 구성
+    // 리퍼럴 정보 조회 (있으면)
+    let referrals: any[] = [];
+    try {
+      const { data: refs } = await (supabase as any)
+        .from('referrals')
+        .select('id')
+        .eq('referrer_id', authUser.id);
+      referrals = refs || [];
+    } catch {
+      // referrals 테이블이 없거나 데이터가 없음 - 무시
+    }
+
+    // 응답 데이터 구성 (profiles + users + auth 데이터 통합)
     const user = {
       id: authUser.id,
       name: userData?.name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || '사용자',
       email: authUser.email || userData?.email || '',
       avatarUrl: userData?.avatar_url || authUser.user_metadata?.avatar_url || null,
-      membership: userData?.membership_tier || 'free',
-      membershipExpiresAt: userData?.membership_expires_at || null,
-      coins: userData?.coin_balance || 0,
-      totalAnalyses: userData?.total_analyses || recentAnalyses?.length || 0,
+      membership: userData?.membership_tier || (profileData?.premium_until ? 'premium' : 'free'),
+      membershipExpiresAt: userData?.membership_expires_at || profileData?.premium_until || null,
+      // profiles 테이블의 포인트 정보 사용
+      points: profileData?.points || 0,
+      totalPointsEarned: profileData?.total_points_earned || 0,
+      totalPointsSpent: profileData?.total_points_spent || 0,
+      // 기존 coins 필드도 유지 (호환성)
+      coins: profileData?.points || userData?.coin_balance || 0,
+      totalAnalyses: profileData?.total_analyses || userData?.total_analyses || recentAnalyses?.length || 0,
       streak: checkinData?.streak_count || 0,
       joinDate: userData?.created_at || authUser.created_at,
       referralCode: userData?.referral_code || null,
       referralCount: referrals?.length || 0,
+      // 관리자 여부
+      isAdmin: authUser.email?.includes('admin') || false,
     };
 
     // 구독 정보 변환
@@ -94,6 +121,7 @@ export async function GET(request: NextRequest) {
     const analyses = (recentAnalyses || []).map((analysis: any) => ({
       id: analysis.id,
       type: analysis.type,
+      subtype: analysis.subtype,
       date: analysis.created_at,
       score: analysis.scores?.overall || analysis.result_summary?.score || 0,
     }));

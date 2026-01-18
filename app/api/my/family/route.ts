@@ -25,26 +25,36 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용자가 소유한 그룹 조회
-    const { data: groups, error: fetchError } = await (supabase as any)
-      .from('fortune_groups')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false });
+    let groups: any[] = [];
+    try {
+      const { data, error: fetchError } = await (supabase as any)
+        .from('fortune_groups')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (fetchError) {
-      console.error('Groups fetch error:', fetchError);
-      return NextResponse.json(
-        { error: '그룹 조회 중 오류가 발생했습니다.' },
-        { status: 500 }
-      );
+      if (fetchError) {
+        console.error('Groups fetch error:', fetchError);
+        // 테이블이 없어도 빈 배열 반환
+      } else {
+        groups = data || [];
+      }
+    } catch (e) {
+      console.error('Groups query error:', e);
     }
 
     // 저장된 프로필 조회 (가족 멤버 자동 불러오기용)
-    const { data: profiles } = await (supabase as any)
-      .from('saju_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('display_order', { ascending: true });
+    let profiles: any[] = [];
+    try {
+      const { data } = await (supabase as any)
+        .from('saju_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('display_order', { ascending: true });
+      profiles = data || [];
+    } catch (e) {
+      console.error('Profiles query error:', e);
+    }
 
     // 그룹 데이터 변환
     const formattedGroups = (groups || []).map((group: any) => ({

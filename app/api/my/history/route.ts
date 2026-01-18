@@ -29,29 +29,31 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // 운세 분석 히스토리 조회
-    let query = (supabase as any)
-      .from('fortune_analyses')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    let analyses: any[] = [];
+    try {
+      let query = (supabase as any)
+        .from('fortune_analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
-    // 타입 필터
-    if (type && type !== 'all') {
-      query = query.eq('type', type);
-    }
+      // 타입 필터
+      if (type && type !== 'all') {
+        query = query.eq('type', type);
+      }
 
-    // 저장된 항목만 필터 (result_summary의 saved 필드 확인)
-    // Note: Supabase JSONB 필터링
+      const { data, error: fetchError } = await query;
 
-    const { data: analyses, error: fetchError } = await query;
-
-    if (fetchError) {
-      console.error('History fetch error:', fetchError);
-      return NextResponse.json(
-        { error: '히스토리 조회 중 오류가 발생했습니다.' },
-        { status: 500 }
-      );
+      if (fetchError) {
+        console.error('History fetch error:', fetchError);
+        // 테이블이 없어도 빈 배열 반환
+      } else {
+        analyses = data || [];
+      }
+    } catch (e) {
+      console.error('History query error:', e);
+      // 에러 시 빈 배열 반환
     }
 
     // 데이터 변환
