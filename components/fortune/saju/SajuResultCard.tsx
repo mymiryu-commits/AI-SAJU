@@ -1274,8 +1274,8 @@ function OhengPentagonChart({
   ];
 
   const maxValue = Math.max(...Object.values(balance), 5);
-  const center = 80;
-  const maxRadius = 60;
+  const center = 100;
+  const maxRadius = 55;
 
   const getPoint = (angle: number, value: number) => {
     const rad = (angle * Math.PI) / 180;
@@ -1290,8 +1290,8 @@ function OhengPentagonChart({
   const pathD = pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
 
   return (
-    <div className="flex justify-center py-4">
-      <svg width="160" height="160" viewBox="0 0 160 160">
+    <div className="flex justify-center items-center py-4">
+      <svg width="200" height="200" viewBox="0 0 200 200">
         {/* 배경 오각형 가이드 */}
         {[0.2, 0.4, 0.6, 0.8, 1].map((scale, idx) => (
           <polygon
@@ -1345,7 +1345,7 @@ function OhengPentagonChart({
 
         {/* 라벨 */}
         {elements.map(el => {
-          const labelRadius = maxRadius + 20;
+          const labelRadius = maxRadius + 25;
           const rad = (el.angle * Math.PI) / 180;
           const x = center + labelRadius * Math.cos(rad);
           const y = center + labelRadius * Math.sin(rad);
