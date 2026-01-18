@@ -935,9 +935,12 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.addPage();
   yPos = margin;
 
-  // 60갑자 정보 가져오기
+  // 60갑자 정보 가져오기 (v2.0: premium.sixtyJiazi 우선 사용)
   const yearStem = saju.year?.heavenlyStem || '甲';
   const yearBranch = saju.year?.earthlyBranch || '子';
+  // premium.sixtyJiazi는 SixtyJiaziAnalysis 타입 (이미 생성된 분석 콘텐츠)
+  const sixtyJiaziAnalysis = premium?.sixtyJiazi;
+  // getSixtyJiaziInfo는 SixtyJiaziInfo 타입 (원본 매핑 데이터) - 폴백용
   const jiaziInfo = getSixtyJiaziInfo(yearStem, yearBranch);
 
   // 일간 정보로 꽃/동물 카드 가져오기
@@ -952,14 +955,25 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.text('✧ 당신의 운명 이야기 ✧', pageWidth / 2, yPos, { align: 'center' });
   yPos += 15;
 
-  // 60갑자 정보
-  if (jiaziInfo) {
-    doc.setFontSize(12);
-    doc.text(`${jiaziInfo.korean}년 ${jiaziInfo.animalKorean}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+  // v2.0: premium.prologue 또는 premium.sixtyJiazi 사용
+  const prologueText = premium?.prologue
+    || sixtyJiaziAnalysis?.prologueText
+    || (jiaziInfo ? generateJiaziPrologue(jiaziInfo) : null);
+
+  if (prologueText) {
+    // 60갑자 제목
+    if (premium?.sixtyJiazi) {
+      doc.setFontSize(12);
+      doc.text(`${premium.sixtyJiazi.yearKorean}년 ${premium.sixtyJiazi.animalDescription}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    } else if (jiaziInfo && 'korean' in jiaziInfo && 'animalKorean' in jiaziInfo) {
+      doc.setFontSize(12);
+      doc.text(`${(jiaziInfo as any).korean}년 ${(jiaziInfo as any).animalKorean}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    }
 
     doc.setFontSize(10);
-    const prologueLines = doc.splitTextToSize(generateJiaziPrologue(jiaziInfo), contentWidth - 20);
+    const prologueLines = doc.splitTextToSize(prologueText, contentWidth - 20);
     prologueLines.forEach((line: string) => {
       checkNewPage();
       doc.text(line, pageWidth / 2, yPos, { align: 'center' });
@@ -1543,37 +1557,162 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     if (user.mbti) {
       addSectionTitle('11. MBTI × 사주 통합 분석');
 
-      const mbtiType = user.mbti.toUpperCase() as MBTIType;
-      const dayMasterStr = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
-      const mbtiMatch = analyzeMBTISajuMatch(dayMasterStr, mbtiType);
+      // v2.0: premium.mbtiIntegration 사용 (있으면)
+      if (premium?.mbtiIntegration) {
+        const mbtiData = premium.mbtiIntegration;
 
-      addSubSection(`${mbtiType} 유형과 사주의 조화`);
-      addText(`일치도: ${mbtiMatch.matchScore}%`);
-      addText(mbtiMatch.summary);
-      yPos += 3;
-
-      if (mbtiMatch.strengths.length > 0) {
-        addSubSection('통합 강점');
-        mbtiMatch.strengths.forEach(s => addText(`• ${s}`));
-      }
-
-      if (mbtiMatch.growthAreas.length > 0) {
-        addSubSection('성장 영역');
-        mbtiMatch.growthAreas.forEach(g => addText(`• ${g}`));
-      }
-
-      addSubSection('통합 조언');
-      addText(mbtiMatch.advice);
-
-      // MBTI와 용신 통합 분석
-      if (yongsin?.length) {
+        addSubSection(`${mbtiData.mbti} 유형과 사주의 조화`);
+        addText(`일치도: ${mbtiData.matchScore}%`);
+        addText(mbtiData.isBestMatch ? '✓ 최적의 조합입니다!' : mbtiData.isChallengingMatch ? '△ 도전적이지만 성장 가능한 조합입니다.' : '○ 보완적인 조합입니다.');
         yPos += 5;
-        const integratedAnalysis = generateIntegratedAnalysis(dayMasterStr, mbtiType, yongsin);
-        const analysisLines = doc.splitTextToSize(integratedAnalysis, contentWidth);
+
+        // T/F 분기 분석
+        const isThinkingType = mbtiData.mbti.includes('T');
+        addSubSection(isThinkingType ? 'T(사고형) 관점 강점' : 'F(감정형) 관점 강점');
+        addText(isThinkingType ? mbtiData.strengthsWithT : mbtiData.strengthsWithF);
+        yPos += 3;
+
+        addSubSection('맞춤 조언');
+        addText(isThinkingType ? mbtiData.adviceForT : mbtiData.adviceForF);
+        yPos += 3;
+
+        // 통합 분석
+        addSubSection('통합 분석');
+        const analysisLines = doc.splitTextToSize(mbtiData.integratedAnalysis, contentWidth);
         analysisLines.forEach((line: string) => {
           checkNewPage();
           doc.text(line, margin, yPos);
           yPos += 5;
+        });
+        yPos += 5;
+
+        // 발전 제안
+        if (mbtiData.developmentSuggestions?.length > 0) {
+          addSubSection('발전 제안');
+          mbtiData.developmentSuggestions.forEach(s => addText(`• ${s}`));
+        }
+      } else {
+        // 기존 로직 (fallback)
+        const mbtiType = user.mbti.toUpperCase() as MBTIType;
+        const dayMasterStr = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+        const mbtiMatch = analyzeMBTISajuMatch(dayMasterStr, mbtiType);
+
+        addSubSection(`${mbtiType} 유형과 사주의 조화`);
+        addText(`일치도: ${mbtiMatch.matchScore}%`);
+        addText(mbtiMatch.summary);
+        yPos += 3;
+
+        if (mbtiMatch.strengths.length > 0) {
+          addSubSection('통합 강점');
+          mbtiMatch.strengths.forEach(s => addText(`• ${s}`));
+        }
+
+        if (mbtiMatch.growthAreas.length > 0) {
+          addSubSection('성장 영역');
+          mbtiMatch.growthAreas.forEach(g => addText(`• ${g}`));
+        }
+
+        addSubSection('통합 조언');
+        addText(mbtiMatch.advice);
+
+        // MBTI와 용신 통합 분석
+        if (yongsin?.length) {
+          yPos += 5;
+          const integratedAnalysis = generateIntegratedAnalysis(dayMasterStr, mbtiType, yongsin);
+          const analysisLines = doc.splitTextToSize(integratedAnalysis, contentWidth);
+          analysisLines.forEach((line: string) => {
+            checkNewPage();
+            doc.text(line, margin, yPos);
+            yPos += 5;
+          });
+        }
+      }
+    }
+
+    // ========== 6장 운명 카드 (v2.0) ==========
+    if (premium?.destinyCards && premium.destinyCards.cards.length > 0) {
+      doc.addPage();
+      yPos = margin;
+
+      addSectionTitle('12. 운명의 6장 카드');
+
+      // 핵심 메시지
+      addText(premium.destinyCards.coreMessage);
+      yPos += 8;
+
+      // 각 카드 출력
+      premium.destinyCards.cards.forEach((card, idx) => {
+        checkNewPage(40);
+        addSubSection(`${card.typeKorean} 카드: ${card.title}`);
+        addText(`상징: ${card.symbol}`);
+        addText(`키워드: ${card.keywords.join(', ')}`);
+
+        const storyLines = doc.splitTextToSize(card.story, contentWidth - 10);
+        storyLines.forEach((line: string) => {
+          checkNewPage();
+          doc.text(line, margin + 5, yPos);
+          yPos += 5;
+        });
+
+        addText(`조언: ${card.advice}`);
+        yPos += 5;
+      });
+
+      // 전체 요약
+      yPos += 5;
+      addSubSection('카드 종합 해석');
+      const summaryLines = doc.splitTextToSize(premium.destinyCards.summary, contentWidth);
+      summaryLines.forEach((line: string) => {
+        checkNewPage();
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+    }
+
+    // ========== 오행 시적 해석 (v2.0) ==========
+    if (premium?.elementPoetry) {
+      doc.addPage();
+      yPos = margin;
+
+      addSectionTitle('13. 오행 관계의 시적 해석');
+
+      // 전체 조화 분석
+      addSubSection('오행의 조화');
+      const harmonyLines = doc.splitTextToSize(premium.elementPoetry.overallHarmony, contentWidth);
+      harmonyLines.forEach((line: string) => {
+        checkNewPage();
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+
+      // 강한 오행
+      addSubSection(`강한 기운: ${premium.elementPoetry.dominantElement.korean}`);
+      addText(premium.elementPoetry.dominantElement.poeticDescription);
+      yPos += 3;
+
+      // 약한 오행
+      addSubSection(`보완이 필요한 기운: ${premium.elementPoetry.weakElement.korean}`);
+      addText(premium.elementPoetry.weakElement.poeticDescription);
+      yPos += 5;
+
+      // 상생 관계
+      if (premium.elementPoetry.generatingRelations.length > 0) {
+        addSubSection('상생(相生) 관계');
+        premium.elementPoetry.generatingRelations.forEach(rel => {
+          addText(`${rel.relationName}: ${rel.poeticExpression}`);
+          addText(`→ ${rel.advice}`);
+          yPos += 3;
+        });
+      }
+
+      // 상극 관계
+      if (premium.elementPoetry.controllingRelations.length > 0) {
+        addSubSection('상극(相剋) 관계');
+        premium.elementPoetry.controllingRelations.forEach(rel => {
+          addText(`${rel.relationName}: ${rel.poeticExpression}`);
+          addText(`→ ${rel.advice}`);
+          yPos += 3;
         });
       }
     }
@@ -1583,14 +1722,22 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.addPage();
   yPos = margin;
 
-  // 60갑자 에필로그
-  if (jiaziInfo) {
-    const dayElement = getElementKorean(saju.day?.element || 'wood');
-    const epilogueText = generateJiaziEpilogue(jiaziInfo, dayElement);
+  // v2.0: premium.epilogue 또는 premium.sixtyJiazi 사용
+  const epilogueText = premium?.epilogue
+    || premium?.sixtyJiazi?.epilogueText
+    || (jiaziInfo ? generateJiaziEpilogue(jiaziInfo, getElementKorean(saju.day?.element || 'wood')) : null);
 
+  if (epilogueText) {
     doc.setFontSize(12);
     doc.text('✧ 에필로그 ✧', pageWidth / 2, yPos, { align: 'center' });
     yPos += 15;
+
+    // 60갑자 정보 표시 (있는 경우)
+    if (premium?.sixtyJiazi) {
+      doc.setFontSize(11);
+      doc.text(`${premium.sixtyJiazi.yearKorean}년 ${premium.sixtyJiazi.animalDescription}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+    }
 
     doc.setFontSize(10);
     const epilogueLines = doc.splitTextToSize(epilogueText, contentWidth - 20);

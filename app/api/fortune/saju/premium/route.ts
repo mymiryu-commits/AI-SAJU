@@ -27,6 +27,14 @@ import {
   generateYearlyTimeline
 } from '@/lib/fortune/saju/cards';
 import {
+  generateSixtyJiaziAnalysis,
+  generateMBTIIntegrationAnalysis,
+  generateElementPoetryAnalysis,
+  generateDestinyCardsAnalysis,
+  generateAnalysisPrologue,
+  generateAnalysisEpilogue,
+} from '@/lib/fortune/saju/analysis/premiumAnalysisGenerator';
+import {
   deductPoints,
   getPointBalance,
   PRODUCT_COSTS,
@@ -171,6 +179,46 @@ export async function POST(request: NextRequest) {
     );
 
     premiumContent.storytelling = storytelling;
+
+    // ===== v2.0 새 기능 추가 =====
+
+    // 60갑자 분석
+    const sixtyJiazi = generateSixtyJiaziAnalysis(input, saju);
+    if (sixtyJiazi) {
+      premiumContent.sixtyJiazi = sixtyJiazi;
+    }
+
+    // MBTI-사주 통합 분석 (MBTI 입력된 경우)
+    if (input.mbti) {
+      const mbtiIntegration = generateMBTIIntegrationAnalysis(input, saju, ohengResult.yongsin);
+      if (mbtiIntegration) {
+        premiumContent.mbtiIntegration = mbtiIntegration;
+      }
+    }
+
+    // 오행 관계 시적 해석
+    const elementPoetry = generateElementPoetryAnalysis(
+      saju,
+      ohengResult.balance,
+      ohengResult.yongsin,
+      ohengResult.gisin
+    );
+    premiumContent.elementPoetry = elementPoetry;
+
+    // 6장 운명 카드 (강화 버전)
+    const destinyCards = generateDestinyCardsAnalysis(
+      input,
+      saju,
+      ohengResult.balance,
+      ohengResult.yongsin,
+      dominantSipsin,
+      targetYear
+    );
+    premiumContent.destinyCards = destinyCards;
+
+    // 프롤로그/에필로그 생성
+    premiumContent.prologue = generateAnalysisPrologue(input, saju, sixtyJiazi, ohengResult.yongsin);
+    premiumContent.epilogue = generateAnalysisEpilogue(input, saju, sixtyJiazi, ohengResult.yongsin, targetYear);
 
     // 별자리 분석 통합
     let zodiacAnalysis: ZodiacAnalysis | null = null;

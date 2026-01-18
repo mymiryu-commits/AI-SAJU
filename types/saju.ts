@@ -219,6 +219,100 @@ export interface PremiumContent {
 
   // 스토리텔링 분석 (6장 카드덱 + 과거검증 + 타임라인)
   storytelling?: import('@/types/cards').StorytellingAnalysis;
+
+  // ===== v2.0 새 기능 =====
+
+  // 60갑자 분석
+  sixtyJiazi?: SixtyJiaziAnalysis;
+
+  // MBTI-사주 통합 분석
+  mbtiIntegration?: MBTIIntegrationAnalysis;
+
+  // 오행 관계 시적 해석
+  elementPoetry?: ElementPoetryAnalysis;
+
+  // 6장 운명 카드 (강화된 버전)
+  destinyCards?: DestinyCardsAnalysis;
+
+  // 프롤로그/에필로그
+  prologue?: string;
+  epilogue?: string;
+}
+
+// 60갑자 분석
+export interface SixtyJiaziAnalysis {
+  yearJiazi: string;          // 년간지 (예: "甲子")
+  yearKorean: string;         // 한글 (예: "갑자")
+  animal: string;             // 동물 (예: "청서")
+  animalDescription: string;  // 동물 설명 (예: "청서(靑鼠) - 푸른 쥐")
+  nature: string;             // 자연 특성 (예: "새벽 숲의 첫 번째 빛")
+  color: string;              // 대표 색상
+  keywords: string[];         // 핵심 키워드
+  personality: string;        // 성격 분석
+  destiny: string;            // 운명 분석
+  yearCycle: number[];        // 해당 연도들
+  prologueText: string;       // 프롤로그용 텍스트
+  epilogueText: string;       // 에필로그용 텍스트
+}
+
+// MBTI-사주 통합 분석
+export interface MBTIIntegrationAnalysis {
+  mbti: string;               // MBTI 유형
+  dayMaster: string;          // 일간
+  matchScore: number;         // 궁합 점수 (0-100)
+  isBestMatch: boolean;       // 최적 궁합 여부
+  isChallengingMatch: boolean; // 도전적 조합 여부
+  strengthsWithT: string;     // T 유형의 강점
+  strengthsWithF: string;     // F 유형의 강점
+  adviceForT: string;         // T 유형 조언
+  adviceForF: string;         // F 유형 조언
+  integratedAnalysis: string; // 통합 분석
+  developmentSuggestions: string[]; // 발전 제안
+}
+
+// 오행 관계 시적 해석
+export interface ElementPoetryAnalysis {
+  generatingRelations: ElementRelation[];  // 상생 관계
+  controllingRelations: ElementRelation[]; // 상극 관계
+  balancePoetry: string;                   // 오행 균형 시적 해석
+  dominantElement: {
+    element: string;
+    korean: string;
+    poeticDescription: string;
+  };
+  weakElement: {
+    element: string;
+    korean: string;
+    poeticDescription: string;
+  };
+  overallHarmony: string;                  // 전체 조화 분석
+}
+
+export interface ElementRelation {
+  from: string;               // 출발 오행
+  to: string;                 // 도착 오행
+  relationName: string;       // 관계명 (예: "목생화")
+  poeticExpression: string;   // 시적 표현
+  story: string;              // 스토리
+  advice: string;             // 조언
+}
+
+// 6장 운명 카드 (강화)
+export interface DestinyCardsAnalysis {
+  cards: DestinyCard[];
+  summary: string;            // 전체 요약
+  coreMessage: string;        // 핵심 메시지
+}
+
+export interface DestinyCard {
+  type: 'root' | 'essence' | 'energy' | 'talent' | 'flow' | 'fortune';
+  typeKorean: string;         // 근본/본질/에너지/재능/흐름/행운
+  title: string;              // 카드 제목
+  symbol: string;             // 상징물 (꽃, 동물 등)
+  keywords: string[];         // 키워드
+  story: string;              // 스토리텔링
+  advice: string;             // 맞춤 조언
+  color: string;              // 대표 색상
 }
 
 export interface FamilyImpact {
