@@ -36,10 +36,16 @@ import {
   Loader2,
   AlertCircle,
   Check,
+  Settings2,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/lib/supabase/client';
+import HeroImageSettings from '@/components/admin/HeroImageSettings';
+import type { Database } from '@/types/database';
+
+type UsersRow = Database['public']['Tables']['users']['Row'];
 
 interface ProfileData {
   name: string;
@@ -88,14 +94,41 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Admin 상태
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+
   // 데이터 로딩
   useEffect(() => {
     if (!authLoading && user) {
       fetchSettings();
+      checkAdminStatus();
     } else if (!authLoading && !user) {
       setIsLoading(false);
+      setCheckingAdmin(false);
     }
   }, [user, authLoading]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      if (authUser) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('membership_tier')
+          .eq('id', authUser.id)
+          .single<Pick<UsersRow, 'membership_tier'>>();
+
+        setIsAdmin(userData?.membership_tier === 'admin');
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -235,7 +268,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">프로필</span>
@@ -252,6 +285,12 @@ export default function SettingsPage() {
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">보안</span>
           </TabsTrigger>
+          {!checkingAdmin && isAdmin && (
+            <TabsTrigger value="admin" className="gap-2">
+              <Settings2 className="h-4 w-4" />
+              <span className="hidden sm:inline">관리자</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile Tab */}
@@ -609,6 +648,27 @@ export default function SettingsPage() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* Admin Tab - Only visible to admins */}
+        {!checkingAdmin && isAdmin && (
+          <TabsContent value="admin">
+            <div className="space-y-6">
+              <Card className="border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5" />
+                    사이트 관리
+                  </CardTitle>
+                  <CardDescription>
+                    사이트 전체 설정을 관리합니다. 변경 사항은 모든 사용자에게 적용됩니다.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <HeroImageSettings />
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Delete Account Dialog */}

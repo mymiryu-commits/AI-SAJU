@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Sparkles,
   TrendingUp,
-  Star,
   Zap,
   Flame,
   Crown,
@@ -23,11 +22,33 @@ import {
   Users,
   ArrowUpRight,
   Gem,
-  Award,
   Lightbulb,
   QrCode,
   ExternalLink,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import Image from 'next/image';
+import type { Database } from '@/types/database';
+
+type SiteSettingsRow = Database['public']['Tables']['site_settings']['Row'];
+
+interface HeroSettings {
+  background_image_url: string | null;
+  content_image_url: string | null;
+  use_gradient: boolean;
+  gradient_from: string;
+  gradient_via: string;
+  gradient_to: string;
+}
+
+const defaultHeroSettings: HeroSettings = {
+  background_image_url: null,
+  content_image_url: null,
+  use_gradient: true,
+  gradient_from: '#9333ea',
+  gradient_via: '#7e22ce',
+  gradient_to: '#db2777',
+};
 
 // 수익화 카테고리 데이터
 const categories = [
@@ -100,6 +121,26 @@ const stats = [
   { value: '3개월', label: '평균 수익 달성', icon: Clock },
 ];
 
+async function getHeroSettings(): Promise<HeroSettings> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'hero_settings')
+      .single<Pick<SiteSettingsRow, 'value'>>();
+
+    if (error || !data) {
+      return defaultHeroSettings;
+    }
+
+    return data.value as unknown as HeroSettings;
+  } catch (error) {
+    console.error('Error fetching hero settings:', error);
+    return defaultHeroSettings;
+  }
+}
+
 export default async function HomePage({
   params,
 }: {
@@ -108,20 +149,39 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const heroSettings = await getHeroSettings();
+  const hasBackgroundImage = !!heroSettings.background_image_url;
+
   return (
     <div className="min-h-screen bg-background">
       {/* ===== HERO SECTION ===== */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-amber-50/50 via-background to-background dark:from-amber-950/20 dark:via-background dark:to-background">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Gradient Orbs - Warm Colors */}
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-200/40 to-orange-300/30 dark:from-amber-600/20 dark:to-orange-500/15 rounded-full blur-[100px] animate-pulse-subtle" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-rose-200/30 to-pink-300/25 dark:from-rose-600/15 dark:to-pink-500/10 rounded-full blur-[100px] animate-pulse-subtle animation-delay-500" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-yellow-100/30 to-amber-200/25 dark:from-yellow-600/10 dark:to-amber-500/10 rounded-full blur-[120px] animate-pulse-subtle animation-delay-300" />
+        {/* Custom Background Image from Admin Settings */}
+        {hasBackgroundImage && (
+          <div className="absolute inset-0 z-0">
+            <Image
+              src={heroSettings.background_image_url!}
+              alt="Hero background"
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-background/60 dark:bg-background/80" />
+          </div>
+        )}
 
-          {/* Decorative grid pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(251,191,36,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,191,36,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        </div>
+        {/* Animated Background Elements (hidden when custom image is set) */}
+        {!hasBackgroundImage && (
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Gradient Orbs - Warm Colors */}
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-200/40 to-orange-300/30 dark:from-amber-600/20 dark:to-orange-500/15 rounded-full blur-[100px] animate-pulse-subtle" />
+            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-rose-200/30 to-pink-300/25 dark:from-rose-600/15 dark:to-pink-500/10 rounded-full blur-[100px] animate-pulse-subtle animation-delay-500" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-yellow-100/30 to-amber-200/25 dark:from-yellow-600/10 dark:to-amber-500/10 rounded-full blur-[120px] animate-pulse-subtle animation-delay-300" />
+
+            {/* Decorative grid pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(251,191,36,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,191,36,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          </div>
+        )}
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
