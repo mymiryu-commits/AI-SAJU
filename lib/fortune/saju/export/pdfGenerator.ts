@@ -37,16 +37,16 @@ import {
   type MBTIType
 } from '../mappings';
 import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
+import { generateZodiacAnalysis, getZodiacInfo, type ZodiacAnalysis } from '../analysis/zodiacAnalysis';
+import { generateComprehensiveAnalysis, type ComprehensiveAnalysis } from '../analysis/comprehensiveAnalysis';
+import { calculateAge } from '../calculator';
 
 // ========== 연령별 분기 시스템 ==========
 type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
 
 function getAgeGroup(birthDate: string, targetYear: number = new Date().getFullYear()): { group: AgeGroup; age: number } {
-  const birth = new Date(birthDate);
-
-  // 정확한 만 나이 계산 (목표 연도 말 기준 - 그 해에 도달하는 나이)
-  // 예: 1978년생 → 2026년 = 48세 (2026 - 1978 = 48)
-  const age = targetYear - birth.getFullYear();
+  // 정확한 만 나이 계산 (생일 기준)
+  const age = calculateAge(birthDate);
 
   if (age <= 12) return { group: 'child', age };
   if (age <= 22) return { group: 'youth', age };
@@ -1312,6 +1312,16 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     if (premium.monthlyActionPlan?.length) {
       addSectionTitle('6. 월별 행운 액션플랜');
 
+      // 점수 산출 공식 설명 추가
+      addSubSection('📊 월별 점수 산출 기준');
+      addText('기본 점수 70점에서 다음 요소들을 반영하여 계산됩니다:');
+      addText('• 해당 월의 기운이 나에게 이로운 에너지(용신)와 맞으면 +15점');
+      addText('• 월의 기운이 나를 돕는 관계(상생)이면 +10점');
+      addText('• 반대로 월의 기운이 나와 충돌(상극)하면 -15점');
+      addText('• 특별한 천간/지지 조합(합/충)에 따라 추가 조정');
+      addText('점수 범위: 30점(주의) ~ 100점(최고)');
+      yPos += 5;
+
       premium.monthlyActionPlan.forEach((action: MonthlyAction, index: number) => {
         const monthNum = index + 1;
         const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
@@ -1387,6 +1397,14 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       const timeline = premium.lifeTimeline;
       addText(`현재 나이: ${timeline.currentAge}세`);
 
+      // 인생 단계 점수 산출 공식 설명 추가
+      addSubSection('📊 인생 시기별 점수 산출 기준');
+      addText('기본 점수 70점에서 대운(10년 주기 운)과의 관계를 반영합니다:');
+      addText('• 대운의 기운이 나의 일간을 도우면(상생) +15점');
+      addText('• 대운의 기운이 나의 일간과 충돌하면(상극) -15점');
+      addText('점수가 높을수록 해당 시기에 기회가 많고, 낮을수록 신중함이 필요합니다.');
+      yPos += 3;
+
       if (timeline.phases?.length) {
         addSubSection('인생 시기별 분석');
         timeline.phases.forEach(phase => {
@@ -1410,6 +1428,8 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
       if (timeline.goldenWindows?.length) {
         addSubSection('황금 기회의 시기');
+        addText('성공률은 대운/세운 조합과 목적별 최적 시기를 종합 분석한 결과입니다.');
+        yPos += 2;
         timeline.goldenWindows.forEach(gw => {
           addText(`• ${gw.period}: ${gw.purpose} (성공률 ${gw.successRate}%)`);
         });
@@ -1717,6 +1737,191 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       }
     }
   }
+
+  // ========== 별자리(Zodiac) 분석 페이지 ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 오행에서 가장 강한 요소 찾기
+  const dominantElement = elements.reduce((max, el) =>
+    (oheng[el] || 0) > (oheng[max] || 0) ? el : max
+  , 'wood' as Element);
+
+  // 별자리 분석 생성
+  const zodiacAnalysis = generateZodiacAnalysis(user.birthDate, dominantElement, targetYear);
+  const zodiacSign = zodiacAnalysis.sign;
+
+  addSectionTitle('14. 별자리 × 사주 통합 분석');
+
+  // 별자리 기본 정보
+  addSubSection(`${zodiacSign.name} (${zodiacSign.english}) ${zodiacSign.symbol}`);
+  addText(`기간: ${zodiacSign.dateRange}`);
+  addText(`원소: ${zodiacSign.element} | 수호성: ${zodiacSign.ruler} | 특성: ${zodiacSign.quality}`);
+  yPos += 3;
+
+  // 성격 특성
+  addSubSection('별자리 성격');
+  addText(zodiacSign.personality);
+  yPos += 3;
+
+  // 강점
+  addSubSection('강점');
+  addText(`• ${zodiacSign.strengths.join(', ')}`);
+  yPos += 3;
+
+  // 주의할 점
+  addSubSection('주의할 성향');
+  addText(`• ${zodiacSign.weaknesses.join(', ')}`);
+  yPos += 3;
+
+  // 나와 잘 맞는 사람 (성격 기반 궁합)
+  addSubSection('나와 잘 맞는 사람');
+  const compatLines = doc.splitTextToSize(zodiacSign.compatibilityDesc, contentWidth);
+  compatLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  addText(`궁합 좋은 별자리: ${zodiacSign.compatibility.join(', ')}`);
+  yPos += 3;
+
+  // 이상적인 배우자/파트너
+  addSubSection('이상적인 배우자');
+  const partnerLines = doc.splitTextToSize(zodiacSign.idealPartner, contentWidth);
+  partnerLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 사주와의 조화 분석
+  addSubSection('별자리 × 사주 조화');
+  addText(`조화도: ${zodiacAnalysis.harmony.score}점`);
+  addText(zodiacAnalysis.harmony.description);
+  yPos += 3;
+
+  // 통합 인사이트
+  addSubSection('통합 인사이트');
+  const insightLines = doc.splitTextToSize(zodiacAnalysis.integratedInsight, contentWidth);
+  insightLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 올해 운세 예측
+  addSubSection(`${targetYear}년 별자리 운세`);
+  addText(zodiacAnalysis.yearForecast);
+  yPos += 3;
+
+  // 행운의 요소
+  addSubSection('행운의 요소');
+  addText(`행운의 색: ${zodiacSign.luckyColor}`);
+  addText(`행운의 숫자: ${zodiacSign.luckyNumber.join(', ')}`);
+  addText(`관련 신체 부위: ${zodiacSign.bodyPart}`);
+  yPos += 5;
+
+  // 키워드
+  addSubSection('핵심 키워드');
+  addText(`#${zodiacSign.keywords.join(' #')}`);
+
+  // ========== 종합 성향 분석 (혈액형+MBTI+사주+별자리) ==========
+  doc.addPage();
+  yPos = margin;
+
+  addSectionTitle('15. 나의 성향 종합 분석');
+
+  const dayMasterStr = getDayMasterKorean(saju.day?.heavenlyStem || '甲');
+  const mbtiType = user.mbti?.toUpperCase() as MBTIType | undefined;
+  const bloodType = (user as any).bloodType as string | undefined;
+
+  const comprehensiveAnalysis = generateComprehensiveAnalysis(
+    dayMasterStr,
+    mbtiType,
+    bloodType,
+    user.birthDate,
+    user.name
+  );
+
+  // 핵심 요약
+  addSubSection('📌 핵심 성향 요약');
+  const summaryLines = doc.splitTextToSize(comprehensiveAnalysis.coreSummary, contentWidth);
+  summaryLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 일관된 특성
+  if (comprehensiveAnalysis.consistentTraits.length > 0) {
+    addSubSection('🎯 모든 분석에서 일관되게 나타나는 특성');
+    addText(`당신의 핵심 키워드: ${comprehensiveAnalysis.consistentTraits.join(', ')}`);
+    addText('이 특성들은 혈액형, MBTI, 사주, 별자리 분석에서 공통적으로 확인됩니다.');
+    yPos += 3;
+  }
+
+  // 개별 체계별 인사이트
+  addSubSection('🔍 분석 체계별 핵심 인사이트');
+
+  if (comprehensiveAnalysis.sajuInsight) {
+    addText(`[사주 일간] ${comprehensiveAnalysis.sajuInsight}`);
+  }
+  if (comprehensiveAnalysis.mbtiInsight) {
+    addText(`[MBTI] ${comprehensiveAnalysis.mbtiInsight}`);
+  }
+  if (comprehensiveAnalysis.bloodTypeInsight) {
+    addText(`[혈액형] ${comprehensiveAnalysis.bloodTypeInsight}`);
+  }
+  if (comprehensiveAnalysis.zodiacInsight) {
+    addText(`[별자리] ${comprehensiveAnalysis.zodiacInsight}`);
+  }
+  yPos += 3;
+
+  // 강점 종합
+  if (comprehensiveAnalysis.combinedStrengths.length > 0) {
+    addSubSection('💪 종합 강점');
+    comprehensiveAnalysis.combinedStrengths.forEach(s => addText(s));
+    yPos += 3;
+  }
+
+  // 성장 포인트
+  if (comprehensiveAnalysis.growthPoints.length > 0) {
+    addSubSection('🌱 성장 포인트');
+    comprehensiveAnalysis.growthPoints.forEach(p => addText(`• ${p}`));
+    yPos += 3;
+  }
+
+  // 이상적인 파트너
+  addSubSection('💕 이상적인 파트너');
+  const partnerSummaryLines = doc.splitTextToSize(comprehensiveAnalysis.idealPartnerSummary, contentWidth);
+  partnerSummaryLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 커리어 종합
+  addSubSection('💼 커리어 종합');
+  const careerLines = doc.splitTextToSize(comprehensiveAnalysis.careerSummary, contentWidth);
+  careerLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  // 최종 메시지
+  addSubSection('✨ 종합 메시지');
+  const finalMsgLines = doc.splitTextToSize(comprehensiveAnalysis.finalMessage, contentWidth);
+  finalMsgLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
 
   // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
   doc.addPage();
