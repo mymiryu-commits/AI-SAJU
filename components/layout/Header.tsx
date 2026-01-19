@@ -27,6 +27,9 @@ const mainNavLinks = [
 // 운세 서브메뉴
 const fortuneSubMenu = [
   { href: '/fortune/saju', key: 'saju', icon: '🔮', description: '나만의 운명카드 6장' },
+  { href: '/saju/chat', key: 'sajuChat', icon: '💬', description: 'AI 사주 상담사' },
+  { href: '/saju/advanced', key: 'sajuAdvanced', icon: '🏛️', description: '십신/신살/12운성/합충' },
+  { href: '/fortune/compatibility', key: 'compatibility', icon: '💑', description: '커플/비즈니스 궁합' },
   { href: '/fortune/tarot', key: 'tarot', icon: '🃏', description: '오늘의 카드 뽑기' },
 ] as const;
 
