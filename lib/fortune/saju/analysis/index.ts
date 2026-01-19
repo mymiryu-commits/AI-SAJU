@@ -52,3 +52,45 @@ export {
   DAY_MASTER_TRAITS,
   type ComprehensiveAnalysis
 } from './comprehensiveAnalysis';
+
+// 십신 분석
+export {
+  type SipsinType,
+  type SipsinInfo,
+  type SipsinChart,
+  type SipsinInterpretation,
+  SIPSIN_INFO,
+  analyzeSipsin,
+  interpretSipsinChart
+} from './sipsin';
+
+// 신살 분석
+export {
+  type SinsalType,
+  type SinsalInfo,
+  type SinsalResult,
+  type SinsalAnalysis,
+  SINSAL_INFO,
+  analyzeSinsal
+} from './sinsal';
+
+// 12운성 분석
+export {
+  type UnsungType,
+  type UnsungInfo,
+  type UnsungPosition,
+  type UnsungAnalysis,
+  UNSUNG_INFO,
+  analyzeUnsung,
+  getUnsungForBranch
+} from './unsung';
+
+// 합충형파해 분석
+export {
+  type RelationType,
+  type BranchRelation,
+  type HapChungAnalysis,
+  analyzeHapChung,
+  checkBranchRelation,
+  checkSamhap
+} from './hapchung';
