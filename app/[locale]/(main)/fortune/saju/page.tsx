@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle, Coins } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, Coins, BookOpen, MessageCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -403,6 +403,62 @@ export default function SajuPage() {
                       위의 &apos;프리미엄&apos; 탭에서 모든 분석 결과를 확인하세요.
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 추가 분석 메뉴 - 프리미엄 사용자 또는 유료 구매자용 */}
+            {isPremiumUnlocked && (
+              <div className="mt-8 space-y-4">
+                <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-white">
+                  심화 분석 메뉴
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 정통 사주 심화 */}
+                  <button
+                    onClick={() => {
+                      // 분석 결과를 sessionStorage에 저장 후 이동
+                      if (analysisResult?.saju) {
+                        sessionStorage.setItem('sajuChart', JSON.stringify(analysisResult.saju));
+                        sessionStorage.setItem('sajuUserInput', JSON.stringify(userInput));
+                      }
+                      window.location.href = '/saju/advanced';
+                    }}
+                    className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg transition-all hover:-translate-y-1"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
+                        <BookOpen className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">정통 사주 심화</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">십신/신살/12운성/합충</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* AI 사주 상담 */}
+                  <button
+                    onClick={() => {
+                      // 분석 결과를 sessionStorage에 저장 후 이동
+                      if (analysisResult) {
+                        sessionStorage.setItem('sajuAnalysisResult', JSON.stringify(analysisResult));
+                        sessionStorage.setItem('sajuUserInput', JSON.stringify(userInput));
+                      }
+                      window.location.href = '/saju/chat';
+                    }}
+                    className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg transition-all hover:-translate-y-1"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                        <MessageCircle className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">AI 사주 상담</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">맞춤형 AI 상담사</p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
             )}

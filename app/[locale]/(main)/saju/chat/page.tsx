@@ -45,39 +45,75 @@ export default function SajuChatPage() {
         return;
       }
 
-      // 프로필 및 사주 데이터 조회
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name, birth_date, mbti, blood_type')
-        .eq('id', user.id)
-        .single() as { data: ProfileData | null };
+      // 1. sessionStorage에서 사주 분석 결과 확인 (사주 분석 결과 페이지에서 전달됨)
+      const storedResult = sessionStorage.getItem('sajuAnalysisResult');
+      const storedUserInput = sessionStorage.getItem('sajuUserInput');
 
-      if (profile) {
-        setUserName(profile.name || '');
+      if (storedResult && storedUserInput) {
+        try {
+          const analysisResult = JSON.parse(storedResult);
+          const userInput = JSON.parse(storedUserInput);
 
-        // 최근 사주 분석 결과 조회 (fortune_analyses 테이블에서)
-        const { data: fortuneResult } = await supabase
-          .from('fortune_analyses')
-          .select('result_full')
-          .eq('user_id', user.id)
-          .eq('type', 'saju')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single() as { data: FortuneAnalysisData | null };
-
-        if (fortuneResult?.result_full) {
-          const result = fortuneResult.result_full;
+          setUserName(userInput.name || '');
           setSajuData({
-            dayMaster: result.fourPillars?.day?.heavenly || '미상',
-            fourPillars: result.fourPillars,
-            yongsin: result.dominantElement ? [result.dominantElement] : [],
-            oheng: result.elementBalance || {},
-            mbti: profile.mbti,
-            bloodType: profile.blood_type,
-            birthDate: profile.birth_date,
-            userName: profile.name
+            dayMaster: analysisResult.saju?.day?.heavenlyStem || '미상',
+            fourPillars: {
+              year: { heavenly: analysisResult.saju?.year?.heavenlyStem, earthly: analysisResult.saju?.year?.earthlyBranch },
+              month: { heavenly: analysisResult.saju?.month?.heavenlyStem, earthly: analysisResult.saju?.month?.earthlyBranch },
+              day: { heavenly: analysisResult.saju?.day?.heavenlyStem, earthly: analysisResult.saju?.day?.earthlyBranch },
+              hour: { heavenly: analysisResult.saju?.hour?.heavenlyStem, earthly: analysisResult.saju?.hour?.earthlyBranch }
+            },
+            yongsin: analysisResult.yongsin || [],
+            oheng: analysisResult.oheng || {},
+            mbti: userInput.mbti,
+            bloodType: userInput.bloodType,
+            birthDate: userInput.birthDate,
+            userName: userInput.name
           });
+          setIsLoading(false);
+          return;
+        } catch (e) {
+          console.error('Failed to parse sessionStorage data:', e);
         }
+      }
+
+      // 2. DB에서 프로필 및 사주 데이터 조회 (fallback)
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, birth_date, mbti, blood_type')
+          .eq('id', user.id)
+          .single() as { data: ProfileData | null };
+
+        if (profile) {
+          setUserName(profile.name || '');
+
+          // 최근 사주 분석 결과 조회 (fortune_analyses 테이블에서)
+          const { data: fortuneResult } = await supabase
+            .from('fortune_analyses')
+            .select('result_full')
+            .eq('user_id', user.id)
+            .eq('type', 'saju')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single() as { data: FortuneAnalysisData | null };
+
+          if (fortuneResult?.result_full) {
+            const result = fortuneResult.result_full;
+            setSajuData({
+              dayMaster: result.fourPillars?.day?.heavenly || '미상',
+              fourPillars: result.fourPillars,
+              yongsin: result.dominantElement ? [result.dominantElement] : [],
+              oheng: result.elementBalance || {},
+              mbti: profile.mbti,
+              bloodType: profile.blood_type,
+              birthDate: profile.birth_date,
+              userName: profile.name
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load from DB:', e);
       }
 
       setIsLoading(false);
