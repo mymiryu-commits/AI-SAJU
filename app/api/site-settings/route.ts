@@ -73,14 +73,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is admin
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('membership_tier')
-      .eq('id', user.id)
-      .single<Pick<UsersRow, 'membership_tier'>>();
+    // Check if user is admin (email-based + DB fallback)
+    const adminEmails = ['mymiryu@gmail.com']; // 하드코딩 admin 이메일
+    const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+    const allAdminEmails = [...new Set([...adminEmails, ...envEmails])];
 
-    if (userError || !userData || userData.membership_tier !== 'admin') {
+    let isAdmin = user.email && allAdminEmails.includes(user.email);
+
+    // DB에서도 체크 (users 테이블이 있는 경우)
+    if (!isAdmin) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('membership_tier')
+          .eq('id', user.id)
+          .single<Pick<UsersRow, 'membership_tier'>>();
+
+        isAdmin = userData?.membership_tier === 'admin';
+      } catch {
+        // users 테이블이 없으면 무시
+      }
+    }
+
+    if (!isAdmin) {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
         { status: 403 }
