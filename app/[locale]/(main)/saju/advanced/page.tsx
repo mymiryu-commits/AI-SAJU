@@ -27,14 +27,36 @@ export default function AdvancedSajuPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch('/api/saju/advanced');
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || '분석 데이터를 불러올 수 없습니다.');
-        }
+        // sessionStorage에서 사주 차트 데이터 확인
+        const storedChart = sessionStorage.getItem('sajuChart');
 
-        const result = await res.json();
-        setData(result);
+        if (storedChart) {
+          // sessionStorage에 데이터가 있으면 POST로 분석 요청
+          const sajuChart = JSON.parse(storedChart);
+          const res = await fetch('/api/saju/advanced', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sajuChart })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || '분석 데이터를 불러올 수 없습니다.');
+          }
+
+          const result = await res.json();
+          setData(result);
+        } else {
+          // sessionStorage에 없으면 DB에서 조회 시도 (GET)
+          const res = await fetch('/api/saju/advanced');
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || '분석 데이터를 불러올 수 없습니다.');
+          }
+
+          const result = await res.json();
+          setData(result);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
       } finally {
@@ -69,7 +91,7 @@ export default function AdvancedSajuPage() {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             {error}
           </p>
-          <Button onClick={() => window.location.href = '/saju'}>
+          <Button onClick={() => window.location.href = '/fortune/saju'}>
             사주 분석하러 가기
           </Button>
         </div>
