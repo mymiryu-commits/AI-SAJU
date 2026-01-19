@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle, Coins, Crown } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, Coins, Crown, MessageCircle, BookOpen, Heart, ChevronRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/hooks/useAuth';
+import Link from 'next/link';
 
 // 새로 구현한 컴포넌트들
 import {
@@ -471,6 +472,60 @@ export default function SajuPage() {
               </span>
             </div>
           )}
+        </div>
+
+        {/* 관련 기능 메뉴 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link href="/saju/chat" className="group">
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">AI 사주 상담</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">맞춤형 AI 상담사</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/saju/advanced" className="group">
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-100 dark:border-amber-800/30 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">정통 사주 심화</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">십신/신살/12운성/합충</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-amber-500 transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/fortune/compatibility" className="group">
+            <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl border border-rose-100 dark:border-rose-800/30 hover:shadow-lg transition-all hover:-translate-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">궁합 분석</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">커플/비즈니스 궁합</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-rose-500 transition-colors" />
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* 에러 메시지 */}
