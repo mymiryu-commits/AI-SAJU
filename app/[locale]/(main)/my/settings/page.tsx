@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,14 @@ import {
   LogOut,
   Save,
   Trash2,
+  Settings2,
+  Loader2,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import HeroImageSettings from '@/components/admin/HeroImageSettings';
+import type { Database } from '@/types/database';
+
+type UsersRow = Database['public']['Tables']['users']['Row'];
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState({
@@ -42,6 +49,34 @@ export default function SettingsPage() {
     marketingPush: false,
   });
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('membership_tier')
+          .eq('id', user.id)
+          .single<Pick<UsersRow, 'membership_tier'>>();
+
+        setIsAdmin(userData?.membership_tier === 'admin');
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  };
+
   const handleProfileChange = (name: string, value: string) => {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
@@ -56,7 +91,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             Profile
@@ -73,6 +108,13 @@ export default function SettingsPage() {
             <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
+          {!checkingAdmin && isAdmin && (
+            <TabsTrigger value="admin" className="gap-2">
+              <Settings2 className="h-4 w-4" />
+              Site Admin
+              <Badge variant="secondary" className="ml-1 text-xs">Admin</Badge>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile Tab */}
@@ -404,6 +446,27 @@ export default function SettingsPage() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* Admin Tab - Only visible to admins */}
+        {!checkingAdmin && isAdmin && (
+          <TabsContent value="admin">
+            <div className="space-y-6">
+              <Card className="border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5" />
+                    Site Administration
+                  </CardTitle>
+                  <CardDescription>
+                    Manage site-wide settings. Changes here will affect all users.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <HeroImageSettings />
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

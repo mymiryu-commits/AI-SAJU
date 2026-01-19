@@ -15,6 +15,29 @@ import {
   Video,
   Code,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import Image from 'next/image';
+import type { Database } from '@/types/database';
+
+type SiteSettingsRow = Database['public']['Tables']['site_settings']['Row'];
+
+interface HeroSettings {
+  background_image_url: string | null;
+  content_image_url: string | null;
+  use_gradient: boolean;
+  gradient_from: string;
+  gradient_via: string;
+  gradient_to: string;
+}
+
+const defaultHeroSettings: HeroSettings = {
+  background_image_url: null,
+  content_image_url: null,
+  use_gradient: true,
+  gradient_from: '#9333ea',
+  gradient_via: '#7e22ce',
+  gradient_to: '#db2777',
+};
 
 const categories = [
   { key: 'chat', icon: MessageSquare, color: 'bg-blue-500' },
@@ -54,6 +77,26 @@ const topTools = [
   },
 ];
 
+async function getHeroSettings(): Promise<HeroSettings> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'hero_settings')
+      .single<Pick<SiteSettingsRow, 'value'>>();
+
+    if (error || !data) {
+      return defaultHeroSettings;
+    }
+
+    return data.value as unknown as HeroSettings;
+  } catch (error) {
+    console.error('Error fetching hero settings:', error);
+    return defaultHeroSettings;
+  }
+}
+
 export default async function HomePage({
   params,
 }: {
@@ -62,24 +105,12 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const heroSettings = await getHeroSettings();
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="container mx-auto px-4 py-20 md:py-32">
-          <div className="relative z-10 max-w-3xl">
-            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/30">
-              <Sparkles className="mr-1 h-3 w-3" />
-              2025 AI Tools Ranking
-            </Badge>
-            <HeroContent locale={locale} />
-          </div>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute left-1/4 bottom-0 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl" />
-      </section>
+      <HeroSection heroSettings={heroSettings} locale={locale} />
 
       {/* Categories Section */}
       <section className="container mx-auto px-4 py-16">
@@ -98,6 +129,90 @@ export default async function HomePage({
         <FortuneCTASection locale={locale} />
       </section>
     </div>
+  );
+}
+
+function HeroSection({
+  heroSettings,
+  locale,
+}: {
+  heroSettings: HeroSettings;
+  locale: string;
+}) {
+  const hasBackgroundImage = !!heroSettings.background_image_url;
+  const hasContentImage = !!heroSettings.content_image_url;
+
+  // Build background style
+  const backgroundStyle: React.CSSProperties = hasBackgroundImage
+    ? {}
+    : heroSettings.use_gradient
+    ? {
+        background: `linear-gradient(to bottom right, ${heroSettings.gradient_from}, ${heroSettings.gradient_via}, ${heroSettings.gradient_to})`,
+      }
+    : {
+        background: `linear-gradient(to bottom right, #9333ea, #7e22ce, #db2777)`,
+      };
+
+  return (
+    <section
+      className="relative overflow-hidden text-white"
+      style={backgroundStyle}
+    >
+      {/* Background Image */}
+      {hasBackgroundImage && (
+        <div className="absolute inset-0">
+          <Image
+            src={heroSettings.background_image_url!}
+            alt="Hero background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+      )}
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+
+      <div className="container mx-auto px-4 py-20 md:py-32">
+        <div
+          className={`relative z-10 ${
+            hasContentImage
+              ? 'grid md:grid-cols-2 gap-8 items-center'
+              : 'max-w-3xl'
+          }`}
+        >
+          {/* Text Content */}
+          <div>
+            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/30">
+              <Sparkles className="mr-1 h-3 w-3" />
+              2025 AI Tools Ranking
+            </Badge>
+            <HeroContent locale={locale} />
+          </div>
+
+          {/* Content Image */}
+          {hasContentImage && (
+            <div className="relative hidden md:block">
+              <div className="relative w-full aspect-square max-w-md mx-auto">
+                <Image
+                  src={heroSettings.content_image_url!}
+                  alt="Hero content"
+                  fill
+                  className="object-contain drop-shadow-2xl"
+                  priority
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Decorative elements */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute left-1/4 bottom-0 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl" />
+    </section>
   );
 }
 

@@ -1,0 +1,134 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import type { Database, Json } from '@/types/database';
+
+export interface HeroSettings {
+  background_image_url: string | null;
+  content_image_url: string | null;
+  use_gradient: boolean;
+  gradient_from: string;
+  gradient_via: string;
+  gradient_to: string;
+}
+
+type SiteSettingsRow = Database['public']['Tables']['site_settings']['Row'];
+type UsersRow = Database['public']['Tables']['users']['Row'];
+
+// GET - Fetch site settings (public)
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get('key') || 'hero_settings';
+
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .single<SiteSettingsRow>();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching site settings:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch settings' },
+        { status: 500 }
+      );
+    }
+
+    // Return default settings if not found
+    if (!data) {
+      const defaultSettings: HeroSettings = {
+        background_image_url: null,
+        content_image_url: null,
+        use_gradient: true,
+        gradient_from: '#9333ea',
+        gradient_via: '#7e22ce',
+        gradient_to: '#db2777',
+      };
+      return NextResponse.json({ data: { key, value: defaultSettings } });
+    }
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error('Error in GET /api/site-settings:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Update site settings (admin only)
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Check if user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('membership_tier')
+      .eq('id', user.id)
+      .single<Pick<UsersRow, 'membership_tier'>>();
+
+    if (userError || !userData || userData.membership_tier !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { key, value } = body as { key: string; value: Json };
+
+    if (!key || !value) {
+      return NextResponse.json(
+        { error: 'Missing required fields: key and value' },
+        { status: 400 }
+      );
+    }
+
+    // Upsert the setting
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('site_settings')
+      .upsert(
+        {
+          key,
+          value,
+          updated_by: user.id,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'key',
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating site settings:', error);
+      return NextResponse.json(
+        { error: 'Failed to update settings' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ data, message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error in POST /api/site-settings:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
