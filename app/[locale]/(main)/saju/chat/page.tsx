@@ -13,14 +13,20 @@ interface ProfileData {
   blood_type?: string;
 }
 
-interface SajuResultData {
-  saju_chart?: {
-    day?: {
-      heavenlyStem?: string;
-    };
+interface FourPillars {
+  year?: { heavenly?: string; earthly?: string };
+  month?: { heavenly?: string; earthly?: string };
+  day?: { heavenly?: string; earthly?: string };
+  hour?: { heavenly?: string; earthly?: string };
+}
+
+interface FortuneAnalysisData {
+  result_full?: {
+    fourPillars?: FourPillars;
+    elementBalance?: Record<string, number>;
+    dominantElement?: string;
+    scores?: Record<string, number>;
   };
-  yongsin?: string[];
-  oheng?: Record<string, number>;
 }
 
 export default function SajuChatPage() {
@@ -49,21 +55,23 @@ export default function SajuChatPage() {
       if (profile) {
         setUserName(profile.name || '');
 
-        // 최근 사주 분석 결과 조회
-        const { data: sajuResult } = await supabase
-          .from('saju_results')
-          .select('saju_chart, yongsin, oheng')
+        // 최근 사주 분석 결과 조회 (fortune_analyses 테이블에서)
+        const { data: fortuneResult } = await supabase
+          .from('fortune_analyses')
+          .select('result_full')
           .eq('user_id', user.id)
+          .eq('type', 'saju')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single() as { data: SajuResultData | null };
+          .single() as { data: FortuneAnalysisData | null };
 
-        if (sajuResult) {
+        if (fortuneResult?.result_full) {
+          const result = fortuneResult.result_full;
           setSajuData({
-            dayMaster: sajuResult.saju_chart?.day?.heavenlyStem || '미상',
-            fourPillars: sajuResult.saju_chart,
-            yongsin: sajuResult.yongsin || [],
-            oheng: sajuResult.oheng || {},
+            dayMaster: result.fourPillars?.day?.heavenly || '미상',
+            fourPillars: result.fourPillars,
+            yongsin: result.dominantElement ? [result.dominantElement] : [],
+            oheng: result.elementBalance || {},
             mbti: profile.mbti,
             bloodType: profile.blood_type,
             birthDate: profile.birth_date,
