@@ -168,7 +168,7 @@ export function HeroPage() {
             </div>
 
             {/* 시너지 스코어 미니뷰 */}
-            <Link href="/saju/synergy">
+            <Link href="/fortune/integrated">
               <motion.div
                 className="mt-4 p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30"
                 whileHover={{ scale: 1.02 }}
@@ -266,21 +266,21 @@ export function HeroPage() {
               title="사주 분석"
               features={['6장 카드', '오행/용신']}
               cta="보기"
-              href="/saju/result"
+              href="/fortune/saju"
             />
             <AnalysisCard
               icon="📅"
-              title="운세 캘린더"
-              features={['월별 흐름', '액션플랜']}
+              title="오늘의 운세"
+              features={['일일 운세', '럭키 아이템']}
               cta="보기"
-              href="/saju/calendar"
+              href="/fortune/free"
             />
             <AnalysisCard
               icon="💑"
               title="궁합 분석"
               features={['커플/비즈', '가족 궁합']}
               cta="분석하기"
-              href="/saju/compatibility"
+              href="/fortune/compatibility"
               price="9,900원~"
             />
           </div>

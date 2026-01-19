@@ -26,6 +26,7 @@ const mainNavLinks = [
 
 // 운세 서브메뉴
 const fortuneSubMenu = [
+  { href: '/saju', key: 'sajuHome', icon: '🌙', description: 'AI 사주 홈' },
   { href: '/fortune/saju', key: 'saju', icon: '🔮', description: '나만의 운명카드 6장' },
   { href: '/saju/chat', key: 'sajuChat', icon: '💬', description: 'AI 사주 상담사' },
   { href: '/saju/advanced', key: 'sajuAdvanced', icon: '🏛️', description: '십신/신살/12운성/합충' },
