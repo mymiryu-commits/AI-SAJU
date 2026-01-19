@@ -115,13 +115,28 @@ export default function SettingsPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
 
       if (authUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('membership_tier')
-          .eq('id', authUser.id)
-          .single<Pick<UsersRow, 'membership_tier'>>();
+        // 환경변수 또는 하드코딩된 admin 이메일 체크
+        const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
 
-        setIsAdmin(userData?.membership_tier === 'admin');
+        // 먼저 이메일로 admin 체크
+        if (authUser.email && adminEmails.includes(authUser.email)) {
+          setIsAdmin(true);
+          return;
+        }
+
+        // users 테이블이 있으면 membership_tier 체크
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('membership_tier')
+            .eq('id', authUser.id)
+            .single<Pick<UsersRow, 'membership_tier'>>();
+
+          setIsAdmin(userData?.membership_tier === 'admin');
+        } catch {
+          // users 테이블이 없으면 이메일로만 체크
+          setIsAdmin(false);
+        }
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
