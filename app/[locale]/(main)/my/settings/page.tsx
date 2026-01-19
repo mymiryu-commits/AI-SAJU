@@ -115,11 +115,20 @@ export default function SettingsPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
 
       if (authUser) {
-        // 환경변수 또는 하드코딩된 admin 이메일 체크
-        const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+        // 환경변수 + 하드코딩된 fallback admin 이메일
+        const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+        const fallbackEmails = ['mymiryu@gmail.com']; // 하드코딩 fallback
+        const adminEmails = [...new Set([...envEmails, ...fallbackEmails])];
 
-        // 먼저 이메일로 admin 체크
+        console.log('Admin check:', {
+          userEmail: authUser.email,
+          adminEmails,
+          envValue: process.env.NEXT_PUBLIC_ADMIN_EMAILS
+        });
+
+        // 이메일로 admin 체크
         if (authUser.email && adminEmails.includes(authUser.email)) {
+          console.log('Admin confirmed by email');
           setIsAdmin(true);
           return;
         }
