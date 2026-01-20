@@ -40,7 +40,7 @@ import {
   Compass,
   Sun,
   Moon,
-  Share2,
+  Volume2,
   Search,
   Loader2,
   AlertCircle,
@@ -199,16 +199,63 @@ export default function HistoryPage() {
     }
   };
 
-  // 다운로드
+  // 다운로드 - API를 통한 동적 생성
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const handleDownload = async (item: HistoryItem, type: 'pdf' | 'audio') => {
     if (!item.canDownload) {
       alert('다운로드 기간이 만료되었습니다. (최대 45일)');
       return;
     }
 
-    const url = type === 'pdf' ? item.pdfUrl : item.audioUrl;
-    if (url) {
-      window.open(url, '_blank');
+    // 저장된 URL이 있으면 직접 열기
+    const storedUrl = type === 'pdf' ? item.pdfUrl : item.audioUrl;
+    if (storedUrl) {
+      window.open(storedUrl, '_blank');
+      return;
+    }
+
+    // 저장된 URL이 없으면 API를 통해 동적 생성
+    try {
+      setDownloadingId(`${item.id}-${type}`);
+      const response = await fetch(`/api/fortune/saju/download?type=${type}&analysisId=${item.id}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.errorCode === 'PREMIUM_REQUIRED') {
+          alert('음성 생성은 프리미엄 서비스입니다.');
+        } else {
+          alert(errorData.error || '다운로드 중 오류가 발생했습니다.');
+        }
+        return;
+      }
+
+      // Blob으로 다운로드
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // 파일명 추출 (Content-Disposition 헤더에서)
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = type === 'pdf' ? `사주분석_${item.id}.pdf` : `사주분석_${item.id}.mp3`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)["']?/i);
+        if (filenameMatch) {
+          filename = decodeURIComponent(filenameMatch[1]);
+        }
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -405,15 +452,36 @@ export default function HistoryPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
-                            {item.hasPdf && (
+                            {/* PDF 다운로드 버튼 - 사주 분석에만 표시 */}
+                            {item.type === 'saju' && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDownload(item, 'pdf')}
-                                disabled={!item.canDownload}
+                                disabled={!item.canDownload || downloadingId === `${item.id}-pdf`}
                                 title={item.canDownload ? 'PDF 다운로드' : '다운로드 기간 만료'}
                               >
-                                <Download className={`h-4 w-4 ${!item.canDownload ? 'text-muted-foreground' : ''}`} />
+                                {downloadingId === `${item.id}-pdf` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Download className={`h-4 w-4 ${!item.canDownload ? 'text-muted-foreground' : ''}`} />
+                                )}
+                              </Button>
+                            )}
+                            {/* 음성 다운로드 버튼 - 프리미엄 사주 분석에만 표시 */}
+                            {item.type === 'saju' && item.isPremium && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDownload(item, 'audio')}
+                                disabled={!item.canDownload || downloadingId === `${item.id}-audio`}
+                                title={item.canDownload ? '음성 다운로드' : '다운로드 기간 만료'}
+                              >
+                                {downloadingId === `${item.id}-audio` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Volume2 className={`h-4 w-4 ${!item.canDownload ? 'text-muted-foreground' : ''}`} />
+                                )}
                               </Button>
                             )}
                             <Button

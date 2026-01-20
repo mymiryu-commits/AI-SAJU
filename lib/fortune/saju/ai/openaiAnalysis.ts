@@ -1,9 +1,21 @@
 /**
  * OpenAI 기반 전문가 수준 사주 분석
+ * 전통 사주 이론 (십신, 신살, 12운성, 합충형파해) 통합
  */
 
 import OpenAI from 'openai';
 import type { UserInput, SajuChart, OhengBalance, Element } from '@/types/saju';
+import {
+  analyzeSipsin,
+  analyzeSinsal,
+  analyzeUnsung,
+  analyzeHapChung,
+  interpretSipsinChart,
+  type SipsinChart,
+  type SinsalAnalysis,
+  type UnsungAnalysis,
+  type HapChungAnalysis
+} from '../analysis';
 
 function getOpenAIClient() {
   return new OpenAI({
@@ -79,6 +91,22 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
   const currentYear = new Date().getFullYear();
   const age = currentYear - birthYear + 1; // 한국 나이
 
+  // ===== 전통 사주 분석 실행 =====
+  const sipsinChart = analyzeSipsin(saju);
+  const sipsinInterp = interpretSipsinChart(sipsinChart);
+  const sinsalAnalysis = analyzeSinsal(saju);
+  const unsungAnalysis = analyzeUnsung(saju);
+  const hapchungAnalysis = analyzeHapChung(saju);
+
+  // 전통 분석 데이터 포맷팅
+  const traditionalAnalysis = formatTraditionalAnalysis(
+    sipsinChart,
+    sipsinInterp,
+    sinsalAnalysis,
+    unsungAnalysis,
+    hapchungAnalysis
+  );
+
   const systemPrompt = `당신은 40년 경력의 대한민국 최고 사주명리학 대가입니다.
 수많은 정재계 인사, 연예인, 기업인들의 사주를 봐온 전문가로서, 깊이 있고 정확한 분석을 제공합니다.
 
@@ -140,6 +168,8 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
 - 애정: ${scores.love}점
 - 직업: ${scores.career}점
 - 건강: ${scores.health}점
+
+${traditionalAnalysis}
 
 ## 현재 시점
 - 2026년 병오(丙午)년
@@ -301,4 +331,111 @@ function generateFallbackAnalysis(context: SajuContext) {
       `기신인 ${gisin.map(e => ELEMENT_KOREAN[e]).join(', ')} 관련 상황에서는 큰 결정을 피하세요`
     ]
   };
+}
+
+/**
+ * 전통 사주 분석 데이터를 프롬프트용 텍스트로 포맷팅
+ */
+function formatTraditionalAnalysis(
+  sipsinChart: SipsinChart,
+  sipsinInterp: ReturnType<typeof interpretSipsinChart>,
+  sinsalAnalysis: SinsalAnalysis,
+  unsungAnalysis: UnsungAnalysis,
+  hapchungAnalysis: HapChungAnalysis
+): string {
+  let text = '';
+
+  // 1. 십신(十神) 분석
+  text += `## 십신(十神) 분석
+사주에 나타난 십신 관계:
+- 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)
+- 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)
+- 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)
+- 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)
+
+십신 분포:
+${Object.entries(sipsinChart.distribution).filter(([_, count]) => count > 0).map(([type, count]) => `- ${type}: ${count}개`).join('\n') || '- 분석 중'}
+
+주요 특성:
+- 우세 십신: ${sipsinInterp.dominant.length > 0 ? sipsinInterp.dominant.join(', ') : '특정 우세 없음'}
+- 부족 십신: ${sipsinInterp.missing.length > 0 ? sipsinInterp.missing.join(', ') : '특정 부족 없음'}
+- 균형: ${sipsinInterp.balance}
+- 성격: ${sipsinInterp.personality}
+- 직업 적성: ${sipsinInterp.career}
+- 조언: ${sipsinInterp.advice}
+
+`;
+
+  // 2. 신살(神殺) 분석
+  const hasGilsin = sinsalAnalysis.gilsin.filter(s => s.present).length > 0;
+  const hasHyungsal = sinsalAnalysis.hyungsal.filter(s => s.present).length > 0;
+  const hasTeuksu = sinsalAnalysis.teuksuSal.filter(s => s.present).length > 0;
+
+  if (hasGilsin || hasHyungsal || hasTeuksu) {
+    text += `## 신살(神殺) 분석
+`;
+    if (hasGilsin) {
+      text += `길신(吉神):
+${sinsalAnalysis.gilsin.filter(s => s.present).slice(0, 4).map(s => `- ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}: ${s.info.description} → ${s.info.effect}`).join('\n')}
+`;
+    }
+    if (hasTeuksu) {
+      text += `특수살(特殊殺):
+${sinsalAnalysis.teuksuSal.filter(s => s.present).slice(0, 3).map(s => `- ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}: ${s.info.description} → ${s.info.effect}`).join('\n')}
+`;
+    }
+    if (hasHyungsal) {
+      text += `흉살(凶殺):
+${sinsalAnalysis.hyungsal.filter(s => s.present).slice(0, 3).map(s => `- ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}: ${s.info.description} → 주의: ${s.info.effect}${s.info.remedy ? `, 해소법: ${s.info.remedy}` : ''}`).join('\n')}
+`;
+    }
+    text += `
+신살 종합: ${sinsalAnalysis.summary}
+${sinsalAnalysis.advice.length > 0 ? `조언: ${sinsalAnalysis.advice.slice(0, 2).join(' ')}` : ''}
+
+`;
+  }
+
+  // 3. 12운성 분석
+  text += `## 12운성(十二運星) 분석
+각 지지의 운성 상태:
+${unsungAnalysis.positions.map(p => `- ${p.pillar} ${p.branch}: ${p.info.korean}(${p.info.hanja}) [에너지 ${p.info.energyLevel}/10] - ${p.info.description}`).join('\n')}
+
+현재 생애 주기: ${unsungAnalysis.dominantStage}
+평균 에너지: ${unsungAnalysis.averageEnergy.toFixed(1)}점
+최고 에너지: ${unsungAnalysis.peakPosition.pillar} (${unsungAnalysis.peakPosition.info.korean})
+최저 에너지: ${unsungAnalysis.lowestPosition.pillar} (${unsungAnalysis.lowestPosition.info.korean})
+
+12운성 종합: ${unsungAnalysis.lifeCycleSummary}
+
+`;
+
+  // 4. 합충형파해(合沖刑破害) 분석
+  text += `## 합충형파해(合沖刑破害) 분석
+조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점
+
+`;
+  if (hapchungAnalysis.harmonies.length > 0) {
+    text += `합(合) 관계 (${hapchungAnalysis.harmonies.length}개 - 조화로운 기운):
+${hapchungAnalysis.harmonies.slice(0, 4).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`).join('\n')}
+`;
+  }
+
+  if (hapchungAnalysis.conflicts.length > 0) {
+    text += `충돌 관계 (${hapchungAnalysis.conflicts.length}개 - 주의 필요):
+${hapchungAnalysis.conflicts.slice(0, 3).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}`).join('\n')}
+`;
+  }
+
+  if (hapchungAnalysis.relations.length === 0) {
+    text += `특별한 합충 관계가 없습니다.
+`;
+  }
+
+  text += `
+종합 해석: ${hapchungAnalysis.summary}
+${hapchungAnalysis.advice.length > 0 ? `활용 조언: ${hapchungAnalysis.advice.slice(0, 2).join(' ')}` : ''}
+`;
+
+  return text;
 }

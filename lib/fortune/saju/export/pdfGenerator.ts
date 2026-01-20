@@ -40,6 +40,17 @@ import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
 import { generateZodiacAnalysis, getZodiacInfo, type ZodiacAnalysis } from '../analysis/zodiacAnalysis';
 import { generateComprehensiveAnalysis, type ComprehensiveAnalysis } from '../analysis/comprehensiveAnalysis';
 import { calculateAge } from '../calculator';
+import {
+  analyzeSipsin,
+  analyzeSinsal,
+  analyzeUnsung,
+  analyzeHapChung,
+  interpretSipsinChart,
+  type SipsinChart,
+  type SinsalAnalysis,
+  type UnsungAnalysis,
+  type HapChungAnalysis
+} from '../analysis';
 
 // ========== 연령별 분기 시스템 ==========
 type AgeGroup = 'child' | 'youth' | 'adult' | 'senior';
@@ -1219,6 +1230,164 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     .sort((a, b) => b.value - a.value);
   const strongestEl = sortedOheng[0];
   const weakestEl = sortedOheng[sortedOheng.length - 1];
+
+  // ========== 전통 사주 이론 분석 섹션 (고급 템플릿) ==========
+  doc.addPage();
+  yPos = margin;
+
+  // 전통 분석 실행
+  const sipsinChart = analyzeSipsin(saju);
+  const sipsinInterp = interpretSipsinChart(sipsinChart);
+  const sinsalAnalysis = analyzeSinsal(saju);
+  const unsungAnalysis = analyzeUnsung(saju);
+  const hapchungAnalysis = analyzeHapChung(saju);
+
+  addSectionTitle('전통 사주 이론 분석');
+
+  // 십신(十神) 분석
+  addSubSection('십신(十神) 분석 - 사주 내 관계의 해석');
+  addText('십신은 일간(나)을 기준으로 다른 천간/지지와의 관계를 나타냅니다.');
+  yPos += 3;
+
+  addText(`• 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)`);
+  addText(`• 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)`);
+  addText(`• 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)`);
+  addText(`• 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)`);
+  yPos += 3;
+
+  // 십신 분포
+  const sipsinDistribution = Object.entries(sipsinChart.distribution)
+    .filter(([_, count]) => (count as number) > 0)
+    .map(([type, count]) => `${type}(${count})`);
+  if (sipsinDistribution.length > 0) {
+    addText(`십신 분포: ${sipsinDistribution.join(', ')}`);
+  }
+  yPos += 3;
+
+  // 십신 해석
+  if (sipsinInterp.dominant.length > 0) {
+    addText(`★ 우세 십신: ${sipsinInterp.dominant.join(', ')}`);
+  }
+  if (sipsinInterp.missing.length > 0) {
+    addText(`☆ 부족 십신: ${sipsinInterp.missing.join(', ')}`);
+  }
+  addText(`균형 상태: ${sipsinInterp.balance}`);
+  addText(`성격 특성: ${sipsinInterp.personality}`);
+  addText(`직업 적성: ${sipsinInterp.career}`);
+  yPos += 5;
+
+  // 12운성 분석
+  addSubSection('12운성(十二運星) 분석 - 생애 에너지 주기');
+  addText('12운성은 각 지지가 일간에 미치는 에너지 상태를 나타냅니다.');
+  yPos += 3;
+
+  unsungAnalysis.positions.forEach(p => {
+    const energyBar = '●'.repeat(Math.round(p.info.energyLevel / 2)) + '○'.repeat(5 - Math.round(p.info.energyLevel / 2));
+    addText(`• ${p.pillar} ${p.branch}: ${p.info.korean}(${p.info.hanja}) ${energyBar} - ${p.info.description}`);
+  });
+  yPos += 3;
+
+  addText(`현재 생애 주기: ${unsungAnalysis.dominantStage}`);
+  addText(`평균 에너지: ${unsungAnalysis.averageEnergy.toFixed(1)}/10점`);
+  addText(`최고 에너지: ${unsungAnalysis.peakPosition.pillar} (${unsungAnalysis.peakPosition.info.korean})`);
+  addText(`최저 에너지: ${unsungAnalysis.lowestPosition.pillar} (${unsungAnalysis.lowestPosition.info.korean})`);
+  yPos += 5;
+
+  // 신살(神殺) 분석 - 새 페이지
+  doc.addPage();
+  yPos = margin;
+
+  addSubSection('신살(神殺) 분석 - 특별한 기운의 영향');
+  addText('신살은 사주에 작용하는 특별한 기운으로 길신(복)과 흉살(주의)로 나뉩니다.');
+  yPos += 5;
+
+  // 길신
+  const activeGilsin = sinsalAnalysis.gilsin.filter(s => s.present).slice(0, 4);
+  if (activeGilsin.length > 0) {
+    addText('★ 길신(吉神) - 복을 가져다주는 기운');
+    activeGilsin.forEach(s => {
+      addText(`  • ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}`);
+      addText(`    → ${s.info.description}`);
+      addText(`    효과: ${s.info.effect}`);
+    });
+    yPos += 3;
+  }
+
+  // 특수살
+  const activeTeuksu = sinsalAnalysis.teuksuSal.filter(s => s.present).slice(0, 3);
+  if (activeTeuksu.length > 0) {
+    addText('◎ 특수살(特殊殺) - 특별한 재능의 기운');
+    activeTeuksu.forEach(s => {
+      addText(`  • ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}`);
+      addText(`    → ${s.info.description}`);
+      addText(`    효과: ${s.info.effect}`);
+    });
+    yPos += 3;
+  }
+
+  // 흉살
+  const activeHyungsal = sinsalAnalysis.hyungsal.filter(s => s.present).slice(0, 3);
+  if (activeHyungsal.length > 0) {
+    addText('△ 흉살(凶殺) - 주의가 필요한 기운');
+    activeHyungsal.forEach(s => {
+      addText(`  • ${s.info.korean}(${s.info.hanja})${s.location ? ` [${s.location}]` : ''}`);
+      addText(`    → ${s.info.description}`);
+      addText(`    주의: ${s.info.effect}`);
+      if (s.info.remedy) {
+        addText(`    해소법: ${s.info.remedy}`);
+      }
+    });
+    yPos += 3;
+  }
+
+  addText(`신살 종합 평가: ${sinsalAnalysis.summary}`);
+  if (sinsalAnalysis.advice.length > 0) {
+    addText(`조언: ${sinsalAnalysis.advice.slice(0, 2).join(' ')}`);
+  }
+  yPos += 5;
+
+  // 합충형파해 분석
+  addSubSection('합충형파해(合沖刑破害) 분석 - 지지 간의 관계');
+  addText('지지들 간의 조화와 충돌 관계를 분석합니다.');
+  yPos += 3;
+
+  addText(`조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점`);
+  const harmonyBar = '█'.repeat(Math.round(hapchungAnalysis.harmonyScore / 10)) + '░'.repeat(10 - Math.round(hapchungAnalysis.harmonyScore / 10));
+  addText(`[${harmonyBar}]`);
+  yPos += 3;
+
+  // 합(合) 관계
+  if (hapchungAnalysis.harmonies.length > 0) {
+    addText('☯ 합(合) - 조화로운 관계:');
+    hapchungAnalysis.harmonies.slice(0, 4).forEach(r => {
+      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
+      addText(`    → ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`);
+    });
+    yPos += 3;
+  }
+
+  // 충돌 관계
+  if (hapchungAnalysis.conflicts.length > 0) {
+    addText('⚡ 충돌 관계 - 주의 필요:');
+    hapchungAnalysis.conflicts.slice(0, 3).forEach(r => {
+      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
+      addText(`    → ${r.effect}`);
+    });
+    yPos += 3;
+  }
+
+  if (hapchungAnalysis.relations.length === 0) {
+    addText('특별한 합충 관계가 없어 안정적인 사주입니다.');
+  }
+
+  addText(`종합: ${hapchungAnalysis.summary}`);
+  if (hapchungAnalysis.advice.length > 0) {
+    addText(`활용 조언: ${hapchungAnalysis.advice.slice(0, 2).join(' ')}`);
+  }
+
+  // ========== 다음 섹션으로 이동 ==========
+  doc.addPage();
+  yPos = margin;
 
   // 3. 아동용: 재능 DNA 분석 / 성인용: 건강·재물·관계 분석
   if (ageGroup === 'child') {
