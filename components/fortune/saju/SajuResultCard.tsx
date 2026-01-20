@@ -14,6 +14,7 @@ import {
   AnalysisResult, SajuChart, OhengBalance,
   ELEMENT_KOREAN, PeerComparison, AIAnalysis, Element
 } from '@/types/saju';
+import { ELEMENT_INFO, ElementInfo } from '@/lib/fortune/saju/mappings/poeticExpressions';
 import { generateZodiacAnalysis, type ZodiacAnalysis } from '@/lib/fortune/saju/analysis/zodiacAnalysis';
 import { CardDeck, RootCard } from '@/types/cards';
 import PremiumResultDisplay from './PremiumResultDisplay';
@@ -438,34 +439,79 @@ export default function SajuResultCard({
                 <OhengChart balance={oheng} />
               </div>
 
-              {/* 용신/기신 */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+              {/* 용신/기신 - 자연어 풍부화 */}
+              <div className="space-y-4">
+                {/* 용신 섹션 */}
+                <div className="p-5 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                   <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    용신 (用神)
+                    용신 (用神) - 나에게 힘이 되는 기운
                   </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">나에게 좋은 기운</p>
-                  <div className="flex flex-wrap gap-2">
-                    {yongsin.map(el => (
-                      <span key={el} className="px-3 py-1.5 bg-green-100 dark:bg-green-800 rounded-lg text-sm font-medium text-green-800 dark:text-green-200">
-                        {ELEMENT_KOREAN[el]}
-                      </span>
-                    ))}
+                  <div className="space-y-3">
+                    {yongsin.map(el => {
+                      const info = getElementRichInfo(el);
+                      const koreanKey = ELEMENT_TO_KOREAN_KEY[el];
+                      const emoji = ELEMENT_EMOJI[koreanKey] || '✨';
+
+                      return info ? (
+                        <div key={el} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">{emoji}</span>
+                            <span className="font-bold text-green-800 dark:text-green-200">
+                              {info.poeticName}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ({ELEMENT_KOREAN[el]})
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {info.season}의 에너지, {info.nature}의 기운이 당신에게 행운을 가져옵니다.
+                            {info.direction}을 향하고, {info.color} 계열의 색상을 활용하면 좋습니다.
+                          </p>
+                        </div>
+                      ) : (
+                        <span key={el} className="px-3 py-1.5 bg-green-100 dark:bg-green-800 rounded-lg text-sm font-medium text-green-800 dark:text-green-200">
+                          {ELEMENT_KOREAN[el]}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl border border-red-200 dark:border-red-800">
+
+                {/* 기신 섹션 */}
+                <div className="p-5 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl border border-red-200 dark:border-red-800">
                   <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 bg-red-500 rounded-full" />
-                    기신 (忌神)
+                    기신 (忌神) - 조심해야 할 기운
                   </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">주의할 기운</p>
-                  <div className="flex flex-wrap gap-2">
-                    {gisin.map(el => (
-                      <span key={el} className="px-3 py-1.5 bg-red-100 dark:bg-red-800 rounded-lg text-sm font-medium text-red-800 dark:text-red-200">
-                        {ELEMENT_KOREAN[el]}
-                      </span>
-                    ))}
+                  <div className="space-y-3">
+                    {gisin.map(el => {
+                      const info = getElementRichInfo(el);
+                      const koreanKey = ELEMENT_TO_KOREAN_KEY[el];
+                      const emoji = ELEMENT_EMOJI[koreanKey] || '⚠️';
+
+                      return info ? (
+                        <div key={el} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">{emoji}</span>
+                            <span className="font-bold text-red-800 dark:text-red-200">
+                              {info.poeticName}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ({ELEMENT_KOREAN[el]})
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {info.season}의 기운이 과하면 균형이 깨질 수 있습니다.
+                            {info.emotion}의 감정을 다스리고, {info.organ} 건강에 신경 써주세요.
+                          </p>
+                        </div>
+                      ) : (
+                        <span key={el} className="px-3 py-1.5 bg-red-100 dark:bg-red-800 rounded-lg text-sm font-medium text-red-800 dark:text-red-200">
+                          {ELEMENT_KOREAN[el]}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1039,36 +1085,52 @@ export default function SajuResultCard({
   );
 }
 
-// 오행 차트 컴포넌트
+// 오행 차트 컴포넌트 - 자연어 풍부화
 function OhengChart({ balance }: { balance: OhengBalance }) {
   const elements = [
-    { key: 'wood', label: '목(木)', color: 'bg-green-500' },
-    { key: 'fire', label: '화(火)', color: 'bg-red-500' },
-    { key: 'earth', label: '토(土)', color: 'bg-yellow-500' },
-    { key: 'metal', label: '금(金)', color: 'bg-gray-400' },
-    { key: 'water', label: '수(水)', color: 'bg-blue-500' }
-  ] as const;
+    { key: 'wood' as Element, koreanKey: '목', label: '목(木)', color: 'bg-green-500', emoji: '🌳' },
+    { key: 'fire' as Element, koreanKey: '화', label: '화(火)', color: 'bg-red-500', emoji: '🔥' },
+    { key: 'earth' as Element, koreanKey: '토', label: '토(土)', color: 'bg-yellow-500', emoji: '🏔️' },
+    { key: 'metal' as Element, koreanKey: '금', label: '금(金)', color: 'bg-gray-400', emoji: '💎' },
+    { key: 'water' as Element, koreanKey: '수', label: '수(水)', color: 'bg-blue-500', emoji: '💧' }
+  ];
 
   const maxValue = Math.max(...Object.values(balance));
 
   return (
     <div className="space-y-3">
-      {elements.map(el => (
-        <div key={el.key} className="flex items-center gap-3">
-          <span className="w-16 text-sm text-gray-600 dark:text-gray-400">{el.label}</span>
-          <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(balance[el.key] / maxValue) * 100}%` }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className={`h-full ${el.color} rounded-full`}
-            />
+      {elements.map(el => {
+        const info = ELEMENT_INFO[el.koreanKey];
+        const percentage = (balance[el.key] / maxValue) * 100;
+
+        return (
+          <div key={el.key} className="group">
+            <div className="flex items-center gap-3">
+              <div className="w-24 flex items-center gap-1">
+                <span className="text-sm">{el.emoji}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{el.label}</span>
+              </div>
+              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className={`h-full ${el.color} rounded-full`}
+                />
+              </div>
+              <span className="w-12 text-sm text-gray-600 dark:text-gray-400 text-right">
+                {balance[el.key].toFixed(1)}
+              </span>
+            </div>
+            {/* 호버 시 시적 표현 표시 */}
+            {info && (
+              <div className="hidden group-hover:block ml-24 mt-1 text-xs text-gray-500 dark:text-gray-400 italic">
+                {info.poeticName} • {info.season} • {info.nature}
+              </div>
+            )}
           </div>
-          <span className="w-8 text-sm text-gray-600 dark:text-gray-400">
-            {balance[el.key].toFixed(1)}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1157,6 +1219,30 @@ function getElementColor(element: string): string {
     water: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
   };
   return colors[element] || colors.earth;
+}
+
+// Element (영어) → Korean key 매핑
+const ELEMENT_TO_KOREAN_KEY: Record<Element, string> = {
+  wood: '목',
+  fire: '화',
+  earth: '토',
+  metal: '금',
+  water: '수'
+};
+
+// 오행 이모지 매핑
+const ELEMENT_EMOJI: Record<string, string> = {
+  '목': '🌳',
+  '화': '🔥',
+  '토': '🏔️',
+  '금': '💎',
+  '수': '💧'
+};
+
+// Element에서 풍부한 정보 가져오기
+function getElementRichInfo(element: Element): ElementInfo | null {
+  const koreanKey = ELEMENT_TO_KOREAN_KEY[element];
+  return ELEMENT_INFO[koreanKey] || null;
 }
 
 // 전문가 분석 섹션 컴포넌트
