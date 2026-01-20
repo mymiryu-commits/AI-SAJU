@@ -153,13 +153,21 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Edge TTS를 기본 사용 (무료, API 키 불필요)
+      // OpenAI를 사용하려면 환경변수에 OPENAI_API_KEY 설정
+      const ttsProvider = process.env.TTS_PROVIDER || 'edge';
       const openaiKey = process.env.OPENAI_API_KEY;
-      if (!openaiKey) {
-        return NextResponse.json(
-          { error: '음성 생성 서비스가 설정되지 않았습니다.' },
-          { status: 503 }
-        );
-      }
+
+      const config = ttsProvider === 'openai' && openaiKey
+        ? {
+            provider: 'openai' as const,
+            apiKey: openaiKey,
+            voiceId: 'nova'
+          }
+        : {
+            provider: 'edge' as const,
+            voiceId: 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
+          };
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -169,11 +177,7 @@ export async function GET(request: NextRequest) {
         gisin,
         premium,
         targetYear,
-        config: {
-          provider: 'openai',
-          apiKey: openaiKey,
-          voiceId: 'nova'
-        }
+        config
       });
 
       const filename = generateAudioFilename(userInput, targetYear);
@@ -307,13 +311,21 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // audio
+      // Edge TTS를 기본 사용 (무료, API 키 불필요)
+      const ttsProvider = process.env.TTS_PROVIDER || 'edge';
       const openaiKey = process.env.OPENAI_API_KEY;
-      if (!openaiKey) {
-        return NextResponse.json(
-          { error: '음성 생성 서비스가 설정되지 않았습니다. 관리자에게 문의하세요.' },
-          { status: 503 }
-        );
-      }
+      const requestedVoice = (body as Record<string, unknown>).voiceId as string;
+
+      const config = ttsProvider === 'openai' && openaiKey
+        ? {
+            provider: 'openai' as const,
+            apiKey: openaiKey,
+            voiceId: requestedVoice || 'nova'
+          }
+        : {
+            provider: 'edge' as const,
+            voiceId: requestedVoice || 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
+          };
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -323,11 +335,7 @@ export async function POST(request: NextRequest) {
         gisin,
         premium,
         targetYear,
-        config: {
-          provider: 'openai',
-          apiKey: openaiKey,
-          voiceId: (body as Record<string, unknown>).voiceId as string || 'nova'
-        }
+        config
       });
 
       const filename = generateAudioFilename(userInput, targetYear);

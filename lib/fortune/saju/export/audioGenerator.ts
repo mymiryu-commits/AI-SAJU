@@ -17,7 +17,20 @@ import type {
 import { ELEMENT_KOREAN, CAREER_KOREAN } from '@/types/saju';
 
 // TTS 제공자 타입
-export type TTSProvider = 'google' | 'naver' | 'openai';
+export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
+
+// node-edge-tts 동적 import
+let NodeEdgeTTS: any = null;
+async function getNodeEdgeTTS() {
+  if (!NodeEdgeTTS) {
+    try {
+      NodeEdgeTTS = await import('node-edge-tts');
+    } catch (e) {
+      throw new Error('node-edge-tts 패키지가 설치되지 않았습니다. npm install node-edge-tts');
+    }
+  }
+  return NodeEdgeTTS;
+}
 
 interface TTSConfig {
   provider: TTSProvider;
@@ -952,6 +965,70 @@ export async function generateAudioWithNaver(
 }
 
 /**
+ * Microsoft Edge TTS를 사용한 음성 생성 (무료, API 키 불필요)
+ *
+ * 한국어 음성 추천:
+ * - ko-KR-SunHiNeural: 여성, 따뜻하고 자연스러움 (추천)
+ * - ko-KR-InJoonNeural: 남성, 신뢰감 있음
+ * - ko-KR-BongJinNeural: 남성, 차분함
+ * - ko-KR-GookMinNeural: 남성, 명확함
+ * - ko-KR-JiMinNeural: 여성, 밝고 친근함
+ * - ko-KR-SeoHyeonNeural: 여성, 부드러움
+ * - ko-KR-SoonBokNeural: 여성, 편안함 (고령자 친화적)
+ * - ko-KR-YuJinNeural: 여성, 자연스러움
+ */
+export async function generateAudioWithEdge(
+  text: string,
+  voice: string = 'ko-KR-SunHiNeural',
+  rate: string = '-10%', // 고령자를 위해 조금 느리게
+  pitch: string = '-5Hz', // 약간 낮은 톤
+  volume: string = '+0%'
+): Promise<Buffer> {
+  try {
+    const nodeEdgeTTS = await getNodeEdgeTTS();
+    const { EdgeTTS } = nodeEdgeTTS;
+
+    // EdgeTTS 인스턴스 생성
+    const tts = new EdgeTTS();
+
+    // 텍스트를 음성으로 변환
+    const audioData = await tts.ttsPromise(text, {
+      voice,
+      rate,
+      pitch,
+      volume
+    });
+
+    if (!audioData || audioData.length === 0) {
+      throw new Error('오디오 데이터가 생성되지 않았습니다.');
+    }
+
+    return Buffer.from(audioData);
+  } catch (error) {
+    throw new Error(`Edge TTS Error: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Edge TTS 사용 가능한 음성 목록 조회
+ */
+export async function getEdgeVoices(): Promise<any[]> {
+  try {
+    const nodeEdgeTTS = await getNodeEdgeTTS();
+    const { EdgeTTS } = nodeEdgeTTS;
+
+    const tts = new EdgeTTS();
+    const allVoices = await tts.getVoices();
+
+    // 한국어 음성만 필터링
+    return allVoices.filter((v: any) => v.Locale?.startsWith('ko-KR') || v.locale?.startsWith('ko-KR'));
+  } catch (error) {
+    console.error('Edge TTS voices error:', error);
+    return [];
+  }
+}
+
+/**
  * 통합 음성 생성 함수
  */
 export async function generateSajuAudio(options: AudioGeneratorOptions): Promise<Buffer> {
@@ -961,6 +1038,16 @@ export async function generateSajuAudio(options: AudioGeneratorOptions): Promise
   const config = options.config || { provider: 'openai' as TTSProvider };
 
   switch (config.provider) {
+    case 'edge':
+      // Edge TTS - 무료, API 키 불필요 (기본값으로 추천)
+      return generateAudioWithEdge(
+        fullText,
+        config.voiceId || 'ko-KR-SunHiNeural',
+        '-10%', // 속도
+        '-5Hz', // 피치
+        '+0%'   // 볼륨
+      );
+
     case 'openai':
       if (!config.apiKey) throw new Error('OpenAI API key required');
       return generateAudioWithOpenAI(fullText, config.apiKey, config.voiceId || 'nova');
@@ -994,5 +1081,7 @@ export default {
   generateAudioFilename,
   generateAudioWithOpenAI,
   generateAudioWithGoogle,
-  generateAudioWithNaver
+  generateAudioWithNaver,
+  generateAudioWithEdge,
+  getEdgeVoices
 };
