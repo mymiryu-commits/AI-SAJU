@@ -46,12 +46,18 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
+  generateYearlyDashboard,
   SIPSIN_INFO,
   type SipsinChart,
   type SipsinType,
   type SinsalAnalysis,
   type UnsungAnalysis,
-  type HapChungAnalysis
+  type HapChungAnalysis,
+  type ConsumerFriendlyRisk,
+  type RiskTimingAnalysis,
+  type YearlyDashboard
 } from '../analysis';
 
 // ========== 연령별 분기 시스템 ==========
@@ -1086,10 +1092,92 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     });
   }
 
-  // ========== Executive Summary ==========
+  // ========== 올해 운영 대시보드 (Day7 추가) ==========
   doc.addPage();
   yPos = margin;
 
+  // 합충형파해 분석 및 리스크 타이밍 생성 (대시보드용)
+  const hapchungForDashboard = analyzeHapChung(saju);
+  const riskTimingForDashboard = analyzeRiskTiming(saju, targetYear);
+  const yearlyDashboard = generateYearlyDashboard(saju, hapchungForDashboard, riskTimingForDashboard, targetYear);
+
+  // 대시보드 제목
+  doc.setFontSize(16);
+  doc.text(`📊 ${targetYear}년 운영 대시보드`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 올해 점수 대형 표시
+  doc.setFontSize(40);
+  doc.text(`${yearlyDashboard.yearScore}`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 8;
+  doc.setFontSize(12);
+  doc.text('점 / 100점', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 점수 이유 3개
+  doc.setFontSize(11);
+  doc.text('📝 점수 산출 근거', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(9);
+  yearlyDashboard.scoreReasons.forEach((reason, idx) => {
+    addText(`  ${idx + 1}. ${reason}`);
+  });
+  yPos += 8;
+
+  // 2열 레이아웃: 기회 Top3 | 리스크 Top3
+  const colWidth = (contentWidth - 10) / 2;
+
+  // 기회 Top3 (왼쪽)
+  doc.setFontSize(11);
+  doc.text('🌟 기회 Top3', margin, yPos);
+  doc.text('⚠️ 리스크 Top3', margin + colWidth + 10, yPos);
+  yPos += 8;
+
+  doc.setFontSize(9);
+  for (let i = 0; i < 3; i++) {
+    const opp = yearlyDashboard.opportunityTop3[i];
+    const risk = yearlyDashboard.riskTop3[i];
+
+    if (opp) {
+      const oppText = `${i + 1}. ${opp.month}: ${opp.item}`;
+      const oppLines = doc.splitTextToSize(oppText, colWidth - 5);
+      oppLines.forEach((line: string) => {
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+    }
+
+    if (risk) {
+      const riskText = `${i + 1}. ${risk.month}: ${risk.item}`;
+      const riskLines = doc.splitTextToSize(riskText, colWidth - 5);
+      // 리스크는 같은 y 위치에서 오른쪽 열에 표시
+      const riskY = yPos - 5 * (opp ? doc.splitTextToSize(`${i + 1}. ${opp.month}: ${opp.item}`, colWidth - 5).length : 1);
+      riskLines.forEach((line: string, lineIdx: number) => {
+        doc.text(line, margin + colWidth + 10, riskY + lineIdx * 5);
+      });
+    }
+    yPos += 3;
+  }
+  yPos += 8;
+
+  // 행운의 달 + 액션 아이템
+  doc.setFontSize(11);
+  doc.text('🍀 행운의 달 & 액션 아이템', margin, yPos);
+  yPos += 8;
+
+  doc.setFontSize(9);
+  yearlyDashboard.luckyMonths.forEach(lm => {
+    checkNewPage();
+    addText(`  ✨ ${lm.actionItem}`);
+  });
+  yPos += 10;
+
+  // 구분선
+  doc.setLineWidth(0.3);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 10;
+
+  // ========== Executive Summary (기존) ==========
   const summary = generateYearSummary(oheng, yongsin, premium);
 
   addSectionTitle(`${targetYear}년 운세 핵심 요약`);
@@ -1351,44 +1439,107 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   }
   yPos += 5;
 
-  // 합충형파해 분석
-  addSubSection('합충형파해(合沖刑破害) 분석 - 지지 간의 관계');
-  addText('지지들 간의 조화와 충돌 관계를 분석합니다.');
+  // 합충형파해 분석 → 관계/계약/이동 리스크 (소비자 친화적 변환)
+  addSubSection('관계·계약·이동 리스크 분석');
+  addText('당신의 사주에서 발견된 주요 관계 패턴과 타이밍을 분석합니다.');
   yPos += 3;
 
-  addText(`조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점`);
+  // 조화 점수 시각화
+  addText(`전반적 조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점`);
   const harmonyBar = '█'.repeat(Math.round(hapchungAnalysis.harmonyScore / 10)) + '░'.repeat(10 - Math.round(hapchungAnalysis.harmonyScore / 10));
   addText(`[${harmonyBar}]`);
+  yPos += 5;
+
+  // 소비자 친화적 리스크 변환
+  const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
+
+  // 기회·연결 (합)
+  const opportunities = consumerRisks.filter(r => r.type === '기회·연결');
+  if (opportunities.length > 0) {
+    addText('🌟 기회·연결 (인복/협력 운)');
+    opportunities.slice(0, 3).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    💡 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 변화·이동 (충)
+  const changes = consumerRisks.filter(r => r.type === '변화·이동');
+  if (changes.length > 0) {
+    addText('🔄 변화·이동 (이직/이사 시기)');
+    changes.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    ⚠️ ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 스트레스·자기압박 (형)
+  const stress = consumerRisks.filter(r => r.type === '스트레스·자기압박');
+  if (stress.length > 0) {
+    addText('⚡ 스트레스·자기압박 (번아웃 주의)');
+    stress.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    🧘 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 관계 오해·계약 파손 (파/해)
+  const relationRisks = consumerRisks.filter(r => r.type === '관계 오해·계약 파손');
+  if (relationRisks.length > 0) {
+    addText('💔 관계 오해·계약 파손 (소통/서류 주의)');
+    relationRisks.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    📋 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  if (consumerRisks.length === 0) {
+    addText('✨ 특별한 리스크 없이 안정적인 사주입니다.');
+    addText('   꾸준히 기본기를 다지면 좋은 결과가 있을 것입니다.');
+  }
+
+  // 리스크 타이밍 분석 추가
+  const riskTiming = analyzeRiskTiming(saju, targetYear);
+  yPos += 5;
+
+  addText('📅 올해 타이밍 분석');
   yPos += 3;
 
-  // 합(合) 관계
-  if (hapchungAnalysis.harmonies.length > 0) {
-    addText('☯ 합(合) - 조화로운 관계:');
-    hapchungAnalysis.harmonies.slice(0, 4).forEach(r => {
-      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
-      addText(`    → ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`);
+  // 관계 리스크 월 TOP2
+  addText('⛔ 관계 리스크 월 TOP2:');
+  riskTiming.relationshipRiskMonths.slice(0, 2).forEach((rm, idx) => {
+    if (rm.month > 0) {
+      const level = rm.riskLevel === 'high' ? '🔴' : rm.riskLevel === 'medium' ? '🟡' : '🟢';
+      addText(`  ${idx + 1}. ${rm.monthName} ${level} - ${rm.reason}`);
+      addText(`     💡 ${rm.tip}`);
+    }
+  });
+  yPos += 3;
+
+  // 계약/투자 주의 주간 TOP2
+  addText('📋 계약/투자 주의 시기 TOP2:');
+  riskTiming.contractCautionWeeks.slice(0, 2).forEach((cw, idx) => {
+    if (cw.weekNumber > 0) {
+      const level = cw.riskLevel === 'high' ? '🔴' : cw.riskLevel === 'medium' ? '🟡' : '🟢';
+      addText(`  ${idx + 1}. ${cw.period} ${level}`);
+      addText(`     💡 ${cw.tip}`);
+    }
+  });
+  yPos += 3;
+
+  // 기회의 달
+  if (riskTiming.opportunityMonths.length > 0) {
+    addText('🌟 기회의 달 (네트워킹/계약에 좋은 시기):');
+    riskTiming.opportunityMonths.slice(0, 3).forEach(om => {
+      addText(`  • ${om.monthName}: ${om.reason} → ${om.actionTip}`);
     });
-    yPos += 3;
   }
 
-  // 충돌 관계
-  if (hapchungAnalysis.conflicts.length > 0) {
-    addText('⚡ 충돌 관계 - 주의 필요:');
-    hapchungAnalysis.conflicts.slice(0, 3).forEach(r => {
-      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
-      addText(`    → ${r.effect}`);
-    });
-    yPos += 3;
-  }
-
-  if (hapchungAnalysis.relations.length === 0) {
-    addText('특별한 합충 관계가 없어 안정적인 사주입니다.');
-  }
-
-  addText(`종합: ${hapchungAnalysis.summary}`);
-  if (hapchungAnalysis.advice.length > 0) {
-    addText(`활용 조언: ${hapchungAnalysis.advice.slice(0, 2).join(' ')}`);
-  }
+  addText(`종합: ${hapchungAnalysis.summary}`)
 
   // ========== 다음 섹션으로 이동 ==========
   doc.addPage();

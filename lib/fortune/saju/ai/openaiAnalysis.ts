@@ -11,6 +11,8 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
   SIPSIN_INFO,
   type SipsinChart,
   type SipsinType,
@@ -415,25 +417,53 @@ ${unsungAnalysis.positions.map(p => `- ${p.pillar} ${p.branch}: ${p.info.korean}
 
 `;
 
-  // 4. 합충형파해(合沖刑破害) 분석
-  text += `## 합충형파해(合沖刑破害) 분석
+  // 4. 관계·계약·이동 리스크 분석 (합충형파해 소비자 친화적 변환)
+  const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
+
+  text += `## 관계·계약·이동 리스크 분석
 조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점
 
 `;
-  if (hapchungAnalysis.harmonies.length > 0) {
-    text += `합(合) 관계 (${hapchungAnalysis.harmonies.length}개 - 조화로운 기운):
-${hapchungAnalysis.harmonies.slice(0, 4).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`).join('\n')}
+
+  // 기회·연결 (합)
+  const opportunities = consumerRisks.filter(r => r.type === '기회·연결');
+  if (opportunities.length > 0) {
+    text += `🌟 기회·연결 (인복/협력 운):
+${opportunities.slice(0, 3).map(r => `- ${r.description}\n  💡 ${r.actionTip}`).join('\n')}
+
 `;
   }
 
-  if (hapchungAnalysis.conflicts.length > 0) {
-    text += `충돌 관계 (${hapchungAnalysis.conflicts.length}개 - 주의 필요):
-${hapchungAnalysis.conflicts.slice(0, 3).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}`).join('\n')}
+  // 변화·이동 (충)
+  const changes = consumerRisks.filter(r => r.type === '변화·이동');
+  if (changes.length > 0) {
+    text += `🔄 변화·이동 (이직/이사 시기):
+${changes.slice(0, 2).map(r => `- ${r.description}\n  ⚠️ ${r.actionTip}`).join('\n')}
+
 `;
   }
 
-  if (hapchungAnalysis.relations.length === 0) {
-    text += `특별한 합충 관계가 없습니다.
+  // 스트레스·자기압박 (형)
+  const stress = consumerRisks.filter(r => r.type === '스트레스·자기압박');
+  if (stress.length > 0) {
+    text += `⚡ 스트레스·자기압박 (번아웃 주의):
+${stress.slice(0, 2).map(r => `- ${r.description}\n  🧘 ${r.actionTip}`).join('\n')}
+
+`;
+  }
+
+  // 관계 오해·계약 파손 (파/해)
+  const relationRisks = consumerRisks.filter(r => r.type === '관계 오해·계약 파손');
+  if (relationRisks.length > 0) {
+    text += `💔 관계 오해·계약 파손 (소통/서류 주의):
+${relationRisks.slice(0, 2).map(r => `- ${r.description}\n  📋 ${r.actionTip}`).join('\n')}
+
+`;
+  }
+
+  if (consumerRisks.length === 0) {
+    text += `✨ 특별한 리스크 없이 안정적인 사주입니다.
+
 `;
   }
 
