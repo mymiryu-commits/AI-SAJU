@@ -43,7 +43,8 @@ import {
 import {
   integrateZodiacAnalysis,
 } from '@/lib/services/analysisService';
-import type { UserInput, PremiumContent } from '@/types/saju';
+import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
+import type { UserInput, PremiumContent, AIAnalysis } from '@/types/saju';
 import type { StorytellingAnalysis } from '@/types/cards';
 import type { ZodiacAnalysis } from '@/lib/fortune/zodiac/types';
 
@@ -111,10 +112,55 @@ export async function POST(request: NextRequest) {
     // 오행 분석
     const ohengResult = analyzeOheng(saju);
 
-    // 프리미엄 컨텐츠 생성
-    const premiumContent: PremiumContent = {};
     const currentYear = new Date().getFullYear();
     const targetYear = currentYear + 1; // 내년 분석
+
+    // 기본 점수 계산
+    const scores = {
+      overall: 75,
+      wealth: 70,
+      love: 70,
+      career: 75,
+      health: 70
+    };
+
+    // AI 분석 생성 (프리미엄 전용 - 블라인드 해제된 전체 분석)
+    let aiAnalysis: AIAnalysis | undefined;
+    try {
+      const aiResult = await generateAIAnalysis({
+        user: input,
+        saju,
+        oheng: ohengResult.balance,
+        yongsin: ohengResult.yongsin,
+        gisin: ohengResult.gisin,
+        scores,
+        dayMasterStrength: ohengResult.dayMasterStrength
+      });
+
+      aiAnalysis = {
+        personalityReading: aiResult.personalityReading,
+        fortuneAdvice: aiResult.fortuneAdvice,
+        lifePath: aiResult.lifePath,
+        luckyElements: aiResult.luckyElements,
+        warningAdvice: aiResult.warningAdvice,
+        // 전문가 수준 분석 필드 (프리미엄 전용)
+        dayMasterAnalysis: aiResult.dayMasterAnalysis,
+        tenYearFortune: aiResult.tenYearFortune,
+        yearlyFortune: aiResult.yearlyFortune,
+        monthlyFortune: aiResult.monthlyFortune,
+        relationshipAnalysis: aiResult.relationshipAnalysis,
+        careerGuidance: aiResult.careerGuidance,
+        wealthStrategy: aiResult.wealthStrategy,
+        healthAdvice: aiResult.healthAdvice,
+        spiritualGuidance: aiResult.spiritualGuidance,
+        actionPlan: aiResult.actionPlan
+      };
+    } catch (aiError) {
+      console.warn('AI 분석 생성 실패:', aiError);
+    }
+
+    // 프리미엄 컨텐츠 생성
+    const premiumContent: PremiumContent = {};
 
     // 상품 유형에 따른 분석 범위
     if (['family', 'premium', 'vip'].includes(productType)) {
@@ -318,6 +364,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         premium: premiumContent,
+        aiAnalysis,  // 블라인드 해제된 AI 분석
         saju,
         oheng: ohengResult.balance,
         yongsin: ohengResult.yongsin,

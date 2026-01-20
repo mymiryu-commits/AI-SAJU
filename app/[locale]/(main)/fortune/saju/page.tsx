@@ -198,12 +198,14 @@ export default function SajuPage() {
       }
 
       console.log('Updating analysis result with premium data...');
-      // 분석 결과에 프리미엄 데이터 추가
+      // 분석 결과에 프리미엄 데이터 및 블라인드 해제된 AI 분석 추가
       setAnalysisResult(prev => {
         if (!prev) return prev;
         return {
           ...prev,
-          premium: data.data.premium
+          premium: data.data.premium,
+          // 블라인드 해제된 AI 분석으로 교체 (프리미엄 전용)
+          aiAnalysis: data.data.aiAnalysis || prev.aiAnalysis
         };
       });
 
