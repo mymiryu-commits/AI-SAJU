@@ -46,7 +46,9 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  SIPSIN_INFO,
   type SipsinChart,
+  type SipsinType,
   type SinsalAnalysis,
   type UnsungAnalysis,
   type HapChungAnalysis
@@ -1244,21 +1246,24 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   addSectionTitle('전통 사주 이론 분석');
 
+  // 십신 타입을 한글로 변환하는 헬퍼 함수
+  const sipsinToKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
+
   // 십신(十神) 분석
   addSubSection('십신(十神) 분석 - 사주 내 관계의 해석');
   addText('십신은 일간(나)을 기준으로 다른 천간/지지와의 관계를 나타냅니다.');
   yPos += 3;
 
-  addText(`• 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)`);
-  addText(`• 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)`);
-  addText(`• 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)`);
-  addText(`• 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)`);
+  addText(`• 년주 십신: ${sipsinToKorean(sipsinChart.yearStem)} (천간) / ${sipsinToKorean(sipsinChart.yearBranch)} (지지)`);
+  addText(`• 월주 십신: ${sipsinToKorean(sipsinChart.monthStem)} (천간) / ${sipsinToKorean(sipsinChart.monthBranch)} (지지)`);
+  addText(`• 일주 십신: ${sipsinToKorean(sipsinChart.dayStem)} (천간) / ${sipsinToKorean(sipsinChart.dayBranch)} (지지)`);
+  addText(`• 시주 십신: ${sipsinChart.hourStem ? sipsinToKorean(sipsinChart.hourStem) : '미상'} (천간) / ${sipsinChart.hourBranch ? sipsinToKorean(sipsinChart.hourBranch) : '미상'} (지지)`);
   yPos += 3;
 
   // 십신 분포
   const sipsinDistribution = Object.entries(sipsinChart.distribution)
     .filter(([_, count]) => (count as number) > 0)
-    .map(([type, count]) => `${type}(${count})`);
+    .map(([type, count]) => `${sipsinToKorean(type as SipsinType)}(${count})`);
   if (sipsinDistribution.length > 0) {
     addText(`십신 분포: ${sipsinDistribution.join(', ')}`);
   }
@@ -1266,10 +1271,10 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // 십신 해석
   if (sipsinInterp.dominant.length > 0) {
-    addText(`★ 우세 십신: ${sipsinInterp.dominant.join(', ')}`);
+    addText(`★ 우세 십신: ${sipsinInterp.dominant.map(d => sipsinToKorean(d)).join(', ')}`);
   }
   if (sipsinInterp.missing.length > 0) {
-    addText(`☆ 부족 십신: ${sipsinInterp.missing.join(', ')}`);
+    addText(`☆ 부족 십신: ${sipsinInterp.missing.map(m => sipsinToKorean(m)).join(', ')}`);
   }
   addText(`균형 상태: ${sipsinInterp.balance}`);
   addText(`성격 특성: ${sipsinInterp.personality}`);
@@ -1535,86 +1540,79 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       addText(`전환 시기: ${career.pivotTiming}`);
     }
 
-    // 월별 액션플랜
+    // 월별 액션플랜 (3줄 규격: 점수+결론, 해야할것, 피해야할것)
     if (premium.monthlyActionPlan?.length) {
       addSectionTitle('6. 월별 행운 액션플랜');
 
-      // 점수 산출 공식 설명 추가
-      addSubSection('📊 월별 점수 산출 기준');
-      addText('기본 점수 70점에서 다음 요소들을 반영하여 계산됩니다:');
-      addText('• 해당 월의 기운이 나에게 이로운 에너지(용신)와 맞으면 +15점');
-      addText('• 월의 기운이 나를 돕는 관계(상생)이면 +10점');
-      addText('• 반대로 월의 기운이 나와 충돌(상극)하면 -15점');
-      addText('• 특별한 천간/지지 조합(합/충)에 따라 추가 조정');
-      addText('점수 범위: 30점(주의) ~ 100점(최고)');
+      // 간단한 안내
+      addText('각 월의 핵심만 정리했습니다. 점수가 높을수록 기회, 낮을수록 신중함이 필요합니다.');
       yPos += 5;
 
-      premium.monthlyActionPlan.forEach((action: MonthlyAction, index: number) => {
+      // 상반기/하반기 구분
+      const firstHalf = premium.monthlyActionPlan.slice(0, 6);
+      const secondHalf = premium.monthlyActionPlan.slice(6);
+
+      // 월별 피해야 할 것 데이터
+      const MONTHLY_AVOID: Record<number, string> = {
+        1: '무리한 새 프로젝트 착수',
+        2: '고위험 투자/충동 결제',
+        3: '과도한 약속/일정 과부하',
+        4: '급격한 변화/이직 결정',
+        5: '과도한 지출/인간관계 갈등',
+        6: '지나친 완벽주의/번아웃',
+        7: '휴식 없는 과로/건강 무시',
+        8: '충동적 결정/감정적 대응',
+        9: '마무리 없는 새 시작',
+        10: '검증 안 된 투자/사기 주의',
+        11: '급한 결정/연말 과소비',
+        12: '과도한 약속/체력 무리'
+      };
+
+      // 상반기
+      addSubSection('상반기 (1~6월)');
+      firstHalf.forEach((action: MonthlyAction, index: number) => {
         const monthNum = index + 1;
         const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
+        const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
 
-        checkNewPage(50);
-        addSubSection(`${action.monthName} - ${monthAdvice?.theme || ''} (점수: ${action.score}점)`);
-
-        // 스토리텔링 문구 추가 (연령별 맞춤)
-        const story = generateMonthlyStory(monthNum, action.score, yongsin, user.name, ageGroup);
-        if (story) {
-          addText(story);
-          yPos += 3;
-        }
-
-        // 이달의 핵심 조언 (연령별 맞춤)
-        if (monthAdvice?.actionTip) {
-          const tipLabel = ageGroup === 'child' ? '부모님 팁' : '이달의 핵심';
-          addText(`💡 ${tipLabel}: ${monthAdvice.actionTip}`);
-          yPos += 2;
-        }
-
-        if (action.mustDo?.length) {
-          const doLabel = ageGroup === 'child' ? '추천 활동:' : '▸ 실천 항목:';
-          addText(doLabel);
-          action.mustDo.forEach(item => {
-            // 아동용: 부적절한 카테고리 필터링
-            if (ageGroup === 'child' && ['재테크', '부동산', '투자', '사업'].includes(item.category)) {
-              return; // 아동에게 부적절한 항목 스킵
-            }
-            addText(`  • [${item.category}] ${item.action}`);
-            if (item.optimalDays?.length) {
-              addText(`    추천일: ${item.optimalDays.join(', ')}일 / 시간: ${item.optimalTime}`);
-            }
-          });
-        }
-
-        // 월별 맥락화된 주의사항 (반복 방지)
-        const contextWarning = MONTHLY_CONTEXTUALIZED_WARNINGS[monthNum];
-        if (contextWarning) {
-          // 용신이 수(水)인 경우 수 기운 관련 맥락화된 조언
-          if (yongsin?.includes('water')) {
-            addText(`▸ 이달의 조언: ${contextWarning.water}`);
-          } else {
-            addText(`▸ 이달의 조언: ${contextWarning.general}`);
-          }
-        }
-
-        // 행운 요소 다양화 (용신 기반 + 월별 변화)
-        if (yongsin?.length) {
-          const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
-          if (luckyPool) {
-            const colorIdx = (monthNum - 1) % luckyPool.colors.length;
-            const numberIdx = (monthNum - 1) % luckyPool.numbers.length;
-            const dirIdx = (monthNum - 1) % luckyPool.directions.length;
-            const foodIdx = (monthNum - 1) % luckyPool.foods.length;
-            addText(`▸ 행운 요소: 색상(${luckyPool.colors[colorIdx]}) | 숫자(${luckyPool.numbers[numberIdx]}) | 방향(${luckyPool.directions[dirIdx]})`);
-            if (ageGroup === 'child') {
-              addText(`▸ 추천 음식: ${luckyPool.foods[foodIdx]}`);
-            }
-          }
-        } else if (action.luckyElements) {
-          addText(`▸ 행운 요소: 색상(${action.luckyElements.color}) | 숫자(${action.luckyElements.number}) | 방향(${action.luckyElements.direction})`);
-        }
-
-        yPos += 5;
+        checkNewPage(25);
+        // 1줄: 점수 + 한줄 결론
+        addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
+        // 2줄: 해야 할 것
+        const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
+        addText(`  ✓ 해야 할 것: ${mustDoAction}`);
+        // 3줄: 피해야 할 것
+        addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
+        yPos += 3;
       });
+
+      // 하반기
+      if (secondHalf.length > 0) {
+        yPos += 3;
+        addSubSection('하반기 (7~12월)');
+        secondHalf.forEach((action: MonthlyAction, index: number) => {
+          const monthNum = index + 7;
+          const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
+          const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
+
+          checkNewPage(25);
+          addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
+          const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
+          addText(`  ✓ 해야 할 것: ${mustDoAction}`);
+          addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
+          yPos += 3;
+        });
+      }
+
+      // 행운 요소 요약 (상세 정보는 접어서)
+      yPos += 5;
+      addSubSection('행운 요소 참고');
+      if (yongsin?.length) {
+        const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
+        if (luckyPool) {
+          addText(`행운색: ${luckyPool.colors.slice(0, 3).join(', ')} | 행운숫자: ${luckyPool.numbers.slice(0, 3).join(', ')} | 행운방향: ${luckyPool.directions[0]}`);
+        }
+      }
     }
 
     // 인생 타임라인

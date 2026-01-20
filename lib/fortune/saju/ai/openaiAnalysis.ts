@@ -11,7 +11,9 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  SIPSIN_INFO,
   type SipsinChart,
+  type SipsinType,
   type SinsalAnalysis,
   type UnsungAnalysis,
   type HapChungAnalysis
@@ -345,20 +347,23 @@ function formatTraditionalAnalysis(
 ): string {
   let text = '';
 
+  // 십신 타입을 한글로 변환하는 헬퍼 함수
+  const toKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
+
   // 1. 십신(十神) 분석
   text += `## 십신(十神) 분석
 사주에 나타난 십신 관계:
-- 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)
-- 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)
-- 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)
-- 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)
+- 년주 십신: ${toKorean(sipsinChart.yearStem)} (천간) / ${toKorean(sipsinChart.yearBranch)} (지지)
+- 월주 십신: ${toKorean(sipsinChart.monthStem)} (천간) / ${toKorean(sipsinChart.monthBranch)} (지지)
+- 일주 십신: ${toKorean(sipsinChart.dayStem)} (천간) / ${toKorean(sipsinChart.dayBranch)} (지지)
+- 시주 십신: ${sipsinChart.hourStem ? toKorean(sipsinChart.hourStem) : '미상'} (천간) / ${sipsinChart.hourBranch ? toKorean(sipsinChart.hourBranch) : '미상'} (지지)
 
 십신 분포:
-${Object.entries(sipsinChart.distribution).filter(([_, count]) => count > 0).map(([type, count]) => `- ${type}: ${count}개`).join('\n') || '- 분석 중'}
+${Object.entries(sipsinChart.distribution).filter(([_, count]) => count > 0).map(([type, count]) => `- ${toKorean(type as SipsinType)}: ${count}개`).join('\n') || '- 분석 중'}
 
 주요 특성:
-- 우세 십신: ${sipsinInterp.dominant.length > 0 ? sipsinInterp.dominant.join(', ') : '특정 우세 없음'}
-- 부족 십신: ${sipsinInterp.missing.length > 0 ? sipsinInterp.missing.join(', ') : '특정 부족 없음'}
+- 우세 십신: ${sipsinInterp.dominant.length > 0 ? sipsinInterp.dominant.map(d => toKorean(d)).join(', ') : '특정 우세 없음'}
+- 부족 십신: ${sipsinInterp.missing.length > 0 ? sipsinInterp.missing.map(m => toKorean(m)).join(', ') : '특정 부족 없음'}
 - 균형: ${sipsinInterp.balance}
 - 성격: ${sipsinInterp.personality}
 - 직업 적성: ${sipsinInterp.career}
