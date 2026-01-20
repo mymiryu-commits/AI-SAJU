@@ -4,7 +4,7 @@
  * Claude API 및 OpenAI API를 통합 관리합니다.
  */
 
-export type AIModel = 'haiku' | 'sonnet' | 'gpt-4o' | 'gpt-4o-mini';
+export type AIModel = 'haiku' | 'sonnet' | 'gpt-4o' | 'gpt-4o-mini' | 'ollama';
 
 interface AIRequestOptions {
   model: AIModel;
@@ -135,9 +135,77 @@ async function callOpenAIAPI(options: AIRequestOptions): Promise<AIResponse> {
 }
 
 /**
+ * Ollama API 호출 (로컬 LLM - 무료, 자체 호스팅)
+ *
+ * 지원 모델:
+ * - qwen2.5:14b (한국어 추천)
+ * - llama3.2:latest
+ * - mistral:latest
+ *
+ * 설치: docker run -d -p 11434:11434 ollama/ollama
+ * 모델 다운로드: ollama pull qwen2.5:14b
+ */
+async function callOllamaAPI(options: AIRequestOptions): Promise<AIResponse> {
+  const ollamaUrl = process.env.OLLAMA_API_URL || 'http://localhost:11434';
+  const modelName = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
+
+  try {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          {
+            role: 'system',
+            content: options.systemPrompt
+          },
+          {
+            role: 'user',
+            content: options.userPrompt
+          }
+        ],
+        stream: false,
+        options: {
+          temperature: options.temperature || 0.7,
+          num_predict: options.maxTokens || 1024
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Ollama API Error: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      content: data.message?.content || '',
+      tokensUsed: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+      model: modelName
+    };
+  } catch (error) {
+    // Ollama 서버가 없으면 fallback으로 Claude 사용
+    console.warn('Ollama not available, falling back to Claude Haiku');
+    return callClaudeAPI({ ...options, model: 'haiku' });
+  }
+}
+
+/**
  * AI 응답 생성 (통합)
  */
 export async function generateAIResponse(options: AIRequestOptions): Promise<AIResponse> {
+  // 환경변수로 기본 AI 제공자 선택 가능
+  const defaultProvider = process.env.AI_PROVIDER;
+
+  // Ollama 모델 직접 선택 또는 환경변수로 설정
+  if (options.model === 'ollama' || defaultProvider === 'ollama') {
+    return callOllamaAPI(options);
+  }
+
   const isClaudeModel = options.model === 'haiku' || options.model === 'sonnet';
 
   if (isClaudeModel) {
