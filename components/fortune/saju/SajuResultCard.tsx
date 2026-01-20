@@ -14,7 +14,7 @@ import {
   AnalysisResult, SajuChart, OhengBalance,
   ELEMENT_KOREAN, PeerComparison, AIAnalysis, Element
 } from '@/types/saju';
-import { ELEMENT_INFO, ElementInfo } from '@/lib/fortune/saju/mappings/poeticExpressions';
+import { ELEMENT_INFO, ElementInfo, generateEnhancedElementPoetry, EnhancedElementPoetry } from '@/lib/fortune/saju/mappings/poeticExpressions';
 import { generateZodiacAnalysis, type ZodiacAnalysis } from '@/lib/fortune/saju/analysis/zodiacAnalysis';
 import { CardDeck, RootCard } from '@/types/cards';
 import PremiumResultDisplay from './PremiumResultDisplay';
@@ -90,6 +90,18 @@ export default function SajuResultCard({
 
     return generateZodiacAnalysis(result.user.birthDate, dominantElement, 2026);
   }, [result.user.birthDate, oheng]);
+
+  // 향상된 오행 시적 해석 (표준안 적용)
+  const enhancedPoetry = useMemo(() => {
+    const ohengKorean: Record<string, number> = {
+      '목': oheng.wood || 0,
+      '화': oheng.fire || 0,
+      '토': oheng.earth || 0,
+      '금': oheng.metal || 0,
+      '수': oheng.water || 0
+    };
+    return generateEnhancedElementPoetry(ohengKorean, yongsin);
+  }, [oheng, yongsin]);
 
   // 6장 카드 배열 구성
   const sixCards = cardDeck ? [
@@ -516,62 +528,112 @@ export default function SajuResultCard({
                 </div>
               </div>
 
-              {/* 오행 시적 표현 */}
-              {(elementPoetry || cardDeck?.elementPoetry) && (
-                <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
-                  <h4 className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                    <Star className="w-4 h-4" />
-                    오행의 시적 해석
-                  </h4>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {cardDeck?.elementPoetry?.poeticPhrase || elementPoetry?.balancePoetry}
-                  </p>
-                  {(cardDeck?.elementPoetry?.balanceAdvice || elementPoetry?.overallHarmony) && (
-                    <p className="mt-3 text-sm text-purple-600 dark:text-purple-400">
-                      {cardDeck?.elementPoetry?.balanceAdvice || elementPoetry?.overallHarmony}
+              {/* 오행의 시적 해석 — 에너지 균형 리포트 (표준안 적용) */}
+              {enhancedPoetry && (
+                <div className="space-y-4">
+                  {/* 메인 해석 */}
+                  <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                    <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400 mb-4 flex items-center gap-2">
+                      <Star className="w-4 h-4" />
+                      {enhancedPoetry.title}
+                    </h4>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line text-sm">
+                      {enhancedPoetry.mainInterpretation}
                     </p>
-                  )}
+                  </div>
+
+                  {/* 핵심 보완 메시지 */}
+                  <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <h4 className="text-sm font-bold text-red-700 dark:text-red-400 mb-3">
+                      {enhancedPoetry.coreMessage.title}
+                    </h4>
+                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line text-sm mb-3">
+                      {enhancedPoetry.coreMessage.balanceAdvice}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {enhancedPoetry.coreMessage.transitions.map((t, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded text-xs text-gray-600 dark:text-gray-400">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* 상생/상극 관계 (프리미엄) */}
-              {isPremiumUnlocked && elementPoetry ? (
+              {isPremiumUnlocked && enhancedPoetry ? (
                 <div className="space-y-4">
-                  {/* 상생 관계 */}
+                  {/* 상생 관계 (에너지 증폭 구조) */}
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
-                      🌊 상생 관계 (서로 살리는 힘)
+                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-3">
+                      🌊 상생 관계 (에너지 증폭 구조)
                     </h4>
-                    <div className="space-y-2">
-                      {elementPoetry.generatingRelations?.slice(0, 2).map((rel, idx) => (
+                    <div className="space-y-3">
+                      {enhancedPoetry.generatingRelations.map((rel, idx) => (
                         <div key={idx} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                          <p className="font-medium text-gray-800 dark:text-white text-sm">{rel.relationName}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rel.poeticExpression}</p>
+                          <p className="font-medium text-blue-800 dark:text-blue-300 text-sm mb-1">
+                            {rel.emoji} {rel.relationName}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                            {rel.poeticExpression}
+                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* 상극 관계 */}
+                  {/* 상극 관계 (균형 조절 장치) */}
                   <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
-                    <h4 className="text-sm font-medium text-orange-700 dark:text-orange-400 mb-3">
-                      ⚔️ 상극 관계 (균형을 잡는 힘)
+                    <h4 className="text-sm font-bold text-orange-700 dark:text-orange-400 mb-3">
+                      ⚔️ 상극 관계 (균형 조절 장치)
                     </h4>
-                    <div className="space-y-2">
-                      {elementPoetry.controllingRelations?.slice(0, 2).map((rel, idx) => (
+                    <div className="space-y-3">
+                      {enhancedPoetry.controllingRelations.map((rel, idx) => (
                         <div key={idx} className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                          <p className="font-medium text-gray-800 dark:text-white text-sm">{rel.relationName}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rel.poeticExpression}</p>
+                          <p className="font-medium text-orange-800 dark:text-orange-300 text-sm mb-1">
+                            {rel.emoji} {rel.relationName}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                            {rel.poeticExpression}
+                          </p>
+                          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                            👉 {rel.warning}
+                          </p>
                         </div>
                       ))}
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                      👉 균형 = 억제 + 활성의 동시 설계
+                    </p>
+                  </div>
+
+                  {/* 오늘의 실행 처방 */}
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                    <h4 className="text-sm font-bold text-green-700 dark:text-green-400 mb-3">
+                      ✅ 오늘의 실행 처방 (즉시 행동 연결)
+                    </h4>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-3">
+                      {enhancedPoetry.actionPrescription.title}
+                    </p>
+                    <div className="space-y-2">
+                      {enhancedPoetry.actionPrescription.actions.map((action, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <span className="text-sm font-bold text-green-600">{idx + 1}️⃣</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{action}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-4 text-sm text-green-600 dark:text-green-400 font-medium text-center">
+                      ✨ {enhancedPoetry.actionPrescription.closingMessage}
+                    </p>
                   </div>
                 </div>
               ) : !isPremiumUnlocked && (
                 <FOMOSection
                   title="오행의 숨겨진 관계"
                   description="상생과 상극의 에너지 흐름을 이해하면 인생의 파도를 탈 수 있습니다"
-                  features={['상생 관계: 당신을 성장시키는 에너지', '상극 관계: 균형을 잡아주는 힘', '맞춤 균형 조언']}
+                  features={['상생 관계: 에너지 증폭 구조', '상극 관계: 균형 조절 장치', '오늘의 실행 처방']}
                   onUnlock={onUnlockPremium}
                 />
               )}
@@ -880,39 +942,93 @@ export default function SajuResultCard({
                   </div>
                 </div>
 
-                {/* 잠긴 타임라인 */}
-                {[
-                  { label: '다음 대운', years: '향후 10년' },
-                  { label: '인생 전환점', years: '중요 시기' },
-                  { label: '골든윈도우', years: '최적의 기회' }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-xl border relative overflow-hidden
-                      ${isPremiumUnlocked
-                        ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                        : 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'}`}
-                  >
-                    {!isPremiumUnlocked && (
+                {/* 타임라인 항목 - 프리미엄 해금 시 실제 데이터 표시 */}
+                {isPremiumUnlocked && result.premium?.lifeTimeline ? (
+                  <>
+                    {/* 다음 대운 (다음 phase) */}
+                    {result.premium.lifeTimeline.phases?.[1] && (
+                      <div className="p-4 rounded-xl border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-amber-100 text-amber-700">
+                            1
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 dark:text-white">다음 대운: {result.premium.lifeTimeline.phases[1].phase}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{result.premium.lifeTimeline.phases[1].ageRange}세</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-amber-700 dark:text-amber-300 ml-13">
+                          ✨ {result.premium.lifeTimeline.phases[1].opportunities?.[0] || '새로운 기회가 열립니다'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 인생 전환점 */}
+                    {result.premium.lifeTimeline.turningPoints?.[0] && (
+                      <div className="p-4 rounded-xl border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-purple-100 text-purple-700">
+                            2
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 dark:text-white">인생 전환점: {result.premium.lifeTimeline.turningPoints[0].year}년</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{result.premium.lifeTimeline.turningPoints[0].age}세</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-purple-700 dark:text-purple-300 ml-13">
+                          🔮 {result.premium.lifeTimeline.turningPoints[0].event}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 골든윈도우 */}
+                    {result.premium.lifeTimeline.goldenWindows?.[0] && (
+                      <div className="p-4 rounded-xl border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-green-100 text-green-700">
+                            3
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 dark:text-white">골든윈도우: {result.premium.lifeTimeline.goldenWindows[0].period}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">성공 확률 {result.premium.lifeTimeline.goldenWindows[0].successRate}%</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-green-700 dark:text-green-300 ml-13">
+                          🌟 {result.premium.lifeTimeline.goldenWindows[0].purpose}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* 잠긴 타임라인 - 프리미엄 미해금 시 */
+                  [
+                    { label: '다음 대운', years: '향후 10년' },
+                    { label: '인생 전환점', years: '중요 시기' },
+                    { label: '골든윈도우', years: '최적의 기회' }
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl border relative overflow-hidden bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-white dark:via-gray-900/80 dark:to-gray-900 flex items-center justify-end pr-4">
                         <Lock className="w-4 h-4 text-gray-400" />
                       </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
-                        ${idx === 0 ? 'bg-amber-100 text-amber-700' :
-                          idx === 1 ? 'bg-purple-100 text-purple-700' :
-                          'bg-green-100 text-green-700'}`}
-                      >
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-white">{item.label}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.years}</p>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                          ${idx === 0 ? 'bg-amber-100 text-amber-700' :
+                            idx === 1 ? 'bg-purple-100 text-purple-700' :
+                            'bg-green-100 text-green-700'}`}
+                        >
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-white">{item.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.years}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* 프리미엄 유도 */}
@@ -1738,14 +1854,14 @@ function getMonthlyFortune(result: AnalysisResult) {
     }));
   }
 
-  // 기본 데이터
+  // 기본 데이터 - 모든 월에 의미있는 조언 제공
   const baseScore = result.scores.overall;
   return [
     { month: 1, monthName: '1월', score: Math.min(100, baseScore + 5), keyword: '새로운 시작', advice: '올해의 계획을 세우기 좋은 시기입니다' },
     { month: 2, monthName: '2월', score: Math.min(100, baseScore + 10), keyword: '준비와 성장', advice: '기반을 다지는 시기입니다' },
     { month: 3, monthName: '3월', score: Math.min(100, baseScore + 15), keyword: '도약의 기회', advice: '적극적으로 움직이세요' },
-    { month: 4, monthName: '4월', score: Math.min(100, baseScore), keyword: '안정과 조정', advice: '프리미엄에서 확인하세요' },
-    { month: 5, monthName: '5월', score: Math.min(100, baseScore - 5), keyword: '성장의 시기', advice: '프리미엄에서 확인하세요' },
-    { month: 6, monthName: '6월', score: Math.min(100, baseScore + 8), keyword: '수확의 시작', advice: '프리미엄에서 확인하세요' }
+    { month: 4, monthName: '4월', score: Math.min(100, baseScore), keyword: '안정과 조정', advice: '차분히 계획을 점검하는 시기입니다' },
+    { month: 5, monthName: '5월', score: Math.min(100, baseScore - 5), keyword: '성장의 시기', advice: '꾸준한 노력이 빛을 발합니다' },
+    { month: 6, monthName: '6월', score: Math.min(100, baseScore + 8), keyword: '수확의 시작', advice: '상반기 노력의 결실이 맺힙니다' }
   ];
 }

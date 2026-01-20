@@ -300,7 +300,13 @@ export function generateCardDeck(
   }
 
   // v2.0: 오행 시적 표현
-  const primaryYongsin = yongsin[0] || '목';
+  const elementEnToKo: Record<string, string> = {
+    'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수'
+  };
+  const primaryYongsin = yongsin[0] || 'wood';
+  const primaryYongsinKo = elementEnToKo[primaryYongsin] || '목';
+  const yongsinInfo = ELEMENT_INFO[primaryYongsinKo];
+
   const ohengKorean: Record<string, number> = {
     '목': oheng.wood, '화': oheng.fire, '토': oheng.earth, '금': oheng.metal, '수': oheng.water
   };
@@ -311,7 +317,7 @@ export function generateCardDeck(
   const elementPoetry: CardDeck['elementPoetry'] = {
     dominantElement: `${dominantElement}(${elementInfo?.korean || dominantElement})`,
     poeticPhrase,
-    balanceAdvice: `${elementInfo?.poeticName || dominantElement}의 기운이 강한 당신, ${primaryYongsin}의 기운을 더해 균형을 맞추세요.`
+    balanceAdvice: `${elementInfo?.poeticName || dominantElement}의 기운이 강한 당신, ${yongsinInfo?.poeticName || primaryYongsinKo}의 기운을 더해 균형을 맞추세요.`
   };
 
   return {
