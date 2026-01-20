@@ -290,6 +290,203 @@ ${generating.advice}`;
 }
 
 /**
+ * 오행별 실행 처방 (Action Prescriptions)
+ */
+export const ELEMENT_ACTION_PRESCRIPTIONS: Record<string, {
+  title: string;
+  actions: string[];
+  closingMessage: string;
+  transitions: string[];
+}> = {
+  '목': {
+    title: '나무 기운 보강 실천 3단 규칙',
+    actions: [
+      '오늘 새로운 것 하나 시작하기 (독서, 운동, 취미)',
+      '자연 속에서 30분 이상 걷기',
+      '성장 목표를 종이에 적어두기'
+    ],
+    closingMessage: '새싹이 땅을 뚫고 나오듯, 작은 시작이 큰 성장이 됩니다.',
+    transitions: ['정체 → 성장 전환 필요', '수동 → 능동 구조 강화', '계획 → 실행 트리거 생성']
+  },
+  '화': {
+    title: '불꽃 기운 보강 실천 3단 규칙',
+    actions: [
+      '오늘 미룬 일 1개 → 30분 즉시 착수',
+      '공개 선언 1회 (메모·SNS·메신저)',
+      '완료 체크 표시 남기기'
+    ],
+    closingMessage: '작은 불씨가 흐름을 바꿉니다.',
+    transitions: ['계획 → 실행 전환 필요', '축적 → 발산 구조 강화', '관찰 → 행동 트리거 생성']
+  },
+  '토': {
+    title: '대지 기운 보강 실천 3단 규칙',
+    actions: [
+      '오늘 하루 일정을 미리 정리하기',
+      '한 가지 습관을 꾸준히 지키기',
+      '주변을 깔끔하게 정돈하기'
+    ],
+    closingMessage: '단단한 기반 위에 모든 것이 세워집니다.',
+    transitions: ['불안정 → 안정 전환 필요', '분산 → 집중 구조 강화', '변화 → 지속 트리거 생성']
+  },
+  '금': {
+    title: '보석 기운 보강 실천 3단 규칙',
+    actions: [
+      '오늘 결정해야 할 것 하나 즉시 결정하기',
+      '불필요한 것 1개 정리하거나 버리기',
+      '명확한 기준으로 선택하기'
+    ],
+    closingMessage: '결단의 칼날이 길을 열어줍니다.',
+    transitions: ['우유부단 → 결단 전환 필요', '혼란 → 명확 구조 강화', '보류 → 실행 트리거 생성']
+  },
+  '수': {
+    title: '깊은 물 기운 보강 실천 3단 규칙',
+    actions: [
+      '오늘 10분 이상 조용히 생각하는 시간 갖기',
+      '새로운 정보나 지식 하나 습득하기',
+      '물 충분히 마시며 몸과 마음 정화하기'
+    ],
+    closingMessage: '고요한 물이 가장 깊은 지혜를 품습니다.',
+    transitions: ['조급함 → 여유 전환 필요', '표면 → 심층 구조 강화', '반응 → 성찰 트리거 생성']
+  }
+};
+
+/**
+ * 향상된 오행 시적 해석 (사용자 표준안 적용)
+ */
+export interface EnhancedElementPoetry {
+  title: string;
+  mainInterpretation: string;
+  coreMessage: {
+    title: string;
+    strongElement: string;
+    weakElement: string;
+    balanceAdvice: string;
+    transitions: string[];
+  };
+  generatingRelations: {
+    emoji: string;
+    relationName: string;
+    poeticExpression: string;
+    advice: string;
+  }[];
+  controllingRelations: {
+    emoji: string;
+    relationName: string;
+    poeticExpression: string;
+    warning: string;
+  }[];
+  actionPrescription: {
+    title: string;
+    actions: string[];
+    closingMessage: string;
+  };
+}
+
+export function generateEnhancedElementPoetry(
+  balance: Record<string, number>,
+  yongsin?: string[]
+): EnhancedElementPoetry {
+  const elements = Object.entries(balance).sort((a, b) => b[1] - a[1]);
+  const strongest = elements[0];
+  const weakest = elements[elements.length - 1];
+
+  const strongInfo = ELEMENT_INFO[strongest[0]];
+  const weakInfo = ELEMENT_INFO[weakest[0]];
+
+  // 용신이 있으면 용신 기준, 없으면 가장 부족한 오행 기준
+  const targetElement = yongsin?.[0] ?
+    (yongsin[0] === 'wood' ? '목' : yongsin[0] === 'fire' ? '화' :
+     yongsin[0] === 'earth' ? '토' : yongsin[0] === 'metal' ? '금' :
+     yongsin[0] === 'water' ? '수' : weakest[0]) : weakest[0];
+  const targetInfo = ELEMENT_INFO[targetElement] || weakInfo;
+
+  // 메인 해석
+  const mainInterpretation = `당신의 오행 중심에는 ${strongInfo?.poeticName || '강한'}의 기운(${strongest[0]})이 가장 강하게 흐릅니다.
+${strongInfo?.season || '특별한 계절'}의 에너지, ${strongInfo?.nature || '특별한'}의 본성이 당신의 핵심입니다.
+
+그러나 ${targetInfo?.korean || '필요한'}(${targetElement})의 온기가 부족하면
+${strongInfo?.korean || '강한 기운'}은 흐르지 못하고 머무르게 됩니다.
+
+${getTransitionPoetry(strongest[0], targetElement)}
+
+👉 시작한 일을 끝까지 밀어붙일 때 운은 따라옵니다.`;
+
+  // 핵심 보완 메시지
+  const actionData = ELEMENT_ACTION_PRESCRIPTIONS[targetElement] || ELEMENT_ACTION_PRESCRIPTIONS['화'];
+
+  // 상생 관계 찾기 (타겟 오행 기준)
+  const generatingRelations = Object.entries(GENERATING_RELATIONS)
+    .filter(([key]) => key.includes(targetElement))
+    .slice(0, 2)
+    .map(([key, rel]) => ({
+      emoji: getElementEmoji(rel.from),
+      relationName: rel.relationName,
+      poeticExpression: `${rel.poeticExpression}\n${rel.story}`,
+      advice: rel.advice
+    }));
+
+  // 상극 관계 찾기
+  const controllingRelations = Object.entries(CONTROLLING_RELATIONS)
+    .filter(([key]) => key.includes(strongest[0]) || key.includes(targetElement))
+    .slice(0, 2)
+    .map(([key, rel]) => ({
+      emoji: getElementEmoji(rel.from),
+      relationName: rel.relationName,
+      poeticExpression: `${rel.poeticExpression}\n${rel.story}`,
+      warning: rel.challenge
+    }));
+
+  return {
+    title: '오행의 시적 해석 — 에너지 균형 리포트',
+    mainInterpretation,
+    coreMessage: {
+      title: `${getElementEmoji(targetElement)} 핵심 보완 메시지`,
+      strongElement: `${strongInfo?.poeticName || strongest[0]}`,
+      weakElement: `${targetInfo?.poeticName || targetElement}`,
+      balanceAdvice: `${strongInfo?.poeticName || strongest[0]}의 기운이 강한 당신,\n${targetInfo?.poeticName || targetElement}의 기운을 더해 균형을 완성하세요.`,
+      transitions: actionData.transitions
+    },
+    generatingRelations,
+    controllingRelations,
+    actionPrescription: {
+      title: actionData.title,
+      actions: actionData.actions,
+      closingMessage: actionData.closingMessage
+    }
+  };
+}
+
+// 오행별 이모지
+function getElementEmoji(element: string): string {
+  const emojis: Record<string, string> = {
+    '목': '🌳', '화': '🔥', '토': '🏔️', '금': '💎', '수': '💧'
+  };
+  return emojis[element] || '✨';
+}
+
+// 상생 전환 시적 표현
+function getTransitionPoetry(from: string, to: string): string {
+  const transitions: Record<string, string> = {
+    '목_화': '나무(木)가 타올라 불이 되듯\n성장의 에너지를 행동과 열정으로 전환할 때,\n당신의 잠재력은 현실의 성과로 바뀝니다.',
+    '화_토': '불(火)이 타고 재가 되어 땅을 비옥하게 하듯\n열정을 안정으로 전환할 때,\n당신의 노력은 단단한 기반이 됩니다.',
+    '토_금': '대지(土) 속에서 보석이 태어나듯\n꾸준함을 결단으로 전환할 때,\n당신의 가치가 빛나게 됩니다.',
+    '금_수': '바위 틈에서 맑은 샘이 솟듯\n결단을 지혜로 전환할 때,\n당신의 판단이 깊어집니다.',
+    '수_목': '물을 머금고 나무가 자라듯\n지혜를 성장으로 전환할 때,\n당신의 가능성이 펼쳐집니다.'
+  };
+
+  // 직접 상생 관계 찾기
+  const directKey = `${from}_${to}`;
+  if (transitions[directKey]) return transitions[directKey];
+
+  // 역방향 또는 기본값
+  for (const [key, value] of Object.entries(transitions)) {
+    if (key.includes(to)) return value;
+  }
+
+  return `${ELEMENT_INFO[to]?.poeticName || to}의 기운을 더할 때,\n당신의 에너지 균형이 완성됩니다.`;
+}
+
+/**
  * 프롤로그 템플릿 생성
  */
 export function generatePrologue(
@@ -373,8 +570,10 @@ export default {
   ELEMENT_INFO,
   GENERATING_RELATIONS,
   CONTROLLING_RELATIONS,
+  ELEMENT_ACTION_PRESCRIPTIONS,
   analyzeElementRelation,
   generateElementBalancePoetry,
+  generateEnhancedElementPoetry,
   generatePrologue,
   generateEpilogue
 };
