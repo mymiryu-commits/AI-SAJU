@@ -72,6 +72,44 @@ function getElementKorean(element: string): string {
   return mapping[element] || '목';
 }
 
+// Element 영어 → 한글 키 변환
+const ELEMENT_TO_KO_KEY: Record<string, string> = {
+  'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수',
+  '목': '목', '화': '화', '토': '토', '금': '금', '수': '수'
+};
+
+// 오행 자연어 풍부화 함수 (PDF용)
+function getElementRichDescription(element: Element | string, type: 'yongsin' | 'gisin' | 'display' = 'display'): string {
+  const koKey = ELEMENT_TO_KO_KEY[element] || '목';
+  const info = ELEMENT_INFO[koKey];
+
+  if (!info) {
+    return ELEMENT_KOREAN[element as Element] || element;
+  }
+
+  switch (type) {
+    case 'yongsin':
+      return `${info.poeticName}(${ELEMENT_KOREAN[element as Element]}) - ${info.season}의 기운, ${info.nature}`;
+    case 'gisin':
+      return `${info.poeticName}(${ELEMENT_KOREAN[element as Element]}) - ${info.emotion}의 감정, ${info.organ} 건강 주의`;
+    case 'display':
+    default:
+      return `${info.poeticName}(${koKey})`;
+  }
+}
+
+// 오행 상세 설명 (PDF 섹션용)
+function getElementDetailedDescription(element: Element | string): string {
+  const koKey = ELEMENT_TO_KO_KEY[element] || '목';
+  const info = ELEMENT_INFO[koKey];
+
+  if (!info) return '';
+
+  return `${info.poeticName}은 ${info.season}의 에너지입니다. ` +
+         `${info.direction}을 향하면 좋고, ${info.color} 계열의 색상이 행운을 가져옵니다. ` +
+         `${info.nature}의 본성을 가지며, ${info.organ}과 관련이 깊습니다.`;
+}
+
 // OhengBalance를 Record<string, number>로 변환
 function convertOhengToRecord(oheng: OhengBalance): Record<string, number> {
   return {
@@ -731,7 +769,11 @@ function generateYearSummary(
   const challenges: string[] = [];
 
   if (yongsin?.length) {
-    highlights.push(`용신 ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}의 기운을 활용하면 운세 상승`);
+    const yongsinNames = yongsin.map(e => {
+      const koKey = ELEMENT_TO_KO_KEY[e] || '목';
+      return ELEMENT_INFO[koKey]?.poeticName || ELEMENT_KOREAN[e];
+    }).join(', ');
+    highlights.push(`${yongsinNames}의 기운을 가까이 하면 운세가 상승합니다`);
   }
 
   // 오행 균형 분석
@@ -744,11 +786,15 @@ function generateYearSummary(
   const weakestElement = sortedElements[sortedElements.length - 1];
 
   if (strongestElement.value > 30) {
-    highlights.push(`${ELEMENT_KOREAN[strongestElement.element]}(${strongestElement.value.toFixed(0)}%)의 강한 기운이 핵심 동력`);
+    const strongKoKey = ELEMENT_TO_KO_KEY[strongestElement.element] || '목';
+    const strongName = ELEMENT_INFO[strongKoKey]?.poeticName || ELEMENT_KOREAN[strongestElement.element];
+    highlights.push(`${strongName}의 강한 기운(${strongestElement.value.toFixed(0)}%)이 당신의 핵심 동력입니다`);
   }
 
   if (weakestElement.value < 10) {
-    challenges.push(`${ELEMENT_KOREAN[weakestElement.element]} 기운 부족으로 관련 영역 보완 필요`);
+    const weakKoKey = ELEMENT_TO_KO_KEY[weakestElement.element] || '목';
+    const weakName = ELEMENT_INFO[weakKoKey]?.poeticName || ELEMENT_KOREAN[weakestElement.element];
+    challenges.push(`${weakName}의 기운이 부족하여 관련 영역 보완이 필요합니다`);
   }
 
   if (premium?.lifeTimeline?.goldenWindows?.length) {
@@ -1137,21 +1183,33 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   });
 
   if (yongsin?.length || gisin?.length) {
-    addSubSection('용신/기신 분석');
+    addSubSection('용신/기신 분석 - 나에게 필요한 기운과 주의할 기운');
     if (yongsin?.length) {
-      addText(`용신(用神): ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
-      addText('- 용신은 당신의 사주에서 부족하거나 필요한 기운입니다.');
-      addText('- 이 오행과 관련된 색상, 방향, 활동을 활용하면 운이 상승합니다.');
+      addText('');
+      addText('★ 용신(用神) - 나에게 힘이 되는 기운');
       yongsin.forEach(e => {
+        const richDesc = getElementRichDescription(e, 'yongsin');
+        const detailedDesc = getElementDetailedDescription(e);
+        addText(`  • ${richDesc}`);
+        addText(`    ${detailedDesc}`);
         const impact = ELEMENT_LIFE_IMPACT[e];
         if (impact) {
-          addText(`  ▸ ${ELEMENT_KOREAN[e]} 활용법: ${impact.wealth.advice}`);
+          addText(`    ▸ 활용법: ${impact.wealth.advice}`);
         }
       });
+      addText('');
+      addText('  ※ 용신은 당신의 사주에서 부족하거나 필요한 기운입니다.');
+      addText('    이 오행과 관련된 색상, 방향, 활동을 활용하면 운이 상승합니다.');
     }
     if (gisin?.length) {
-      addText(`기신(忌神): ${gisin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
-      addText('- 기신은 사주에 이미 과한 기운으로, 피하면 균형을 유지할 수 있습니다.');
+      addText('');
+      addText('☆ 기신(忌神) - 조심해야 할 기운');
+      gisin.forEach(e => {
+        const richDesc = getElementRichDescription(e, 'gisin');
+        addText(`  • ${richDesc}`);
+      });
+      addText('');
+      addText('  ※ 기신은 사주에 이미 과한 기운으로, 관련 활동을 줄이면 균형을 유지할 수 있습니다.');
     }
   }
 
@@ -2098,10 +2156,10 @@ export function generatePDFSections(options: PDFGeneratorOptions): PDFSection[] 
   ];
 
   if (yongsin?.length) {
-    ohengContent.push(`용신: ${yongsin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
+    ohengContent.push(`용신(힘이 되는 기운): ${yongsin.map(e => getElementRichDescription(e, 'display')).join(', ')}`);
   }
   if (gisin?.length) {
-    ohengContent.push(`기신: ${gisin.map(e => ELEMENT_KOREAN[e]).join(', ')}`);
+    ohengContent.push(`기신(주의할 기운): ${gisin.map(e => getElementRichDescription(e, 'display')).join(', ')}`);
   }
   sections.push({ title: '오행 분석', content: ohengContent });
 
