@@ -426,8 +426,386 @@ export function checkSamhap(branches: string[]): { result: string } | null {
   return null;
 }
 
+// ========== 소비자 친화적 리스크 변환 (Day7) ==========
+
+/**
+ * 합충형파해 → 관계/계약/이동 리스크 변환
+ *
+ * - 합(合) = "기회·연결" (긍정적)
+ * - 충(沖) = "변화·이동" (주의 필요)
+ * - 형(刑) = "스트레스·자기압박" (주의 필요)
+ * - 파/해 = "관계 오해·계약 파손" (주의 필요)
+ */
+export interface ConsumerFriendlyRisk {
+  type: '기회·연결' | '변화·이동' | '스트레스·자기압박' | '관계 오해·계약 파손';
+  originalType: RelationType;
+  positions: string[];
+  description: string;
+  actionTip: string;
+  isPositive: boolean;
+}
+
+export interface RiskTimingAnalysis {
+  // 관계 리스크 월 TOP2
+  relationshipRiskMonths: Array<{
+    month: number;
+    monthName: string;
+    riskLevel: 'high' | 'medium' | 'low';
+    reason: string;
+    tip: string;
+  }>;
+  // 계약/투자 주의 주간 TOP2
+  contractCautionWeeks: Array<{
+    weekNumber: number;
+    period: string;  // "1월 2째주" 형태
+    riskLevel: 'high' | 'medium' | 'low';
+    reason: string;
+    tip: string;
+  }>;
+  // 기회/연결 좋은 월
+  opportunityMonths: Array<{
+    month: number;
+    monthName: string;
+    reason: string;
+    actionTip: string;
+  }>;
+}
+
+const CONSUMER_FRIENDLY_TYPE_MAP: Record<RelationType, ConsumerFriendlyRisk['type']> = {
+  '육합': '기회·연결',
+  '삼합': '기회·연결',
+  '방합': '기회·연결',
+  '충': '변화·이동',
+  '형': '스트레스·자기압박',
+  '파': '관계 오해·계약 파손',
+  '해': '관계 오해·계약 파손'
+};
+
+const RISK_ACTION_TIPS: Record<ConsumerFriendlyRisk['type'], string[]> = {
+  '기회·연결': [
+    '새로운 만남에 적극적으로 임하세요.',
+    '협력 관계를 맺기에 좋은 시기입니다.',
+    '네트워킹 활동을 늘려보세요.',
+    '중요한 계약/약속을 이 시기에 맞추세요.'
+  ],
+  '변화·이동': [
+    '이직, 이사 등 변화가 자연스러운 시기입니다.',
+    '급격한 결정보다 충분한 검토가 필요합니다.',
+    '여행이나 출장이 많을 수 있으니 건강 관리에 유의하세요.',
+    '변화를 두려워하지 말고 준비된 자세로 임하세요.'
+  ],
+  '스트레스·자기압박': [
+    '완벽주의를 내려놓고 여유를 가지세요.',
+    '스스로를 너무 몰아붙이지 마세요.',
+    '명상, 운동 등 스트레스 해소 활동을 추천합니다.',
+    '중요한 결정은 미루고 휴식을 취하세요.'
+  ],
+  '관계 오해·계약 파손': [
+    '오해가 생기기 쉬우니 명확한 소통을 하세요.',
+    '계약서는 꼼꼼히 검토하고 서명하세요.',
+    '구두 약속보다 문서화를 권장합니다.',
+    '친한 사이일수록 경계를 명확히 하세요.'
+  ]
+};
+
+/**
+ * 합충형파해를 소비자 친화적 리스크로 변환
+ */
+export function transformToConsumerFriendlyRisk(analysis: HapChungAnalysis): ConsumerFriendlyRisk[] {
+  return analysis.relations.map(relation => {
+    const consumerType = CONSUMER_FRIENDLY_TYPE_MAP[relation.type];
+    const tips = RISK_ACTION_TIPS[consumerType];
+    const randomTip = tips[Math.floor(Math.random() * tips.length)];
+
+    // 위치에 따른 구체적 설명
+    const positionMeaning = getPositionMeaning(relation.positions);
+
+    return {
+      type: consumerType,
+      originalType: relation.type,
+      positions: relation.positions,
+      description: `${positionMeaning} ${relation.effect}`,
+      actionTip: randomTip,
+      isPositive: relation.isPositive
+    };
+  });
+}
+
+function getPositionMeaning(positions: string[]): string {
+  const posSet = new Set(positions);
+
+  if (posSet.has('년지') && posSet.has('월지')) {
+    return '가족/직장 환경에서';
+  }
+  if (posSet.has('월지') && posSet.has('일지')) {
+    return '직장/사회생활에서';
+  }
+  if (posSet.has('일지') && posSet.has('시지')) {
+    return '가정/배우자 관계에서';
+  }
+  if (posSet.has('년지') && posSet.has('일지')) {
+    return '인생 방향/정체성에서';
+  }
+  return '전반적인 삶에서';
+}
+
+// 월별 지지 매핑 (음력 기준 대략)
+const MONTH_BRANCH_MAP: Record<number, string> = {
+  1: '寅', 2: '卯', 3: '辰', 4: '巳', 5: '午', 6: '未',
+  7: '申', 8: '酉', 9: '戌', 10: '亥', 11: '子', 12: '丑'
+};
+
+const MONTH_NAMES = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+
+/**
+ * 사주 기반 리스크 타이밍 분석
+ * 관계 리스크 월 TOP2, 계약/투자 주의 주간 TOP2, 기회 월 분석
+ */
+export function analyzeRiskTiming(saju: SajuChart, targetYear: number = 2026): RiskTimingAnalysis {
+  const branches = [
+    saju.year.earthlyBranch,
+    saju.month.earthlyBranch,
+    saju.day.earthlyBranch,
+    saju.time?.earthlyBranch || ''
+  ].filter(Boolean);
+
+  const monthRisks: Array<{ month: number; riskScore: number; reasons: string[] }> = [];
+  const monthOpportunities: Array<{ month: number; score: number; reasons: string[] }> = [];
+
+  // 각 월별로 사주 지지와의 충돌/합 체크
+  for (let month = 1; month <= 12; month++) {
+    const monthBranch = MONTH_BRANCH_MAP[month];
+    let riskScore = 0;
+    let opportunityScore = 0;
+    const riskReasons: string[] = [];
+    const oppReasons: string[] = [];
+
+    branches.forEach((branch, idx) => {
+      // 충 체크
+      if (CHUNG_TABLE[branch] === monthBranch) {
+        riskScore += 30;
+        riskReasons.push(`${PILLAR_NAMES[idx]}과 ${month}월 지지가 충(沖)`);
+      }
+      // 형 체크
+      HYUNG_TABLE.forEach(hyung => {
+        if (hyung.branches.includes(branch) && hyung.branches.includes(monthBranch)) {
+          riskScore += 20;
+          riskReasons.push(`${hyung.name} 형(刑) 발생`);
+        }
+      });
+      // 파 체크
+      if (PA_TABLE[branch] === monthBranch) {
+        riskScore += 15;
+        riskReasons.push(`${PILLAR_NAMES[idx]}과 파(破)`);
+      }
+      // 해 체크
+      if (HAE_TABLE[branch] === monthBranch) {
+        riskScore += 15;
+        riskReasons.push(`${PILLAR_NAMES[idx]}과 해(害)`);
+      }
+      // 육합 체크 (긍정)
+      if (YUKAP_TABLE[branch]?.partner === monthBranch) {
+        opportunityScore += 25;
+        oppReasons.push(`${PILLAR_NAMES[idx]}과 육합(六合) - 좋은 인연`);
+      }
+    });
+
+    // 삼합 체크 (긍정)
+    SAMHAP_TABLE.forEach(samhap => {
+      const matching = samhap.branches.filter(b => branches.includes(b) || b === monthBranch);
+      if (matching.length >= 2 && samhap.branches.includes(monthBranch)) {
+        opportunityScore += 20;
+        oppReasons.push(`삼합(三合) 기운 형성`);
+      }
+    });
+
+    if (riskScore > 0) {
+      monthRisks.push({ month, riskScore, reasons: riskReasons });
+    }
+    if (opportunityScore > 0) {
+      monthOpportunities.push({ month, score: opportunityScore, reasons: oppReasons });
+    }
+  }
+
+  // 리스크 TOP2 정렬
+  monthRisks.sort((a, b) => b.riskScore - a.riskScore);
+  const topRiskMonths = monthRisks.slice(0, 2).map(r => ({
+    month: r.month,
+    monthName: MONTH_NAMES[r.month - 1],
+    riskLevel: r.riskScore >= 40 ? 'high' as const : r.riskScore >= 20 ? 'medium' as const : 'low' as const,
+    reason: r.reasons[0] || '지지 충돌',
+    tip: r.riskScore >= 40
+      ? '이 달은 중요한 인간관계 결정을 피하고, 갈등 해소에 집중하세요.'
+      : '관계에서 오해가 생기지 않도록 명확한 소통을 권장합니다.'
+  }));
+
+  // 기회 월 정렬
+  monthOpportunities.sort((a, b) => b.score - a.score);
+  const topOpportunityMonths = monthOpportunities.slice(0, 3).map(o => ({
+    month: o.month,
+    monthName: MONTH_NAMES[o.month - 1],
+    reason: o.reasons[0] || '지지 조화',
+    actionTip: '네트워킹, 새로운 계약, 중요한 만남에 좋은 시기입니다.'
+  }));
+
+  // 계약/투자 주의 주간 (리스크 높은 월의 특정 주간)
+  const contractCautionWeeks = topRiskMonths.slice(0, 2).map((rm, idx) => ({
+    weekNumber: idx + 1,
+    period: `${rm.monthName} ${idx === 0 ? '초순(1~10일)' : '중순(11~20일)'}`,
+    riskLevel: rm.riskLevel,
+    reason: '지지 충돌로 인한 불안정 에너지',
+    tip: '중요 계약은 이 시기를 피하고, 투자 결정은 신중히 검토하세요.'
+  }));
+
+  return {
+    relationshipRiskMonths: topRiskMonths.length > 0 ? topRiskMonths : [{
+      month: 0,
+      monthName: '특별히 주의할 월 없음',
+      riskLevel: 'low',
+      reason: '전반적으로 안정적',
+      tip: '꾸준히 관계를 유지하세요.'
+    }],
+    contractCautionWeeks: contractCautionWeeks.length > 0 ? contractCautionWeeks : [{
+      weekNumber: 0,
+      period: '특별히 주의할 주간 없음',
+      riskLevel: 'low',
+      reason: '전반적으로 안정적',
+      tip: '계획대로 진행하세요.'
+    }],
+    opportunityMonths: topOpportunityMonths.length > 0 ? topOpportunityMonths : [{
+      month: 5,
+      monthName: '5월',
+      reason: '봄의 활기찬 에너지',
+      actionTip: '새로운 시작에 좋은 시기입니다.'
+    }]
+  };
+}
+
+/**
+ * 올해 운영 대시보드 데이터 생성
+ */
+export interface YearlyDashboard {
+  yearScore: number;
+  scoreReasons: string[];  // 점수 이유 3개
+  opportunityTop3: Array<{ item: string; month: string; tip: string }>;
+  riskTop3: Array<{ item: string; month: string; tip: string }>;
+  luckyMonths: Array<{ month: number; monthName: string; actionItem: string }>;
+}
+
+export function generateYearlyDashboard(
+  saju: SajuChart,
+  hapchungAnalysis: HapChungAnalysis,
+  riskTiming: RiskTimingAnalysis,
+  targetYear: number = 2026
+): YearlyDashboard {
+  // 기본 점수 계산 (합충 조화 점수 기반)
+  const baseScore = hapchungAnalysis.harmonyScore;
+
+  // 점수 이유 3개 생성
+  const scoreReasons: string[] = [];
+
+  if (hapchungAnalysis.harmonies.length > 0) {
+    const hapTypes = [...new Set(hapchungAnalysis.harmonies.map(h => h.type))];
+    scoreReasons.push(`${hapTypes.join('·')}이 있어 인복과 조력자 운이 좋습니다 (+${hapchungAnalysis.harmonies.length * 10}점)`);
+  }
+
+  if (hapchungAnalysis.conflicts.length > 0) {
+    const conflictCount = hapchungAnalysis.conflicts.length;
+    scoreReasons.push(`${conflictCount}개의 충돌 관계로 변화와 도전이 예상됩니다 (-${conflictCount * 8}점)`);
+  } else {
+    scoreReasons.push('충돌 없이 안정적인 흐름입니다 (+10점)');
+  }
+
+  // 년지 기반 올해 운 분석
+  const yearBranch = saju.year.earthlyBranch;
+  const targetYearBranch = getYearBranch(targetYear);
+  const yearRelation = checkBranchRelation(yearBranch, targetYearBranch);
+
+  if (yearRelation === '육합' || yearRelation === '삼합') {
+    scoreReasons.push(`올해(${targetYear}) 지지와 조화로운 관계로 기회가 많습니다 (+15점)`);
+  } else if (yearRelation === '충') {
+    scoreReasons.push(`올해(${targetYear}) 지지와 충돌하여 변화가 많은 해입니다 (-10점)`);
+  } else {
+    scoreReasons.push(`올해(${targetYear})는 무난한 흐름으로 기본기를 다지기 좋습니다`);
+  }
+
+  // 기회 Top3
+  const opportunityTop3 = riskTiming.opportunityMonths.slice(0, 3).map(om => ({
+    item: om.reason,
+    month: om.monthName,
+    tip: om.actionTip
+  }));
+
+  // 부족하면 기본값 추가
+  while (opportunityTop3.length < 3) {
+    opportunityTop3.push({
+      item: '꾸준한 자기계발',
+      month: `${6 + opportunityTop3.length}월`,
+      tip: '실력을 쌓는 시기로 활용하세요.'
+    });
+  }
+
+  // 리스크 Top3
+  const riskTop3: Array<{ item: string; month: string; tip: string }> = [];
+
+  riskTiming.relationshipRiskMonths.forEach(rm => {
+    if (rm.month > 0) {
+      riskTop3.push({
+        item: '관계 갈등 주의',
+        month: rm.monthName,
+        tip: rm.tip
+      });
+    }
+  });
+
+  riskTiming.contractCautionWeeks.forEach(cw => {
+    if (cw.weekNumber > 0) {
+      riskTop3.push({
+        item: '계약/투자 신중',
+        month: cw.period,
+        tip: cw.tip
+      });
+    }
+  });
+
+  // 부족하면 기본값 추가
+  while (riskTop3.length < 3) {
+    riskTop3.push({
+      item: '과로/건강 주의',
+      month: `${7 + riskTop3.length}월`,
+      tip: '무리하지 말고 휴식을 챙기세요.'
+    });
+  }
+
+  // 행운의 달 (기회 월 + 삼합/육합 월)
+  const luckyMonths = riskTiming.opportunityMonths.slice(0, 3).map(om => ({
+    month: om.month,
+    monthName: om.monthName,
+    actionItem: `${om.monthName}: ${om.actionTip}`
+  }));
+
+  return {
+    yearScore: baseScore,
+    scoreReasons: scoreReasons.slice(0, 3),
+    opportunityTop3: opportunityTop3.slice(0, 3),
+    riskTop3: riskTop3.slice(0, 3),
+    luckyMonths
+  };
+}
+
+// 연도별 지지 계산 (간단한 공식)
+function getYearBranch(year: number): string {
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  // 1984년은 甲子년이므로 자(子)
+  const index = (year - 4) % 12;
+  return branches[index >= 0 ? index : index + 12];
+}
+
 export default {
   analyzeHapChung,
   checkBranchRelation,
-  checkSamhap
+  checkSamhap,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
+  generateYearlyDashboard
 };

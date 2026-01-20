@@ -46,10 +46,18 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
+  generateYearlyDashboard,
+  SIPSIN_INFO,
   type SipsinChart,
+  type SipsinType,
   type SinsalAnalysis,
   type UnsungAnalysis,
-  type HapChungAnalysis
+  type HapChungAnalysis,
+  type ConsumerFriendlyRisk,
+  type RiskTimingAnalysis,
+  type YearlyDashboard
 } from '../analysis';
 
 // ========== 연령별 분기 시스템 ==========
@@ -1084,10 +1092,92 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     });
   }
 
-  // ========== Executive Summary ==========
+  // ========== 올해 운영 대시보드 (Day7 추가) ==========
   doc.addPage();
   yPos = margin;
 
+  // 합충형파해 분석 및 리스크 타이밍 생성 (대시보드용)
+  const hapchungForDashboard = analyzeHapChung(saju);
+  const riskTimingForDashboard = analyzeRiskTiming(saju, targetYear);
+  const yearlyDashboard = generateYearlyDashboard(saju, hapchungForDashboard, riskTimingForDashboard, targetYear);
+
+  // 대시보드 제목
+  doc.setFontSize(16);
+  doc.text(`📊 ${targetYear}년 운영 대시보드`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 올해 점수 대형 표시
+  doc.setFontSize(40);
+  doc.text(`${yearlyDashboard.yearScore}`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 8;
+  doc.setFontSize(12);
+  doc.text('점 / 100점', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 점수 이유 3개
+  doc.setFontSize(11);
+  doc.text('📝 점수 산출 근거', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(9);
+  yearlyDashboard.scoreReasons.forEach((reason, idx) => {
+    addText(`  ${idx + 1}. ${reason}`);
+  });
+  yPos += 8;
+
+  // 2열 레이아웃: 기회 Top3 | 리스크 Top3
+  const colWidth = (contentWidth - 10) / 2;
+
+  // 기회 Top3 (왼쪽)
+  doc.setFontSize(11);
+  doc.text('🌟 기회 Top3', margin, yPos);
+  doc.text('⚠️ 리스크 Top3', margin + colWidth + 10, yPos);
+  yPos += 8;
+
+  doc.setFontSize(9);
+  for (let i = 0; i < 3; i++) {
+    const opp = yearlyDashboard.opportunityTop3[i];
+    const risk = yearlyDashboard.riskTop3[i];
+
+    if (opp) {
+      const oppText = `${i + 1}. ${opp.month}: ${opp.item}`;
+      const oppLines = doc.splitTextToSize(oppText, colWidth - 5);
+      oppLines.forEach((line: string) => {
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+    }
+
+    if (risk) {
+      const riskText = `${i + 1}. ${risk.month}: ${risk.item}`;
+      const riskLines = doc.splitTextToSize(riskText, colWidth - 5);
+      // 리스크는 같은 y 위치에서 오른쪽 열에 표시
+      const riskY = yPos - 5 * (opp ? doc.splitTextToSize(`${i + 1}. ${opp.month}: ${opp.item}`, colWidth - 5).length : 1);
+      riskLines.forEach((line: string, lineIdx: number) => {
+        doc.text(line, margin + colWidth + 10, riskY + lineIdx * 5);
+      });
+    }
+    yPos += 3;
+  }
+  yPos += 8;
+
+  // 행운의 달 + 액션 아이템
+  doc.setFontSize(11);
+  doc.text('🍀 행운의 달 & 액션 아이템', margin, yPos);
+  yPos += 8;
+
+  doc.setFontSize(9);
+  yearlyDashboard.luckyMonths.forEach(lm => {
+    checkNewPage();
+    addText(`  ✨ ${lm.actionItem}`);
+  });
+  yPos += 10;
+
+  // 구분선
+  doc.setLineWidth(0.3);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 10;
+
+  // ========== Executive Summary (기존) ==========
   const summary = generateYearSummary(oheng, yongsin, premium);
 
   addSectionTitle(`${targetYear}년 운세 핵심 요약`);
@@ -1244,21 +1334,24 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   addSectionTitle('전통 사주 이론 분석');
 
+  // 십신 타입을 한글로 변환하는 헬퍼 함수
+  const sipsinToKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
+
   // 십신(十神) 분석
   addSubSection('십신(十神) 분석 - 사주 내 관계의 해석');
   addText('십신은 일간(나)을 기준으로 다른 천간/지지와의 관계를 나타냅니다.');
   yPos += 3;
 
-  addText(`• 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)`);
-  addText(`• 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)`);
-  addText(`• 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)`);
-  addText(`• 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)`);
+  addText(`• 년주 십신: ${sipsinToKorean(sipsinChart.yearStem)} (천간) / ${sipsinToKorean(sipsinChart.yearBranch)} (지지)`);
+  addText(`• 월주 십신: ${sipsinToKorean(sipsinChart.monthStem)} (천간) / ${sipsinToKorean(sipsinChart.monthBranch)} (지지)`);
+  addText(`• 일주 십신: ${sipsinToKorean(sipsinChart.dayStem)} (천간) / ${sipsinToKorean(sipsinChart.dayBranch)} (지지)`);
+  addText(`• 시주 십신: ${sipsinChart.hourStem ? sipsinToKorean(sipsinChart.hourStem) : '미상'} (천간) / ${sipsinChart.hourBranch ? sipsinToKorean(sipsinChart.hourBranch) : '미상'} (지지)`);
   yPos += 3;
 
   // 십신 분포
   const sipsinDistribution = Object.entries(sipsinChart.distribution)
     .filter(([_, count]) => (count as number) > 0)
-    .map(([type, count]) => `${type}(${count})`);
+    .map(([type, count]) => `${sipsinToKorean(type as SipsinType)}(${count})`);
   if (sipsinDistribution.length > 0) {
     addText(`십신 분포: ${sipsinDistribution.join(', ')}`);
   }
@@ -1266,10 +1359,10 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // 십신 해석
   if (sipsinInterp.dominant.length > 0) {
-    addText(`★ 우세 십신: ${sipsinInterp.dominant.join(', ')}`);
+    addText(`★ 우세 십신: ${sipsinInterp.dominant.map(d => sipsinToKorean(d)).join(', ')}`);
   }
   if (sipsinInterp.missing.length > 0) {
-    addText(`☆ 부족 십신: ${sipsinInterp.missing.join(', ')}`);
+    addText(`☆ 부족 십신: ${sipsinInterp.missing.map(m => sipsinToKorean(m)).join(', ')}`);
   }
   addText(`균형 상태: ${sipsinInterp.balance}`);
   addText(`성격 특성: ${sipsinInterp.personality}`);
@@ -1346,44 +1439,107 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   }
   yPos += 5;
 
-  // 합충형파해 분석
-  addSubSection('합충형파해(合沖刑破害) 분석 - 지지 간의 관계');
-  addText('지지들 간의 조화와 충돌 관계를 분석합니다.');
+  // 합충형파해 분석 → 관계/계약/이동 리스크 (소비자 친화적 변환)
+  addSubSection('관계·계약·이동 리스크 분석');
+  addText('당신의 사주에서 발견된 주요 관계 패턴과 타이밍을 분석합니다.');
   yPos += 3;
 
-  addText(`조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점`);
+  // 조화 점수 시각화
+  addText(`전반적 조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점`);
   const harmonyBar = '█'.repeat(Math.round(hapchungAnalysis.harmonyScore / 10)) + '░'.repeat(10 - Math.round(hapchungAnalysis.harmonyScore / 10));
   addText(`[${harmonyBar}]`);
+  yPos += 5;
+
+  // 소비자 친화적 리스크 변환
+  const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
+
+  // 기회·연결 (합)
+  const opportunities = consumerRisks.filter(r => r.type === '기회·연결');
+  if (opportunities.length > 0) {
+    addText('🌟 기회·연결 (인복/협력 운)');
+    opportunities.slice(0, 3).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    💡 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 변화·이동 (충)
+  const changes = consumerRisks.filter(r => r.type === '변화·이동');
+  if (changes.length > 0) {
+    addText('🔄 변화·이동 (이직/이사 시기)');
+    changes.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    ⚠️ ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 스트레스·자기압박 (형)
+  const stress = consumerRisks.filter(r => r.type === '스트레스·자기압박');
+  if (stress.length > 0) {
+    addText('⚡ 스트레스·자기압박 (번아웃 주의)');
+    stress.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    🧘 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  // 관계 오해·계약 파손 (파/해)
+  const relationRisks = consumerRisks.filter(r => r.type === '관계 오해·계약 파손');
+  if (relationRisks.length > 0) {
+    addText('💔 관계 오해·계약 파손 (소통/서류 주의)');
+    relationRisks.slice(0, 2).forEach(r => {
+      addText(`  • ${r.description}`);
+      addText(`    📋 ${r.actionTip}`);
+    });
+    yPos += 3;
+  }
+
+  if (consumerRisks.length === 0) {
+    addText('✨ 특별한 리스크 없이 안정적인 사주입니다.');
+    addText('   꾸준히 기본기를 다지면 좋은 결과가 있을 것입니다.');
+  }
+
+  // 리스크 타이밍 분석 추가
+  const riskTiming = analyzeRiskTiming(saju, targetYear);
+  yPos += 5;
+
+  addText('📅 올해 타이밍 분석');
   yPos += 3;
 
-  // 합(合) 관계
-  if (hapchungAnalysis.harmonies.length > 0) {
-    addText('☯ 합(合) - 조화로운 관계:');
-    hapchungAnalysis.harmonies.slice(0, 4).forEach(r => {
-      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
-      addText(`    → ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`);
+  // 관계 리스크 월 TOP2
+  addText('⛔ 관계 리스크 월 TOP2:');
+  riskTiming.relationshipRiskMonths.slice(0, 2).forEach((rm, idx) => {
+    if (rm.month > 0) {
+      const level = rm.riskLevel === 'high' ? '🔴' : rm.riskLevel === 'medium' ? '🟡' : '🟢';
+      addText(`  ${idx + 1}. ${rm.monthName} ${level} - ${rm.reason}`);
+      addText(`     💡 ${rm.tip}`);
+    }
+  });
+  yPos += 3;
+
+  // 계약/투자 주의 주간 TOP2
+  addText('📋 계약/투자 주의 시기 TOP2:');
+  riskTiming.contractCautionWeeks.slice(0, 2).forEach((cw, idx) => {
+    if (cw.weekNumber > 0) {
+      const level = cw.riskLevel === 'high' ? '🔴' : cw.riskLevel === 'medium' ? '🟡' : '🟢';
+      addText(`  ${idx + 1}. ${cw.period} ${level}`);
+      addText(`     💡 ${cw.tip}`);
+    }
+  });
+  yPos += 3;
+
+  // 기회의 달
+  if (riskTiming.opportunityMonths.length > 0) {
+    addText('🌟 기회의 달 (네트워킹/계약에 좋은 시기):');
+    riskTiming.opportunityMonths.slice(0, 3).forEach(om => {
+      addText(`  • ${om.monthName}: ${om.reason} → ${om.actionTip}`);
     });
-    yPos += 3;
   }
 
-  // 충돌 관계
-  if (hapchungAnalysis.conflicts.length > 0) {
-    addText('⚡ 충돌 관계 - 주의 필요:');
-    hapchungAnalysis.conflicts.slice(0, 3).forEach(r => {
-      addText(`  • ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')})`);
-      addText(`    → ${r.effect}`);
-    });
-    yPos += 3;
-  }
-
-  if (hapchungAnalysis.relations.length === 0) {
-    addText('특별한 합충 관계가 없어 안정적인 사주입니다.');
-  }
-
-  addText(`종합: ${hapchungAnalysis.summary}`);
-  if (hapchungAnalysis.advice.length > 0) {
-    addText(`활용 조언: ${hapchungAnalysis.advice.slice(0, 2).join(' ')}`);
-  }
+  addText(`종합: ${hapchungAnalysis.summary}`)
 
   // ========== 다음 섹션으로 이동 ==========
   doc.addPage();
@@ -1535,86 +1691,79 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       addText(`전환 시기: ${career.pivotTiming}`);
     }
 
-    // 월별 액션플랜
+    // 월별 액션플랜 (3줄 규격: 점수+결론, 해야할것, 피해야할것)
     if (premium.monthlyActionPlan?.length) {
       addSectionTitle('6. 월별 행운 액션플랜');
 
-      // 점수 산출 공식 설명 추가
-      addSubSection('📊 월별 점수 산출 기준');
-      addText('기본 점수 70점에서 다음 요소들을 반영하여 계산됩니다:');
-      addText('• 해당 월의 기운이 나에게 이로운 에너지(용신)와 맞으면 +15점');
-      addText('• 월의 기운이 나를 돕는 관계(상생)이면 +10점');
-      addText('• 반대로 월의 기운이 나와 충돌(상극)하면 -15점');
-      addText('• 특별한 천간/지지 조합(합/충)에 따라 추가 조정');
-      addText('점수 범위: 30점(주의) ~ 100점(최고)');
+      // 간단한 안내
+      addText('각 월의 핵심만 정리했습니다. 점수가 높을수록 기회, 낮을수록 신중함이 필요합니다.');
       yPos += 5;
 
-      premium.monthlyActionPlan.forEach((action: MonthlyAction, index: number) => {
+      // 상반기/하반기 구분
+      const firstHalf = premium.monthlyActionPlan.slice(0, 6);
+      const secondHalf = premium.monthlyActionPlan.slice(6);
+
+      // 월별 피해야 할 것 데이터
+      const MONTHLY_AVOID: Record<number, string> = {
+        1: '무리한 새 프로젝트 착수',
+        2: '고위험 투자/충동 결제',
+        3: '과도한 약속/일정 과부하',
+        4: '급격한 변화/이직 결정',
+        5: '과도한 지출/인간관계 갈등',
+        6: '지나친 완벽주의/번아웃',
+        7: '휴식 없는 과로/건강 무시',
+        8: '충동적 결정/감정적 대응',
+        9: '마무리 없는 새 시작',
+        10: '검증 안 된 투자/사기 주의',
+        11: '급한 결정/연말 과소비',
+        12: '과도한 약속/체력 무리'
+      };
+
+      // 상반기
+      addSubSection('상반기 (1~6월)');
+      firstHalf.forEach((action: MonthlyAction, index: number) => {
         const monthNum = index + 1;
         const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
+        const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
 
-        checkNewPage(50);
-        addSubSection(`${action.monthName} - ${monthAdvice?.theme || ''} (점수: ${action.score}점)`);
-
-        // 스토리텔링 문구 추가 (연령별 맞춤)
-        const story = generateMonthlyStory(monthNum, action.score, yongsin, user.name, ageGroup);
-        if (story) {
-          addText(story);
-          yPos += 3;
-        }
-
-        // 이달의 핵심 조언 (연령별 맞춤)
-        if (monthAdvice?.actionTip) {
-          const tipLabel = ageGroup === 'child' ? '부모님 팁' : '이달의 핵심';
-          addText(`💡 ${tipLabel}: ${monthAdvice.actionTip}`);
-          yPos += 2;
-        }
-
-        if (action.mustDo?.length) {
-          const doLabel = ageGroup === 'child' ? '추천 활동:' : '▸ 실천 항목:';
-          addText(doLabel);
-          action.mustDo.forEach(item => {
-            // 아동용: 부적절한 카테고리 필터링
-            if (ageGroup === 'child' && ['재테크', '부동산', '투자', '사업'].includes(item.category)) {
-              return; // 아동에게 부적절한 항목 스킵
-            }
-            addText(`  • [${item.category}] ${item.action}`);
-            if (item.optimalDays?.length) {
-              addText(`    추천일: ${item.optimalDays.join(', ')}일 / 시간: ${item.optimalTime}`);
-            }
-          });
-        }
-
-        // 월별 맥락화된 주의사항 (반복 방지)
-        const contextWarning = MONTHLY_CONTEXTUALIZED_WARNINGS[monthNum];
-        if (contextWarning) {
-          // 용신이 수(水)인 경우 수 기운 관련 맥락화된 조언
-          if (yongsin?.includes('water')) {
-            addText(`▸ 이달의 조언: ${contextWarning.water}`);
-          } else {
-            addText(`▸ 이달의 조언: ${contextWarning.general}`);
-          }
-        }
-
-        // 행운 요소 다양화 (용신 기반 + 월별 변화)
-        if (yongsin?.length) {
-          const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
-          if (luckyPool) {
-            const colorIdx = (monthNum - 1) % luckyPool.colors.length;
-            const numberIdx = (monthNum - 1) % luckyPool.numbers.length;
-            const dirIdx = (monthNum - 1) % luckyPool.directions.length;
-            const foodIdx = (monthNum - 1) % luckyPool.foods.length;
-            addText(`▸ 행운 요소: 색상(${luckyPool.colors[colorIdx]}) | 숫자(${luckyPool.numbers[numberIdx]}) | 방향(${luckyPool.directions[dirIdx]})`);
-            if (ageGroup === 'child') {
-              addText(`▸ 추천 음식: ${luckyPool.foods[foodIdx]}`);
-            }
-          }
-        } else if (action.luckyElements) {
-          addText(`▸ 행운 요소: 색상(${action.luckyElements.color}) | 숫자(${action.luckyElements.number}) | 방향(${action.luckyElements.direction})`);
-        }
-
-        yPos += 5;
+        checkNewPage(25);
+        // 1줄: 점수 + 한줄 결론
+        addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
+        // 2줄: 해야 할 것
+        const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
+        addText(`  ✓ 해야 할 것: ${mustDoAction}`);
+        // 3줄: 피해야 할 것
+        addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
+        yPos += 3;
       });
+
+      // 하반기
+      if (secondHalf.length > 0) {
+        yPos += 3;
+        addSubSection('하반기 (7~12월)');
+        secondHalf.forEach((action: MonthlyAction, index: number) => {
+          const monthNum = index + 7;
+          const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
+          const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
+
+          checkNewPage(25);
+          addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
+          const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
+          addText(`  ✓ 해야 할 것: ${mustDoAction}`);
+          addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
+          yPos += 3;
+        });
+      }
+
+      // 행운 요소 요약 (상세 정보는 접어서)
+      yPos += 5;
+      addSubSection('행운 요소 참고');
+      if (yongsin?.length) {
+        const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
+        if (luckyPool) {
+          addText(`행운색: ${luckyPool.colors.slice(0, 3).join(', ')} | 행운숫자: ${luckyPool.numbers.slice(0, 3).join(', ')} | 행운방향: ${luckyPool.directions[0]}`);
+        }
+      }
     }
 
     // 인생 타임라인

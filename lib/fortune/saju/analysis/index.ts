@@ -85,12 +85,18 @@ export {
   getUnsungForBranch
 } from './unsung';
 
-// 합충형파해 분석
+// 합충형파해 분석 + 소비자 친화적 리스크 변환
 export {
   type RelationType,
   type BranchRelation,
   type HapChungAnalysis,
+  type ConsumerFriendlyRisk,
+  type RiskTimingAnalysis,
+  type YearlyDashboard,
   analyzeHapChung,
   checkBranchRelation,
-  checkSamhap
+  checkSamhap,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
+  generateYearlyDashboard
 } from './hapchung';

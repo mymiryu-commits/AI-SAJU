@@ -11,7 +11,11 @@ import {
   analyzeUnsung,
   analyzeHapChung,
   interpretSipsinChart,
+  transformToConsumerFriendlyRisk,
+  analyzeRiskTiming,
+  SIPSIN_INFO,
   type SipsinChart,
+  type SipsinType,
   type SinsalAnalysis,
   type UnsungAnalysis,
   type HapChungAnalysis
@@ -345,20 +349,23 @@ function formatTraditionalAnalysis(
 ): string {
   let text = '';
 
+  // 십신 타입을 한글로 변환하는 헬퍼 함수
+  const toKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
+
   // 1. 십신(十神) 분석
   text += `## 십신(十神) 분석
 사주에 나타난 십신 관계:
-- 년주 십신: ${sipsinChart.yearStem || '-'} (천간) / ${sipsinChart.yearBranch || '-'} (지지)
-- 월주 십신: ${sipsinChart.monthStem || '-'} (천간) / ${sipsinChart.monthBranch || '-'} (지지)
-- 일주 십신: ${sipsinChart.dayStem || '-'} (천간) / ${sipsinChart.dayBranch || '-'} (지지)
-- 시주 십신: ${sipsinChart.hourStem || '미상'} (천간) / ${sipsinChart.hourBranch || '미상'} (지지)
+- 년주 십신: ${toKorean(sipsinChart.yearStem)} (천간) / ${toKorean(sipsinChart.yearBranch)} (지지)
+- 월주 십신: ${toKorean(sipsinChart.monthStem)} (천간) / ${toKorean(sipsinChart.monthBranch)} (지지)
+- 일주 십신: ${toKorean(sipsinChart.dayStem)} (천간) / ${toKorean(sipsinChart.dayBranch)} (지지)
+- 시주 십신: ${sipsinChart.hourStem ? toKorean(sipsinChart.hourStem) : '미상'} (천간) / ${sipsinChart.hourBranch ? toKorean(sipsinChart.hourBranch) : '미상'} (지지)
 
 십신 분포:
-${Object.entries(sipsinChart.distribution).filter(([_, count]) => count > 0).map(([type, count]) => `- ${type}: ${count}개`).join('\n') || '- 분석 중'}
+${Object.entries(sipsinChart.distribution).filter(([_, count]) => count > 0).map(([type, count]) => `- ${toKorean(type as SipsinType)}: ${count}개`).join('\n') || '- 분석 중'}
 
 주요 특성:
-- 우세 십신: ${sipsinInterp.dominant.length > 0 ? sipsinInterp.dominant.join(', ') : '특정 우세 없음'}
-- 부족 십신: ${sipsinInterp.missing.length > 0 ? sipsinInterp.missing.join(', ') : '특정 부족 없음'}
+- 우세 십신: ${sipsinInterp.dominant.length > 0 ? sipsinInterp.dominant.map(d => toKorean(d)).join(', ') : '특정 우세 없음'}
+- 부족 십신: ${sipsinInterp.missing.length > 0 ? sipsinInterp.missing.map(m => toKorean(m)).join(', ') : '특정 부족 없음'}
 - 균형: ${sipsinInterp.balance}
 - 성격: ${sipsinInterp.personality}
 - 직업 적성: ${sipsinInterp.career}
@@ -410,25 +417,53 @@ ${unsungAnalysis.positions.map(p => `- ${p.pillar} ${p.branch}: ${p.info.korean}
 
 `;
 
-  // 4. 합충형파해(合沖刑破害) 분석
-  text += `## 합충형파해(合沖刑破害) 분석
+  // 4. 관계·계약·이동 리스크 분석 (합충형파해 소비자 친화적 변환)
+  const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
+
+  text += `## 관계·계약·이동 리스크 분석
 조화 점수: ${hapchungAnalysis.harmonyScore}점 / 100점
 
 `;
-  if (hapchungAnalysis.harmonies.length > 0) {
-    text += `합(合) 관계 (${hapchungAnalysis.harmonies.length}개 - 조화로운 기운):
-${hapchungAnalysis.harmonies.slice(0, 4).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}${r.result ? ` → ${r.result} 기운 생성` : ''}`).join('\n')}
+
+  // 기회·연결 (합)
+  const opportunities = consumerRisks.filter(r => r.type === '기회·연결');
+  if (opportunities.length > 0) {
+    text += `🌟 기회·연결 (인복/협력 운):
+${opportunities.slice(0, 3).map(r => `- ${r.description}\n  💡 ${r.actionTip}`).join('\n')}
+
 `;
   }
 
-  if (hapchungAnalysis.conflicts.length > 0) {
-    text += `충돌 관계 (${hapchungAnalysis.conflicts.length}개 - 주의 필요):
-${hapchungAnalysis.conflicts.slice(0, 3).map(r => `- ${r.branches.join('-')} ${r.type} (${r.positions.join('↔')}): ${r.effect}`).join('\n')}
+  // 변화·이동 (충)
+  const changes = consumerRisks.filter(r => r.type === '변화·이동');
+  if (changes.length > 0) {
+    text += `🔄 변화·이동 (이직/이사 시기):
+${changes.slice(0, 2).map(r => `- ${r.description}\n  ⚠️ ${r.actionTip}`).join('\n')}
+
 `;
   }
 
-  if (hapchungAnalysis.relations.length === 0) {
-    text += `특별한 합충 관계가 없습니다.
+  // 스트레스·자기압박 (형)
+  const stress = consumerRisks.filter(r => r.type === '스트레스·자기압박');
+  if (stress.length > 0) {
+    text += `⚡ 스트레스·자기압박 (번아웃 주의):
+${stress.slice(0, 2).map(r => `- ${r.description}\n  🧘 ${r.actionTip}`).join('\n')}
+
+`;
+  }
+
+  // 관계 오해·계약 파손 (파/해)
+  const relationRisks = consumerRisks.filter(r => r.type === '관계 오해·계약 파손');
+  if (relationRisks.length > 0) {
+    text += `💔 관계 오해·계약 파손 (소통/서류 주의):
+${relationRisks.slice(0, 2).map(r => `- ${r.description}\n  📋 ${r.actionTip}`).join('\n')}
+
+`;
+  }
+
+  if (consumerRisks.length === 0) {
+    text += `✨ 특별한 리스크 없이 안정적인 사주입니다.
+
 `;
   }
 
