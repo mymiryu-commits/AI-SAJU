@@ -258,6 +258,10 @@ export async function POST(request: NextRequest) {
 
         if (saveResult.id) {
           analysisId = saveResult.id;
+          console.log('분석 결과 저장 성공:', saveResult.id);
+        } else if (saveResult.error) {
+          console.error('분석 결과 저장 실패:', saveResult.error);
+          // 저장 실패 시에도 분석 결과는 반환하되, 저장 실패 플래그 설정
         }
 
         // 포인트 잔액 업데이트
@@ -267,7 +271,8 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (dbError) {
-      console.warn('DB 저장 실패:', dbError);
+      console.error('DB 작업 중 예외 발생:', dbError);
+      // 예외 발생해도 분석 결과는 반환
     }
 
     // 블라인드 처리 (관리자/포인트 결제 제외)

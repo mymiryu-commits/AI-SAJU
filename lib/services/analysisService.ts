@@ -6,9 +6,23 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { analyzeZodiac } from '@/lib/fortune/zodiac/calculator';
 import type { ZodiacAnalysis } from '@/lib/fortune/zodiac/types';
 import type { AnalysisResult, PremiumContent, Element } from '@/types/saju';
+
+// Service Role 클라이언트 (RLS 우회 - 분석 저장용)
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    console.warn('Service role credentials not available, using regular client');
+    return null;
+  }
+
+  return createSupabaseClient(url, key);
+}
 
 // 블라인드 처리된 텍스트
 const BLINDED_TEXT = '🔒 프리미엄 분석에서 확인하세요';
@@ -156,6 +170,7 @@ export function integrateZodiacAnalysis(birthDate: string): ZodiacAnalysis | nul
 
 /**
  * 분석 결과 저장 (45일 유지)
+ * Service Role 사용하여 RLS 우회
  */
 export async function saveAnalysisResult(
   userId: string,
@@ -170,7 +185,9 @@ export async function saveAnalysisResult(
     audioUrl?: string;
   }
 ): Promise<{ id: string | null; error?: string }> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
 
   // 45일 후 만료
   const expiresAt = new Date();
@@ -229,6 +246,7 @@ export async function saveAnalysisResult(
 
 /**
  * 저장된 분석 결과 조회
+ * Service Role 사용하여 RLS 우회
  */
 export async function getAnalysisById(
   analysisId: string,
@@ -239,7 +257,9 @@ export async function getAnalysisById(
   isBlinded: boolean;
   unblindPrice?: number;
 }> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
 
   const { data, error } = await (supabase as any)
     .from('fortune_analyses')
@@ -273,6 +293,7 @@ export async function getAnalysisById(
 
 /**
  * 사용자의 분석 히스토리 조회
+ * Service Role 사용하여 RLS 우회
  */
 export async function getUserAnalysisHistory(
   userId: string,
@@ -287,7 +308,9 @@ export async function getUserAnalysisHistory(
   total: number;
   hasMore: boolean;
 }> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
   const { limit = 10, offset = 0, type, onlyPremium } = options;
 
   let query = (supabase as any)
@@ -321,12 +344,15 @@ export async function getUserAnalysisHistory(
 
 /**
  * 블라인드 해제 (포인트 차감)
+ * Service Role 사용하여 RLS 우회
  */
 export async function unblindAnalysis(
   userId: string,
   analysisId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  // Service Role 클라이언트 사용 (RLS 우회)
+  const serviceSupabase = getServiceSupabase();
+  const supabase = serviceSupabase || await createClient();
 
   // 분석 정보 조회
   const { analysis, isBlinded, unblindPrice } = await getAnalysisById(analysisId, userId);
