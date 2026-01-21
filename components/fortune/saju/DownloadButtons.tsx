@@ -4,9 +4,10 @@
  * 사주 분석 결과 다운로드 버튼 컴포넌트
  *
  * PDF 문서 및 음성 파일 다운로드 기능 제공
+ * 클라이언트 사이드 PDF 생성 (한글 폰트 지원)
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type {
   UserInput,
@@ -15,6 +16,7 @@ import type {
   AnalysisResult,
   PremiumContent
 } from '@/types/saju';
+import PdfTemplate from './PdfTemplate';
 
 interface DownloadButtonsProps {
   user: UserInput;
@@ -64,6 +66,8 @@ export default function DownloadButtons({
   const [estimatedDuration, setEstimatedDuration] = useState<number>(0);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedType, setSelectedType] = useState<DownloadType | null>(null);
+  const [showPdfTemplate, setShowPdfTemplate] = useState(false);
+  const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async (type: DownloadType) => {
     if (!isPremium) {
@@ -76,6 +80,13 @@ export default function DownloadButtons({
     setDownloadState(prev => ({ ...prev, [type]: 'loading' }));
 
     try {
+      // PDF는 클라이언트 사이드에서 생성 (한글 폰트 지원)
+      if (type === 'pdf') {
+        await handleClientPdfDownload();
+        return;
+      }
+
+      // 음성은 서버에서 생성
       let response: Response;
 
       if (analysisId) {
@@ -110,7 +121,7 @@ export default function DownloadButtons({
       // 파일 다운로드
       const blob = await response.blob();
       const filename = response.headers.get('Content-Disposition')
-        ?.match(/filename="(.+)"/)?.[1] || `download.${type === 'pdf' ? 'pdf' : 'mp3'}`;
+        ?.match(/filename="(.+)"/)?.[1] || 'download.mp3';
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -135,6 +146,62 @@ export default function DownloadButtons({
       // 5초 후 상태 리셋
       setTimeout(() => {
         setDownloadState(prev => ({ ...prev, [type]: 'idle' }));
+      }, 5000);
+    }
+  };
+
+  // 클라이언트 사이드 PDF 생성 (한글 폰트 지원)
+  const handleClientPdfDownload = async () => {
+    try {
+      // PDF 템플릿 표시
+      setShowPdfTemplate(true);
+
+      // DOM 렌더링 대기
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const element = pdfTemplateRef.current;
+      if (!element) {
+        throw new Error('PDF 템플릿을 찾을 수 없습니다.');
+      }
+
+      // html2pdf.js 동적 로드
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      const filename = `${user.name}_사주분석_${targetYear}.pdf`;
+
+      const opt = {
+        margin: 0,
+        filename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true
+        },
+        jsPDF: {
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+
+      setShowPdfTemplate(false);
+      setDownloadState(prev => ({ ...prev, pdf: 'success' }));
+
+      setTimeout(() => {
+        setDownloadState(prev => ({ ...prev, pdf: 'idle' }));
+      }, 3000);
+
+    } catch (error) {
+      console.error('Client PDF generation error:', error);
+      setShowPdfTemplate(false);
+      setDownloadState(prev => ({ ...prev, pdf: 'error' }));
+
+      setTimeout(() => {
+        setDownloadState(prev => ({ ...prev, pdf: 'idle' }));
       }, 5000);
     }
   };
@@ -439,6 +506,31 @@ export default function DownloadButtons({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 숨겨진 PDF 템플릿 (PDF 생성용) */}
+      {showPdfTemplate && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: 0,
+            width: '210mm',
+            minHeight: '297mm',
+            backgroundColor: 'white',
+            zIndex: -1
+          }}
+        >
+          <PdfTemplate
+            ref={pdfTemplateRef}
+            user={user}
+            saju={saju}
+            oheng={oheng}
+            result={result}
+            premium={premium}
+            targetYear={targetYear}
+          />
+        </div>
+      )}
     </div>
   );
 }
