@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Loader2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Mail, ExternalLink, Copy } from 'lucide-react';
+import { isWebView, getWebViewAppName, getExternalBrowserUrl } from '@/lib/utils/webview';
 
 export default function SignupPage() {
   const t = useTranslations('auth.signup');
@@ -28,6 +29,18 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [inWebView, setInWebView] = useState(false);
+  const [webViewApp, setWebViewApp] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // WebView 감지
+  useEffect(() => {
+    const detected = isWebView();
+    setInWebView(detected);
+    if (detected) {
+      setWebViewApp(getWebViewAppName());
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -82,7 +95,31 @@ export default function SignupPage() {
     }
   };
 
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(getExternalBrowserUrl());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = getExternalBrowserUrl();
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const handleSocialLogin = async (provider: 'google' | 'kakao' | 'apple') => {
+    // WebView에서 Google OAuth 시도 시 경고
+    if (inWebView && provider === 'google') {
+      setError(`${webViewApp || '인앱 브라우저'}에서는 Google 로그인이 지원되지 않습니다. 아래 안내에 따라 외부 브라우저에서 접속해주세요.`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -92,7 +129,12 @@ export default function SignupPage() {
 
       if (error) {
         console.error('OAuth error:', error);
-        setError(`${provider} 로그인 실패: ${error.message}`);
+        // WebView 관련 에러 메시지 개선
+        if (error.message.includes('disallowed_useragent')) {
+          setError('인앱 브라우저에서는 Google 로그인이 지원되지 않습니다. 외부 브라우저(Chrome, Safari 등)에서 접속해주세요.');
+        } else {
+          setError(`${provider} 로그인 실패: ${error.message}`);
+        }
         setLoading(false);
         return;
       }
@@ -162,6 +204,38 @@ export default function SignupPage() {
         <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* WebView Warning */}
+        {inWebView && (
+          <Alert className="mb-4 border-amber-500 bg-amber-50 text-amber-800">
+            <ExternalLink className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p className="font-medium">
+                  {webViewApp ? `${webViewApp} 앱` : '인앱 브라우저'}에서는 Google 로그인이 지원되지 않습니다.
+                </p>
+                <p className="text-sm">
+                  외부 브라우저(Chrome, Safari)에서 접속해주세요.
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="text-amber-800 border-amber-500 hover:bg-amber-100"
+                    onClick={handleCopyUrl}
+                  >
+                    <Copy className="h-3 w-3 mr-1" />
+                    {copied ? '복사됨!' : 'URL 복사'}
+                  </Button>
+                </div>
+                <p className="text-xs text-amber-600 mt-1">
+                  URL을 복사하여 Chrome 또는 Safari에 붙여넣기 해주세요.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Error Alert */}
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -175,7 +249,7 @@ export default function SignupPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className={`w-full ${inWebView ? 'opacity-50' : ''}`}
             onClick={() => handleSocialLogin('google')}
             disabled={loading}
           >
@@ -198,6 +272,7 @@ export default function SignupPage() {
               />
             </svg>
             Google로 시작하기
+            {inWebView && <span className="ml-1 text-xs">(외부 브라우저 필요)</span>}
           </Button>
           <Button
             type="button"
