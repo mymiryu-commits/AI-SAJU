@@ -27,11 +27,19 @@
   "nav": {
     "home": "Home",
     "ranking": "AI Ranking",
+    "aiRanking": "AI Ranking",
+    "aiStore": "AI Store",
     "guide": "AI Guide",
     "prompts": "Prompt Market",
-    "fortune": "AI Fortune",
-    "lotto": "Lotto Analyzer",
-    "qr": "QR Card",
+    "fortune": "Fortune",
+    "sajuHome": "AI Saju Home",
+    "saju": "Saju",
+    "sajuChat": "AI Saju Chat",
+    "sajuAdvanced": "Advanced Saju",
+    "compatibility": "Compatibility",
+    "tarot": "Tarot",
+    "lotto": "Lotto",
+    "qr": "QR",
     "community": "Community",
     "pricing": "Pricing",
     "login": "Login",
@@ -144,6 +152,12 @@
       "title": "Daily Fortune",
       "checkin": "Check In",
       "streakDays": "{count} day streak",
+      "streakStart": "Check in to start your streak!",
+      "checkedIn": "Checked In",
+      "checkInBtn": "Check In",
+      "streakBonus": "7 day streak for bonus rewards!",
+      "todayMessage": "Today's Message",
+      "caution": "Caution",
       "todayFortune": "Check today's fortune",
       "scores": {
         "overall": "Overall",
@@ -156,6 +170,36 @@
         "time": "Lucky Time",
         "color": "Lucky Color",
         "number": "Lucky Number"
+      },
+      "colors": {
+        "Purple": "Purple",
+        "Blue": "Blue",
+        "Green": "Green",
+        "Red": "Red",
+        "Yellow": "Yellow",
+        "Orange": "Orange"
+      },
+      "advices": [
+        "Today is a great day for new beginnings. Trust your instincts.",
+        "Focus on relationships today. Good communication brings opportunities.",
+        "Financial decisions made today will have lasting impacts.",
+        "Take time for self-care. Your health is your wealth.",
+        "Creative pursuits will bring unexpected rewards today.",
+        "Be patient with others. Kindness will be repaid tenfold."
+      ],
+      "cautions": [
+        "Avoid impulsive purchases in the afternoon.",
+        "Be careful with words around 3 PM.",
+        "Double-check important documents before signing.",
+        "Take breaks to avoid burnout.",
+        "Watch your diet, especially sweets.",
+        "Don't rush important decisions."
+      ],
+      "deeperAnalysis": {
+        "title": "Want a Deeper Analysis?",
+        "description": "Get a comprehensive reading with our premium Four Pillars analysis. Understand your destiny in detail.",
+        "freeSaju": "Free Four Pillars Analysis",
+        "viewPlans": "View Premium Plans"
       }
     },
     "free": {

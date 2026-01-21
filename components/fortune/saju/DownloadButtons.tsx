@@ -4,9 +4,10 @@
  * 사주 분석 결과 다운로드 버튼 컴포넌트
  *
  * PDF 문서 및 음성 파일 다운로드 기능 제공
+ * 클라이언트 사이드 PDF 생성 (한글 폰트 지원)
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type {
   UserInput,
@@ -15,6 +16,7 @@ import type {
   AnalysisResult,
   PremiumContent
 } from '@/types/saju';
+import PdfTemplate from './PdfTemplate';
 
 interface DownloadButtonsProps {
   user: UserInput;
@@ -26,7 +28,15 @@ interface DownloadButtonsProps {
   analysisId?: string; // 저장된 분석 ID (있으면 GET 방식)
   isPremium?: boolean; // 프리미엄 기능 활성화 여부
   onUpgradeClick?: () => void; // 업그레이드 클릭 핸들러
+  onPurchaseDownload?: (type: DownloadType) => void; // 다운로드 구매 핸들러
 }
+
+// 다운로드 가격
+const DOWNLOAD_PRICES = {
+  pdf: 2900,
+  audio: 3900,
+  bundle: 4900
+};
 
 type DownloadType = 'pdf' | 'audio';
 
@@ -44,7 +54,8 @@ export default function DownloadButtons({
   targetYear = 2026,
   analysisId,
   isPremium = false,
-  onUpgradeClick
+  onUpgradeClick,
+  onPurchaseDownload
 }: DownloadButtonsProps) {
   const [downloadState, setDownloadState] = useState<DownloadState>({
     pdf: 'idle',
@@ -53,16 +64,29 @@ export default function DownloadButtons({
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState<string>('');
   const [estimatedDuration, setEstimatedDuration] = useState<number>(0);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedType, setSelectedType] = useState<DownloadType | null>(null);
+  const [showPdfTemplate, setShowPdfTemplate] = useState(false);
+  const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async (type: DownloadType) => {
     if (!isPremium) {
-      onUpgradeClick?.();
+      // 무료 사용자는 구매 모달 표시
+      setSelectedType(type);
+      setShowPurchaseModal(true);
       return;
     }
 
     setDownloadState(prev => ({ ...prev, [type]: 'loading' }));
 
     try {
+      // PDF는 클라이언트 사이드에서 생성 (한글 폰트 지원)
+      if (type === 'pdf') {
+        await handleClientPdfDownload();
+        return;
+      }
+
+      // 음성은 서버에서 생성
       let response: Response;
 
       if (analysisId) {
@@ -81,7 +105,8 @@ export default function DownloadButtons({
             user,
             saju,
             oheng,
-            result,
+            yongsin: result.yongsin,
+            gisin: result.gisin,
             premium,
             targetYear
           })
@@ -96,7 +121,7 @@ export default function DownloadButtons({
       // 파일 다운로드
       const blob = await response.blob();
       const filename = response.headers.get('Content-Disposition')
-        ?.match(/filename="(.+)"/)?.[1] || `download.${type === 'pdf' ? 'pdf' : 'mp3'}`;
+        ?.match(/filename="(.+)"/)?.[1] || 'download.mp3';
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -125,6 +150,67 @@ export default function DownloadButtons({
     }
   };
 
+  // 클라이언트 사이드 PDF 생성 (한글 폰트 지원)
+  const handleClientPdfDownload = async () => {
+    try {
+      // PDF 템플릿 표시
+      setShowPdfTemplate(true);
+
+      // 폰트 로딩 대기 (Pretendard 폰트)
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // DOM 렌더링 및 폰트 적용 대기
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const element = pdfTemplateRef.current;
+      if (!element) {
+        throw new Error('PDF 템플릿을 찾을 수 없습니다.');
+      }
+
+      // html2pdf.js 동적 로드
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      const filename = `${user.name}_사주분석_${targetYear}.pdf`;
+
+      const opt = {
+        margin: 0,
+        filename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true
+        },
+        jsPDF: {
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+
+      setShowPdfTemplate(false);
+      setDownloadState(prev => ({ ...prev, pdf: 'success' }));
+
+      setTimeout(() => {
+        setDownloadState(prev => ({ ...prev, pdf: 'idle' }));
+      }, 3000);
+
+    } catch (error) {
+      console.error('Client PDF generation error:', error);
+      setShowPdfTemplate(false);
+      setDownloadState(prev => ({ ...prev, pdf: 'error' }));
+
+      setTimeout(() => {
+        setDownloadState(prev => ({ ...prev, pdf: 'idle' }));
+      }, 5000);
+    }
+  };
+
   const handlePreview = async () => {
     if (!isPremium) {
       onUpgradeClick?.();
@@ -140,7 +226,8 @@ export default function DownloadButtons({
           user,
           saju,
           oheng,
-          result,
+          yongsin: result.yongsin,
+          gisin: result.gisin,
           premium,
           targetYear
         })
@@ -273,20 +360,23 @@ export default function DownloadButtons({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200"
+          className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200"
         >
           <div className="flex items-start gap-3">
-            <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                프리미엄 전용 기능
+            <DownloadIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-800">
+                다운로드 구매 가능
               </p>
-              <p className="text-xs text-amber-600 mt-1">
-                PDF 리포트와 음성 나레이션 다운로드는 프리미엄 서비스에서 이용 가능합니다.
+              <p className="text-xs text-blue-600 mt-1">
+                PDF 리포트 ₩{DOWNLOAD_PRICES.pdf.toLocaleString()} / 음성 파일 ₩{DOWNLOAD_PRICES.audio.toLocaleString()}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                프리미엄 구독 시 무료로 무제한 다운로드 가능!
               </p>
               <button
                 onClick={onUpgradeClick}
-                className="mt-2 text-xs font-medium text-amber-700 hover:text-amber-800 underline"
+                className="mt-2 text-xs font-medium text-blue-700 hover:text-blue-800 underline"
               >
                 프리미엄 업그레이드 →
               </button>
@@ -294,6 +384,75 @@ export default function DownloadButtons({
           </div>
         </motion.div>
       )}
+
+      {/* 구매 모달 */}
+      <AnimatePresence>
+        {showPurchaseModal && selectedType && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setShowPurchaseModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl max-w-sm w-full overflow-hidden shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  {selectedType === 'pdf' ? 'PDF 리포트' : '음성 파일'} 다운로드
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  {user.name}님의 사주 분석 결과를 {selectedType === 'pdf' ? 'PDF 문서로' : '음성 파일로'} 다운로드하세요.
+                </p>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">다운로드 비용</span>
+                    <span className="text-xl font-bold text-gray-900">
+                      ₩{DOWNLOAD_PRICES[selectedType].toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    결제 후 즉시 다운로드 가능합니다.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setShowPurchaseModal(false);
+                      onPurchaseDownload?.(selectedType);
+                    }}
+                    className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    ₩{DOWNLOAD_PRICES[selectedType].toLocaleString()}로 구매
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPurchaseModal(false);
+                      onUpgradeClick?.();
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+                  >
+                    프리미엄으로 무제한 다운로드
+                  </button>
+                  <button
+                    onClick={() => setShowPurchaseModal(false)}
+                    className="w-full py-2 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 미리보기 모달 */}
       <AnimatePresence>
@@ -352,6 +511,31 @@ export default function DownloadButtons({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 숨겨진 PDF 템플릿 (PDF 생성용) */}
+      {showPdfTemplate && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: 0,
+            width: '210mm',
+            minHeight: '297mm',
+            backgroundColor: 'white',
+            zIndex: -1
+          }}
+        >
+          <PdfTemplate
+            ref={pdfTemplateRef}
+            user={user}
+            saju={saju}
+            oheng={oheng}
+            result={result}
+            premium={premium}
+            targetYear={targetYear}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -428,6 +612,15 @@ function CloseIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
     </svg>
   );
 }

@@ -27,11 +27,19 @@
   "nav": {
     "home": "홈",
     "ranking": "AI 순위",
+    "aiRanking": "AI랭킹",
+    "aiStore": "AI스토어",
     "guide": "AI 가이드",
     "prompts": "프롬프트 마켓",
-    "fortune": "AI 운세",
-    "lotto": "로또 분석",
-    "qr": "QR 명함",
+    "fortune": "운세",
+    "sajuHome": "AI 사주 홈",
+    "saju": "사주",
+    "sajuChat": "AI 사주 상담",
+    "sajuAdvanced": "정통 사주 심화",
+    "compatibility": "궁합 분석",
+    "tarot": "타로",
+    "lotto": "로또",
+    "qr": "QR",
     "community": "커뮤니티",
     "pricing": "요금제",
     "login": "로그인",
@@ -144,6 +152,12 @@
       "title": "오늘의 운세",
       "checkin": "출석 체크",
       "streakDays": "연속 {count}일",
+      "streakStart": "출석체크하고 연속 출석을 시작하세요!",
+      "checkedIn": "출석 완료",
+      "checkInBtn": "출석하기",
+      "streakBonus": "7일 연속 출석 시 보너스 지급!",
+      "todayMessage": "오늘의 메시지",
+      "caution": "주의",
       "todayFortune": "오늘의 운세를 확인하세요",
       "scores": {
         "overall": "종합운",
@@ -156,6 +170,36 @@
         "time": "행운의 시간",
         "color": "행운의 색",
         "number": "행운의 숫자"
+      },
+      "colors": {
+        "Purple": "보라색",
+        "Blue": "파란색",
+        "Green": "초록색",
+        "Red": "빨간색",
+        "Yellow": "노란색",
+        "Orange": "주황색"
+      },
+      "advices": [
+        "오늘은 새로운 시작에 좋은 날입니다. 직감을 믿으세요.",
+        "관계에 집중하세요. 좋은 소통이 기회를 가져옵니다.",
+        "오늘 내리는 재정적 결정은 오래 갈 것입니다.",
+        "자기 관리에 시간을 투자하세요. 건강이 곧 재산입니다.",
+        "창의적인 활동이 예상치 못한 보상을 가져올 것입니다.",
+        "다른 사람에게 인내심을 가지세요. 친절은 열 배로 돌아옵니다."
+      ],
+      "cautions": [
+        "오후에 충동 구매를 피하세요.",
+        "오후 3시경 말조심하세요.",
+        "중요한 서류에 서명하기 전에 다시 확인하세요.",
+        "번아웃을 피하기 위해 휴식을 취하세요.",
+        "식단에 주의하세요, 특히 단 음식.",
+        "중요한 결정을 서두르지 마세요."
+      ],
+      "deeperAnalysis": {
+        "title": "더 자세한 분석을 원하시나요?",
+        "description": "프리미엄 사주 분석으로 당신의 운명을 더 자세히 알아보세요.",
+        "freeSaju": "무료 사주 분석",
+        "viewPlans": "프리미엄 플랜 보기"
       }
     },
     "free": {

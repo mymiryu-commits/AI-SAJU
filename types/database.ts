@@ -461,6 +461,29 @@ export interface Database {
           updated_at?: string
         }
       }
+      site_settings: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          value: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+      }
     }
     Views: {
       lotto_total_stats: {
