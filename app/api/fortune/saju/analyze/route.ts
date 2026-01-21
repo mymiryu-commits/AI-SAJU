@@ -24,6 +24,7 @@ import {
   canUseFreeAnalysis,
   incrementFreeAnalysis,
   getPointBalance,
+  deductPoints,
   PRODUCT_COSTS,
 } from '@/lib/services/pointService';
 import {
@@ -175,7 +176,8 @@ export async function POST(request: NextRequest) {
     let pointBalance = null;
     let freeAnalysisStatus = { canUse: true, remaining: 3, limit: 3 };
     let isBlinded = true; // 무료 분석은 기본적으로 블라인드
-    let isAdminOrPremium = false;
+    let isAdmin = false;
+    let usedPoints = 0;
 
     // 관리자 이메일 목록
     const ADMIN_EMAILS = ['mymiryu@gmail.com'];
@@ -188,43 +190,69 @@ export async function POST(request: NextRequest) {
         userId = user.id;
 
         // 관리자 확인
-        const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+        isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
 
         // 포인트 잔액 조회
         pointBalance = await getPointBalance(userId);
 
-        // 프리미엄 또는 관리자 확인
-        isAdminOrPremium = isAdmin || (pointBalance?.isPremium || false);
-
-        // 무료 분석 횟수 확인 (관리자/프리미엄은 제한 없음)
-        if (isAdminOrPremium) {
+        if (isAdmin) {
+          // 관리자: 무제한 무료 (포인트 차감 없음)
           freeAnalysisStatus = { canUse: true, remaining: 999, limit: 999 };
           isBlinded = false;
         } else {
+          // 일반 사용자: 무료 분석 횟수 확인
           freeAnalysisStatus = await canUseFreeAnalysis(userId);
 
-          if (!freeAnalysisStatus.canUse) {
-            return NextResponse.json({
-              success: false,
-              error: '오늘의 무료 분석 횟수를 모두 사용했습니다.',
-              data: {
-                freeAnalysisStatus,
-                pointBalance,
-                upgradeCost: PRODUCT_COSTS.premium,
-              }
-            }, { status: 429 });
-          }
+          if (freeAnalysisStatus.canUse) {
+            // 무료 분석 가능 → 사용
+            await incrementFreeAnalysis(userId);
+            isBlinded = true;
+          } else {
+            // 무료 분석 소진 → 포인트로 결제
+            const currentPoints = pointBalance?.points || 0;
+            const analysisCost = PRODUCT_COSTS.basic; // 500 포인트
 
-          // 무료 분석 횟수 증가
-          await incrementFreeAnalysis(userId);
+            if (currentPoints >= analysisCost) {
+              // 포인트 차감
+              const deductResult = await deductPoints(userId, 'basic');
+              if (deductResult.success) {
+                usedPoints = analysisCost;
+                isBlinded = false; // 포인트 결제 시 블라인드 해제
+                // 포인트 잔액 업데이트
+                pointBalance = await getPointBalance(userId);
+              } else {
+                return NextResponse.json({
+                  success: false,
+                  error: '포인트 차감에 실패했습니다.',
+                  data: { pointBalance, upgradeCost: PRODUCT_COSTS.basic }
+                }, { status: 500 });
+              }
+            } else {
+              // 포인트 부족
+              return NextResponse.json({
+                success: false,
+                error: '오늘의 무료 분석 횟수를 모두 사용했습니다. 포인트를 충전해주세요.',
+                errorCode: 'INSUFFICIENT_POINTS',
+                data: {
+                  freeAnalysisStatus,
+                  pointBalance: {
+                    current: currentPoints,
+                    required: analysisCost,
+                    shortage: analysisCost - currentPoints
+                  },
+                  upgradeCost: PRODUCT_COSTS.basic,
+                }
+              }, { status: 402 });
+            }
+          }
         }
 
         // 분석 결과 저장
         const saveResult = await saveAnalysisResult(userId, result, {
-          isPremium: isAdminOrPremium,
-          isBlinded: !isAdminOrPremium,
-          productType: isAdminOrPremium ? 'premium' : 'basic',
-          pointsPaid: 0,
+          isPremium: !isBlinded,
+          isBlinded: isBlinded,
+          productType: usedPoints > 0 ? 'basic' : 'free',
+          pointsPaid: usedPoints,
           zodiacData: zodiacAnalysis,
         });
 
@@ -234,7 +262,7 @@ export async function POST(request: NextRequest) {
 
         // 포인트 잔액 업데이트
         pointBalance = await getPointBalance(userId);
-        if (!isAdminOrPremium) {
+        if (!isAdmin) {
           freeAnalysisStatus = await canUseFreeAnalysis(userId);
         }
       }
@@ -242,17 +270,17 @@ export async function POST(request: NextRequest) {
       console.warn('DB 저장 실패:', dbError);
     }
 
-    // 무료 분석은 일부 콘텐츠 블라인드 처리 (관리자/프리미엄 제외)
-    const blindedResult = isAdminOrPremium ? result : blindFreeAnalysis(result);
+    // 블라인드 처리 (관리자/포인트 결제 제외)
+    const blindedResult = isBlinded ? blindFreeAnalysis(result) : result;
 
     return NextResponse.json({
       success: true,
       data: {
         result: blindedResult,
-        fullResult: isAdminOrPremium ? result : null, // 관리자/프리미엄에게만 제공
+        fullResult: !isBlinded ? result : null, // 관리자/포인트결제에게만 제공
         ohengActions,
         zodiacAnalysis, // 별자리 분석 포함
-        isBlinded: !isAdminOrPremium,
+        isBlinded,
         conversion: {
           paywallTemplate,
           urgencyBanner,
@@ -266,14 +294,15 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
         pointBalance: pointBalance ? {
           current: pointBalance.points,
-          isPremium: pointBalance.isPremium || isAdminOrPremium,
+          isPremium: isAdmin,
         } : null,
         freeAnalysis: freeAnalysisStatus,
-        isAdmin: isAdminOrPremium,
+        isAdmin,
+        usedPoints,
         upgradeCost: {
-          premium: PRODUCT_COSTS.premium,
+          basic: PRODUCT_COSTS.basic,
           deep: PRODUCT_COSTS.deep,
-          vip: PRODUCT_COSTS.vip,
+          premium: PRODUCT_COSTS.premium,
         }
       }
     });
