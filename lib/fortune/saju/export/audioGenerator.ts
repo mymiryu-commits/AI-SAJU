@@ -984,48 +984,68 @@ export async function generateAudioWithEdge(
   pitch: string = '-5Hz', // 약간 낮은 톤
   volume: string = '+0%'
 ): Promise<Buffer> {
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const os = await import('os');
+
+  // 임시 파일 경로 생성
+  const tempDir = os.tmpdir();
+  const tempFilename = `edge-tts-${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
+  const tempFilePath = path.join(tempDir, tempFilename);
+
   try {
     const nodeEdgeTTS = await getNodeEdgeTTS();
     const { EdgeTTS } = nodeEdgeTTS;
 
-    // EdgeTTS 인스턴스 생성
-    const tts = new EdgeTTS();
-
-    // 텍스트를 음성으로 변환
-    const audioData = await tts.ttsPromise(text, {
+    // EdgeTTS 인스턴스 생성 (설정은 생성자에 전달)
+    const tts = new EdgeTTS({
       voice,
+      lang: 'ko-KR',
       rate,
       pitch,
-      volume
+      volume,
+      timeout: 60000 // 60초 타임아웃 (긴 텍스트 대비)
     });
 
-    if (!audioData || audioData.length === 0) {
+    // 텍스트를 음성 파일로 변환
+    await tts.ttsPromise(text, tempFilePath);
+
+    // 파일 읽기
+    const audioBuffer = await fs.readFile(tempFilePath);
+
+    if (!audioBuffer || audioBuffer.length === 0) {
       throw new Error('오디오 데이터가 생성되지 않았습니다.');
     }
 
-    return Buffer.from(audioData);
+    return audioBuffer;
   } catch (error) {
     throw new Error(`Edge TTS Error: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    // 임시 파일 정리
+    try {
+      await fs.unlink(tempFilePath);
+    } catch {
+      // 파일이 없거나 삭제 실패해도 무시
+    }
   }
 }
 
 /**
- * Edge TTS 사용 가능한 음성 목록 조회
+ * Edge TTS 사용 가능한 한국어 음성 목록 반환 (하드코딩)
+ * node-edge-tts에는 getVoices 메서드가 없으므로 하드코딩된 목록 사용
  */
-export async function getEdgeVoices(): Promise<any[]> {
-  try {
-    const nodeEdgeTTS = await getNodeEdgeTTS();
-    const { EdgeTTS } = nodeEdgeTTS;
-
-    const tts = new EdgeTTS();
-    const allVoices = await tts.getVoices();
-
-    // 한국어 음성만 필터링
-    return allVoices.filter((v: any) => v.Locale?.startsWith('ko-KR') || v.locale?.startsWith('ko-KR'));
-  } catch (error) {
-    console.error('Edge TTS voices error:', error);
-    return [];
-  }
+export function getEdgeVoices(): any[] {
+  // 한국어 음성 목록 (Microsoft Edge TTS 제공)
+  return [
+    { name: 'ko-KR-SunHiNeural', gender: 'Female', description: '따뜻하고 자연스러움 (추천)' },
+    { name: 'ko-KR-InJoonNeural', gender: 'Male', description: '신뢰감 있음' },
+    { name: 'ko-KR-BongJinNeural', gender: 'Male', description: '차분함' },
+    { name: 'ko-KR-GookMinNeural', gender: 'Male', description: '명확함' },
+    { name: 'ko-KR-JiMinNeural', gender: 'Female', description: '밝고 친근함' },
+    { name: 'ko-KR-SeoHyeonNeural', gender: 'Female', description: '부드러움' },
+    { name: 'ko-KR-SoonBokNeural', gender: 'Female', description: '편안함 (고령자 친화적)' },
+    { name: 'ko-KR-YuJinNeural', gender: 'Female', description: '자연스러움' }
+  ];
 }
 
 /**
