@@ -6,6 +6,7 @@
  */
 
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { createKoreanPDF } from '@/lib/fonts/koreanFont';
 import type {
   UserInput,
@@ -961,6 +962,103 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     yPos += 8;
   };
 
+  // 헬퍼 함수: 테이블 출력 (jspdf-autotable 사용)
+  const addTable = (
+    headers: string[],
+    rows: string[][],
+    options: {
+      title?: string;
+      columnWidths?: number[];
+      headerColor?: [number, number, number];
+    } = {}
+  ) => {
+    checkNewPage(30);
+
+    if (options.title) {
+      addSubSection(options.title);
+    }
+
+    // autoTable 호출
+    autoTable(doc, {
+      startY: yPos,
+      head: [headers],
+      body: rows,
+      margin: { left: margin, right: margin },
+      styles: {
+        font: 'NanumGothic',
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: options.headerColor || [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        textColor: [33, 33, 33]
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: options.columnWidths ?
+        options.columnWidths.reduce((acc, width, idx) => {
+          acc[idx] = { cellWidth: width };
+          return acc;
+        }, {} as Record<number, { cellWidth: number }>) : undefined
+    });
+
+    // autoTable이 설정한 최종 Y 위치 가져오기
+    yPos = (doc as any).lastAutoTable.finalY + 10;
+  };
+
+  // 헬퍼 함수: 2열 정보 테이블 (키-값 쌍)
+  const addInfoTable = (
+    data: Array<{ label: string; value: string }>,
+    title?: string
+  ) => {
+    const rows = data.map(d => [d.label, d.value]);
+    addTable(['항목', '내용'], rows, {
+      title,
+      columnWidths: [50, contentWidth - 50],
+      headerColor: [100, 116, 139]
+    });
+  };
+
+  // 헬퍼 함수: 점수 테이블 (항목별 점수 표시)
+  const addScoreTable = (
+    items: Array<{ category: string; score: number; description?: string }>,
+    title?: string
+  ) => {
+    const rows = items.map(item => {
+      const bar = '█'.repeat(Math.round(item.score / 10)) + '░'.repeat(10 - Math.round(item.score / 10));
+      return [item.category, `${item.score}점`, bar, item.description || ''];
+    });
+    addTable(['분야', '점수', '시각화', '설명'], rows, {
+      title,
+      columnWidths: [35, 25, 45, contentWidth - 105],
+      headerColor: [34, 197, 94]
+    });
+  };
+
+  // 헬퍼 함수: 월별 운세 테이블
+  const addMonthlyTable = (
+    months: Array<{ month: string; score: number; action: string; avoid: string }>,
+    title?: string
+  ) => {
+    const rows = months.map(m => {
+      const emoji = m.score >= 80 ? '🌟' : m.score >= 60 ? '✨' : '🌙';
+      return [m.month, `${m.score}점 ${emoji}`, m.action, m.avoid];
+    });
+    addTable(['월', '점수', '해야 할 것', '피해야 할 것'], rows, {
+      title,
+      columnWidths: [25, 30, (contentWidth - 55) / 2, (contentWidth - 55) / 2],
+      headerColor: [168, 85, 247]
+    });
+  };
+
   // ========== 표지 ==========
   doc.setFontSize(28);
   doc.text('사주팔자 분석 리포트', pageWidth / 2, 70, { align: 'center' });
@@ -1256,7 +1354,8 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   // 1. 사주팔자 기본 정보
   addSectionTitle('1. 사주팔자 기본 정보');
 
-  addSubSection('사주 구성');
+  // 사주 구성 - 테이블 형식
+  const sajuRows: string[][] = [];
   const pillars: { name: string; pillar?: SajuPillar }[] = [
     { name: '년주(年柱)', pillar: saju.year },
     { name: '월주(月柱)', pillar: saju.month },
@@ -1266,21 +1365,39 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   pillars.forEach(({ name, pillar }) => {
     if (pillar) {
-      const elementKo = pillar.element ? ELEMENT_KOREAN[pillar.element] : '';
-      addText(`${name}: ${pillar.heavenlyStem}${pillar.earthlyBranch} (${pillar.stemKorean}${pillar.branchKorean}) - ${elementKo}`);
+      const elementKo = pillar.element ? ELEMENT_KOREAN[pillar.element] : '-';
+      sajuRows.push([
+        name,
+        `${pillar.heavenlyStem}${pillar.earthlyBranch}`,
+        `${pillar.stemKorean}${pillar.branchKorean}`,
+        elementKo
+      ]);
     }
+  });
+
+  addTable(['주(柱)', '한자', '한글', '오행'], sajuRows, {
+    title: '사주 구성',
+    columnWidths: [40, 35, 50, 45],
+    headerColor: [59, 130, 246]
   });
 
   // 2. 오행 분석
   addSectionTitle('2. 오행(五行) 분석');
 
-  addSubSection('오행 분포');
+  // 오행 분포 - 테이블 형식
   const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
-  elements.forEach(el => {
+  const ohengRows: string[][] = elements.map(el => {
     const percentage = oheng[el] || 0;
     const barFilled = Math.round(percentage / 5);
     const bar = '█'.repeat(barFilled) + '░'.repeat(20 - barFilled);
-    addText(`${ELEMENT_KOREAN[el]}: ${bar} ${percentage.toFixed(1)}%`);
+    const status = percentage > 25 ? '과다' : percentage < 15 ? '부족' : '적정';
+    return [ELEMENT_KOREAN[el], `${percentage.toFixed(1)}%`, bar, status];
+  });
+
+  addTable(['오행', '비율', '시각화', '상태'], ohengRows, {
+    title: '오행 분포',
+    columnWidths: [35, 30, 70, 35],
+    headerColor: [34, 197, 94]
   });
 
   if (yongsin?.length || gisin?.length) {
@@ -1691,17 +1808,13 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       addText(`전환 시기: ${career.pivotTiming}`);
     }
 
-    // 월별 액션플랜 (3줄 규격: 점수+결론, 해야할것, 피해야할것)
+    // 월별 액션플랜 (표 형식)
     if (premium.monthlyActionPlan?.length) {
       addSectionTitle('6. 월별 행운 액션플랜');
 
       // 간단한 안내
       addText('각 월의 핵심만 정리했습니다. 점수가 높을수록 기회, 낮을수록 신중함이 필요합니다.');
       yPos += 5;
-
-      // 상반기/하반기 구분
-      const firstHalf = premium.monthlyActionPlan.slice(0, 6);
-      const secondHalf = premium.monthlyActionPlan.slice(6);
 
       // 월별 피해야 할 것 데이터
       const MONTHLY_AVOID: Record<number, string> = {
@@ -1719,49 +1832,64 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
         12: '과도한 약속/체력 무리'
       };
 
-      // 상반기
-      addSubSection('상반기 (1~6월)');
-      firstHalf.forEach((action: MonthlyAction, index: number) => {
+      // 상반기 테이블
+      const firstHalf = premium.monthlyActionPlan.slice(0, 6);
+      const firstHalfRows = firstHalf.map((action: MonthlyAction, index: number) => {
         const monthNum = index + 1;
         const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
         const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
-
-        checkNewPage(25);
-        // 1줄: 점수 + 한줄 결론
-        addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
-        // 2줄: 해야 할 것
         const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
-        addText(`  ✓ 해야 할 것: ${mustDoAction}`);
-        // 3줄: 피해야 할 것
-        addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
-        yPos += 3;
+        return [
+          action.monthName,
+          `${action.score}점 ${scoreEmoji}`,
+          mustDoAction,
+          MONTHLY_AVOID[monthNum]
+        ];
       });
 
-      // 하반기
+      addTable(['월', '점수', '✓ 해야 할 것', '✗ 피해야 할 것'], firstHalfRows, {
+        title: '상반기 (1~6월)',
+        columnWidths: [20, 28, (contentWidth - 48) / 2, (contentWidth - 48) / 2],
+        headerColor: [168, 85, 247]
+      });
+
+      // 하반기 테이블
+      const secondHalf = premium.monthlyActionPlan.slice(6);
       if (secondHalf.length > 0) {
-        yPos += 3;
-        addSubSection('하반기 (7~12월)');
-        secondHalf.forEach((action: MonthlyAction, index: number) => {
+        const secondHalfRows = secondHalf.map((action: MonthlyAction, index: number) => {
           const monthNum = index + 7;
           const monthAdvice = MONTHLY_UNIQUE_ADVICE[monthNum];
           const scoreEmoji = action.score >= 80 ? '🌟' : action.score >= 60 ? '✨' : '🌙';
-
-          checkNewPage(25);
-          addText(`${action.monthName}(${action.score}점) ${scoreEmoji} ${monthAdvice?.theme || ''}`);
           const mustDoAction = action.mustDo?.[0]?.action || monthAdvice?.actionTip || '기초를 다지세요';
-          addText(`  ✓ 해야 할 것: ${mustDoAction}`);
-          addText(`  ✗ 피해야 할 것: ${MONTHLY_AVOID[monthNum]}`);
-          yPos += 3;
+          return [
+            action.monthName,
+            `${action.score}점 ${scoreEmoji}`,
+            mustDoAction,
+            MONTHLY_AVOID[monthNum]
+          ];
+        });
+
+        addTable(['월', '점수', '✓ 해야 할 것', '✗ 피해야 할 것'], secondHalfRows, {
+          title: '하반기 (7~12월)',
+          columnWidths: [20, 28, (contentWidth - 48) / 2, (contentWidth - 48) / 2],
+          headerColor: [168, 85, 247]
         });
       }
 
-      // 행운 요소 요약 (상세 정보는 접어서)
-      yPos += 5;
-      addSubSection('행운 요소 참고');
+      // 행운 요소 테이블
       if (yongsin?.length) {
         const luckyPool = LUCKY_ELEMENTS_POOL[yongsin[0]];
         if (luckyPool) {
-          addText(`행운색: ${luckyPool.colors.slice(0, 3).join(', ')} | 행운숫자: ${luckyPool.numbers.slice(0, 3).join(', ')} | 행운방향: ${luckyPool.directions[0]}`);
+          addTable(['항목', '내용'], [
+            ['행운색', luckyPool.colors.slice(0, 4).join(', ')],
+            ['행운숫자', luckyPool.numbers.slice(0, 4).join(', ')],
+            ['행운방향', luckyPool.directions.join(', ')],
+            ['행운음식', luckyPool.foods?.slice(0, 3).join(', ') || '-']
+          ], {
+            title: '행운 요소 참고',
+            columnWidths: [40, contentWidth - 40],
+            headerColor: [251, 191, 36]
+          });
         }
       }
     }

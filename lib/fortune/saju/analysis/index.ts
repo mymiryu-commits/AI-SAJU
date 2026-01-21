@@ -8,10 +8,12 @@ export {
   generateDetailedPeerAnalysis
 } from './peerComparison';
 
-// 가족 영향
+// 가족 영향 + 부모 영향도 분석
 export {
   analyzeFamilyImpact,
-  analyzeSpouseCompatibility
+  analyzeSpouseCompatibility,
+  analyzeParentInfluence,
+  type ParentInfluenceAnalysis
 } from './familyImpact';
 
 // 직업 매칭
