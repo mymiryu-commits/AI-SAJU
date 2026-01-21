@@ -31,6 +31,9 @@ import {
 import { blindPremiumContent } from '@/lib/services/analysisService';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
 
+// 관리자 이메일 목록
+const ADMIN_EMAILS = ['mymiryu@gmail.com'];
+
 // 저장된 분석 결과에서 다운로드 (GET)
 export async function GET(request: NextRequest) {
   try {
@@ -141,16 +144,34 @@ export async function GET(request: NextRequest) {
         }
       });
     } else {
-      // 음성 생성 - 프리미엄 전용
-      if (!isPremiumUser && !isAnalysisPremium) {
+      // 음성 생성 - 관리자 무료, 포인트 보유 사용자는 포인트 차감
+      const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+      const currentPoints = pointBalance?.points || 0;
+      const audioCost = PRODUCT_COSTS.voice; // 300 포인트
+
+      // 관리자가 아니고, 프리미엄 분석도 아니고, 포인트도 부족한 경우
+      if (!isAdmin && !isAnalysisPremium && currentPoints < audioCost) {
         return NextResponse.json(
           {
-            error: '음성 생성은 프리미엄 서비스입니다.',
-            errorCode: 'PREMIUM_REQUIRED',
+            error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
+            errorCode: 'INSUFFICIENT_POINTS',
+            requiredPoints: audioCost,
+            currentPoints: currentPoints,
             upgradeRequired: true
           },
           { status: 402 }
         );
+      }
+
+      // 관리자가 아니고 프리미엄 분석도 아닌 경우 포인트 차감
+      if (!isAdmin && !isAnalysisPremium) {
+        const deductResult = await deductPoints(user.id, 'voice');
+        if (!deductResult.success) {
+          return NextResponse.json(
+            { error: '포인트 차감에 실패했습니다.' },
+            { status: 500 }
+          );
+        }
       }
 
       // Edge TTS를 기본 사용 (무료, API 키 불필요)
@@ -238,7 +259,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 음성 생성은 프리미엄 전용 - 인증 및 프리미엄 확인
+    // 음성 생성은 관리자 무료, 일반 사용자는 포인트 차감
     if (type === 'audio') {
       const supabase = await createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -250,18 +271,34 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
       const pointBalance = await getPointBalance(user.id);
-      const isPremiumUser = pointBalance?.isPremium || false;
+      const currentPoints = pointBalance?.points || 0;
+      const audioCost = PRODUCT_COSTS.voice; // 300 포인트
 
-      if (!isPremiumUser) {
+      // 관리자가 아니고 포인트도 부족한 경우
+      if (!isAdmin && currentPoints < audioCost) {
         return NextResponse.json(
           {
-            error: '음성 생성은 프리미엄 서비스입니다.',
-            errorCode: 'PREMIUM_REQUIRED',
+            error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
+            errorCode: 'INSUFFICIENT_POINTS',
+            requiredPoints: audioCost,
+            currentPoints: currentPoints,
             upgradeRequired: true
           },
           { status: 402 }
         );
+      }
+
+      // 관리자가 아닌 경우 포인트 차감
+      if (!isAdmin) {
+        const deductResult = await deductPoints(user.id, 'voice');
+        if (!deductResult.success) {
+          return NextResponse.json(
+            { error: '포인트 차감에 실패했습니다.' },
+            { status: 500 }
+          );
+        }
       }
     }
 
