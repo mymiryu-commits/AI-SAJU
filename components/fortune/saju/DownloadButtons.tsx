@@ -156,8 +156,13 @@ export default function DownloadButtons({
       // PDF 템플릿 표시
       setShowPdfTemplate(true);
 
-      // DOM 렌더링 대기
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 폰트 로딩 대기 (Pretendard 폰트)
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // DOM 렌더링 및 폰트 적용 대기
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const element = pdfTemplateRef.current;
       if (!element) {

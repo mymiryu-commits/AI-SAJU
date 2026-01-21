@@ -366,34 +366,6 @@ export default function SajuPage() {
               productLevel={productLevel}
             />
 
-            {/* 전환 유도 영역 */}
-            {conversionData && !isPremiumUnlocked && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl">
-                <h3 className="text-xl font-bold mb-2">
-                  {conversionData.paywallTemplate.headline}
-                </h3>
-                <ul className="mb-4 space-y-2">
-                  {conversionData.paywallTemplate.bullets.slice(0, 3).map((bullet, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-yellow-300">✓</span>
-                      <span className="text-sm">{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-2 text-sm text-white/80 mb-4">
-                  <Coins className="w-4 h-4" />
-                  <span>포인트로 바로 구매 가능!</span>
-                </div>
-                <button
-                  onClick={handleUpgrade}
-                  className="w-full py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-white/90 transition flex items-center justify-center gap-2"
-                >
-                  <Coins className="w-5 h-5" />
-                  포인트로 프리미엄 분석 받기
-                </button>
-              </div>
-            )}
-
             {/* 프리미엄 해제 완료 메시지 */}
             {isPremiumUnlocked && (
               <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl">

@@ -1159,44 +1159,6 @@ export default function SajuResultCard({
           )}
         </AnimatePresence>
       </div>
-
-      {/* ============================================ */}
-      {/* 하단 CTA (기회 기반 FOMO) */}
-      {/* ============================================ */}
-      {!isPremiumUnlocked && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6 p-6 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl text-white relative overflow-hidden"
-        >
-          {/* 배경 장식 */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-3xl" />
-          </div>
-
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 justify-center mb-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-sm text-amber-300 font-medium">특별한 기회</span>
-            </div>
-            <p className="text-center text-lg font-medium mb-2">
-              {sixtyJiazi?.nature || heroData.nature}
-            </p>
-            <p className="text-center text-sm opacity-80 mb-4">
-              2026년, 당신만의 골든타임을 놓치지 마세요
-            </p>
-            <Button
-              onClick={onUnlockPremium}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-5"
-            >
-              {coreMessage.cta || '나의 기회 확인하기'}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }

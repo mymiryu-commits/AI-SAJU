@@ -79,12 +79,17 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           minHeight: '297mm',
           padding: '15mm',
           backgroundColor: '#ffffff',
-          fontFamily: '"Noto Sans KR", "Malgun Gothic", sans-serif',
+          fontFamily: 'Pretendard, "Noto Sans KR", "Malgun Gothic", -apple-system, BlinkMacSystemFont, sans-serif',
           fontSize: '10pt',
           lineHeight: 1.6,
           color: '#1f2937'
         }}
       >
+        {/* 웹 폰트 프리로드 */}
+        <link
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          rel="stylesheet"
+        />
         {/* 표지 */}
         <div style={{
           textAlign: 'center',
@@ -172,10 +177,10 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                   <tr key={name}>
                     <td style={tableCellStyle}><strong>{name}</strong></td>
                     <td style={{ ...tableCellStyle, textAlign: 'center', fontSize: '14pt' }}>
-                      {pillar.heavenlyStem}
+                      {pillar.stemKorean || pillar.heavenlyStem || '-'}
                     </td>
                     <td style={{ ...tableCellStyle, textAlign: 'center', fontSize: '14pt' }}>
-                      {pillar.earthlyBranch}
+                      {pillar.branchKorean || pillar.earthlyBranch || '-'}
                     </td>
                     <td style={{ ...tableCellStyle, textAlign: 'center' }}>
                       <span style={{
