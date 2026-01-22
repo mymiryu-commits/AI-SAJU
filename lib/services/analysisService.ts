@@ -172,50 +172,48 @@ export async function saveAnalysisResult(
 ): Promise<{ id: string | null; error?: string }> {
   const supabase = await createClient();
 
-  // 45일 후 만료
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 45);
-
   const { saju, oheng, scores, yongsin, gisin, personality, peerComparison } = result;
+
+  // 기본 insert 데이터 (expires_at 컬럼이 없을 수 있으므로 제외)
+  const insertData: Record<string, unknown> = {
+    user_id: userId,
+    type: 'saju',
+    subtype: options.productType,
+    input_data: result.user,
+    result_summary: {
+      saju: {
+        year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
+        month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
+        day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
+        time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
+      },
+      scores,
+      zodiac: saju.year.zodiac,
+      dayMaster: saju.day.heavenlyStem,
+      yongsin,
+      gisin,
+    },
+    result_full: result,
+    keywords: [
+      saju.day.element,
+      saju.year.zodiac,
+      ...(yongsin || []),
+      result.user.currentConcern || 'none',
+    ],
+    scores,
+    is_premium: options.isPremium,
+    is_blinded: options.isBlinded,
+    unblind_price: options.isBlinded ? 500 : null,
+    zodiac_included: !!options.zodiacData,
+    zodiac_data: options.zodiacData,
+    pdf_url: options.pdfUrl,
+    audio_url: options.audioUrl,
+    price_paid: options.pointsPaid || 0,
+  };
 
   const { data, error } = await (supabase as any)
     .from('fortune_analyses')
-    .insert({
-      user_id: userId,
-      type: 'saju',
-      subtype: options.productType,
-      input_data: result.user,
-      result_summary: {
-        saju: {
-          year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
-          month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
-          day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
-          time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
-        },
-        scores,
-        zodiac: saju.year.zodiac,
-        dayMaster: saju.day.heavenlyStem,
-        yongsin,
-        gisin,
-      },
-      result_full: result,
-      keywords: [
-        saju.day.element,
-        saju.year.zodiac,
-        ...(yongsin || []),
-        result.user.currentConcern || 'none',
-      ],
-      scores,
-      is_premium: options.isPremium,
-      is_blinded: options.isBlinded,
-      unblind_price: options.isBlinded ? 500 : null,
-      expires_at: expiresAt.toISOString(),
-      zodiac_included: !!options.zodiacData,
-      zodiac_data: options.zodiacData,
-      pdf_url: options.pdfUrl,
-      audio_url: options.audioUrl,
-      price_paid: options.pointsPaid || 0,
-    })
+    .insert(insertData)
     .select('id')
     .single();
 
@@ -292,7 +290,7 @@ export async function getUserAnalysisHistory(
 
   let query = (supabase as any)
     .from('fortune_analyses')
-    .select('id, type, subtype, input_data, result_summary, scores, is_premium, is_blinded, pdf_url, audio_url, created_at, expires_at', { count: 'exact' })
+    .select('id, type, subtype, input_data, result_summary, scores, is_premium, is_blinded, pdf_url, audio_url, created_at', { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);

@@ -317,7 +317,6 @@ export async function POST(request: NextRequest) {
       },
       is_premium: true,
       is_blinded: false,
-      expires_at: expiresAt.toISOString(),
       zodiac_included: !!zodiacAnalysis,
       zodiac_data: zodiacAnalysis
     };
@@ -334,7 +333,6 @@ export async function POST(request: NextRequest) {
           scores: analysisRecord.scores,
           is_premium: true,
           is_blinded: false,
-          expires_at: analysisRecord.expires_at,
           zodiac_included: analysisRecord.zodiac_included,
           zodiac_data: analysisRecord.zodiac_data
         })
