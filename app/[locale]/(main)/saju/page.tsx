@@ -20,6 +20,7 @@ import {
   Clock,
   CheckCircle,
   Play,
+  Coins,
 } from 'lucide-react';
 
 type CategoryFilter = 'all' | 'free' | 'premium' | 'recommended';
@@ -35,8 +36,8 @@ interface SajuService {
   recommended: boolean;
   rating: number;
   reviewCount: number;
-  price?: number;
-  originalPrice?: number;
+  points?: number;
+  originalPoints?: number;
   href: string;
   badge?: string;
 }
@@ -65,8 +66,8 @@ const sajuServices: SajuService[] = [
     recommended: true,
     rating: 4.9,
     reviewCount: 8721,
-    price: 9900,
-    originalPrice: 15000,
+    points: 50,
+    originalPoints: 80,
     href: '/fortune/saju?tier=deep',
     badge: 'BEST',
   },
@@ -80,7 +81,7 @@ const sajuServices: SajuService[] = [
     recommended: false,
     rating: 4.7,
     reviewCount: 5432,
-    price: 5900,
+    points: 30,
     href: '/fortune/face',
   },
   {
@@ -93,7 +94,7 @@ const sajuServices: SajuService[] = [
     recommended: true,
     rating: 4.8,
     reviewCount: 9876,
-    price: 9900,
+    points: 50,
     href: '/fortune/compatibility',
     badge: 'NEW',
   },
@@ -107,7 +108,7 @@ const sajuServices: SajuService[] = [
     recommended: false,
     rating: 4.6,
     reviewCount: 3210,
-    price: 14900,
+    points: 80,
     href: '/fortune/group',
   },
   {
@@ -414,23 +415,28 @@ function ServiceCard({ service }: { service: SajuService }) {
             </span>
           </div>
 
-          {/* Price & CTA */}
+          {/* Points & CTA */}
           <div className="flex items-center justify-between">
             <div>
-              {service.price ? (
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-primary">
-                    {service.price.toLocaleString()}
-                  </span>
-                  <span className="text-sm text-muted-foreground">원</span>
-                  {service.originalPrice && (
+              {service.points ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Coins className="h-5 w-5 text-amber-500" />
+                    <span className="text-2xl font-bold text-primary">
+                      {service.points}
+                    </span>
+                  </div>
+                  {service.originalPoints && (
                     <span className="text-sm text-muted-foreground line-through">
-                      {service.originalPrice.toLocaleString()}원
+                      {service.originalPoints}P
                     </span>
                   )}
                 </div>
               ) : (
-                <span className="text-2xl font-bold text-green-600">무료</span>
+                <div className="flex items-center gap-1">
+                  <Gift className="h-5 w-5 text-green-500" />
+                  <span className="text-xl font-bold text-green-600">무료</span>
+                </div>
               )}
             </div>
             <Button size="sm" className="group-hover:bg-primary group-hover:text-white transition-colors">

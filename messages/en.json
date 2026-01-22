@@ -227,8 +227,8 @@
     },
     "premium": {
       "title": "Premium Benefits",
-      "subtitle": "For deeper and more accurate analysis",
-      "cta": "View Premium Plans",
+      "subtitle": "Get deeper and more accurate analysis with points",
+      "cta": "Charge Points",
       "features": {
         "detailedReport": {
           "title": "Detailed Reports",
@@ -239,8 +239,8 @@
           "description": "Practical action guides based on AI analysis results."
         },
         "unlimitedAccess": {
-          "title": "Unlimited Access",
-          "description": "Use all fortune services unlimited with a monthly subscription."
+          "title": "Points System",
+          "description": "Charge points and use premium services as you need."
         }
       }
     },

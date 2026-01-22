@@ -227,8 +227,8 @@
     },
     "premium": {
       "title": "프리미엄 혜택",
-      "subtitle": "더 깊고 정확한 분석을 원하신다면",
-      "cta": "프리미엄 플랜 보기",
+      "subtitle": "포인트로 더 깊고 정확한 분석을 받아보세요",
+      "cta": "포인트 충전하기",
       "features": {
         "detailedReport": {
           "title": "상세 리포트",
@@ -239,8 +239,8 @@
           "description": "AI 분석 결과를 바탕으로 실질적인 행동 가이드를 제공합니다."
         },
         "unlimitedAccess": {
-          "title": "무제한 이용",
-          "description": "월간 구독으로 모든 사주 서비스를 무제한으로 이용하세요."
+          "title": "포인트 충전",
+          "description": "포인트를 충전하고 원하는 프리미엄 서비스를 이용하세요."
         }
       }
     },
