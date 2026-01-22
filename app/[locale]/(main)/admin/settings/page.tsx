@@ -324,6 +324,24 @@ export default function AdminSettingsPage() {
           </div>
         </Link>
 
+        {/* Service Card Images Link */}
+        <Link href="/admin/service-cards">
+          <div className="mt-4 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 border border-pink-200 dark:border-pink-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
+                  <ImageIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-pink-800 dark:text-pink-300">서비스 카드 이미지 관리</h3>
+                  <p className="text-sm text-pink-600 dark:text-pink-400">홈페이지 서비스 카드 이미지를 변경하세요</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-pink-500 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </Link>
+
         {/* AI Shortcuts Management */}
         <div className="mt-8 bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
