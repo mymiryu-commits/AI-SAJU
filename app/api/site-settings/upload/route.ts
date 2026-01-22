@@ -59,9 +59,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!imageType || !['background', 'content'].includes(imageType)) {
+    // 허용된 이미지 타입: background, content, 또는 service_로 시작하는 서비스 카드 타입
+    const validTypes = ['background', 'content'];
+    const isServiceCard = imageType?.startsWith('service_');
+
+    if (!imageType || (!validTypes.includes(imageType) && !isServiceCard)) {
       return NextResponse.json(
-        { error: 'Invalid image type. Must be "background" or "content"' },
+        { error: 'Invalid image type. Must be "background", "content", or service card type (e.g., "service_daily_fortune")' },
         { status: 400 }
       );
     }
