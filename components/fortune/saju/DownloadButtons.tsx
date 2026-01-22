@@ -844,7 +844,7 @@ export default function DownloadButtons({
                     📥 파일로 저장하기
                   </a>
 
-                  {/* 공유 버튼 (Web Share API 지원 시) */}
+                  {/* 카카오톡 공유 버튼 (Web Share API 지원 시) */}
                   {typeof navigator !== 'undefined' && navigator.share && (
                     <button
                       onClick={async () => {
@@ -855,14 +855,16 @@ export default function DownloadButtons({
                           await navigator.share({
                             files: [file],
                             title: '사주 분석 음성',
+                            text: `${user.name}님의 사주 분석 음성 파일입니다.`,
                           });
                         } catch (err) {
                           console.error('Share failed:', err);
                         }
                       }}
-                      className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                      className="w-full py-3 bg-[#FEE500] text-[#191919] font-medium rounded-lg hover:bg-[#FDD835] transition-colors flex items-center justify-center gap-2"
                     >
-                      📤 다른 앱으로 공유
+                      <KakaoIcon />
+                      카카오톡으로 보내기
                     </button>
                   )}
 
@@ -1077,6 +1079,14 @@ function DownloadIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  );
+}
+
+function KakaoIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3C6.477 3 2 6.463 2 10.714c0 2.683 1.737 5.042 4.348 6.373-.136.474-.878 3.063-.91 3.273 0 0-.018.149.078.206.097.057.21.014.21.014.276-.039 3.194-2.09 3.7-2.447.846.127 1.72.194 2.574.194 5.523 0 10-3.463 10-7.714S17.523 3 12 3z"/>
     </svg>
   );
 }
