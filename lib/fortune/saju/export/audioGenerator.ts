@@ -531,56 +531,121 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     });
   }
 
-  // ========== 7. 이성관 심층 분석 - 좋은 인연 만나기 ==========
-  sections.push({
-    title: '이성관 서론',
-    content: `${user.name}님, 여기서 정말 중요한 이야기를 드릴게요. ` +
-             `살면서 좋은 이성을 만나는 것은 인생의 큰 축이 바뀌는 일입니다. ` +
-             `결혼이든 연애든, 누구를 만나느냐에 따라 10년, 20년의 행복이 결정됩니다. ` +
-             `그래서 사주에서 이성운은 가장 신중하게 봐야 할 부분이에요.`,
-    pauseAfter: 2500
-  });
-
-  // 일간별 이상적 파트너 특성
+  // ========== 7. 이성관/관계운 분석 - 결혼 상태 맞춤형 ==========
+  const maritalStatus = user.maritalStatus || 'single';
   const idealPartner = getIdealPartnerByDaymaster(dayMaster, user.gender || 'male');
-  sections.push({
-    title: '이상적 파트너',
-    content: `당신에게 맞는 이상적인 파트너는 어떤 사람일까요? ` +
-             `${idealPartner.traits} ` +
-             `${idealPartner.compatibility}`,
-    pauseAfter: 2500
-  });
 
-  // 주의해야 할 이성 유형
-  sections.push({
-    title: '주의할 이성',
-    content: `반대로, 이런 사람은 조심하셔야 해요. ` +
-             `${idealPartner.warningTypes} ` +
-             `첫인상이 좋아도 시간을 두고 확인하세요. 급하게 결정하면 후회할 수 있습니다.`,
-    pauseAfter: 2000
-  });
+  if (maritalStatus === 'married' || maritalStatus === 'remarried') {
+    // 기혼자/재혼자용 - 배우자 관계 조언
+    const isRemarried = maritalStatus === 'remarried';
+    sections.push({
+      title: '부부 관계 서론',
+      content: `${user.name}님, 이제 ${isRemarried ? '지금의 반려자와의' : '부부'} 관계에 대해 말씀드릴게요. ` +
+               `결혼 생활에서 가장 중요한 것은 서로에 대한 이해와 존중입니다. ` +
+               `사주를 통해 ${isRemarried ? '현재' : ''} 배우자와의 조화로운 관계를 위한 조언을 드리겠습니다.`,
+      pauseAfter: 2500
+    });
 
-  // 인연 만나는 방법
-  sections.push({
-    title: '인연 만나기',
-    content: `좋은 인연은 어디서 만날까요? ` +
-             `${idealPartner.whereToMeet} ` +
-             `억지로 찾기보다, 자신을 가꾸면서 자연스럽게 만나는 게 가장 좋습니다.`,
-    pauseAfter: 2000
-  });
+    sections.push({
+      title: '배우자와의 궁합',
+      content: `당신의 사주에서 보면, ${idealPartner.marriedAdvice || idealPartner.traits} ` +
+               `배우자와 갈등이 생길 때는 상대의 입장에서 한 번 더 생각해보세요. ` +
+               `특히 ${idealPartner.conflictAreas || '사소한 일상의 결정'}에서 의견 차이가 있을 수 있어요.`,
+      pauseAfter: 2500
+    });
 
-  // 파트너 체크리스트
-  sections.push({
-    title: '파트너 체크',
-    content: `지금 만나는 분이 있다면, 이 다섯 가지를 체크해보세요. ` +
-             `첫째, 당신의 말을 끝까지 듣고 공감해주는가. ` +
-             `둘째, 작은 약속도 성실하게 지키는가. ` +
-             `셋째, 갈등 상황에서 해결하려고 노력하는가. ` +
-             `넷째, 당신의 가족과 친구를 존중하는가. ` +
-             `다섯째, 미래에 대한 비전이 비슷한가. ` +
-             `세 개 이상 해당된다면 좋은 인연일 가능성이 높습니다.`,
-    pauseAfter: 3000
-  });
+    sections.push({
+      title: '관계 개선 조언',
+      content: `부부 관계를 더 좋게 만드는 팁을 드릴게요. ` +
+               `첫째, 감사의 말을 자주 표현하세요. 당연하다고 생각하는 것들에 고마움을 전해보세요. ` +
+               `둘째, 함께하는 시간을 의도적으로 만드세요. 바쁜 일상 속에서도 둘만의 시간이 필요합니다. ` +
+               `셋째, 서로의 개인 시간과 공간을 존중해주세요. ` +
+               `이 세 가지만 실천해도 관계가 한층 깊어질 거예요.`,
+      pauseAfter: 3000
+    });
+
+    if (user.hasChildren) {
+      sections.push({
+        title: '가정 운세',
+        content: `자녀가 있으시니, 가정 전체의 화목에 대해서도 말씀드릴게요. ` +
+                 `부모의 관계가 좋으면 자녀에게도 긍정적인 영향을 미칩니다. ` +
+                 `가족 간의 대화 시간을 꼭 챙기시고, 서로의 이야기에 귀 기울여주세요.`,
+        pauseAfter: 2000
+      });
+    }
+  } else if (maritalStatus === 'divorced') {
+    // 이혼자용 - 치유와 새로운 시작
+    sections.push({
+      title: '새로운 시작',
+      content: `${user.name}님, 인생에서 힘든 시간을 보내셨을 수 있어요. ` +
+               `하지만 사주에서 보면, 모든 끝은 새로운 시작을 의미합니다. ` +
+               `과거의 경험은 당신을 더 강하고 현명하게 만들어주었습니다.`,
+      pauseAfter: 2500
+    });
+
+    sections.push({
+      title: '치유의 시간',
+      content: `지금 가장 중요한 것은 자신을 돌보는 시간입니다. ` +
+               `새로운 인연을 급하게 찾기보다, 먼저 내면의 상처를 치유하세요. ` +
+               `당신의 사주에서 ${idealPartner.healingAdvice || '조용한 취미 활동이나 자기 계발'}이 큰 도움이 될 거예요.`,
+      pauseAfter: 2500
+    });
+
+    sections.push({
+      title: '미래의 인연',
+      content: `준비가 되셨을 때, 좋은 인연은 분명 다시 찾아옵니다. ` +
+               `${idealPartner.traits} ` +
+               `이전의 실패를 거울삼아, 더 나은 선택을 하실 수 있을 거예요. ` +
+               `천천히, 자신의 속도로 나아가세요.`,
+      pauseAfter: 2500
+    });
+  } else {
+    // 미혼자용 - 기존 연애/만남 조언
+    sections.push({
+      title: '이성관 서론',
+      content: `${user.name}님, 여기서 정말 중요한 이야기를 드릴게요. ` +
+               `살면서 좋은 이성을 만나는 것은 인생의 큰 축이 바뀌는 일입니다. ` +
+               `누구를 만나느냐에 따라 10년, 20년의 행복이 결정됩니다. ` +
+               `그래서 사주에서 이성운은 가장 신중하게 봐야 할 부분이에요.`,
+      pauseAfter: 2500
+    });
+
+    sections.push({
+      title: '이상적 파트너',
+      content: `당신에게 맞는 이상적인 파트너는 어떤 사람일까요? ` +
+               `${idealPartner.traits} ` +
+               `${idealPartner.compatibility}`,
+      pauseAfter: 2500
+    });
+
+    sections.push({
+      title: '주의할 이성',
+      content: `반대로, 이런 사람은 조심하셔야 해요. ` +
+               `${idealPartner.warningTypes} ` +
+               `첫인상이 좋아도 시간을 두고 확인하세요. 급하게 결정하면 후회할 수 있습니다.`,
+      pauseAfter: 2000
+    });
+
+    sections.push({
+      title: '인연 만나기',
+      content: `좋은 인연은 어디서 만날까요? ` +
+               `${idealPartner.whereToMeet} ` +
+               `억지로 찾기보다, 자신을 가꾸면서 자연스럽게 만나는 게 가장 좋습니다.`,
+      pauseAfter: 2000
+    });
+
+    sections.push({
+      title: '파트너 체크',
+      content: `지금 만나는 분이 있다면, 이 다섯 가지를 체크해보세요. ` +
+               `첫째, 당신의 말을 끝까지 듣고 공감해주는가. ` +
+               `둘째, 작은 약속도 성실하게 지키는가. ` +
+               `셋째, 갈등 상황에서 해결하려고 노력하는가. ` +
+               `넷째, 당신의 가족과 친구를 존중하는가. ` +
+               `다섯째, 미래에 대한 비전이 비슷한가. ` +
+               `세 개 이상 해당된다면 좋은 인연일 가능성이 높습니다.`,
+      pauseAfter: 3000
+    });
+  }
 
   // ========== 8. 빛나는 환경 vs 피해야 할 환경 ==========
   sections.push({
@@ -866,6 +931,11 @@ interface IdealPartnerProfile {
   compatibility: string;
   warningTypes: string;
   whereToMeet: string;
+  // 기혼자용 추가 필드
+  marriedAdvice?: string;
+  conflictAreas?: string;
+  // 이혼자용 추가 필드
+  healingAdvice?: string;
 }
 
 function getIdealPartnerByDaymaster(dayMaster: string, gender: 'male' | 'female'): IdealPartnerProfile {
@@ -1015,7 +1085,54 @@ function getIdealPartnerByDaymaster(dayMaster: string, gender: 'male' | 'female'
 
   // 기본값 (갑)
   const profile = profiles[dayMaster] || profiles['갑'];
-  return profile[gender];
+  const baseProfile = profile[gender];
+
+  // 기혼자/이혼자용 추가 조언 (일간별 기본 특성 기반)
+  const marriedAdviceMap: Record<string, string> = {
+    '갑': '배우자의 유연함을 존중하고, 때로는 물러설 줄 아는 지혜가 필요해요. 당신의 강한 추진력이 때로는 상대를 압도할 수 있습니다.',
+    '을': '배우자에게 더 의지해도 괜찮아요. 혼자 감당하려 하지 마시고, 함께 해결하려는 모습이 관계를 깊게 합니다.',
+    '병': '배우자에게 관심과 스포트라이트를 나눠주세요. 당신이 빛나는 만큼, 상대도 빛날 기회를 주면 더 좋은 관계가 됩니다.',
+    '정': '당신의 헌신이 당연하게 받아들여지지 않도록, 가끔은 솔직하게 표현하세요. 배우자에게 당신의 마음을 전하는 것도 중요해요.',
+    '무': '변화와 새로움을 두려워하지 마세요. 배우자가 제안하는 새로운 시도에 열린 마음으로 함께 하면 관계가 더 풍요로워집니다.',
+    '기': '완벽하지 않아도 괜찮다는 것을 기억하세요. 배우자의 부족함을 지적하기보다 있는 그대로를 인정해주면 사랑이 깊어집니다.',
+    '경': '때로는 날카로운 말 대신 부드러운 표현을 선택해보세요. 옳고 그름보다 관계의 온기가 더 중요할 때가 있습니다.',
+    '신': '세세한 것에 얽매이기보다 큰 그림을 보세요. 배우자의 작은 실수보다 전체적인 노력과 마음을 봐주시면 좋겠습니다.',
+    '임': '꿈과 이상도 좋지만, 현실적인 가정 문제에도 관심을 기울여주세요. 배우자와 함께 구체적인 계획을 세우면 더욱 든든합니다.',
+    '계': '당신의 직관과 감성을 배우자에게 솔직히 표현해보세요. 말하지 않으면 모르는 것들이 있습니다.'
+  };
+
+  const conflictAreasMap: Record<string, string> = {
+    '갑': '주도권과 결정 과정',
+    '을': '의사소통과 감정 표현',
+    '병': '관심과 인정받고 싶은 욕구',
+    '정': '헌신의 정도와 감사 표현',
+    '무': '변화와 안정 사이의 균형',
+    '기': '기대치와 완벽주의',
+    '경': '의견 충돌과 양보',
+    '신': '세부사항과 전체적인 방향',
+    '임': '현실적 문제와 이상적 추구',
+    '계': '감정 공유와 표현 방식'
+  };
+
+  const healingAdviceMap: Record<string, string> = {
+    '갑': '새로운 도전이나 운동을 통해 에너지를 발산하세요. 산이나 숲에서 시간을 보내면 마음이 정화됩니다.',
+    '을': '가까운 친구들과의 깊은 대화나 글쓰기가 치유에 도움이 됩니다. 작은 식물을 키워보는 것도 좋아요.',
+    '병': '새로운 사람들과의 만남, 밝은 곳에서의 활동이 에너지 회복에 좋습니다. 햇살 아래 산책이 추천됩니다.',
+    '정': '요리, 수공예 등 손으로 하는 활동이 마음을 안정시켜줍니다. 가까운 사람들과의 따뜻한 교류도 중요해요.',
+    '무': '흙을 만지는 활동이나 정원 가꾸기가 치유에 도움이 됩니다. 안정적인 일상 루틴을 만들어보세요.',
+    '기': '세밀한 작업이나 정리 정돈 활동이 마음의 안정을 줍니다. 명상이나 요가도 좋습니다.',
+    '경': '운동이나 새로운 기술 배우기가 감정 정리에 도움이 됩니다. 목표를 세우고 도전하세요.',
+    '신': '공예, 악기 연주 등 집중을 요하는 활동이 좋습니다. 혼자만의 시간을 충분히 가지세요.',
+    '임': '여행이나 새로운 배움이 시야를 넓혀줍니다. 물가에서 시간을 보내면 마음이 정화됩니다.',
+    '계': '명상, 음악 감상, 예술 활동이 내면을 치유합니다. 조용한 공간에서 자신을 돌아보는 시간이 필요해요.'
+  };
+
+  return {
+    ...baseProfile,
+    marriedAdvice: marriedAdviceMap[dayMaster] || marriedAdviceMap['갑'],
+    conflictAreas: conflictAreasMap[dayMaster] || conflictAreasMap['갑'],
+    healingAdvice: healingAdviceMap[dayMaster] || healingAdviceMap['갑']
+  };
 }
 
 /**
@@ -1076,10 +1193,24 @@ export function narrationToText(script: NarrationScript): string {
  * - nova: 여성적, 밝은 (약간 울림 있음)
  * - onyx: 남성적, 깊은
  */
+/**
+ * OpenAI TTS 사용 가능한 음성 목록
+ * - alloy: 중성, 균형 잡힌 톤
+ * - echo: 남성, 낮고 차분함
+ * - fable: 남성, 영국식 표현력
+ * - onyx: 남성, 깊고 권위적
+ * - nova: 여성, 따뜻하고 친근함 (여성 추천)
+ * - shimmer: 여성, 맑고 또렷함 (여성 추천)
+ */
+export const OPENAI_VOICES = {
+  male: ['echo', 'onyx', 'fable', 'alloy'],
+  female: ['nova', 'shimmer', 'alloy']
+} as const;
+
 export async function generateAudioWithOpenAI(
   text: string,
   apiKey: string,
-  voice: string = 'shimmer' // 울림 없이 따뜻한 음성으로 변경
+  voice: string = 'nova' // 기본값: 따뜻한 여성 음성
 ): Promise<Buffer> {
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
@@ -1088,11 +1219,11 @@ export async function generateAudioWithOpenAI(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'tts-1', // HD 대신 기본 모델 사용 (울림 감소, 더 자연스러움)
+      model: 'tts-1-hd', // HD 모델 사용 (더 깨끗한 음질, 울림 감소)
       input: text,
       voice: voice,
       response_format: 'mp3',
-      speed: 0.9 // 고령자를 위해 조금 더 천천히
+      speed: 0.95 // 자연스러운 속도 (0.9는 너무 느림)
     })
   });
 
@@ -1279,6 +1410,22 @@ export function getEdgeVoices(): any[] {
 }
 
 /**
+ * 사용자 성별에 따른 자동 음성 선택
+ * 남성 사용자 → 여성 음성 (더 친근하고 부드러운 느낌)
+ * 여성 사용자 → 남성 음성 (신뢰감 있고 안정적인 느낌)
+ */
+function getAutoVoice(userGender: 'male' | 'female', provider: TTSProvider): string {
+  if (provider === 'openai') {
+    // OpenAI: 남성 사용자 → nova(여성), 여성 사용자 → onyx(남성)
+    return userGender === 'male' ? 'nova' : 'onyx';
+  } else if (provider === 'edge') {
+    // Edge TTS: 남성 사용자 → SunHiNeural(여성), 여성 사용자 → InJoonNeural(남성)
+    return userGender === 'male' ? 'ko-KR-SunHiNeural' : 'ko-KR-InJoonNeural';
+  }
+  return 'nova'; // 기본값
+}
+
+/**
  * 통합 음성 생성 함수
  */
 export async function generateSajuAudio(options: AudioGeneratorOptions): Promise<Buffer> {
@@ -1286,21 +1433,25 @@ export async function generateSajuAudio(options: AudioGeneratorOptions): Promise
   const fullText = narrationToText(script);
 
   const config = options.config || { provider: 'openai' as TTSProvider };
+  const userGender = options.user.gender || 'male';
+
+  // 음성 자동 선택 (voiceId가 명시되지 않은 경우)
+  const autoVoice = config.voiceId || getAutoVoice(userGender, config.provider);
 
   switch (config.provider) {
     case 'edge':
       // Edge TTS - 무료, API 키 불필요 (기본값으로 추천)
       return generateAudioWithEdge(
         fullText,
-        config.voiceId || 'ko-KR-SunHiNeural',
-        '-10%', // 속도
-        '-5Hz', // 피치
+        autoVoice,
+        '-5%', // 속도 (약간 천천히)
+        '-3Hz', // 피치 (약간 낮게 - 울림 감소)
         '+0%'   // 볼륨
       );
 
     case 'openai':
       if (!config.apiKey) throw new Error('OpenAI API key required');
-      return generateAudioWithOpenAI(fullText, config.apiKey, config.voiceId || 'nova');
+      return generateAudioWithOpenAI(fullText, config.apiKey, autoVoice);
 
     case 'google':
       if (!config.apiKey) throw new Error('Google API key required');
@@ -1333,5 +1484,6 @@ export default {
   generateAudioWithGoogle,
   generateAudioWithNaver,
   generateAudioWithEdge,
-  getEdgeVoices
+  getEdgeVoices,
+  OPENAI_VOICES
 };
