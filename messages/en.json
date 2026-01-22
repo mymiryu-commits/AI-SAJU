@@ -27,19 +27,12 @@
   "nav": {
     "home": "Home",
     "ranking": "AI Ranking",
-    "aiRanking": "AI Ranking",
-    "aiStore": "AI Store",
+    "saju": "AI Fortune",
     "guide": "AI Guide",
     "prompts": "Prompt Market",
-    "fortune": "Fortune",
-    "sajuHome": "AI Saju Home",
-    "saju": "Saju",
-    "sajuChat": "AI Saju Chat",
-    "sajuAdvanced": "Advanced Saju",
-    "compatibility": "Compatibility",
-    "tarot": "Tarot",
-    "lotto": "Lotto",
-    "qr": "QR",
+    "fortune": "AI Fortune",
+    "lotto": "Lotto Analyzer",
+    "qr": "QR Card",
     "community": "Community",
     "pricing": "Pricing",
     "login": "Login",
@@ -152,12 +145,6 @@
       "title": "Daily Fortune",
       "checkin": "Check In",
       "streakDays": "{count} day streak",
-      "streakStart": "Check in to start your streak!",
-      "checkedIn": "Checked In",
-      "checkInBtn": "Check In",
-      "streakBonus": "7 day streak for bonus rewards!",
-      "todayMessage": "Today's Message",
-      "caution": "Caution",
       "todayFortune": "Check today's fortune",
       "scores": {
         "overall": "Overall",
@@ -170,36 +157,6 @@
         "time": "Lucky Time",
         "color": "Lucky Color",
         "number": "Lucky Number"
-      },
-      "colors": {
-        "Purple": "Purple",
-        "Blue": "Blue",
-        "Green": "Green",
-        "Red": "Red",
-        "Yellow": "Yellow",
-        "Orange": "Orange"
-      },
-      "advices": [
-        "Today is a great day for new beginnings. Trust your instincts.",
-        "Focus on relationships today. Good communication brings opportunities.",
-        "Financial decisions made today will have lasting impacts.",
-        "Take time for self-care. Your health is your wealth.",
-        "Creative pursuits will bring unexpected rewards today.",
-        "Be patient with others. Kindness will be repaid tenfold."
-      ],
-      "cautions": [
-        "Avoid impulsive purchases in the afternoon.",
-        "Be careful with words around 3 PM.",
-        "Double-check important documents before signing.",
-        "Take breaks to avoid burnout.",
-        "Watch your diet, especially sweets.",
-        "Don't rush important decisions."
-      ],
-      "deeperAnalysis": {
-        "title": "Want a Deeper Analysis?",
-        "description": "Get a comprehensive reading with our premium Four Pillars analysis. Understand your destiny in detail.",
-        "freeSaju": "Free Four Pillars Analysis",
-        "viewPlans": "View Premium Plans"
       }
     },
     "free": {
@@ -217,6 +174,100 @@
         "Expert consultation"
       ],
       "cta": "Get Premium Analysis"
+    }
+  },
+  "saju": {
+    "hero": {
+      "badge": "AI-Powered Fortune Analysis",
+      "title": "Discover Your Destiny",
+      "subtitle": "Four Pillars, Face Reading, Compatibility and more. Find your life direction with AI-powered fortune services.",
+      "freeCta": "Free Fortune Reading",
+      "demoCta": "Explore Services",
+      "stats": {
+        "totalAnalyses": "Total Analyses",
+        "avgRating": "Avg Rating",
+        "satisfaction": "Return Rate"
+      }
+    },
+    "services": {
+      "title": "Fortune Services",
+      "subtitle": "Explore various AI-powered fortune telling services",
+      "filters": {
+        "all": "All",
+        "free": "Free",
+        "premium": "Premium",
+        "recommended": "Recommended"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "Basic Four Pillars",
+          "description": "Discover your Four Pillars of Destiny with your birth date and time. Check your basic fortune for free."
+        },
+        "deep-saju": {
+          "title": "Deep Analysis",
+          "description": "10-year fortune cycles, monthly predictions, career, wealth, and health. A comprehensive analysis of your life flow."
+        },
+        "face-reading": {
+          "title": "AI Face Reading",
+          "description": "Discover your personality and destiny from a single photo. AI analyzes your facial features precisely."
+        },
+        "compatibility": {
+          "title": "Compatibility",
+          "description": "Analyze compatibility with lovers, spouses, or business partners. Learn the strengths and cautions in relationships."
+        },
+        "group-analysis": {
+          "title": "Group Analysis",
+          "description": "Comprehensive analysis of multiple people like family or team members. Understand group dynamics."
+        },
+        "yearly-fortune": {
+          "title": "2025 Fortune",
+          "description": "Check this year's overall fortune flow and monthly points of attention."
+        }
+      }
+    },
+    "premium": {
+      "title": "Premium Benefits",
+      "subtitle": "Get deeper and more accurate analysis with points",
+      "cta": "Charge Points",
+      "features": {
+        "detailedReport": {
+          "title": "Detailed Reports",
+          "description": "PDF reports and voice narration you can review anytime."
+        },
+        "expertAdvice": {
+          "title": "Expert Advice",
+          "description": "Practical action guides based on AI analysis results."
+        },
+        "unlimitedAccess": {
+          "title": "Points System",
+          "description": "Charge points and use premium services as you need."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "Done in 3 Minutes",
+      "title": "Get Started Now",
+      "description": "AI analyzes your fortune with just simple information input.",
+      "cta": "Start Free Analysis",
+      "steps": {
+        "step1": "Enter your birth date and time",
+        "step2": "AI calculates your Four Pillars",
+        "step3": "Review your detailed fortune analysis"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "High Accuracy",
+          "description": "Precise analysis combining traditional methods with AI"
+        },
+        "speed": {
+          "title": "Fast Results",
+          "description": "Detailed analysis results within 3 minutes"
+        },
+        "privacy": {
+          "title": "Privacy Protected",
+          "description": "Your information is deleted immediately after analysis"
+        }
+      }
     }
   },
   "auth": {

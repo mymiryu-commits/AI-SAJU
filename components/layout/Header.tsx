@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
 import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings, LogOut, Crown, Sparkles } from 'lucide-react';
@@ -18,26 +18,13 @@ import { useLogo } from '@/lib/hooks/useLogo';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 
-// 메인 네비게이션 링크
-const mainNavLinks = [
-  { href: '/ranking', key: 'aiRanking', icon: '📊' },
-  { href: '/marketplace', key: 'aiStore', icon: '🛒' },
-] as const;
-
-// 운세 서브메뉴
-const fortuneSubMenu = [
-  { href: '/saju', key: 'sajuHome', icon: '🌙', description: 'AI 사주 홈' },
-  { href: '/fortune/saju', key: 'saju', icon: '🔮', description: '나만의 운명카드 6장' },
-  { href: '/saju/chat', key: 'sajuChat', icon: '💬', description: 'AI 사주 상담사' },
-  { href: '/saju/advanced', key: 'sajuAdvanced', icon: '🏛️', description: '십신/신살/12운성/합충' },
-  { href: '/fortune/compatibility', key: 'compatibility', icon: '💑', description: '커플/비즈니스 궁합' },
-  { href: '/fortune/tarot', key: 'tarot', icon: '🃏', description: '오늘의 카드 뽑기' },
-] as const;
-
-// 기타 링크
-const otherNavLinks = [
+// 간소화된 메인 네비게이션 링크
+const navLinks = [
+  { href: '/ranking', key: 'ranking', icon: '📊' },
+  { href: '/saju', key: 'saju', icon: '🔮' },
   { href: '/lotto', key: 'lotto', icon: '🎱' },
   { href: '/tools/qrcode', key: 'qr', icon: '📱' },
+  { href: '/pricing', key: 'pricing', icon: '💎' },
 ] as const;
 
 const languages = [
@@ -52,27 +39,14 @@ export function Header() {
   const router = useRouter();
   const locale = useLocale();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [fortuneDropdownOpen, setFortuneDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
-  const { siteLogo, aiLogo, isLoaded } = useLogo();
-  const { user, isAdmin, isLoading, signOut } = useAuth();
+  const { siteLogo, aiLogo } = useLogo();
+  const { user, isAdmin, signOut } = useAuth();
 
   // Handle hydration mismatch
   React.useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setFortuneDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLanguageChange = (newLocale: string) => {
@@ -91,8 +65,6 @@ export function Header() {
     if (!user?.email) return '';
     return user.email.split('@')[0];
   };
-
-  const isFortuneActive = pathname.startsWith('/fortune');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -132,82 +104,13 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-1">
-          {/* AI랭킹, AI스토어 */}
-          {mainNavLinks.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.key}
               href={link.href}
               className={cn(
                 'px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300',
-                pathname === link.href
-                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
-                  : 'text-muted-foreground hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
-              )}
-            >
-              <span className="mr-1.5">{link.icon}</span>
-              {t(link.key)}
-            </Link>
-          ))}
-
-          {/* 운세 드롭다운 */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setFortuneDropdownOpen(!fortuneDropdownOpen)}
-              onMouseEnter={() => setFortuneDropdownOpen(true)}
-              className={cn(
-                'flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300',
-                isFortuneActive
-                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
-                  : 'text-muted-foreground hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
-              )}
-            >
-              <span className="mr-1">✨</span>
-              {t('fortune')}
-              <ChevronDown className={cn(
-                'h-4 w-4 transition-transform',
-                fortuneDropdownOpen && 'rotate-180'
-              )} />
-            </button>
-
-            {/* 드롭다운 메뉴 */}
-            {fortuneDropdownOpen && (
-              <div
-                className="absolute top-full left-0 mt-1 w-64 rounded-xl border bg-background shadow-lg py-2 animate-in fade-in-0 zoom-in-95"
-                onMouseLeave={() => setFortuneDropdownOpen(false)}
-              >
-                {fortuneSubMenu.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    onClick={() => setFortuneDropdownOpen(false)}
-                    className={cn(
-                      'flex items-start gap-3 px-4 py-3 hover:bg-accent transition-colors',
-                      pathname === item.href && 'bg-accent'
-                    )}
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {t(item.key)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {item.description}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 로또, QR */}
-          {otherNavLinks.map((link) => (
-            <Link
-              key={link.key}
-              href={link.href}
-              className={cn(
-                'px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300',
-                pathname === link.href
+                pathname === link.href || pathname.startsWith(link.href + '/')
                   ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
                   : 'text-muted-foreground hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
               )}
@@ -375,58 +278,13 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t bg-background animate-fade-in">
           <div className="container mx-auto px-4 py-4 space-y-2">
-            {/* AI랭킹, AI스토어 */}
-            {mainNavLinks.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.key}
                 href={link.href}
                 className={cn(
                   'flex items-center gap-2 py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300',
-                  pathname === link.href
-                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300'
-                    : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 dark:from-gray-800/50 dark:to-gray-700/50 text-muted-foreground'
-                )}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>{link.icon}</span>
-                {t(link.key)}
-              </Link>
-            ))}
-
-            {/* 운세 섹션 */}
-            <div className="py-2">
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                ✨ {t('fortune')}
-              </div>
-              {fortuneSubMenu.map((item) => (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 ml-2 rounded-xl text-sm transition-colors',
-                    pathname === item.href
-                      ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300'
-                      : 'text-muted-foreground hover:bg-accent'
-                  )}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>{item.icon}</span>
-                  <div>
-                    <div className="font-medium">{t(item.key)}</div>
-                    <div className="text-xs opacity-70">{item.description}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* 로또, QR */}
-            {otherNavLinks.map((link) => (
-              <Link
-                key={link.key}
-                href={link.href}
-                className={cn(
-                  'flex items-center gap-2 py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300',
-                  pathname === link.href
+                  pathname === link.href || pathname.startsWith(link.href + '/')
                     ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300'
                     : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 dark:from-gray-800/50 dark:to-gray-700/50 text-muted-foreground'
                 )}

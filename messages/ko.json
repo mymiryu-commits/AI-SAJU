@@ -27,19 +27,12 @@
   "nav": {
     "home": "홈",
     "ranking": "AI 순위",
-    "aiRanking": "AI랭킹",
-    "aiStore": "AI스토어",
+    "saju": "AI 사주",
     "guide": "AI 가이드",
     "prompts": "프롬프트 마켓",
-    "fortune": "운세",
-    "sajuHome": "AI 사주 홈",
-    "saju": "사주",
-    "sajuChat": "AI 사주 상담",
-    "sajuAdvanced": "정통 사주 심화",
-    "compatibility": "궁합 분석",
-    "tarot": "타로",
-    "lotto": "로또",
-    "qr": "QR",
+    "fortune": "AI 운세",
+    "lotto": "로또 분석",
+    "qr": "QR 명함",
     "community": "커뮤니티",
     "pricing": "요금제",
     "login": "로그인",
@@ -152,12 +145,6 @@
       "title": "오늘의 운세",
       "checkin": "출석 체크",
       "streakDays": "연속 {count}일",
-      "streakStart": "출석체크하고 연속 출석을 시작하세요!",
-      "checkedIn": "출석 완료",
-      "checkInBtn": "출석하기",
-      "streakBonus": "7일 연속 출석 시 보너스 지급!",
-      "todayMessage": "오늘의 메시지",
-      "caution": "주의",
       "todayFortune": "오늘의 운세를 확인하세요",
       "scores": {
         "overall": "종합운",
@@ -170,36 +157,6 @@
         "time": "행운의 시간",
         "color": "행운의 색",
         "number": "행운의 숫자"
-      },
-      "colors": {
-        "Purple": "보라색",
-        "Blue": "파란색",
-        "Green": "초록색",
-        "Red": "빨간색",
-        "Yellow": "노란색",
-        "Orange": "주황색"
-      },
-      "advices": [
-        "오늘은 새로운 시작에 좋은 날입니다. 직감을 믿으세요.",
-        "관계에 집중하세요. 좋은 소통이 기회를 가져옵니다.",
-        "오늘 내리는 재정적 결정은 오래 갈 것입니다.",
-        "자기 관리에 시간을 투자하세요. 건강이 곧 재산입니다.",
-        "창의적인 활동이 예상치 못한 보상을 가져올 것입니다.",
-        "다른 사람에게 인내심을 가지세요. 친절은 열 배로 돌아옵니다."
-      ],
-      "cautions": [
-        "오후에 충동 구매를 피하세요.",
-        "오후 3시경 말조심하세요.",
-        "중요한 서류에 서명하기 전에 다시 확인하세요.",
-        "번아웃을 피하기 위해 휴식을 취하세요.",
-        "식단에 주의하세요, 특히 단 음식.",
-        "중요한 결정을 서두르지 마세요."
-      ],
-      "deeperAnalysis": {
-        "title": "더 자세한 분석을 원하시나요?",
-        "description": "프리미엄 사주 분석으로 당신의 운명을 더 자세히 알아보세요.",
-        "freeSaju": "무료 사주 분석",
-        "viewPlans": "프리미엄 플랜 보기"
       }
     },
     "free": {
@@ -217,6 +174,100 @@
         "전문가 상담 연결"
       ],
       "cta": "프리미엄 분석 받기"
+    }
+  },
+  "saju": {
+    "hero": {
+      "badge": "AI 기반 정밀 사주 분석",
+      "title": "당신의 운명을 읽다",
+      "subtitle": "사주팔자, 관상, 궁합까지. AI가 분석하는 정밀 운세 서비스로 인생의 방향을 찾아보세요.",
+      "freeCta": "무료로 사주 보기",
+      "demoCta": "서비스 둘러보기",
+      "stats": {
+        "totalAnalyses": "총 분석 건수",
+        "avgRating": "평균 만족도",
+        "satisfaction": "재이용률"
+      }
+    },
+    "services": {
+      "title": "사주 서비스",
+      "subtitle": "AI가 분석하는 다양한 운세 서비스를 만나보세요",
+      "filters": {
+        "all": "전체",
+        "free": "무료",
+        "premium": "프리미엄",
+        "recommended": "추천"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "기본 사주 분석",
+          "description": "생년월일과 시간으로 알아보는 당신의 사주팔자. 무료로 기본 운세를 확인하세요."
+        },
+        "deep-saju": {
+          "title": "심화 사주 분석",
+          "description": "10년 대운, 월별 운세, 직업/재물/건강운까지. 인생의 흐름을 상세하게 분석합니다."
+        },
+        "face-reading": {
+          "title": "AI 관상 분석",
+          "description": "얼굴 사진 한 장으로 알아보는 당신의 성격과 운명. AI가 관상을 정밀 분석합니다."
+        },
+        "compatibility": {
+          "title": "궁합 분석",
+          "description": "연인, 부부, 비즈니스 파트너와의 궁합을 분석합니다. 관계의 강점과 주의점을 알아보세요."
+        },
+        "group-analysis": {
+          "title": "그룹 분석",
+          "description": "가족, 팀원 등 여러 명의 사주를 종합 분석합니다. 그룹 내 역학 관계를 파악하세요."
+        },
+        "yearly-fortune": {
+          "title": "2025년 운세",
+          "description": "올해의 전체적인 운세 흐름과 월별 주의점을 확인하세요."
+        }
+      }
+    },
+    "premium": {
+      "title": "프리미엄 혜택",
+      "subtitle": "포인트로 더 깊고 정확한 분석을 받아보세요",
+      "cta": "포인트 충전하기",
+      "features": {
+        "detailedReport": {
+          "title": "상세 리포트",
+          "description": "PDF 리포트와 음성 해설로 언제든 다시 확인할 수 있습니다."
+        },
+        "expertAdvice": {
+          "title": "전문가 조언",
+          "description": "AI 분석 결과를 바탕으로 실질적인 행동 가이드를 제공합니다."
+        },
+        "unlimitedAccess": {
+          "title": "포인트 충전",
+          "description": "포인트를 충전하고 원하는 프리미엄 서비스를 이용하세요."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "3분 만에 완료",
+      "title": "지금 바로 시작하세요",
+      "description": "간단한 정보 입력만으로 AI가 당신의 사주를 분석합니다.",
+      "cta": "무료 분석 시작",
+      "steps": {
+        "step1": "생년월일과 시간을 입력하세요",
+        "step2": "AI가 사주팔자를 계산합니다",
+        "step3": "상세한 운세 분석 결과를 확인하세요"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "높은 정확도",
+          "description": "전통 명리학과 AI를 결합한 정밀 분석"
+        },
+        "speed": {
+          "title": "빠른 결과",
+          "description": "3분 이내 상세한 분석 결과 제공"
+        },
+        "privacy": {
+          "title": "개인정보 보호",
+          "description": "입력된 정보는 분석 후 즉시 삭제됩니다"
+        }
+      }
     }
   },
   "auth": {
