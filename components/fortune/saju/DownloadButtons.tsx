@@ -45,6 +45,18 @@ interface DownloadState {
   audio: 'idle' | 'loading' | 'success' | 'error';
 }
 
+// 모바일 감지
+const isMobile = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+};
+
+// iOS 감지
+const isIOS = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
+
 export default function DownloadButtons({
   user,
   saju,
@@ -68,6 +80,13 @@ export default function DownloadButtons({
   const [selectedType, setSelectedType] = useState<DownloadType | null>(null);
   const [showPdfTemplate, setShowPdfTemplate] = useState(false);
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
+
+  // 모바일 음성 재생 관련
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
+  const [showMobileGuide, setShowMobileGuide] = useState(false);
+  const [downloadedFileName, setDownloadedFileName] = useState<string>('');
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleDownload = async (type: DownloadType) => {
     if (!isPremium) {
@@ -123,14 +142,38 @@ export default function DownloadButtons({
       const filename = response.headers.get('Content-Disposition')
         ?.match(/filename="(.+)"/)?.[1] || 'download.mp3';
 
+      const decodedFilename = decodeURIComponent(filename);
       const url = URL.createObjectURL(blob);
+
+      // 모바일에서 음성 파일인 경우 - 재생 옵션 제공
+      if (type === 'audio' && isMobile()) {
+        // 이전 URL 정리
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+        }
+        setAudioUrl(url);
+        setDownloadedFileName(decodedFilename);
+        setShowAudioPlayer(true);
+        setDownloadState(prev => ({ ...prev, [type]: 'success' }));
+        return;
+      }
+
+      // 일반 다운로드
       const a = document.createElement('a');
       a.href = url;
-      a.download = decodeURIComponent(filename);
+      a.download = decodedFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      // 모바일인 경우 저장 위치 안내
+      if (isMobile()) {
+        setDownloadedFileName(decodedFilename);
+        setShowMobileGuide(true);
+      }
+
+      // URL 정리는 약간 지연 후 (다운로드 완료 대기)
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
 
       setDownloadState(prev => ({ ...prev, [type]: 'success' }));
 
@@ -505,6 +548,163 @@ export default function DownloadButtons({
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                 >
                   닫기
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 모바일 오디오 플레이어 모달 */}
+      <AnimatePresence>
+        {showAudioPlayer && audioUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setShowAudioPlayer(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl max-w-sm w-full overflow-hidden shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full">
+                  <AudioIcon />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 text-center mb-2">
+                  음성 파일 준비 완료
+                </h3>
+                <p className="text-gray-600 text-sm text-center mb-4">
+                  {downloadedFileName}
+                </p>
+
+                {/* 오디오 플레이어 */}
+                <div className="bg-gray-100 rounded-lg p-4 mb-4">
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    controls
+                    className="w-full"
+                    style={{ height: '40px' }}
+                  >
+                    브라우저가 오디오를 지원하지 않습니다.
+                  </audio>
+                </div>
+
+                <div className="space-y-2">
+                  {/* 다운로드 버튼 */}
+                  <a
+                    href={audioUrl}
+                    download={downloadedFileName}
+                    className="block w-full py-3 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 transition-colors text-center"
+                    onClick={() => {
+                      // 다운로드 후 안내
+                      setTimeout(() => setShowMobileGuide(true), 500);
+                    }}
+                  >
+                    📥 파일로 저장하기
+                  </a>
+
+                  {/* 공유 버튼 (Web Share API 지원 시) */}
+                  {typeof navigator !== 'undefined' && navigator.share && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(audioUrl);
+                          const blob = await response.blob();
+                          const file = new File([blob], downloadedFileName, { type: 'audio/mpeg' });
+                          await navigator.share({
+                            files: [file],
+                            title: '사주 분석 음성',
+                          });
+                        } catch (err) {
+                          console.error('Share failed:', err);
+                        }
+                      }}
+                      className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      📤 다른 앱으로 공유
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setShowAudioPlayer(false);
+                      if (audioUrl) {
+                        URL.revokeObjectURL(audioUrl);
+                        setAudioUrl(null);
+                      }
+                    }}
+                    className="w-full py-2 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    닫기
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-400 text-center mt-4">
+                  💡 이 화면에서 바로 재생하거나 저장할 수 있습니다
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 모바일 다운로드 위치 안내 모달 */}
+      <AnimatePresence>
+        {showMobileGuide && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setShowMobileGuide(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl max-w-sm w-full overflow-hidden shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full text-white">
+                  <CheckIcon />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 text-center mb-2">
+                  다운로드 완료!
+                </h3>
+                <p className="text-gray-600 text-sm text-center mb-4">
+                  {downloadedFileName}
+                </p>
+
+                <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-medium text-blue-800 mb-2">
+                    📁 파일 저장 위치
+                  </p>
+                  {isIOS() ? (
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <p>• <strong>파일</strong> 앱 → <strong>다운로드</strong> 폴더</p>
+                      <p>• 또는 Safari 주소창 옆 <strong>⬇️ 아이콘</strong> 탭</p>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <p>• <strong>파일</strong> 앱 → <strong>다운로드</strong> 폴더</p>
+                      <p>• 또는 상단 알림창에서 확인</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowMobileGuide(false)}
+                  className="w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  확인
                 </button>
               </div>
             </motion.div>
