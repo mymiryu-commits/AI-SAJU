@@ -9,10 +9,8 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/ranking', key: 'ranking' },
-  { href: '/guide', key: 'guide' },
-  { href: '/fortune', key: 'fortune' },
+  { href: '/saju', key: 'saju' },
   { href: '/lotto', key: 'lotto' },
-  { href: '/prompts', key: 'prompts' },
   { href: '/pricing', key: 'pricing' },
 ] as const;
 

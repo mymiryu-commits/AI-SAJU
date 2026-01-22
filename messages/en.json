@@ -27,6 +27,7 @@
   "nav": {
     "home": "Home",
     "ranking": "AI Ranking",
+    "saju": "AI Fortune",
     "guide": "AI Guide",
     "prompts": "Prompt Market",
     "fortune": "AI Fortune",
@@ -173,6 +174,100 @@
         "Expert consultation"
       ],
       "cta": "Get Premium Analysis"
+    }
+  },
+  "saju": {
+    "hero": {
+      "badge": "AI-Powered Fortune Analysis",
+      "title": "Discover Your Destiny",
+      "subtitle": "Four Pillars, Face Reading, Compatibility and more. Find your life direction with AI-powered fortune services.",
+      "freeCta": "Free Fortune Reading",
+      "demoCta": "Explore Services",
+      "stats": {
+        "totalAnalyses": "Total Analyses",
+        "avgRating": "Avg Rating",
+        "satisfaction": "Return Rate"
+      }
+    },
+    "services": {
+      "title": "Fortune Services",
+      "subtitle": "Explore various AI-powered fortune telling services",
+      "filters": {
+        "all": "All",
+        "free": "Free",
+        "premium": "Premium",
+        "recommended": "Recommended"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "Basic Four Pillars",
+          "description": "Discover your Four Pillars of Destiny with your birth date and time. Check your basic fortune for free."
+        },
+        "deep-saju": {
+          "title": "Deep Analysis",
+          "description": "10-year fortune cycles, monthly predictions, career, wealth, and health. A comprehensive analysis of your life flow."
+        },
+        "face-reading": {
+          "title": "AI Face Reading",
+          "description": "Discover your personality and destiny from a single photo. AI analyzes your facial features precisely."
+        },
+        "compatibility": {
+          "title": "Compatibility",
+          "description": "Analyze compatibility with lovers, spouses, or business partners. Learn the strengths and cautions in relationships."
+        },
+        "group-analysis": {
+          "title": "Group Analysis",
+          "description": "Comprehensive analysis of multiple people like family or team members. Understand group dynamics."
+        },
+        "yearly-fortune": {
+          "title": "2025 Fortune",
+          "description": "Check this year's overall fortune flow and monthly points of attention."
+        }
+      }
+    },
+    "premium": {
+      "title": "Premium Benefits",
+      "subtitle": "For deeper and more accurate analysis",
+      "cta": "View Premium Plans",
+      "features": {
+        "detailedReport": {
+          "title": "Detailed Reports",
+          "description": "PDF reports and voice narration you can review anytime."
+        },
+        "expertAdvice": {
+          "title": "Expert Advice",
+          "description": "Practical action guides based on AI analysis results."
+        },
+        "unlimitedAccess": {
+          "title": "Unlimited Access",
+          "description": "Use all fortune services unlimited with a monthly subscription."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "Done in 3 Minutes",
+      "title": "Get Started Now",
+      "description": "AI analyzes your fortune with just simple information input.",
+      "cta": "Start Free Analysis",
+      "steps": {
+        "step1": "Enter your birth date and time",
+        "step2": "AI calculates your Four Pillars",
+        "step3": "Review your detailed fortune analysis"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "High Accuracy",
+          "description": "Precise analysis combining traditional methods with AI"
+        },
+        "speed": {
+          "title": "Fast Results",
+          "description": "Detailed analysis results within 3 minutes"
+        },
+        "privacy": {
+          "title": "Privacy Protected",
+          "description": "Your information is deleted immediately after analysis"
+        }
+      }
     }
   },
   "auth": {
