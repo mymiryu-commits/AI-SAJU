@@ -887,6 +887,77 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             </p>
           </div>
         </div>
+
+        {/* ====== 공유 & 추천 페이지 ====== */}
+        <div style={{ pageBreakBefore: 'always', textAlign: 'center', paddingTop: '50px' }}>
+          <h2 style={{ fontSize: '18pt', marginBottom: '16px', color: '#6366f1' }}>
+            소중한 분과 함께하세요
+          </h2>
+          <p style={{ fontSize: '11pt', color: '#6b7280', marginBottom: '40px', lineHeight: 1.7 }}>
+            이 분석이 도움이 되셨다면,<br />
+            가족과 친구에게도 운명의 지혜를 선물해 보세요.
+          </p>
+
+          {/* QR 코드 영역 */}
+          <div style={{
+            width: '160px',
+            height: '160px',
+            margin: '0 auto 20px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#ffffff'
+          }}>
+            {/* QR 코드 이미지 - 실제 QR 생성 라이브러리로 대체 가능 */}
+            <div style={{
+              width: '140px',
+              height: '140px',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f3f4f6' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.35em' font-size='8' fill='%236366f1'%3EQR CODE%3C/text%3E%3C/svg%3E")`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center'
+            }} />
+          </div>
+
+          <p style={{ fontSize: '13pt', fontWeight: 700, color: '#4f46e5', marginBottom: '8px' }}>
+            AI-PLANX.COM
+          </p>
+          <p style={{ fontSize: '10pt', color: '#9ca3af', marginBottom: '40px' }}>
+            QR코드를 스캔하여 바로 접속하세요
+          </p>
+
+          {/* 추천 혜택 안내 */}
+          <InfoBox type="highlight" style={{ maxWidth: '420px', margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: '12pt', fontWeight: 700, color: '#6366f1', marginBottom: '12px' }}>
+              🎁 친구 추천 혜택
+            </p>
+            <p style={{ fontSize: '10pt', color: '#4b5563', lineHeight: 1.8, marginBottom: '16px' }}>
+              친구가 가입하면 <strong style={{ color: '#6366f1' }}>500P</strong> 적립!<br />
+              친구도 <strong style={{ color: '#6366f1' }}>500P</strong>를 받아요.
+            </p>
+            <div style={{
+              backgroundColor: '#f0f0ff',
+              padding: '12px 20px',
+              borderRadius: '8px',
+              display: 'inline-block'
+            }}>
+              <p style={{ fontSize: '9pt', color: '#6b7280', marginBottom: '4px' }}>
+                내 추천 코드
+              </p>
+              <p style={{ fontSize: '14pt', fontWeight: 700, color: '#4f46e5', letterSpacing: '2px' }}>
+                {user.id?.slice(0, 8).toUpperCase() || 'PLANX2026'}
+              </p>
+            </div>
+          </InfoBox>
+
+          {/* 하단 안내 */}
+          <div style={{ marginTop: '50px', color: '#9ca3af', fontSize: '9pt', lineHeight: 1.6 }}>
+            <p>AI-PLANX는 동양 철학과 인공지능의 만남입니다.</p>
+            <p>당신의 운명, 당신의 선택.</p>
+          </div>
+        </div>
       </div>
     );
   }

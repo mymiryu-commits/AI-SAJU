@@ -622,6 +622,15 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
              `운명은 정해진 게 아니라, 알고 대비하면 바꿀 수 있습니다. ` +
              `이 분석이 당신의 인생에 작은 나침반이 되기를 바랍니다. ` +
              `${user.name}님의 앞날에 좋은 일만 가득하기를 진심으로 기원합니다.`,
+    pauseAfter: 1500
+  });
+
+  // ========== 14. 아웃트로 ==========
+  sections.push({
+    title: '아웃트로',
+    content: `이 분석이 도움이 되셨다면, 소중한 분께 공유해 보세요. ` +
+             `더 자세한 분석은 AI 플랜엑스 닷컴에서 확인하실 수 있습니다. ` +
+             `AI 플랜엑스, 당신의 운명과 함께합니다.`,
     pauseAfter: 0
   });
 
