@@ -124,8 +124,48 @@ export interface AnalysisResult {
   // 핵심 메시지 (고민 기반)
   coreMessage: CoreMessage;
 
+  // AI 분석 (OpenAI 생성)
+  aiAnalysis?: AIAnalysis;
+
   // 프리미엄 컨텐츠 (유료)
   premium?: PremiumContent;
+}
+
+// AI 분석 결과
+export interface AIAnalysis {
+  personalityReading: string;
+  fortuneAdvice: {
+    overall: string;
+    wealth: string;
+    love: string;
+    career: string;
+    health: string;
+  };
+  lifePath: string;
+  luckyElements: string;
+  warningAdvice: string;
+  // 전문가 수준 분석 (새 필드)
+  dayMasterAnalysis?: string;      // 일주 분석
+  tenYearFortune?: string;         // 대운 분석
+  yearlyFortune?: string;          // 세운 (2026년 운세)
+  monthlyFortune?: string;         // 월운 분석
+  relationshipAnalysis?: string;   // 인연/대인관계 분석
+  careerGuidance?: string;         // 직업 가이드
+  wealthStrategy?: string;         // 재물 전략
+  healthAdvice?: string;           // 건강 조언
+  spiritualGuidance?: string;      // 영적/정신적 가이드
+  actionPlan?: string[];           // 실천 액션플랜
+  // 이성관 심층 분석
+  loveAndPartnerAnalysis?: {
+    hook: string;                  // 후킹 메시지
+    idealPartnerTraits: string[];  // 이상적 파트너 특성
+    compatibilityFactors: string;  // 궁합 요소 설명
+    warningSignsInPartner: string[]; // 주의해야 할 이성 유형
+    meetingStrategy: string;       // 인연 만나는 전략
+    relationshipAdvice: string;    // 연애/결혼 조언
+    timingAnalysis: string;        // 이성운 타이밍 분석
+    partnerChecklist: string[];    // 파트너 체크리스트
+  };
 }
 
 export interface PeerComparison {
@@ -187,6 +227,103 @@ export interface PremiumContent {
 
   // 다자간 궁합 (새 기능)
   groupCompatibility?: GroupCompatibility;
+
+  // 스토리텔링 분석 (6장 카드덱 + 과거검증 + 타임라인)
+  storytelling?: import('@/types/cards').StorytellingAnalysis;
+
+  // ===== v2.0 새 기능 =====
+
+  // 60갑자 분석
+  sixtyJiazi?: SixtyJiaziAnalysis;
+
+  // MBTI-사주 통합 분석
+  mbtiIntegration?: MBTIIntegrationAnalysis;
+
+  // 오행 관계 시적 해석
+  elementPoetry?: ElementPoetryAnalysis;
+
+  // 6장 운명 카드 (강화된 버전)
+  destinyCards?: DestinyCardsAnalysis;
+
+  // 프롤로그/에필로그
+  prologue?: string;
+  epilogue?: string;
+}
+
+// 60갑자 분석
+export interface SixtyJiaziAnalysis {
+  yearJiazi: string;          // 년간지 (예: "甲子")
+  yearKorean: string;         // 한글 (예: "갑자")
+  animal: string;             // 동물 (예: "청서")
+  animalDescription: string;  // 동물 설명 (예: "청서(靑鼠) - 푸른 쥐")
+  nature: string;             // 자연 특성 (예: "새벽 숲의 첫 번째 빛")
+  color: string;              // 대표 색상
+  keywords: string[];         // 핵심 키워드
+  personality: string;        // 성격 분석
+  destiny: string;            // 운명 분석
+  yearCycle: number[];        // 해당 연도들
+  prologueText: string;       // 프롤로그용 텍스트
+  epilogueText: string;       // 에필로그용 텍스트
+}
+
+// MBTI-사주 통합 분석
+export interface MBTIIntegrationAnalysis {
+  mbti: string;               // MBTI 유형
+  dayMaster: string;          // 일간
+  matchScore: number;         // 궁합 점수 (0-100)
+  isBestMatch: boolean;       // 최적 궁합 여부
+  isChallengingMatch: boolean; // 도전적 조합 여부
+  strengthsWithT: string;     // T 유형의 강점
+  strengthsWithF: string;     // F 유형의 강점
+  adviceForT: string;         // T 유형 조언
+  adviceForF: string;         // F 유형 조언
+  integratedAnalysis: string; // 통합 분석
+  developmentSuggestions: string[]; // 발전 제안
+}
+
+// 오행 관계 시적 해석
+export interface ElementPoetryAnalysis {
+  generatingRelations: ElementRelation[];  // 상생 관계
+  controllingRelations: ElementRelation[]; // 상극 관계
+  balancePoetry: string;                   // 오행 균형 시적 해석
+  dominantElement: {
+    element: string;
+    korean: string;
+    poeticDescription: string;
+  };
+  weakElement: {
+    element: string;
+    korean: string;
+    poeticDescription: string;
+  };
+  overallHarmony: string;                  // 전체 조화 분석
+}
+
+export interface ElementRelation {
+  from: string;               // 출발 오행
+  to: string;                 // 도착 오행
+  relationName: string;       // 관계명 (예: "목생화")
+  poeticExpression: string;   // 시적 표현
+  story: string;              // 스토리
+  advice: string;             // 조언
+}
+
+// 6장 운명 카드 (강화)
+export interface DestinyCardsAnalysis {
+  cards: DestinyCard[];
+  summary: string;            // 전체 요약
+  coreMessage: string;        // 핵심 메시지
+}
+
+export interface DestinyCard {
+  type: 'root' | 'essence' | 'energy' | 'talent' | 'flow' | 'fortune';
+  typeKorean: string;         // 근본/본질/에너지/재능/흐름/행운
+  title: string;              // 카드 제목
+  symbol: string;             // 상징물 (꽃, 동물 등)
+  keywords: string[];         // 키워드
+  story: string;              // 스토리텔링
+  advice: string;             // 맞춤 조언
+  color: string;              // 대표 색상
 }
 
 export interface FamilyImpact {
@@ -402,8 +539,8 @@ export interface ConversionTemplate {
 export interface ProductType {
   id: string;
   name: string;
-  price: number;
-  originalPrice: number;
+  pointCost: number;        // 포인트 비용
+  originalPointCost: number; // 원래 포인트 비용
   features: string[];
   recommended?: boolean;
 }
@@ -411,46 +548,48 @@ export interface ProductType {
 export const PRODUCTS: ProductType[] = [
   {
     id: "basic",
-    name: "기본 분석",
-    price: 9900,
-    originalPrice: 12900,
+    name: "베이직 분석",
+    pointCost: 500,
+    originalPointCost: 700,
     features: [
-      "상세 성격 분석",
-      "2026년 운세 분석",
-      "월별 액션플랜",
-      "PDF 리포트"
+      "4장 운명 카드 해금",
+      "에너지 카드 (용신)",
+      "재능 카드 (십신)",
+      "3개월 운세 예측"
     ]
   },
   {
-    id: "family",
-    name: "가족 연결 분석",
-    price: 29900,
-    originalPrice: 39900,
+    id: "deep",
+    name: "심층 분석",
+    pointCost: 1000,
+    originalPointCost: 1300,
     features: [
-      "기본 분석 포함",
-      "가족 영향 분석",
-      "자녀 교육 타이밍",
-      "가계 재정 타임라인"
-    ]
-  },
-  {
-    id: "premium",
-    name: "프리미엄 분석",
-    price: 49900,
-    originalPrice: 69900,
-    features: [
-      "가족 연결 분석 포함",
-      "인생 타임라인",
-      "골든윈도우 분석",
-      "음성 리포트"
+      "6장 운명 카드 전체",
+      "흐름 카드 (대운/세운)",
+      "수호 카드 (보완 오행)",
+      "12개월 상세 운세",
+      "AI 맞춤 분석"
     ],
     recommended: true
   },
   {
+    id: "premium",
+    name: "프리미엄 분석",
+    pointCost: 2000,
+    originalPointCost: 2500,
+    features: [
+      "심층 분석 포함",
+      "인생 타임라인",
+      "가족 영향 분석",
+      "골든윈도우 분석",
+      "PDF 리포트"
+    ]
+  },
+  {
     id: "group",
-    name: "다자간 궁합 분석",
-    price: 39900,
-    originalPrice: 59900,
+    name: "그룹 궁합 분석",
+    pointCost: 1500,
+    originalPointCost: 2000,
     features: [
       "2~5인 동시 분석",
       "개별 궁합 분석",
@@ -461,8 +600,8 @@ export const PRODUCTS: ProductType[] = [
   {
     id: "vip",
     name: "VIP 종합 분석",
-    price: 99900,
-    originalPrice: 149900,
+    pointCost: 5000,
+    originalPointCost: 7000,
     features: [
       "모든 분석 포함",
       "다자간 궁합 포함",

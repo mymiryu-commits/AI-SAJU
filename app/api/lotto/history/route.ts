@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadLottoHistory, analyzePatterns, generateStatsSummary } from '@/lib/lotto';
+import { loadLottoHistoryFromDB, loadLottoHistory, analyzePatterns, generateStatsSummary, getLatestCompletedRound } from '@/lib/lotto';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,13 +9,17 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const includeAnalysis = searchParams.get('analysis') === 'true';
 
-    // 역대 데이터 로드
-    const allResults = loadLottoHistory();
+    // Supabase에서 데이터 로드 (실패시 JSON fallback)
+    const allResults = await loadLottoHistoryFromDB(undefined, undefined, limit);
+
+    // 현재 완료된 회차 정보 포함
+    const latestCompletedRound = getLatestCompletedRound();
     const results = allResults.slice(0, limit);
 
     let response: Record<string, unknown> = {
       success: true,
       count: results.length,
+      latestCompletedRound,
       results,
     };
 
