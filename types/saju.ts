@@ -155,6 +155,17 @@ export interface AIAnalysis {
   healthAdvice?: string;           // 건강 조언
   spiritualGuidance?: string;      // 영적/정신적 가이드
   actionPlan?: string[];           // 실천 액션플랜
+  // 이성관 심층 분석
+  loveAndPartnerAnalysis?: {
+    hook: string;                  // 후킹 메시지
+    idealPartnerTraits: string[];  // 이상적 파트너 특성
+    compatibilityFactors: string;  // 궁합 요소 설명
+    warningSignsInPartner: string[]; // 주의해야 할 이성 유형
+    meetingStrategy: string;       // 인연 만나는 전략
+    relationshipAdvice: string;    // 연애/결혼 조언
+    timingAnalysis: string;        // 이성운 타이밍 분석
+    partnerChecklist: string[];    // 파트너 체크리스트
+  };
 }
 
 export interface PeerComparison {

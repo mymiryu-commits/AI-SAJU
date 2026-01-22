@@ -650,8 +650,120 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         {/* 페이지 나누기 */}
         <div style={{ pageBreakAfter: 'always' }} />
 
-        {/* ============ 6. 대운과 인생 흐름 ============ */}
-        <Section title="6. 대운(大運)과 인생 흐름">
+        {/* ============ 6. 이성관 심층 분석 ============ */}
+        {aiAnalysis?.loveAndPartnerAnalysis && (
+          <Section title="6. 이성관 심층 분석 - 인연과 사랑">
+            {/* 후킹 메시지 */}
+            {aiAnalysis.loveAndPartnerAnalysis.hook && (
+              <InfoBox type="highlight" style={{ marginBottom: '16px' }}>
+                <p style={{ lineHeight: 1.8, textAlign: 'justify', fontSize: '14pt', fontWeight: 500 }}>
+                  {aiAnalysis.loveAndPartnerAnalysis.hook}
+                </p>
+              </InfoBox>
+            )}
+
+            {/* 이상적인 파트너 */}
+            {aiAnalysis.loveAndPartnerAnalysis.idealPartnerTraits?.length > 0 && (
+              <SubSection title="나에게 맞는 이상적인 파트너">
+                <InfoBox type="success">
+                  <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.idealPartnerTraits.map((trait: string, i: number) => (
+                      <li key={i} style={{ marginBottom: '8px', lineHeight: 1.7 }}>
+                        {trait}
+                      </li>
+                    ))}
+                  </ul>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 상성 분석 */}
+            {aiAnalysis.loveAndPartnerAnalysis.compatibilityFactors && (
+              <SubSection title="MBTI, 별자리, 사주 종합 상성">
+                <InfoBox type="info">
+                  <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.compatibilityFactors}
+                  </p>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 주의해야 할 이성 유형 */}
+            {aiAnalysis.loveAndPartnerAnalysis.warningSignsInPartner?.length > 0 && (
+              <SubSection title="주의해야 할 이성 유형">
+                <InfoBox type="warning">
+                  <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.warningSignsInPartner.map((sign: string, i: number) => (
+                      <li key={i} style={{ marginBottom: '8px', lineHeight: 1.7, color: '#dc2626' }}>
+                        {sign}
+                      </li>
+                    ))}
+                  </ul>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 만남 전략 */}
+            {aiAnalysis.loveAndPartnerAnalysis.meetingStrategy && (
+              <SubSection title="좋은 인연을 만나는 방법">
+                <InfoBox type="default">
+                  <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.meetingStrategy}
+                  </p>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 연애 스타일 조언 */}
+            {aiAnalysis.loveAndPartnerAnalysis.relationshipAdvice && (
+              <SubSection title="나의 연애 스타일과 조언">
+                <InfoBox type="highlight">
+                  <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.relationshipAdvice}
+                  </p>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 인연 시기 분석 */}
+            {aiAnalysis.loveAndPartnerAnalysis.timingAnalysis && (
+              <SubSection title="인연이 찾아오는 시기">
+                <InfoBox type="info">
+                  <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.timingAnalysis}
+                  </p>
+                </InfoBox>
+              </SubSection>
+            )}
+
+            {/* 파트너 체크리스트 */}
+            {aiAnalysis.loveAndPartnerAnalysis.partnerChecklist?.length > 0 && (
+              <SubSection title="이 사람이 나와 맞는지 확인하는 체크리스트">
+                <InfoBox type="default" style={{ backgroundColor: '#fef3c7', border: '1px solid #fbbf24' }}>
+                  <p style={{ marginBottom: '12px', fontWeight: 700, color: '#92400e' }}>
+                    만나고 있는 사람이 있다면, 아래 항목들을 체크해보세요:
+                  </p>
+                  <ol style={{ paddingLeft: '20px', margin: 0 }}>
+                    {aiAnalysis.loveAndPartnerAnalysis.partnerChecklist.map((item: string, i: number) => (
+                      <li key={i} style={{ marginBottom: '8px', lineHeight: 1.7, color: '#78350f' }}>
+                        {item}
+                      </li>
+                    ))}
+                  </ol>
+                  <p style={{ marginTop: '12px', fontSize: '12pt', color: '#92400e' }}>
+                    * 3개 이상 해당된다면 좋은 인연일 가능성이 높습니다.
+                  </p>
+                </InfoBox>
+              </SubSection>
+            )}
+          </Section>
+        )}
+
+        {/* 페이지 나누기 */}
+        <div style={{ pageBreakAfter: 'always' }} />
+
+        {/* ============ 7. 대운과 인생 흐름 ============ */}
+        <Section title="7. 대운(大運)과 인생 흐름">
           {aiAnalysis?.tenYearFortune && (
             <SubSection title="현재 대운 분석 - 인생의 큰 흐름">
               <InfoBox type="highlight">
@@ -683,8 +795,8 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           )}
         </Section>
 
-        {/* ============ 7. 행운 요소 & 주의사항 ============ */}
-        <Section title="7. 행운 요소 & 주의사항">
+        {/* ============ 8. 행운 요소 & 주의사항 ============ */}
+        <Section title="8. 행운 요소 & 주의사항">
           {aiAnalysis?.luckyElements && (
             <SubSection title="행운을 부르는 요소">
               <InfoBox type="success">
@@ -739,7 +851,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
             {/* 월별 운세 */}
             {premium.monthlyActionPlan && (
-              <Section title="8. 월별 행운 액션플랜">
+              <Section title="9. 월별 행운 액션플랜">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc' }}>
@@ -782,7 +894,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
             {/* 직업 분석 */}
             {premium.careerAnalysis && (
-              <Section title="9. 직업 및 커리어 분석">
+              <Section title="10. 직업 및 커리어 분석">
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                   <InfoBox type="default" style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ fontWeight: 700, marginBottom: '12px' }}>현재 직업 적합도</h4>
@@ -819,7 +931,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             {premium.lifeTimeline && (
               <>
                 <div style={{ pageBreakAfter: 'always' }} />
-                <Section title="10. 인생 타임라인">
+                <Section title="11. 인생 타임라인">
                   <p style={{ marginBottom: '16px', color: '#6b7280' }}>
                     현재 나이: <strong>{premium.lifeTimeline.currentAge}세</strong>
                   </p>

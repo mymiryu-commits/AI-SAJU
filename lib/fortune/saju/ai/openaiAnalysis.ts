@@ -88,6 +88,17 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
   healthAdvice: string;
   spiritualGuidance: string;
   actionPlan: string[];
+  // 이성관 심층 분석
+  loveAndPartnerAnalysis: {
+    hook: string;
+    idealPartnerTraits: string[];
+    compatibilityFactors: string;
+    warningSignsInPartner: string[];
+    meetingStrategy: string;
+    relationshipAdvice: string;
+    timingAnalysis: string;
+    partnerChecklist: string[];
+  };
 }> {
   const { user, saju, oheng, yongsin, gisin, scores, dayMasterStrength } = context;
 
@@ -270,7 +281,40 @@ ${traditionalAnalysis}
     "(올해 안에 할 행동 3)",
     "(장기적으로 준비할 것 4)",
     "(반드시 피해야 할 것 5)"
-  ]
+  ],
+
+  "loveAndPartnerAnalysis": {
+    "hook": "(중요! 먼저 공감을 이끄는 후킹으로 시작. 예: '${user.name}님, 인생에서 좋은 이성을 만나는 것은 운명의 큰 축이 바뀌는 일입니다.' 또는 '사람의 인연은 타이밍입니다. ${user.name}님의 사주에서 중요한 이야기가 보입니다.' 등 몰입감 있는 2-3문장)",
+
+    "idealPartnerTraits": [
+      "(${user.name}님에게 맞는 이상적 파트너 성향 1 - 성격/가치관 측면에서 구체적으로. 예: '감정 표현이 솔직하고 따뜻한 사람')",
+      "(이상적 파트너 성향 2 - 생활 방식 측면. 예: '계획적이면서도 유연함을 가진 사람')",
+      "(이상적 파트너 성향 3 - 관계 태도 측면. 예: '존중하며 경청할 줄 아는 사람')",
+      "(이상적 파트너 성향 4 - 직업/목표 측면. 예: '안정적인 직업보다 성장 의지가 있는 사람')"
+    ],
+
+    "compatibilityFactors": "(MBTI ${user.mbti || '미입력'}, 별자리, 사주 오행을 종합한 상성 분석. ${user.mbti ? user.mbti + '유형으로서 ' : ''}어떤 오행/성향의 사람과 시너지가 나는지, 왜 그런지 구체적으로 설명. 4-5문장)",
+
+    "warningSignsInPartner": [
+      "(피해야 할 이성 유형 1 - 구체적인 행동/성향으로. 예: '첫 만남부터 과도하게 집착하거나 연락을 강요하는 사람')",
+      "(피해야 할 이성 유형 2 - 예: '자신의 잘못을 인정하지 않고 항상 상대방 탓을 하는 사람')",
+      "(피해야 할 이성 유형 3 - 예: '금전 관계를 일찍 요구하거나 경제관념이 불투명한 사람')"
+    ],
+
+    "meetingStrategy": "(${user.maritalStatus === 'single' ? '좋은 인연을 만나기 위한 구체적 전략. 어디서, 어떤 활동을 통해, 어떤 마음가짐으로 만나면 좋은지.' : '현재 관계를 더 깊게 하거나, 인연의 질을 높이는 방법.'} 환경, 시기, 접근법 포함 4-5문장)",
+
+    "relationshipAdvice": "(${user.name}님의 연애/결혼 스타일 분석. 관계에서의 강점과 주의점. ${user.maritalStatus === 'married' ? '배우자와의 관계를 더 좋게 만드는 방법' : '연애할 때 주의해야 할 본인의 패턴'}. 4-5문장)",
+
+    "timingAnalysis": "(인연이 찾아오는 시기 분석. 2026년 중 어떤 달/시기에 좋은 만남이 있는지, 결혼/고백에 좋은 시기, 관계 결정에 신중해야 할 시기. 3-4문장)",
+
+    "partnerChecklist": [
+      "(이 사람이 나와 맞는지 확인하는 체크포인트 1 - 예: '대화할 때 내 말을 끝까지 듣고 공감해주는가?')",
+      "(체크포인트 2 - 예: '작은 약속도 성실하게 지키는가?')",
+      "(체크포인트 3 - 예: '갈등 상황에서 해결하려는 태도를 보이는가?')",
+      "(체크포인트 4 - 예: '나의 가족, 친구에 대해 존중하는 태도를 보이는가?')",
+      "(체크포인트 5 - 예: '미래에 대한 비전이 나와 비슷한 방향인가?')"
+    ]
+  }
 }`;
 
   try {
@@ -373,7 +417,40 @@ function generateFallbackAnalysis(context: SajuContext) {
       `${scores.wealth >= 70 ? '재테크나 부업을 고려해보세요' : '불필요한 지출을 점검하고 저축 계획을 세우세요'}`,
       `건강을 위해 ${oheng.water < 1 ? '수분 섭취와 신장 건강' : oheng.fire < 1 ? '혈액순환과 심장 건강' : '규칙적인 운동'}에 신경 쓰세요`,
       `기신인 ${gisin.map(e => ELEMENT_KOREAN[e]).join(', ')} 관련 상황에서는 큰 결정을 피하세요`
-    ]
+    ],
+
+    loveAndPartnerAnalysis: {
+      hook: `${user.name}님, 인생에서 좋은 사람을 만나는 것은 운명의 큰 축이 바뀌는 일입니다. 사주를 보니 ${scores.love >= 75 ? '인연복이 있는 편이지만, 아무나 만나면 안 됩니다.' : '인연을 만나는 데 시간이 걸릴 수 있지만, 그만큼 소중한 인연이 옵니다.'} 어떤 사람이 ${user.name}님에게 맞는지 알려드릴게요.`,
+
+      idealPartnerTraits: [
+        `${yongsin.includes('wood') ? '성장 지향적이고 새로운 것에 도전하는 에너지가 있는 사람' : yongsin.includes('fire') ? '열정적이고 표현이 풍부하며 밝은 에너지를 가진 사람' : yongsin.includes('earth') ? '안정적이고 믿음직하며 가정적인 성향의 사람' : yongsin.includes('metal') ? '원칙이 있고 결단력 있으며 정의로운 사람' : '깊이 있고 지혜로우며 유연한 사고를 가진 사람'}`,
+        `${dayMasterStrength === 'strong' ? '자신만의 의견이 있으면서도 유연하게 조율할 줄 아는 사람' : '든든하게 지지해주고 함께 성장하려는 의지가 있는 사람'}`,
+        `${saju.day.element === 'wood' || saju.day.element === 'fire' ? '차분하게 경청하고 감정을 안정시켜주는 사람' : '적극적으로 다가오고 에너지를 북돋아주는 사람'}`,
+        `가치관과 인생의 방향이 비슷하고, 서로의 성장을 응원하는 사람`
+      ],
+
+      compatibilityFactors: `${user.name}님의 일간 ${saju.day.heavenlyStem}(${saju.day.element === 'wood' ? '목' : saju.day.element === 'fire' ? '화' : saju.day.element === 'earth' ? '토' : saju.day.element === 'metal' ? '금' : '수'})은 ${saju.day.element === 'wood' ? '수(水)나 화(火) 기운이 강한 사람과 좋은 상성입니다. 수는 나무를 키워주고, 화는 나무의 열매를 맺게 합니다.' : saju.day.element === 'fire' ? '목(木)이나 토(土) 기운이 강한 사람과 좋은 상성입니다. 목은 불을 지펴주고, 토는 불의 열기를 안정시킵니다.' : saju.day.element === 'earth' ? '화(火)나 금(金) 기운이 강한 사람과 좋은 상성입니다. 화는 흙을 따뜻하게 하고, 금은 흙에서 귀한 것을 캐내줍니다.' : saju.day.element === 'metal' ? '토(土)나 수(水) 기운이 강한 사람과 좋은 상성입니다. 토는 금을 품어주고, 수는 금을 깨끗하게 합니다.' : '금(金)이나 목(木) 기운이 강한 사람과 좋은 상성입니다. 금은 물을 맑게 하고, 목은 물의 흐름에 방향을 줍니다.'} ${user.mbti ? `MBTI ${user.mbti}의 경우 감정 교류와 깊은 대화를 중시하는 유형과 잘 맞습니다.` : ''}`,
+
+      warningSignsInPartner: [
+        `${gisin.includes('fire') ? '감정 기복이 심하고 충동적으로 행동하는 사람은 피하세요' : gisin.includes('water') ? '우유부단하고 결정을 미루는 사람은 피하세요' : gisin.includes('wood') ? '자기주장만 강하고 타협을 모르는 사람은 피하세요' : gisin.includes('metal') ? '지나치게 비판적이고 냉정한 사람은 피하세요' : '책임감 없이 현실을 회피하는 사람은 피하세요'}`,
+        '만난 지 얼마 안 되어 금전적 요구를 하거나 경제 관념이 불투명한 사람',
+        '갈등 상황에서 대화로 해결하려 하지 않고 회피하거나 감정적으로 대응하는 사람'
+      ],
+
+      meetingStrategy: `${user.maritalStatus === 'single' ? `좋은 인연은 ${yongsin.includes('wood') ? '스터디 모임, 자기계발 활동, 새로운 취미 동호회' : yongsin.includes('fire') ? '활동적인 모임, 봉사활동, 문화/예술 행사' : yongsin.includes('earth') ? '신뢰할 수 있는 지인 소개, 직장 내 만남, 안정적인 커뮤니티' : yongsin.includes('metal') ? '전문 분야 모임, 운동/스포츠 동호회, 목표 지향적 그룹' : '독서 모임, 명상/힐링 활동, 조용한 카페나 전시회'}에서 만날 가능성이 높습니다. 억지로 찾기보다 자신을 가꾸며 자연스럽게 만나세요.` : '현재 관계에서 더 깊은 유대를 만들려면 일상의 작은 감사를 표현하고, 함께하는 시간의 질을 높이세요. 서로의 성장을 응원하는 것이 관계를 더 단단하게 합니다.'}`,
+
+      relationshipAdvice: `${user.name}님은 ${dayMasterStrength === 'strong' ? '독립적이고 주도적인 연애 스타일입니다. 하지만 상대방의 의견도 존중하고 양보하는 연습이 필요합니다.' : '배려심이 깊고 상대를 위하는 연애 스타일입니다. 하지만 자신의 감정과 의견도 표현하는 것이 중요합니다.'} ${saju.day.element === 'fire' ? '열정적이지만 감정 조절에 주의하세요.' : saju.day.element === 'water' ? '깊은 애정을 주지만 의존하지 않도록 주의하세요.' : saju.day.element === 'wood' ? '성장하는 관계를 원하지만 조급함은 금물입니다.' : saju.day.element === 'metal' ? '원칙을 중시하지만 유연함도 필요합니다.' : '안정을 추구하지만 새로움도 받아들이세요.'}`,
+
+      timingAnalysis: `2026년 중 ${scores.love >= 75 ? '3월, 6월, 9월에 좋은 만남의 기회가 있습니다. 특히 6월은 인연수가 높은 달입니다.' : '상반기보다 하반기에 인연이 들어올 가능성이 높습니다. 7월 이후를 주목하세요.'} ${user.maritalStatus === 'single' ? '결혼을 생각한다면 2026년 하반기가 좋은 시기입니다.' : ''}`,
+
+      partnerChecklist: [
+        '대화할 때 내 말을 끝까지 듣고 진심으로 공감해주는가?',
+        '작은 약속도 성실하게 지키고 신뢰를 쌓으려 노력하는가?',
+        '갈등 상황에서 도망가지 않고 해결하려는 태도를 보이는가?',
+        '나의 가족, 친구에 대해 존중하는 태도를 보이는가?',
+        '미래에 대한 비전과 가치관이 나와 비슷한 방향인가?'
+      ]
+    }
   };
 }
 
