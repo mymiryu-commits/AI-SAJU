@@ -144,13 +144,16 @@ export async function GET(request: NextRequest) {
         }
       });
     } else {
-      // 음성 생성 - 관리자 무료, 포인트 보유 사용자는 포인트 차감
+      // 음성 생성 - 관리자/프리미엄구독/프리미엄분석은 무료, 그 외는 포인트 차감
       const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
       const currentPoints = pointBalance?.points || 0;
       const audioCost = PRODUCT_COSTS.voice; // 300 포인트
 
-      // 관리자가 아니고, 프리미엄 분석도 아니고, 포인트도 부족한 경우
-      if (!isAdmin && !isAnalysisPremium && currentPoints < audioCost) {
+      // 무료 대상: 관리자, 프리미엄 구독자, 프리미엄 분석
+      const isFreeAudio = isAdmin || isPremiumUser || isAnalysisPremium;
+
+      // 무료 대상이 아니고 포인트도 부족한 경우
+      if (!isFreeAudio && currentPoints < audioCost) {
         return NextResponse.json(
           {
             error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
@@ -163,8 +166,8 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // 관리자가 아니고 프리미엄 분석도 아닌 경우 포인트 차감
-      if (!isAdmin && !isAnalysisPremium) {
+      // 무료 대상이 아닌 경우에만 포인트 차감
+      if (!isFreeAudio) {
         const deductResult = await deductPoints(user.id, 'voice');
         if (!deductResult.success) {
           return NextResponse.json(
@@ -258,7 +261,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 음성 생성은 관리자 무료, 일반 사용자는 포인트 차감
+    // 음성 생성은 관리자/프리미엄 구독자 무료, 일반 사용자는 포인트 차감
     if (type === 'audio') {
       const supabase = await createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -272,11 +275,15 @@ export async function POST(request: NextRequest) {
 
       const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
       const pointBalance = await getPointBalance(user.id);
+      const isPremiumUser = pointBalance?.isPremium || false;
       const currentPoints = pointBalance?.points || 0;
       const audioCost = PRODUCT_COSTS.voice; // 300 포인트
 
-      // 관리자가 아니고 포인트도 부족한 경우
-      if (!isAdmin && currentPoints < audioCost) {
+      // 무료 대상: 관리자, 프리미엄 구독자
+      const isFreeAudio = isAdmin || isPremiumUser;
+
+      // 무료 대상이 아니고 포인트도 부족한 경우
+      if (!isFreeAudio && currentPoints < audioCost) {
         return NextResponse.json(
           {
             error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
@@ -289,8 +296,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 관리자가 아닌 경우 포인트 차감
-      if (!isAdmin) {
+      // 무료 대상이 아닌 경우에만 포인트 차감
+      if (!isFreeAudio) {
         const deductResult = await deductPoints(user.id, 'voice');
         if (!deductResult.success) {
           return NextResponse.json(
