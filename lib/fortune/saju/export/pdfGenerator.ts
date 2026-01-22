@@ -1092,7 +1092,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   doc.setFontSize(10);
   doc.text(`발행일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, 250, { align: 'center' });
-  doc.text('AI-SAJU Premium Service', pageWidth / 2, 260, { align: 'center' });
+  doc.text('AI-PLANX Premium Service', pageWidth / 2, 260, { align: 'center' });
 
   // ========== 프롤로그 페이지 (60갑자 + 시적 도입부) ==========
   doc.addPage();
@@ -2547,7 +2547,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   doc.text(`분석 생성일: ${new Date().toLocaleDateString('ko-KR')}`, pageWidth / 2, yPos, { align: 'center' });
   yPos += 15;
   doc.setFontSize(12);
-  doc.text('AI-SAJU Premium Service', pageWidth / 2, yPos, { align: 'center' });
+  doc.text('AI-PLANX Premium Service', pageWidth / 2, yPos, { align: 'center' });
   yPos += 8;
   doc.setFontSize(10);
   doc.text('Your Fortune, Your Choice', pageWidth / 2, yPos, { align: 'center' });

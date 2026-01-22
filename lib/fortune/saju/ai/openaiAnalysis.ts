@@ -111,14 +111,22 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
     hapchungAnalysis
   );
 
-  const systemPrompt = `당신은 40년 경력의 대한민국 최고 사주명리학 대가입니다.
-수많은 정재계 인사, 연예인, 기업인들의 사주를 봐온 전문가로서, 깊이 있고 정확한 분석을 제공합니다.
+  const systemPrompt = `당신은 40년 경력의 대한민국 최고 사주명리학 대가이자, 베스트셀러 운명학 작가입니다.
+수많은 정재계 인사, 연예인, 기업인들의 사주를 봐온 전문가입니다.
+
+## 스토리텔링 원칙 (중요!)
+1. **후킹 기법**: 의뢰인의 가장 특징적인 면을 먼저 언급하여 공감을 이끌어내세요
+   - 예: "책임감이 매우 강한 김형석님" / "섬세하면서도 추진력 있는 이수진님"
+2. **대화체 서술**: 마치 눈앞에서 이야기하듯 자연스럽고 따뜻하게 말하세요
+3. **시나리오 작가처럼**: 추상적 설명 대신 구체적 장면과 상황으로 묘사하세요
+   - 나쁜 예: "금전운이 좋습니다"
+   - 좋은 예: "올 하반기, 예상치 못한 곳에서 기회가 찾아옵니다. 평소 관심 두었던 분야에서 수익이 생길 조짐입니다."
 
 ## 분석 원칙
 1. **구체성**: 추상적인 말 대신 구체적인 시기, 행동, 방향을 제시
 2. **전문성**: 사주학적 용어와 원리를 바탕으로 한 논리적 해석
 3. **실용성**: 즉시 실천 가능한 조언 제공
-4. **개인화**: 사용자의 나이, 성별, 고민에 맞춤화된 해석
+4. **개인화**: 의뢰인의 나이, 성별, 직업, 가정상황, 고민에 완전히 맞춤화된 해석
 5. **균형**: 긍정적 측면과 주의점을 균형있게 제시
 
 ## 해석 깊이
@@ -130,6 +138,34 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
 
 응답은 반드시 JSON 형식으로 제공하세요.`;
 
+  // 결혼 상태 한글 변환
+  const maritalStatusText: Record<string, string> = {
+    'single': '미혼',
+    'married': '기혼',
+    'divorced': '이혼',
+    'remarried': '재혼'
+  };
+
+  // 직급 한글 변환
+  const careerLevelText: Record<string, string> = {
+    'entry': '신입/사원급',
+    'mid': '대리/과장급',
+    'senior': '차장/부장급',
+    'executive': '임원급'
+  };
+
+  // 관심사 한글 변환
+  const interestText: Record<string, string> = {
+    'career': '커리어/직장',
+    'wealth': '재테크/투자',
+    'love': '연애/결혼',
+    'health': '건강/운동',
+    'family': '가족관계',
+    'study': '학업/자기계발',
+    'business': '창업/사업',
+    'relationship': '대인관계'
+  };
+
   const userPrompt = `## 의뢰인 정보
 - 성명: ${user.name}
 - 성별: ${user.gender === 'male' ? '남성' : '여성'}
@@ -138,6 +174,10 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
 - 역법: ${user.calendar === 'lunar' ? '음력' : '양력'}
 - 현재 고민: ${user.currentConcern ? getConcernText(user.currentConcern) : '없음'}
 - 직업/분야: ${user.careerType || '미입력'}
+- 직급/경력: ${user.careerLevel ? careerLevelText[user.careerLevel] : '미입력'}${user.yearsExp ? ` (경력 ${user.yearsExp}년)` : ''}
+- 결혼 상태: ${user.maritalStatus ? maritalStatusText[user.maritalStatus] : '미입력'}
+- 자녀: ${user.hasChildren ? (user.childrenAges?.length ? `있음 (${user.childrenAges.join(', ')}세)` : '있음') : '없음/미입력'}
+- 관심 분야: ${user.interests?.length ? user.interests.map(i => interestText[i] || i).join(', ') : '미입력'}
 - MBTI: ${user.mbti || '미입력'}
 - 혈액형: ${user.bloodType || '미입력'}
 
@@ -184,7 +224,7 @@ ${traditionalAnalysis}
 위 정보를 바탕으로 다음 JSON 형식으로 전문가 수준의 상세 분석을 제공해주세요:
 
 {
-  "personalityReading": "(일간 ${saju.day.heavenlyStem}의 본질적 특성, 성격의 강점과 약점, 타고난 기질을 5-6문장으로 상세히. 사주학적 근거 포함)",
+  "personalityReading": "(먼저 '${user.name}님은 [특징적 성격]한 분이시네요.'로 시작. 일간 ${saju.day.heavenlyStem}의 본질적 특성을 의뢰인 상황에 맞춰 구체적으로. 마치 오랜 친구에게 말하듯 따뜻하게 5-6문장)",
 
   "dayMasterAnalysis": "(일주 ${saju.day.heavenlyStem}${saju.day.earthlyBranch}의 의미, 일간과 일지의 관계, 이 조합이 가진 특별한 의미를 4-5문장으로)",
 
@@ -194,9 +234,9 @@ ${traditionalAnalysis}
 
   "monthlyFortune": "(2026년 상반기 월별 운세 요약. 특히 좋은 달, 주의할 달, 중요한 시기를 3-4문장으로)",
 
-  "relationshipAnalysis": "(대인관계와 인연 분석. 어떤 사람과 잘 맞는지, 주의할 관계, 귀인의 특징을 4-5문장으로)",
+  "relationshipAnalysis": "(대인관계와 인연 분석. ${user.maritalStatus === 'married' ? '배우자와의 관계, 가정 내 역할' : user.maritalStatus === 'single' ? '인연을 만날 시기와 이상적인 배우자상' : '현재 상황에 맞는 인간관계 조언'}. 어떤 사람과 잘 맞는지, 주의할 관계, 귀인의 특징을 4-5문장으로)",
 
-  "careerGuidance": "(${user.careerType ? user.careerType + ' 분야에서의' : '직업/사업'} 구체적 방향성. 적합한 업종, 피해야 할 분야, 성공 전략을 5-6문장으로)",
+  "careerGuidance": "(${user.careerType ? user.careerType + ' 분야에서의' : '직업/사업'}${user.careerLevel === 'entry' ? ' 신입으로서 성장 전략' : user.careerLevel === 'executive' ? ' 리더로서 경영/관리 전략' : ''} 구체적 방향성. ${user.yearsExp ? `경력 ${user.yearsExp}년차에 맞는 ` : ''}적합한 업종, 피해야 할 분야, 성공 전략을 5-6문장으로)",
 
   "wealthStrategy": "(재물운 상세 분석. 돈이 들어오는 방향, 투자 적기, 재물 관리 전략을 4-5문장으로)",
 
@@ -205,17 +245,17 @@ ${traditionalAnalysis}
   "spiritualGuidance": "(영적/정신적 조언. 마음가짐, 수양 방법, 개운법을 3-4문장으로)",
 
   "fortuneAdvice": {
-    "overall": "(2026년 전체 운세 핵심 메시지 3-4문장)",
-    "wealth": "(재물운 구체적 조언과 행동 지침 3-4문장)",
-    "love": "(애정운/인간관계 구체적 조언 3-4문장)",
-    "career": "(직업/사업운 구체적 전략 3-4문장)",
+    "overall": "(2026년 전체 운세 핵심 메시지. ${user.interests?.length ? user.interests.map(i => interestText[i] || i).join(', ') + ' 분야에 대한 운세 포함' : ''} 3-4문장)",
+    "wealth": "(재물운 구체적 조언. ${user.careerLevel === 'executive' ? '경영자 관점의 투자/자산 관리' : '현 직급에 맞는 재테크 전략'} 행동 지침 3-4문장)",
+    "love": "(${user.maritalStatus === 'married' ? '부부운/가정운' : user.maritalStatus === 'single' ? '연애운/결혼운' : '애정운'}${user.hasChildren ? ', 자녀운' : ''} 구체적 조언 3-4문장)",
+    "career": "(직업/사업운. ${user.careerType || '현재 분야'}에서의 구체적 전략 3-4문장)",
     "health": "(건강운 주의사항과 관리법 2-3문장)"
   },
 
   "coreMessage": {
-    "hook": "(${user.name}님의 사주에서 발견한 가장 중요한 메시지. 고민인 '${user.currentConcern || '없음'}'에 대한 사주적 답변. 강렬하고 공감가는 2-3문장)",
-    "insight": "(사주가 말해주는 핵심 인사이트. ${user.name}님만을 위한 맞춤 조언 3-4문장)",
-    "urgency": "(지금 이 시기가 중요한 이유, 행동해야 하는 이유 1-2문장)"
+    "hook": "(${user.name}님의 사주에서 발견한 가장 중요한 메시지. 고민인 '${user.currentConcern || '없음'}'에 대한 사주적 답변. ${user.maritalStatus === 'married' ? '가정인으로서' : ''} ${user.hasChildren ? '부모로서' : ''} 강렬하고 공감가는 2-3문장)",
+    "insight": "(사주가 말해주는 핵심 인사이트. ${user.name}님의 ${user.careerType || '직업'}, ${user.maritalStatus === 'married' ? '가정' : '인간관계'}, ${user.interests?.length ? user.interests[0] : '삶'} 분야를 위한 맞춤 조언 3-4문장)",
+    "urgency": "(지금 ${age}세, 이 시기가 중요한 이유, 행동해야 하는 이유 1-2문장)"
   },
 
   "lifePath": "(인생 전체 흐름. 주요 전환점 시기, 대운의 변화, 노년운까지 4-5문장으로)",

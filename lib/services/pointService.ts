@@ -288,10 +288,10 @@ export async function incrementFreeAnalysis(userId: string): Promise<boolean> {
   const supabase = serviceSupabase || await createClient();
   const today = new Date().toISOString().split('T')[0];
 
-  // 현재 상태 조회
+  // 현재 상태 조회 (total_analyses 포함)
   const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('free_analyses_today, last_analysis_date')
+    .select('free_analyses_today, last_analysis_date, total_analyses')
     .eq('id', userId)
     .single();
 

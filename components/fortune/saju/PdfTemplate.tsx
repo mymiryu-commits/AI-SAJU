@@ -8,7 +8,8 @@
  * 전통 사주 이론 (십신, 신살, 12운성, 합충형파해) 통합
  */
 
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import type {
   UserInput,
   SajuChart,
@@ -66,6 +67,35 @@ const ELEMENT_DESCRIPTION: Record<Element, string> = {
 
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
   ({ user, saju, oheng, result, premium, targetYear = 2026 }, ref) => {
+    // QR 코드 생성
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+    // 추천 코드 생성 (이름 + 생년월일 해시)
+    const generateReferralCode = () => {
+      const base = `${user.name}${user.birthDate}`.replace(/[^a-zA-Z0-9가-힣]/g, '');
+      // 간단한 해시: 문자열을 숫자로 변환
+      let hash = 0;
+      for (let i = 0; i < base.length; i++) {
+        hash = ((hash << 5) - hash) + base.charCodeAt(i);
+        hash = hash & hash; // 32bit integer로 변환
+      }
+      return `REF-${Math.abs(hash).toString(36).toUpperCase().slice(0, 8)}`;
+    };
+
+    const referralCode = generateReferralCode();
+    const referralLink = `https://ai-planx.com/signup?ref=${referralCode}`;
+
+    useEffect(() => {
+      // QR 코드 생성
+      QRCode.toDataURL(referralLink, {
+        width: 140,
+        margin: 1,
+        color: { dark: '#4f46e5', light: '#ffffff' }
+      })
+        .then(url => setQrCodeDataUrl(url))
+        .catch(err => console.error('QR code generation failed:', err));
+    }, [referralLink]);
+
     // 기본값 설정 (데이터가 없을 때 에러 방지)
     const {
       scores = { overall: 70, wealth: 70, love: 70, career: 70, health: 70 },
@@ -198,7 +228,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
               fontWeight: 600,
               marginTop: '8px'
             }}>
-              AI-SAJU Premium Service
+              AI-PLANX Premium Service
             </p>
           </div>
         </div>
@@ -659,7 +689,13 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             <SubSection title="행운을 부르는 요소">
               <InfoBox type="success">
                 <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
-                  {aiAnalysis.luckyElements}
+                  {typeof aiAnalysis.luckyElements === 'string'
+                    ? aiAnalysis.luckyElements
+                    : typeof aiAnalysis.luckyElements === 'object'
+                      ? Object.entries(aiAnalysis.luckyElements as Record<string, unknown>)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(', ')
+                      : '행운의 요소 정보를 확인하세요.'}
                 </p>
               </InfoBox>
             </SubSection>
@@ -874,11 +910,94 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           <div style={{ marginTop: '60px', color: '#9ca3af' }}>
             <p>분석 생성일: {new Date().toLocaleDateString('ko-KR')}</p>
             <p style={{ marginTop: '12px', fontWeight: 700, fontSize: '14pt', color: '#6366f1' }}>
-              AI-SAJU Premium Service
+              AI-PLANX Premium Service
             </p>
             <p style={{ fontSize: '10pt', marginTop: '6px', color: '#a5b4fc' }}>
               Your Fortune, Your Choice
             </p>
+          </div>
+        </div>
+
+        {/* ====== 공유 & 추천 페이지 ====== */}
+        <div style={{ pageBreakBefore: 'always', textAlign: 'center', paddingTop: '50px' }}>
+          <h2 style={{ fontSize: '18pt', marginBottom: '16px', color: '#6366f1' }}>
+            소중한 분과 함께하세요
+          </h2>
+          <p style={{ fontSize: '11pt', color: '#6b7280', marginBottom: '40px', lineHeight: 1.7 }}>
+            이 분석이 도움이 되셨다면,<br />
+            가족과 친구에게도 운명의 지혜를 선물해 보세요.
+          </p>
+
+          {/* QR 코드 영역 */}
+          <div style={{
+            width: '160px',
+            height: '160px',
+            margin: '0 auto 20px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#ffffff',
+            overflow: 'hidden'
+          }}>
+            {qrCodeDataUrl ? (
+              <img
+                src={qrCodeDataUrl}
+                alt="추천 링크 QR 코드"
+                style={{ width: '140px', height: '140px' }}
+              />
+            ) : (
+              <div style={{
+                width: '140px',
+                height: '140px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f3f4f6',
+                color: '#6366f1',
+                fontSize: '10pt'
+              }}>
+                QR 생성 중...
+              </div>
+            )}
+          </div>
+
+          <p style={{ fontSize: '13pt', fontWeight: 700, color: '#4f46e5', marginBottom: '8px' }}>
+            AI-PLANX.COM
+          </p>
+          <p style={{ fontSize: '10pt', color: '#9ca3af', marginBottom: '40px' }}>
+            QR코드를 스캔하여 바로 접속하세요
+          </p>
+
+          {/* 추천 혜택 안내 */}
+          <InfoBox type="highlight" style={{ maxWidth: '420px', margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: '12pt', fontWeight: 700, color: '#6366f1', marginBottom: '12px' }}>
+              🎁 친구 추천 혜택
+            </p>
+            <p style={{ fontSize: '10pt', color: '#4b5563', lineHeight: 1.8, marginBottom: '16px' }}>
+              친구가 가입하면 나에게 <strong style={{ color: '#6366f1' }}>300P</strong> 적립!<br />
+              친구도 <strong style={{ color: '#6366f1' }}>200P</strong>를 받아요.
+            </p>
+            <div style={{
+              backgroundColor: '#f0f0ff',
+              padding: '12px 20px',
+              borderRadius: '8px',
+              display: 'inline-block'
+            }}>
+              <p style={{ fontSize: '9pt', color: '#6b7280', marginBottom: '4px' }}>
+                내 추천 코드
+              </p>
+              <p style={{ fontSize: '14pt', fontWeight: 700, color: '#4f46e5', letterSpacing: '2px' }}>
+                {referralCode}
+              </p>
+            </div>
+          </InfoBox>
+
+          {/* 하단 안내 */}
+          <div style={{ marginTop: '50px', color: '#9ca3af', fontSize: '9pt', lineHeight: 1.6 }}>
+            <p>AI-PLANX는 동양 철학과 인공지능의 만남입니다.</p>
+            <p>당신의 운명, 당신의 선택.</p>
           </div>
         </div>
       </div>

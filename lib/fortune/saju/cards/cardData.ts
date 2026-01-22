@@ -3,13 +3,15 @@
 import type { EssenceCard, EnergyCard, TalentCard, FlowCard, GuardianCard } from '@/types/cards';
 
 // ============================================
-// 본질 카드 (꽃) - 일간 매핑
+// 본질 카드 (자연물) - 일간 매핑
+// 참고: category로 나무/꽃을 구분하여 정확한 표현 사용
 // ============================================
 export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
   '갑': {
     dayMaster: '갑',
     flower: 'pine',
     flowerKorean: '소나무',
+    category: 'tree', // 나무
     keywords: ['곧음', '리더십', '개척'],
     story: '우뚝 솟은 소나무처럼, 당신은 어떤 풍파에도 꺾이지 않는 곧은 심지를 가졌습니다. 앞장서서 길을 내고, 뒤따르는 이들에게 그늘이 되어주는 사람. 그것이 당신의 타고난 본질입니다.',
     imageKey: 'essence-pine',
@@ -19,6 +21,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '을',
     flower: 'orchid',
     flowerKorean: '난초',
+    category: 'flower',
     keywords: ['유연함', '적응력', '우아함'],
     story: '바람에 흔들리는 난초처럼, 당신은 강인함보다 유연함으로 세상을 헤쳐나갑니다. 어떤 환경에서도 자신만의 향기를 잃지 않고, 우아하게 피어나는 사람. 부드러움 속에 진정한 강함이 있습니다.',
     imageKey: 'essence-orchid',
@@ -28,6 +31,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '병',
     flower: 'sunflower',
     flowerKorean: '해바라기',
+    category: 'flower',
     keywords: ['열정', '중심', '밝음'],
     story: '태양을 향해 고개 드는 해바라기처럼, 당신은 어디서든 빛나는 존재입니다. 사람들의 중심에 서서 따뜻한 에너지를 나누고, 주변을 환하게 밝히는 사람. 당신이 있는 곳에 활기가 넘칩니다.',
     imageKey: 'essence-sunflower',
@@ -37,6 +41,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '정',
     flower: 'camellia',
     flowerKorean: '동백',
+    category: 'flower',
     keywords: ['따뜻함', '헌신', '섬세함'],
     story: '어둠 속에서도 피어나는 동백처럼, 당신은 조용히 그러나 분명하게 빛납니다. 겉으로 드러나지 않아도 깊은 열정을 품고, 사랑하는 이들을 위해 묵묵히 헌신하는 사람. 당신의 따뜻함이 세상을 녹입니다.',
     imageKey: 'essence-camellia',
@@ -46,6 +51,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '무',
     flower: 'peony',
     flowerKorean: '모란',
+    category: 'flower',
     keywords: ['안정', '포용', '중후함'],
     story: '만개한 모란처럼, 당신은 너그럽고 든든한 존재입니다. 산처럼 묵직하게 자리를 지키며, 모든 것을 품어주는 넉넉함이 있습니다. 당신 곁에 있으면 사람들은 안심합니다.',
     imageKey: 'essence-peony',
@@ -55,6 +61,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '기',
     flower: 'cosmos',
     flowerKorean: '코스모스',
+    category: 'flower',
     keywords: ['다정함', '감성', '조화'],
     story: '들판에 피어난 코스모스처럼, 당신은 소박하지만 깊은 아름다움을 가졌습니다. 주변과 조화를 이루며, 작은 것에서도 행복을 찾는 감성이 있습니다. 당신의 다정함이 사람들의 마음을 어루만집니다.',
     imageKey: 'essence-cosmos',
@@ -64,6 +71,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '경',
     flower: 'chrysanthemum',
     flowerKorean: '국화',
+    category: 'flower',
     keywords: ['결단', '의리', '절개'],
     story: '서리가 내려도 꺾이지 않는 국화처럼, 당신은 어떤 상황에서도 원칙을 지킵니다. 한번 정한 것은 끝까지 가고, 맺은 인연은 절대 저버리지 않는 사람. 단단함 속에 진정한 아름다움이 있습니다.',
     imageKey: 'essence-chrysanthemum',
@@ -73,6 +81,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '신',
     flower: 'plum',
     flowerKorean: '매화',
+    category: 'flower',
     keywords: ['섬세함', '고고함', '순수'],
     story: '눈 속에서 피어나는 매화처럼, 당신은 역경 속에서 더욱 빛납니다. 세상의 기준에 휘둘리지 않고 자신만의 아름다움을 지키는 고고함이 있습니다. 당신의 순수함이 사람들에게 감동을 줍니다.',
     imageKey: 'essence-plum',
@@ -82,6 +91,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '임',
     flower: 'lotus',
     flowerKorean: '연꽃',
+    category: 'flower',
     keywords: ['지혜', '포용', '깊이'],
     story: '진흙 속에서도 청아하게 피어나는 연꽃처럼, 당신은 깊은 지혜를 가졌습니다. 모든 것을 받아들이면서도 물들지 않고, 넓은 마음으로 세상을 품는 사람. 당신의 깊이가 사람들을 이끕니다.',
     imageKey: 'essence-lotus',
@@ -91,6 +101,7 @@ export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
     dayMaster: '계',
     flower: 'forgetmenot',
     flowerKorean: '물망초',
+    category: 'flower',
     keywords: ['감성', '직관', '스며듦'],
     story: '이슬 맺힌 물망초처럼, 당신은 섬세한 감수성으로 세상을 느낍니다. 말하지 않아도 상대의 마음을 읽고, 조용히 스며들어 영향을 주는 사람. 당신의 직관이 길을 밝혀줍니다.',
     imageKey: 'essence-forgetmenot',

@@ -17,7 +17,7 @@ export function generatePDFContent(
   sections.push(`
 ═══════════════════════════════════════════════════════════════
 
-                     🔮 AI-SAJU 프리미엄 사주 분석 보고서 🔮
+                     🔮 AI-PLANX 프리미엄 사주 분석 보고서 🔮
 
                      ${userName}님의 운명 분석서
 
@@ -212,7 +212,7 @@ ${result.healthProfile.dietRecommendations.map(d => `  • ${d}`).join('\n')}
 
                      🙏 ${userName}님의 행복을 기원합니다 🙏
 
-                     AI-SAJU Premium Analysis Report
+                     AI-PLANX Premium Analysis Report
                      © ${new Date().getFullYear()} AI-PlanX
 
                      이 보고서는 사주명리학과 AI 기술을 결합하여
@@ -829,7 +829,7 @@ export function generatePrintableHTML(
     <div class="footer">
       <p>🙏 ${userName}님의 행복을 기원합니다 🙏</p>
       <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
-        AI-SAJU Premium Analysis Report<br>
+        AI-PLANX Premium Analysis Report<br>
         © ${new Date().getFullYear()} AI-PlanX
       </p>
     </div>

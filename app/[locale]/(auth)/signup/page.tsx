@@ -3,18 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Loader2, AlertCircle, CheckCircle, Mail, ExternalLink, Copy } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Mail, ExternalLink, Copy, Gift } from 'lucide-react';
 import { isWebView, getWebViewAppName, getExternalBrowserUrl } from '@/lib/utils/webview';
 
 export default function SignupPage() {
   const t = useTranslations('auth.signup');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signUpWithEmail, signInWithOAuth } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -32,6 +35,23 @@ export default function SignupPage() {
   const [inWebView, setInWebView] = useState(false);
   const [webViewApp, setWebViewApp] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // 추천 코드 확인 (URL query parameter: ?ref=REF-XXXXXXXX)
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+      // localStorage에도 저장 (OAuth 리다이렉트 후에도 유지)
+      localStorage.setItem('referralCode', refCode);
+    } else {
+      // localStorage에서 복원
+      const storedCode = localStorage.getItem('referralCode');
+      if (storedCode) {
+        setReferralCode(storedCode);
+      }
+    }
+  }, [searchParams]);
 
   // WebView 감지
   useEffect(() => {
@@ -84,6 +104,22 @@ export default function SignupPage() {
           setError(error.message);
         }
         return;
+      }
+
+      // 추천 코드가 있으면 적용 시도
+      if (referralCode && data?.user) {
+        try {
+          await fetch('/api/referral', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ referralCode }),
+          });
+          // 사용한 추천 코드 삭제
+          localStorage.removeItem('referralCode');
+        } catch (refErr) {
+          console.warn('Referral application failed:', refErr);
+          // 추천 코드 적용 실패는 가입 실패로 처리하지 않음
+        }
       }
 
       // Success - show confirmation message
@@ -241,6 +277,24 @@ export default function SignupPage() {
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Referral Bonus Alert */}
+        {referralCode && (
+          <Alert className="mb-4 border-green-500 bg-green-50 text-green-800">
+            <Gift className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-medium">추천 코드 적용됨!</span>
+                  <p className="text-sm mt-1">가입 시 <strong>200P</strong>가 지급됩니다.</p>
+                </div>
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  {referralCode}
+                </Badge>
+              </div>
+            </AlertDescription>
           </Alert>
         )}
 
