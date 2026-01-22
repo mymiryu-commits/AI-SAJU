@@ -147,43 +147,66 @@ export default function PaywallModal({
             </div>
           )}
 
-          {/* ===== 상품 선택 (심플) ===== */}
-          <div className="px-5 pb-4 space-y-2">
+          {/* ===== 상품 선택 ===== */}
+          <div className="px-5 pb-4 space-y-3">
             {PRODUCTS.slice(0, 3).map(product => {
               const isSelected = selectedProduct === product.id;
               const canAfford = isAdmin || userPoints >= product.pointCost;
+
+              // 상품별 설명
+              const productDescriptions: Record<string, string> = {
+                basic: '혈액형/MBTI/오행/대운 분석',
+                deep: '십신/신살/12운성/합충 분석',
+                premium: '사주+심화+AI상담 올인원'
+              };
 
               return (
                 <button
                   key={product.id}
                   onClick={() => setSelectedProduct(product.id)}
-                  className={`w-full p-3 rounded-xl border-2 text-left transition-all flex items-center justify-between
+                  className={`w-full p-4 rounded-xl border-2 text-left transition-all
                     ${isSelected
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'}
                     ${!canAfford && !isAdmin ? 'opacity-50' : ''}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
-                      ${isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
-                      {isSelected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-800 dark:text-white">{product.name}</span>
-                        {product.recommended && (
-                          <span className="px-1.5 py-0.5 bg-purple-500 text-white text-[10px] rounded">추천</span>
-                        )}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0
+                        ${isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {product.features[0]}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-800 dark:text-white">{product.name}</span>
+                          {product.recommended && (
+                            <span className="px-1.5 py-0.5 bg-purple-500 text-white text-[10px] rounded font-medium">추천</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {productDescriptions[product.id] || product.features[0]}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <span className="font-bold text-purple-600 text-lg">{product.pointCost.toLocaleString()}P</span>
+                      <p className="text-xs text-gray-400 line-through">{product.originalPointCost.toLocaleString()}P</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-purple-600">{product.pointCost.toLocaleString()}P</span>
-                    <p className="text-xs text-gray-400 line-through">{product.originalPointCost.toLocaleString()}P</p>
-                  </div>
+
+                  {/* 선택된 상품의 상세 기능 표시 */}
+                  {isSelected && (
+                    <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
+                      <ul className="space-y-1">
+                        {product.features.slice(0, 4).map((feature, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Check className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </button>
               );
             })}

@@ -200,24 +200,24 @@
       },
       "items": {
         "basic-saju": {
-          "title": "基本四柱推命",
+          "title": "無料四柱体験",
           "description": "生年月日と時間であなたの四柱八字を分析。無料で基本運勢を確認できます。"
         },
-        "deep-saju": {
-          "title": "詳細四柱推命",
-          "description": "10年大運、月別運勢、仕事・金運・健康運まで。人生の流れを詳しく分析します。"
+        "saju-analysis": {
+          "title": "四柱分析",
+          "description": "血液型/MBTI統合、五行バランス、月別運勢、10年大運分析とPDFダウンロード。"
         },
-        "face-reading": {
-          "title": "AI人相占い",
-          "description": "写真1枚であなたの性格と運命を分析。AIが人相を精密に読み解きます。"
+        "deep-saju": {
+          "title": "伝統四柱深層",
+          "description": "十神、神殺、12運星、合沖分析。伝統命理学の深い解釈を提供します。"
+        },
+        "premium-saju": {
+          "title": "プレミアム分析",
+          "description": "四柱分析 + 伝統深層 + PDF + 音声解説 + リアルタイムAI相談までオールインワン。"
         },
         "compatibility": {
           "title": "相性診断",
           "description": "恋人、夫婦、ビジネスパートナーとの相性を分析。関係の強みと注意点を確認できます。"
-        },
-        "group-analysis": {
-          "title": "グループ分析",
-          "description": "家族やチームメンバーなど複数人の四柱を総合分析。グループ内の力学を把握できます。"
         },
         "yearly-fortune": {
           "title": "2025年運勢",

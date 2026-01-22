@@ -200,24 +200,24 @@
       },
       "items": {
         "basic-saju": {
-          "title": "기본 사주 분석",
+          "title": "무료 사주 체험",
           "description": "생년월일과 시간으로 알아보는 당신의 사주팔자. 무료로 기본 운세를 확인하세요."
         },
-        "deep-saju": {
-          "title": "심화 사주 분석",
-          "description": "10년 대운, 월별 운세, 직업/재물/건강운까지. 인생의 흐름을 상세하게 분석합니다."
+        "saju-analysis": {
+          "title": "사주 분석",
+          "description": "혈액형/MBTI 통합 분석, 오행 균형, 월별 사주, 10년 대운 분석과 PDF 다운로드."
         },
-        "face-reading": {
-          "title": "AI 관상 분석",
-          "description": "얼굴 사진 한 장으로 알아보는 당신의 성격과 운명. AI가 관상을 정밀 분석합니다."
+        "deep-saju": {
+          "title": "전통 사주 심화",
+          "description": "십신, 신살, 12운성, 합충 분석. 전통 명리학의 깊이 있는 해석을 제공합니다."
+        },
+        "premium-saju": {
+          "title": "프리미엄 분석",
+          "description": "사주 분석 + 전통 심화 + PDF + 음성 해설 + 실시간 AI 사주 상담까지 올인원."
         },
         "compatibility": {
           "title": "궁합 분석",
           "description": "연인, 부부, 비즈니스 파트너와의 궁합을 분석합니다. 관계의 강점과 주의점을 알아보세요."
-        },
-        "group-analysis": {
-          "title": "그룹 분석",
-          "description": "가족, 팀원 등 여러 명의 사주를 종합 분석합니다. 그룹 내 역학 관계를 파악하세요."
         },
         "yearly-fortune": {
           "title": "2025년 운세",
