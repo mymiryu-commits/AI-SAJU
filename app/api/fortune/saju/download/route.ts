@@ -174,12 +174,11 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Edge TTS를 기본 사용 (무료, API 키 불필요)
-      // OpenAI를 사용하려면 환경변수에 OPENAI_API_KEY 설정
-      const ttsProvider = process.env.TTS_PROVIDER || 'edge';
+      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
       const openaiKey = process.env.OPENAI_API_KEY;
+      const ttsProvider = openaiKey ? 'openai' : (process.env.TTS_PROVIDER || 'edge');
 
-      const config = ttsProvider === 'openai' && openaiKey
+      const config = openaiKey
         ? {
             provider: 'openai' as const,
             apiKey: openaiKey,
@@ -348,12 +347,11 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // audio
-      // Edge TTS를 기본 사용 (무료, API 키 불필요)
-      const ttsProvider = process.env.TTS_PROVIDER || 'edge';
+      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
       const openaiKey = process.env.OPENAI_API_KEY;
       const requestedVoice = (body as Record<string, unknown>).voiceId as string;
 
-      const config = ttsProvider === 'openai' && openaiKey
+      const config = openaiKey
         ? {
             provider: 'openai' as const,
             apiKey: openaiKey,
