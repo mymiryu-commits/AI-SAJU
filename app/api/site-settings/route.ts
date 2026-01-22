@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { Database, Json } from '@/types/database';
 
 export interface HeroSettings {
@@ -112,9 +112,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 서비스 롤 클라이언트 사용 (RLS 우회)
+    const serviceClient = createServiceClient();
+
     // Upsert the setting
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (serviceClient as any)
       .from('site_settings')
       .upsert(
         {

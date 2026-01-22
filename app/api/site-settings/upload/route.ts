@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/database';
 
 type UsersRow = Database['public']['Tables']['users']['Row'];
@@ -97,8 +97,11 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
+    // 서비스 롤 클라이언트 사용 (스토리지 RLS 우회)
+    const serviceClient = createServiceClient();
+
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await serviceClient.storage
       .from('hero-images')
       .upload(filename, buffer, {
         contentType: file.type,
@@ -114,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = serviceClient.storage
       .from('hero-images')
       .getPublicUrl(filename);
 
@@ -186,8 +189,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // 서비스 롤 클라이언트 사용 (스토리지 RLS 우회)
+    const serviceClient = createServiceClient();
+
     // Delete from Supabase Storage
-    const { error: deleteError } = await supabase.storage
+    const { error: deleteError } = await serviceClient.storage
       .from('hero-images')
       .remove([filename]);
 
