@@ -66,7 +66,14 @@ const ELEMENT_DESCRIPTION: Record<Element, string> = {
 
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
   ({ user, saju, oheng, result, premium, targetYear = 2026 }, ref) => {
-    const { scores, personality, yongsin, gisin, aiAnalysis } = result;
+    // 기본값 설정 (데이터가 없을 때 에러 방지)
+    const {
+      scores = { overall: 70, wealth: 70, love: 70, career: 70, health: 70 },
+      personality,
+      yongsin = [],
+      gisin = [],
+      aiAnalysis
+    } = result || {};
 
     // 나이 계산
     const birthYear = parseInt(user.birthDate.split('-')[0]);
