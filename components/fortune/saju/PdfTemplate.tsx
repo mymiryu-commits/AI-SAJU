@@ -8,7 +8,8 @@
  * 전통 사주 이론 (십신, 신살, 12운성, 합충형파해) 통합
  */
 
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import type {
   UserInput,
   SajuChart,
@@ -66,6 +67,24 @@ const ELEMENT_DESCRIPTION: Record<Element, string> = {
 
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
   ({ user, saju, oheng, result, premium, targetYear = 2026 }, ref) => {
+    // QR 코드 생성
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+    // 추천 코드 생성
+    const referralCode = user.id ? `REF-${user.id.slice(0, 8).toUpperCase()}` : 'AI-PLANX';
+    const referralLink = `https://ai-planx.com/signup?ref=${referralCode}`;
+
+    useEffect(() => {
+      // QR 코드 생성
+      QRCode.toDataURL(referralLink, {
+        width: 140,
+        margin: 1,
+        color: { dark: '#4f46e5', light: '#ffffff' }
+      })
+        .then(url => setQrCodeDataUrl(url))
+        .catch(err => console.error('QR code generation failed:', err));
+    }, [referralLink]);
+
     // 기본값 설정 (데이터가 없을 때 에러 방지)
     const {
       scores = { overall: 70, wealth: 70, love: 70, career: 70, health: 70 },
@@ -908,17 +927,29 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            overflow: 'hidden'
           }}>
-            {/* QR 코드 이미지 - 실제 QR 생성 라이브러리로 대체 가능 */}
-            <div style={{
-              width: '140px',
-              height: '140px',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f3f4f6' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.35em' font-size='8' fill='%236366f1'%3EQR CODE%3C/text%3E%3C/svg%3E")`,
-              backgroundSize: 'contain',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center'
-            }} />
+            {qrCodeDataUrl ? (
+              <img
+                src={qrCodeDataUrl}
+                alt="추천 링크 QR 코드"
+                style={{ width: '140px', height: '140px' }}
+              />
+            ) : (
+              <div style={{
+                width: '140px',
+                height: '140px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f3f4f6',
+                color: '#6366f1',
+                fontSize: '10pt'
+              }}>
+                QR 생성 중...
+              </div>
+            )}
           </div>
 
           <p style={{ fontSize: '13pt', fontWeight: 700, color: '#4f46e5', marginBottom: '8px' }}>
@@ -934,8 +965,8 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
               🎁 친구 추천 혜택
             </p>
             <p style={{ fontSize: '10pt', color: '#4b5563', lineHeight: 1.8, marginBottom: '16px' }}>
-              친구가 가입하면 <strong style={{ color: '#6366f1' }}>500P</strong> 적립!<br />
-              친구도 <strong style={{ color: '#6366f1' }}>500P</strong>를 받아요.
+              친구가 가입하면 나에게 <strong style={{ color: '#6366f1' }}>300P</strong> 적립!<br />
+              친구도 <strong style={{ color: '#6366f1' }}>200P</strong>를 받아요.
             </p>
             <div style={{
               backgroundColor: '#f0f0ff',
@@ -947,7 +978,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 내 추천 코드
               </p>
               <p style={{ fontSize: '14pt', fontWeight: 700, color: '#4f46e5', letterSpacing: '2px' }}>
-                {user.id?.slice(0, 8).toUpperCase() || 'PLANX2026'}
+                {referralCode}
               </p>
             </div>
           </InfoBox>
