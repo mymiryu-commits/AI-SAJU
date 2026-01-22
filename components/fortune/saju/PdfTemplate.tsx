@@ -659,7 +659,13 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             <SubSection title="행운을 부르는 요소">
               <InfoBox type="success">
                 <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
-                  {aiAnalysis.luckyElements}
+                  {typeof aiAnalysis.luckyElements === 'string'
+                    ? aiAnalysis.luckyElements
+                    : typeof aiAnalysis.luckyElements === 'object'
+                      ? Object.entries(aiAnalysis.luckyElements as Record<string, unknown>)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(', ')
+                      : '행운의 요소 정보를 확인하세요.'}
                 </p>
               </InfoBox>
             </SubSection>
