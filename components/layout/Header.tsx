@@ -23,6 +23,7 @@ const navLinks = [
   { href: '/ranking', key: 'ranking', icon: '📊' },
   { href: '/saju', key: 'saju', icon: '🔮' },
   { href: '/lotto', key: 'lotto', icon: '🎱' },
+  { href: '/tools/qrcode', key: 'qr', icon: '📱' },
   { href: '/pricing', key: 'pricing', icon: '💎' },
 ] as const;
 
