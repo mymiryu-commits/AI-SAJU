@@ -88,6 +88,14 @@ export default function DownloadButtons({
   const [downloadedFileName, setDownloadedFileName] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // 바로 보기/듣기 관련
+  const [viewState, setViewState] = useState<DownloadState>({
+    pdf: 'idle',
+    audio: 'idle'
+  });
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
+
   const handleDownload = async (type: DownloadType) => {
     if (!isPremium) {
       // 무료 사용자는 구매 모달 표시
@@ -189,6 +197,143 @@ export default function DownloadButtons({
       // 5초 후 상태 리셋
       setTimeout(() => {
         setDownloadState(prev => ({ ...prev, [type]: 'idle' }));
+      }, 5000);
+    }
+  };
+
+  // 바로 보기/듣기 (다운로드 없이)
+  const handleView = async (type: DownloadType) => {
+    if (!isPremium) {
+      setSelectedType(type);
+      setShowPurchaseModal(true);
+      return;
+    }
+
+    setViewState(prev => ({ ...prev, [type]: 'loading' }));
+
+    try {
+      if (type === 'pdf') {
+        // PDF 바로 보기 - 새 탭에서 열기
+        await handleClientPdfView();
+        return;
+      }
+
+      // 음성 바로 듣기
+      let response: Response;
+
+      if (analysisId) {
+        response = await fetch(
+          `/api/fortune/saju/download?type=audio&analysisId=${analysisId}`,
+          { method: 'GET' }
+        );
+      } else {
+        response = await fetch('/api/fortune/saju/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'audio',
+            user,
+            saju,
+            oheng,
+            yongsin: result.yongsin,
+            gisin: result.gisin,
+            premium,
+            targetYear
+          })
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '음성 생성에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const filename = response.headers.get('Content-Disposition')
+        ?.match(/filename="(.+)"/)?.[1] || '사주분석_음성.mp3';
+
+      // 이전 URL 정리
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+      setDownloadedFileName(decodeURIComponent(filename));
+      setShowAudioPlayer(true);
+      setViewState(prev => ({ ...prev, [type]: 'success' }));
+
+      setTimeout(() => {
+        setViewState(prev => ({ ...prev, [type]: 'idle' }));
+      }, 3000);
+
+    } catch (error) {
+      console.error(`${type} view error:`, error);
+      setViewState(prev => ({ ...prev, [type]: 'error' }));
+
+      setTimeout(() => {
+        setViewState(prev => ({ ...prev, [type]: 'idle' }));
+      }, 5000);
+    }
+  };
+
+  // PDF 바로 보기 (새 탭/모달)
+  const handleClientPdfView = async () => {
+    try {
+      setShowPdfTemplate(true);
+
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const element = pdfTemplateRef.current;
+      if (!element) {
+        throw new Error('PDF 템플릿을 찾을 수 없습니다.');
+      }
+
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      // PDF를 blob으로 생성
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfBlob = await (html2pdf() as any)
+        .set({
+          margin: 0,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        })
+        .from(element)
+        .outputPdf('blob');
+
+      const url = URL.createObjectURL(pdfBlob);
+
+      // 이전 URL 정리
+      if (pdfDataUrl) {
+        URL.revokeObjectURL(pdfDataUrl);
+      }
+
+      setPdfDataUrl(url);
+      setShowPdfTemplate(false);
+
+      // 새 탭에서 PDF 열기 (모바일/데스크톱 모두)
+      window.open(url, '_blank');
+
+      setViewState(prev => ({ ...prev, pdf: 'success' }));
+
+      setTimeout(() => {
+        setViewState(prev => ({ ...prev, pdf: 'idle' }));
+      }, 3000);
+
+    } catch (error) {
+      console.error('PDF view error:', error);
+      setShowPdfTemplate(false);
+      setViewState(prev => ({ ...prev, pdf: 'error' }));
+
+      setTimeout(() => {
+        setViewState(prev => ({ ...prev, pdf: 'idle' }));
       }, 5000);
     }
   };
@@ -329,9 +474,98 @@ export default function DownloadButtons({
     );
   };
 
+  // 바로 보기/듣기 버튼 내용
+  const getViewButtonContent = (type: DownloadType) => {
+    const state = viewState[type];
+    const isAudio = type === 'audio';
+
+    if (state === 'loading') {
+      return (
+        <span className="flex items-center gap-2">
+          <LoadingSpinner />
+          {isAudio ? '음성 준비 중...' : '문서 준비 중...'}
+        </span>
+      );
+    }
+
+    if (state === 'success') {
+      return (
+        <span className="flex items-center gap-2">
+          <CheckIcon />
+          {isAudio ? '재생 준비 완료' : '문서 열림'}
+        </span>
+      );
+    }
+
+    if (state === 'error') {
+      return (
+        <span className="flex items-center gap-2">
+          <ErrorIcon />
+          다시 시도
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex items-center gap-2">
+        {isAudio ? <PlayIcon /> : <EyeIcon />}
+        {isAudio ? '🎧 음성 듣기' : '📄 문서 보기'}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {/* 다운로드 버튼들 */}
+      {/* 바로 보기/듣기 버튼들 (메인) */}
+      <div className="flex flex-wrap gap-3">
+        {/* 문서 바로 보기 */}
+        <motion.button
+          onClick={() => handleView('pdf')}
+          disabled={viewState.pdf === 'loading'}
+          className={`
+            flex-1 min-w-[140px] px-4 py-4 rounded-xl font-medium
+            transition-all duration-200
+            ${!isPremium
+              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              : viewState.pdf === 'success'
+              ? 'bg-green-500 text-white'
+              : viewState.pdf === 'error'
+              ? 'bg-red-500 text-white'
+              : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+            }
+            disabled:opacity-50
+          `}
+          whileHover={isPremium ? { scale: 1.02 } : {}}
+          whileTap={isPremium ? { scale: 0.98 } : {}}
+        >
+          {getViewButtonContent('pdf')}
+        </motion.button>
+
+        {/* 음성 바로 듣기 */}
+        <motion.button
+          onClick={() => handleView('audio')}
+          disabled={viewState.audio === 'loading'}
+          className={`
+            flex-1 min-w-[140px] px-4 py-4 rounded-xl font-medium
+            transition-all duration-200
+            ${!isPremium
+              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              : viewState.audio === 'success'
+              ? 'bg-green-500 text-white'
+              : viewState.audio === 'error'
+              ? 'bg-red-500 text-white'
+              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/25'
+            }
+            disabled:opacity-50
+          `}
+          whileHover={isPremium ? { scale: 1.02 } : {}}
+          whileTap={isPremium ? { scale: 0.98 } : {}}
+        >
+          {getViewButtonContent('audio')}
+        </motion.button>
+      </div>
+
+      {/* 다운로드 버튼들 (보조) */}
       <div className="flex flex-wrap gap-3">
         {/* PDF 다운로드 */}
         <motion.button
@@ -741,6 +975,28 @@ export default function DownloadButtons({
 }
 
 // 아이콘 컴포넌트들
+function PlayIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
+
 function PDFIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
