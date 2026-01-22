@@ -145,7 +145,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         {/* ============ 표지 ============ */}
         <div style={{
           textAlign: 'center',
-          minHeight: '250mm',
+          minHeight: '220mm',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -179,34 +179,34 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 사용자 정보 카드 */}
           <div style={{
             display: 'inline-block',
-            padding: '40px 60px',
+            padding: '30px 50px',
             background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
             borderRadius: '20px',
             border: '1px solid #e2e8f0',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}>
-            <p style={{ fontSize: '20pt', marginBottom: '16px', fontWeight: 700, color: '#1f2937' }}>
+            <p style={{ fontSize: '20pt', marginBottom: '12px', fontWeight: 700, color: '#1f2937' }}>
               <span style={{ color: '#6366f1' }}>성명:</span> {user.name}
             </p>
-            <div style={{ borderTop: '1px solid #d1d5db', paddingTop: '16px', marginTop: '16px' }}>
-              <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '10px' }}>
+            <div style={{ borderTop: '1px solid #d1d5db', paddingTop: '12px', marginTop: '12px' }}>
+              <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '8px' }}>
                 생년월일: {user.birthDate} (만 {age}세 / 한국나이 {koreanAge}세)
               </p>
               {user.birthTime && (
-                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '10px' }}>
+                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '8px' }}>
                   출생시간: {user.birthTime}
                 </p>
               )}
-              <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '10px' }}>
+              <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '8px' }}>
                 성별: {user.gender === 'male' ? '남성' : '여성'}
               </p>
               {user.bloodType && (
-                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '10px' }}>
+                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '8px' }}>
                   혈액형: {user.bloodType}형
                 </p>
               )}
               {zodiacSign && (
-                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '10px' }}>
+                <p style={{ fontSize: '14pt', color: '#4b5563', marginBottom: '8px' }}>
                   별자리: {zodiacSign}
                 </p>
               )}
@@ -218,7 +218,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             </div>
           </div>
 
-          <div style={{ marginTop: '80px' }}>
+          <div style={{ marginTop: '50px' }}>
             <p style={{ fontSize: '12pt', color: '#9ca3af' }}>
               발행일: {new Date().toLocaleDateString('ko-KR')}
             </p>
@@ -306,12 +306,12 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         {/* ============ 2. 오행 분석 ============ */}
         <Section title="2. 오행 에너지 분석">
           <SubSection title="오행 분포">
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '14px' }}>
               {sortedElements.map(({ key, value }) => (
                 <div key={key} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  marginBottom: '14px'
+                  marginBottom: '10px'
                 }}>
                   <span style={{
                     width: '80px',
@@ -350,21 +350,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             </div>
 
             {/* 가장 강한 기운 설명 */}
-            <InfoBox type="success" style={{ marginBottom: '16px' }}>
-              <h4 style={{ color: '#059669', fontWeight: 700, marginBottom: '14px', fontSize: '14pt' }}>
+            <InfoBox type="success" style={{ marginBottom: '10px' }}>
+              <h4 style={{ color: '#059669', fontWeight: 700, marginBottom: '8px', fontSize: '14pt' }}>
                 가장 강한 기운: {ELEMENT_NATURE[strongestElement.key]} ({strongestElement.value.toFixed(1)}%)
               </h4>
-              <p style={{ color: '#374151', lineHeight: 1.7 }}>
+              <p style={{ color: '#374151', lineHeight: 1.6 }}>
                 {ELEMENT_DESCRIPTION[strongestElement.key]}
               </p>
             </InfoBox>
 
             {/* 보완이 필요한 기운 설명 */}
             <InfoBox type="warning">
-              <h4 style={{ color: '#dc2626', fontWeight: 700, marginBottom: '14px', fontSize: '14pt' }}>
+              <h4 style={{ color: '#dc2626', fontWeight: 700, marginBottom: '8px', fontSize: '14pt' }}>
                 보완이 필요한 기운: {ELEMENT_NATURE[weakestElement.key]} ({weakestElement.value.toFixed(1)}%)
               </h4>
-              <p style={{ color: '#374151', lineHeight: 1.7 }}>
+              <p style={{ color: '#374151', lineHeight: 1.6 }}>
                 {ELEMENT_DESCRIPTION[weakestElement.key]} 이 기운을 보완하면 삶의 균형을 찾을 수 있습니다.
               </p>
             </InfoBox>
@@ -373,10 +373,10 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 용신/기신 분석 */}
           {(yongsin?.length > 0 || gisin?.length > 0) && (
             <SubSection title="용신(用神) & 기신(忌神) - 운을 좌우하는 핵심 에너지">
-              <p style={{ color: '#6b7280', marginBottom: '16px', fontSize: '12pt' }}>
+              <p style={{ color: '#6b7280', marginBottom: '10px', fontSize: '12pt' }}>
                 용신은 당신에게 도움이 되는 기운이고, 기신은 주의해야 할 기운입니다.
               </p>
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {yongsin?.length > 0 && (
                   <InfoBox type="success" style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{
@@ -449,8 +449,8 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: '15px',
-            marginBottom: '24px'
+            gap: '10px',
+            marginBottom: '16px'
           }}>
             {[
               { key: 'overall', label: '종합', icon: '⭐' },
@@ -506,7 +506,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
           {/* 사주 특성 + MBTI 특성 */}
           {personality && (
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px' }}>
               <InfoBox type="default" style={{ flex: 1, minWidth: '200px' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: '12px', color: '#6366f1' }}>사주 특성</h4>
                 <ul style={{ paddingLeft: '20px', margin: 0 }}>
@@ -531,9 +531,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
           {/* 교차 분석 */}
           {personality?.crossAnalysis && (
-            <InfoBox type="highlight" style={{ marginTop: '20px' }}>
-              <h4 style={{ fontWeight: 700, marginBottom: '12px' }}>사주-MBTI 통합 분석</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <InfoBox type="highlight" style={{ marginTop: '14px' }}>
+              <h4 style={{ fontWeight: 700, marginBottom: '8px' }}>사주-MBTI 통합 분석</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <p><strong>일치도:</strong> {personality.crossAnalysis.matchRate}%</p>
                 <p><strong>시너지:</strong> {personality.crossAnalysis.synergy}</p>
                 <p><strong>보완점:</strong> {personality.crossAnalysis.conflict}</p>
@@ -546,15 +546,15 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {personality?.coreKeyword && (
             <div style={{
               textAlign: 'center',
-              marginTop: '24px',
-              padding: '20px',
+              marginTop: '16px',
+              padding: '14px',
               background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-              borderRadius: '12px'
+              borderRadius: '10px'
             }}>
-              <p style={{ fontSize: '12pt', color: '#e0e7ff', marginBottom: '8px' }}>
+              <p style={{ fontSize: '11pt', color: '#e0e7ff', marginBottom: '6px' }}>
                 당신을 한마디로 표현하면
               </p>
-              <p style={{ fontSize: '18pt', fontWeight: 700, color: '#ffffff' }}>
+              <p style={{ fontSize: '16pt', fontWeight: 700, color: '#ffffff' }}>
                 "{personality.coreKeyword}"
               </p>
             </div>
@@ -581,9 +581,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 재물 전략 */}
               {aiAnalysis.wealthStrategy && (
-                <InfoBox type="success" style={{ marginTop: '12px', marginBottom: '20px' }}>
-                  <h4 style={{ fontWeight: 700, marginBottom: '8px', color: '#059669' }}>재물 전략</h4>
-                  <p style={{ lineHeight: 1.8 }}>{aiAnalysis.wealthStrategy}</p>
+                <InfoBox type="success" style={{ marginTop: '8px', marginBottom: '14px' }}>
+                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#059669' }}>재물 전략</h4>
+                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.wealthStrategy}</p>
                 </InfoBox>
               )}
 
@@ -600,9 +600,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 인간관계 */}
               {aiAnalysis.relationshipAnalysis && (
-                <InfoBox type="info" style={{ marginTop: '12px', marginBottom: '20px' }}>
-                  <h4 style={{ fontWeight: 700, marginBottom: '8px', color: '#2563eb' }}>대인관계 분석</h4>
-                  <p style={{ lineHeight: 1.8 }}>{aiAnalysis.relationshipAnalysis}</p>
+                <InfoBox type="info" style={{ marginTop: '8px', marginBottom: '14px' }}>
+                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#2563eb' }}>대인관계 분석</h4>
+                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.relationshipAnalysis}</p>
                 </InfoBox>
               )}
 
@@ -619,9 +619,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 커리어 가이드 */}
               {aiAnalysis.careerGuidance && (
-                <InfoBox type="highlight" style={{ marginTop: '12px', marginBottom: '20px' }}>
-                  <h4 style={{ fontWeight: 700, marginBottom: '8px', color: '#6366f1' }}>커리어 가이드</h4>
-                  <p style={{ lineHeight: 1.8 }}>{aiAnalysis.careerGuidance}</p>
+                <InfoBox type="highlight" style={{ marginTop: '8px', marginBottom: '14px' }}>
+                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#6366f1' }}>커리어 가이드</h4>
+                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.careerGuidance}</p>
                 </InfoBox>
               )}
 
@@ -638,9 +638,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 건강 조언 */}
               {aiAnalysis.healthAdvice && (
-                <InfoBox type="warning" style={{ marginTop: '12px' }}>
-                  <h4 style={{ fontWeight: 700, marginBottom: '8px', color: '#dc2626' }}>건강 관리 조언</h4>
-                  <p style={{ lineHeight: 1.8 }}>{aiAnalysis.healthAdvice}</p>
+                <InfoBox type="warning" style={{ marginTop: '8px' }}>
+                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#dc2626' }}>건강 관리 조언</h4>
+                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.healthAdvice}</p>
                 </InfoBox>
               )}
             </>
@@ -1056,7 +1056,7 @@ function getZodiacSign(birthDate: string): string {
 // ============ 스타일 상수 ============
 
 const tableHeaderStyle: React.CSSProperties = {
-  padding: '14px 12px',
+  padding: '10px 10px',
   textAlign: 'left',
   fontWeight: 700,
   fontSize: '12pt',
@@ -1066,7 +1066,7 @@ const tableHeaderStyle: React.CSSProperties = {
 };
 
 const tableCellStyle: React.CSSProperties = {
-  padding: '14px 12px',
+  padding: '10px 10px',
   borderBottom: '1px solid #e5e7eb',
   fontSize: '12pt',
   verticalAlign: 'middle'
@@ -1076,13 +1076,13 @@ const tableCellStyle: React.CSSProperties = {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: '36px' }}>
+    <div style={{ marginBottom: '20px' }}>
       <h2 style={{
         fontSize: '18pt',
         fontWeight: 700,
         color: '#1f2937',
-        marginBottom: '24px',
-        paddingBottom: '12px',
+        marginBottom: '16px',
+        paddingBottom: '10px',
         borderBottom: '3px solid #6366f1'
       }}>
         {title}
@@ -1094,12 +1094,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: '28px' }}>
+    <div style={{ marginBottom: '16px' }}>
       <h3 style={{
         fontSize: '15pt',
         fontWeight: 700,
         color: '#374151',
-        marginBottom: '16px',
+        marginBottom: '12px',
         paddingLeft: '14px',
         borderLeft: '4px solid #a855f7'
       }}>
@@ -1135,12 +1135,12 @@ function InfoBox({ type, children, style }: InfoBoxProps) {
 
   return (
     <div style={{
-      padding: '20px',
-      borderRadius: '14px',
+      padding: '14px 16px',
+      borderRadius: '12px',
       background: bgColors[type],
       border: `1px solid ${borderColors[type]}`,
       fontSize: '13pt',
-      lineHeight: 1.8,
+      lineHeight: 1.7,
       ...style
     }}>
       {children}
@@ -1164,15 +1164,15 @@ function ScoreCard({ label, icon, score }: { label: string; icon: string; score:
   return (
     <div style={{
       textAlign: 'center',
-      padding: '16px 12px',
-      borderRadius: '12px',
+      padding: '12px 8px',
+      borderRadius: '10px',
       background: getScoreBg(score),
       border: '1px solid #e2e8f0'
     }}>
-      <div style={{ fontSize: '24pt', marginBottom: '6px' }}>{icon}</div>
-      <div style={{ fontSize: '13pt', color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: '20pt', marginBottom: '4px' }}>{icon}</div>
+      <div style={{ fontSize: '12pt', color: '#6b7280', marginBottom: '4px', fontWeight: 600 }}>{label}</div>
       <div style={{
-        fontSize: '20pt',
+        fontSize: '18pt',
         fontWeight: 700,
         color: getScoreColor(score)
       }}>
