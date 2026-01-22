@@ -35,12 +35,16 @@ export async function GET() {
       .single();
 
     // 최근 분석 결과 조회 (최대 5개)
-    const { data: recentAnalyses } = await (supabase as any)
+    const { data: recentAnalyses, error: analysesError } = await (supabase as any)
       .from('fortune_analyses')
       .select('id, type, subtype, created_at, scores, result_summary')
       .eq('user_id', authUser.id)
       .order('created_at', { ascending: false })
       .limit(5);
+
+    if (analysesError) {
+      console.error('Recent analyses query error:', analysesError);
+    }
 
     // 구독 정보 조회 (있으면)
     let subscriptionData = null;

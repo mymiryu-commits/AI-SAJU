@@ -50,6 +50,7 @@ interface UserData {
   joinDate: string;
   referralCode?: string | null;
   referralCount: number;
+  isAdmin?: boolean;
 }
 
 interface Subscription {
@@ -488,8 +489,8 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Upgrade Banner for Free Users */}
-      {userData?.membership === 'free' && (
+      {/* Upgrade Banner for Free Users (관리자 제외) */}
+      {userData?.membership === 'free' && !userData?.isAdmin && (
         <Card className="border-primary">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
