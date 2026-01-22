@@ -20,5 +20,8 @@ export {
   generateAudioWithOpenAI,
   generateAudioWithGoogle,
   generateAudioWithNaver,
+  generateAudioWithEdge,
+  getEdgeVoices,
+  OPENAI_VOICES,
   type TTSProvider
 } from './audioGenerator';

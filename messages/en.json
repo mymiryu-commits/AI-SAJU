@@ -200,24 +200,24 @@
       },
       "items": {
         "basic-saju": {
-          "title": "Basic Four Pillars",
+          "title": "Free Fortune Trial",
           "description": "Discover your Four Pillars of Destiny with your birth date and time. Check your basic fortune for free."
         },
-        "deep-saju": {
-          "title": "Deep Analysis",
-          "description": "10-year fortune cycles, monthly predictions, career, wealth, and health. A comprehensive analysis of your life flow."
+        "saju-analysis": {
+          "title": "Fortune Analysis",
+          "description": "Blood type/MBTI integration, Five Elements balance, monthly fortune, 10-year cycle analysis with PDF download."
         },
-        "face-reading": {
-          "title": "AI Face Reading",
-          "description": "Discover your personality and destiny from a single photo. AI analyzes your facial features precisely."
+        "deep-saju": {
+          "title": "Traditional Deep Dive",
+          "description": "Ten Gods, Divine Generals, 12 Life Stages, Combinations analysis. In-depth traditional interpretation."
+        },
+        "premium-saju": {
+          "title": "Premium Analysis",
+          "description": "Fortune + Traditional analysis + PDF + Voice narration + Real-time AI consultation. All-in-one package."
         },
         "compatibility": {
           "title": "Compatibility",
           "description": "Analyze compatibility with lovers, spouses, or business partners. Learn the strengths and cautions in relationships."
-        },
-        "group-analysis": {
-          "title": "Group Analysis",
-          "description": "Comprehensive analysis of multiple people like family or team members. Understand group dynamics."
         },
         "yearly-fortune": {
           "title": "2025 Fortune",

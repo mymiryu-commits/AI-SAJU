@@ -548,27 +548,28 @@ export interface ProductType {
 export const PRODUCTS: ProductType[] = [
   {
     id: "basic",
-    name: "베이직 분석",
+    name: "사주 분석",
     pointCost: 500,
     originalPointCost: 700,
     features: [
-      "4장 운명 카드 해금",
-      "에너지 카드 (용신)",
-      "재능 카드 (십신)",
-      "3개월 운세 예측"
+      "혈액형/MBTI 통합 분석",
+      "오행 균형 분석",
+      "월별 사주 운세",
+      "10년 대운 분석",
+      "PDF 리포트 다운로드"
     ]
   },
   {
     id: "deep",
-    name: "심층 분석",
+    name: "전통 사주 심화",
     pointCost: 1000,
     originalPointCost: 1300,
     features: [
-      "6장 운명 카드 전체",
-      "흐름 카드 (대운/세운)",
-      "수호 카드 (보완 오행)",
-      "12개월 상세 운세",
-      "AI 맞춤 분석"
+      "십신(十神) 분석",
+      "신살(神煞) 분석",
+      "12운성 분석",
+      "합충(合沖) 분석",
+      "용신/기신 상세 해석"
     ],
     recommended: true
   },
@@ -578,11 +579,11 @@ export const PRODUCTS: ProductType[] = [
     pointCost: 2000,
     originalPointCost: 2500,
     features: [
-      "심층 분석 포함",
-      "인생 타임라인",
-      "가족 영향 분석",
-      "골든윈도우 분석",
-      "PDF 리포트"
+      "사주 분석 + 전통 심화 포함",
+      "PDF 리포트",
+      "음성 파일 해설",
+      "실시간 AI 사주 상담",
+      "무제한 후속 질문"
     ]
   },
   {
