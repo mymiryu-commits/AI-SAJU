@@ -198,7 +198,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
               fontWeight: 600,
               marginTop: '8px'
             }}>
-              AI-SAJU Premium Service
+              AI-PLANX Premium Service
             </p>
           </div>
         </div>
@@ -880,7 +880,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           <div style={{ marginTop: '60px', color: '#9ca3af' }}>
             <p>분석 생성일: {new Date().toLocaleDateString('ko-KR')}</p>
             <p style={{ marginTop: '12px', fontWeight: 700, fontSize: '14pt', color: '#6366f1' }}>
-              AI-SAJU Premium Service
+              AI-PLANX Premium Service
             </p>
             <p style={{ fontSize: '10pt', marginTop: '6px', color: '#a5b4fc' }}>
               Your Fortune, Your Choice

@@ -3,13 +3,15 @@
 import type { EssenceCard, EnergyCard, TalentCard, FlowCard, GuardianCard } from '@/types/cards';
 
 // ============================================
-// 본질 카드 (꽃) - 일간 매핑
+// 본질 카드 (자연물) - 일간 매핑
+// 참고: category로 나무/꽃을 구분하여 정확한 표현 사용
 // ============================================
 export const ESSENCE_CARDS: Record<string, Omit<EssenceCard, 'id'>> = {
   '갑': {
     dayMaster: '갑',
     flower: 'pine',
     flowerKorean: '소나무',
+    category: 'tree', // 나무
     keywords: ['곧음', '리더십', '개척'],
     story: '우뚝 솟은 소나무처럼, 당신은 어떤 풍파에도 꺾이지 않는 곧은 심지를 가졌습니다. 앞장서서 길을 내고, 뒤따르는 이들에게 그늘이 되어주는 사람. 그것이 당신의 타고난 본질입니다.',
     imageKey: 'essence-pine',

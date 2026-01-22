@@ -128,18 +128,18 @@ function minuteToSinoKorean(num: number): string {
 
 // ========== 카드 기반 스토리텔링 데이터 ==========
 
-// 일간별 본질 카드 (꽃)
-const ESSENCE_CARD_STORIES: Record<string, { flower: string; story: string }> = {
-  '갑': { flower: '소나무', story: '우뚝 솟은 소나무처럼, 당신은 어떤 풍파에도 꺾이지 않는 곧은 심지를 가졌습니다. 앞장서서 길을 내고, 뒤따르는 이들에게 그늘이 되어주는 사람. 그것이 당신의 타고난 본질입니다.' },
-  '을': { flower: '난초', story: '바람에 흔들리는 난초처럼, 당신은 강인함보다 유연함으로 세상을 헤쳐나갑니다. 어떤 환경에서도 자신만의 향기를 잃지 않고, 우아하게 피어나는 사람입니다.' },
-  '병': { flower: '해바라기', story: '태양을 향해 고개 드는 해바라기처럼, 당신은 어디서든 빛나는 존재입니다. 사람들의 중심에 서서 따뜻한 에너지를 나누고, 주변을 환하게 밝히는 사람입니다.' },
-  '정': { flower: '동백', story: '어둠 속에서도 피어나는 동백처럼, 당신은 조용히 그러나 분명하게 빛납니다. 겉으로 드러나지 않아도 깊은 열정을 품고, 사랑하는 이들을 위해 묵묵히 헌신하는 따뜻한 사람입니다.' },
-  '무': { flower: '모란', story: '만개한 모란처럼, 당신은 너그럽고 든든한 존재입니다. 산처럼 묵직하게 자리를 지키며, 모든 것을 품어주는 넉넉함이 있습니다.' },
-  '기': { flower: '국화', story: '서리가 내려도 꺾이지 않는 국화처럼, 당신은 어떤 상황에서도 원칙을 지키고, 한번 정한 건 끝까지 가는 사람입니다.' },
-  '경': { flower: '백합', story: '고결한 백합처럼, 당신은 정의롭고 깨끗한 마음을 가졌습니다. 옳고 그름을 명확히 구분하고, 타협하지 않는 단단함이 있습니다.' },
-  '신': { flower: '매화', story: '추운 겨울에도 피어나는 매화처럼, 당신은 역경 속에서 더 강해지는 사람입니다. 섬세하면서도 날카로운 통찰력으로 세상을 바라봅니다.' },
-  '임': { flower: '연꽃', story: '진흙 속에서도 맑게 피어나는 연꽃처럼, 당신은 깊은 지혜와 포용력을 가졌습니다. 유유히 흐르는 큰 강처럼 어떤 상황도 담담히 받아들이는 힘이 있습니다.' },
-  '계': { flower: '물망초', story: '작지만 강인한 물망초처럼, 당신은 섬세하고 감수성이 풍부합니다. 남들이 보지 못하는 것을 느끼고, 조용히 세상을 변화시키는 힘을 가졌습니다.' }
+// 일간별 본질 카드 (자연물 - 꽃/나무 구분)
+const ESSENCE_CARD_STORIES: Record<string, { symbol: string; category: 'flower' | 'tree'; trait: string; story: string }> = {
+  '갑': { symbol: '소나무', category: 'tree', trait: '곧은 신념과 리더십을 지닌', story: '우뚝 솟은 소나무처럼, 당신은 어떤 풍파에도 꺾이지 않는 곧은 심지를 가졌습니다. 앞장서서 길을 내고, 뒤따르는 이들에게 그늘이 되어주는 사람. 그것이 당신의 타고난 본질입니다.' },
+  '을': { symbol: '난초', category: 'flower', trait: '유연하면서도 우아함을 잃지 않는', story: '바람에 흔들리는 난초처럼, 당신은 강인함보다 유연함으로 세상을 헤쳐나갑니다. 어떤 환경에서도 자신만의 향기를 잃지 않고, 우아하게 피어나는 사람입니다.' },
+  '병': { symbol: '해바라기', category: 'flower', trait: '에너지가 넘치고 주변을 밝히는', story: '태양을 향해 고개 드는 해바라기처럼, 당신은 어디서든 빛나는 존재입니다. 사람들의 중심에 서서 따뜻한 에너지를 나누고, 주변을 환하게 밝히는 사람입니다.' },
+  '정': { symbol: '동백꽃', category: 'flower', trait: '따뜻하고 헌신적인 마음을 가진', story: '어둠 속에서도 피어나는 동백꽃처럼, 당신은 조용히 그러나 분명하게 빛납니다. 겉으로 드러나지 않아도 깊은 열정을 품고, 사랑하는 이들을 위해 묵묵히 헌신하는 따뜻한 사람입니다.' },
+  '무': { symbol: '모란', category: 'flower', trait: '포용력이 크고 믿음직한', story: '만개한 모란처럼, 당신은 너그럽고 든든한 존재입니다. 산처럼 묵직하게 자리를 지키며, 모든 것을 품어주는 넉넉함이 있습니다.' },
+  '기': { symbol: '코스모스', category: 'flower', trait: '감성이 풍부하고 조화를 이루는', story: '들판의 코스모스처럼, 당신은 소박하지만 깊은 아름다움을 가졌습니다. 주변과 자연스럽게 어우러지며 작은 것에서도 행복을 찾는 사람입니다.' },
+  '경': { symbol: '국화', category: 'flower', trait: '의리 있고 원칙을 중시하는', story: '서리가 내려도 꺾이지 않는 국화처럼, 당신은 어떤 상황에서도 원칙을 지키고, 한번 정한 건 끝까지 가는 사람입니다.' },
+  '신': { symbol: '매화', category: 'flower', trait: '섬세하면서 내면이 단단한', story: '추운 겨울에도 피어나는 매화처럼, 당신은 역경 속에서 더 강해지는 사람입니다. 섬세하면서도 날카로운 통찰력으로 세상을 바라봅니다.' },
+  '임': { symbol: '연꽃', category: 'flower', trait: '깊은 지혜와 포용력을 가진', story: '진흙 속에서도 맑게 피어나는 연꽃처럼, 당신은 깊은 지혜와 포용력을 가졌습니다. 유유히 흐르는 큰 강처럼 어떤 상황도 담담히 받아들이는 힘이 있습니다.' },
+  '계': { symbol: '물망초', category: 'flower', trait: '직관이 뛰어나고 감수성이 풍부한', story: '작지만 강인한 물망초처럼, 당신은 섬세하고 감수성이 풍부합니다. 남들이 보지 못하는 것을 느끼고, 조용히 세상을 변화시키는 힘을 가졌습니다.' }
 };
 
 // 용신별 에너지 카드 (동물)
@@ -442,13 +442,22 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
   const age = calculateKoreanAge(user.birthDate);
   const lifeStage = getLifeStage(age);
 
-  // ========== 1. 오프닝 ==========
+  // ========== 1. 오프닝 - 스토리텔링 후킹 ==========
   const birthTimeKorean = formatTimeToNaturalKorean(user.birthTime);
+  const essenceCardData = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
+
   sections.push({
-    title: '오프닝',
-    content: `${user.name}님, 안녕하세요. ` +
-             `지금부터 당신만을 위한 특별한 이야기를 들려드릴게요. ` +
-             `이 이야기는 당신의 생년월일, 사주, 그리고 타고난 기운을 바탕으로 만들어졌습니다. ` +
+    title: '인트로',
+    content: `신점 AI, 당신의 타고난 본질과 후천적 기질을 들여다봅니다. ` +
+             `AI-PLANX가 전해드리는 ${user.name}님만의 특별한 운명 이야기입니다.`,
+    pauseAfter: 2500
+  });
+
+  sections.push({
+    title: '후킹',
+    content: `${essenceCardData.trait} ${user.name}님. ` +
+             `지금부터 당신의 사주를 검토하겠습니다. ` +
+             `이 분석은 생년월일, 사주팔자, 그리고 타고난 기운을 바탕으로 만들어졌습니다. ` +
              `편안하게 귀 기울여 주세요.`,
     pauseAfter: 2000
   });
@@ -465,10 +474,11 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
 
   // ========== 3. 본질 카드 - 나는 누구인가 ==========
   const essenceCard = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
+  const categoryText = essenceCard.category === 'tree' ? '나무로' : '꽃으로';
   sections.push({
     title: '본질 카드',
     content: `먼저, 당신이 어떤 사람인지 이야기해 볼게요. ` +
-             `당신을 꽃에 비유하면 "${essenceCard.flower}"입니다. ` +
+             `당신을 ${categoryText} 표현하면 "${essenceCard.symbol}"입니다. ` +
              `${essenceCard.story} ` +
              `이게 바로 당신의 타고난 본질이에요. 부정하지 마세요. 그게 당신의 힘입니다.`,
     pauseAfter: 2500
