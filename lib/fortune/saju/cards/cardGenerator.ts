@@ -243,7 +243,13 @@ function generateGuardianCard(
   yongsin: string[]
 ): GuardianCard {
   const dayMaster = saju.day.stemKorean;
-  const primaryYongsin = yongsin[0] || '목';
+
+  // 영문 오행을 한글로 변환
+  const elementToKorean: Record<string, string> = {
+    'wood': '목', 'fire': '화', 'earth': '토', 'metal': '금', 'water': '수'
+  };
+  const primaryYongsinRaw = yongsin[0] || 'wood';
+  const primaryYongsin = elementToKorean[primaryYongsinRaw] || primaryYongsinRaw || '목';
 
   const mainGem = MAIN_GEM_BY_YONGSIN[primaryYongsin] || MAIN_GEM_BY_YONGSIN['목'];
   const subGem = SUB_GEM_BY_DAYMASTER[dayMaster] || SUB_GEM_BY_DAYMASTER['갑'];
