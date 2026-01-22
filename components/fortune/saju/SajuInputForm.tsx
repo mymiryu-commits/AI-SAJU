@@ -94,6 +94,9 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
   const [birthMonth, setBirthMonth] = useState('');
   const [birthDay, setBirthDay] = useState('');
 
+  // 자녀 나이 텍스트 (쉼표 입력 허용)
+  const [childrenAgesText, setChildrenAgesText] = useState('');
+
   // 자동 포커스 이동을 위한 ref
   const monthRef = useRef<HTMLInputElement>(null);
   const dayRef = useRef<HTMLInputElement>(null);
@@ -218,6 +221,13 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
       setBirthYear(dateParts[0]);
       setBirthMonth(dateParts[1].replace(/^0/, ''));
       setBirthDay(dateParts[2].replace(/^0/, ''));
+    }
+
+    // 자녀 나이 텍스트 설정
+    if (profile.children_ages && profile.children_ages.length > 0) {
+      setChildrenAgesText(profile.children_ages.join(', '));
+    } else {
+      setChildrenAgesText('');
     }
 
     setFormData({
@@ -393,7 +403,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.name && birthYear.length === 4 && birthMonth.length >= 1 && birthDay.length >= 1;
+        return formData.name && formData.birthDate;
       case 2:
         return true;
       case 3:
@@ -571,62 +581,28 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
 
             <div>
               <Label>생년월일 <span className="text-red-500">*</span></Label>
-              <div className="flex gap-2 mt-1">
-                <div className="flex-1">
-                  <Input
-                    id="birthYear"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={birthYear}
-                    onChange={handleYearChange}
-                    onPaste={(e) => {
-                      const pasted = e.clipboardData.getData('text');
-                      const numeric = pasted.replace(/[^0-9]/g, '').substring(0, 4);
-                      if (numeric !== pasted) {
-                        e.preventDefault();
-                        setBirthYear(numeric);
-                        if (numeric.length === 4) {
-                          monthRef.current?.focus();
-                        }
-                        updateBirthDate(numeric, birthMonth, birthDay);
-                      }
-                    }}
-                    placeholder="1978"
-                    maxLength={4}
-                    className="text-center"
-                  />
-                  <p className="text-xs text-gray-400 text-center mt-1">년</p>
-                </div>
-                <div className="w-16">
-                  <Input
-                    ref={monthRef}
-                    id="birthMonth"
-                    type="text"
-                    inputMode="numeric"
-                    value={birthMonth}
-                    onChange={e => handleMonthChange(e.target.value)}
-                    placeholder="02"
-                    maxLength={2}
-                    className="text-center"
-                  />
-                  <p className="text-xs text-gray-400 text-center mt-1">월</p>
-                </div>
-                <div className="w-16">
-                  <Input
-                    ref={dayRef}
-                    id="birthDay"
-                    type="text"
-                    inputMode="numeric"
-                    value={birthDay}
-                    onChange={e => handleDayChange(e.target.value)}
-                    placeholder="15"
-                    maxLength={2}
-                    className="text-center"
-                  />
-                  <p className="text-xs text-gray-400 text-center mt-1">일</p>
-                </div>
-              </div>
+              <Input
+                id="birthDate"
+                type="date"
+                value={formData.birthDate || ''}
+                onChange={e => {
+                  const value = e.target.value;
+                  handleChange('birthDate', value);
+                  // 년/월/일 상태도 업데이트 (프로필 저장용)
+                  if (value) {
+                    const parts = value.split('-');
+                    setBirthYear(parts[0] || '');
+                    setBirthMonth(parts[1]?.replace(/^0/, '') || '');
+                    setBirthDay(parts[2]?.replace(/^0/, '') || '');
+                  }
+                }}
+                max={new Date().toISOString().split('T')[0]}
+                min="1920-01-01"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                클릭하여 달력에서 선택하세요
+              </p>
             </div>
 
             <div>
@@ -862,16 +838,23 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     <Input
                       id="childrenAges"
                       placeholder="예: 5, 12, 18"
-                      defaultValue={formData.childrenAges?.join(', ') || ''}
-                      onBlur={e => {
-                        const ages = e.target.value
+                      value={childrenAgesText}
+                      onChange={e => {
+                        // 쉼표와 숫자만 허용
+                        const value = e.target.value;
+                        setChildrenAgesText(value);
+                        // 숫자 배열로 변환하여 formData에 저장
+                        const ages = value
                           .split(',')
                           .map(s => parseInt(s.trim()))
-                          .filter(n => !isNaN(n));
+                          .filter(n => !isNaN(n) && n > 0 && n < 100);
                         handleChange('childrenAges', ages.length > 0 ? ages : undefined);
                       }}
                       className="mt-1"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      예: 5, 12, 18 (여러 명일 경우 쉼표로 구분)
+                    </p>
                   </div>
                 )}
               </>
