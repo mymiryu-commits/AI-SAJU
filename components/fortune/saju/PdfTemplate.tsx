@@ -70,8 +70,19 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
     // QR 코드 생성
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
-    // 추천 코드 생성
-    const referralCode = user.id ? `REF-${user.id.slice(0, 8).toUpperCase()}` : 'AI-PLANX';
+    // 추천 코드 생성 (이름 + 생년월일 해시)
+    const generateReferralCode = () => {
+      const base = `${user.name}${user.birthDate}`.replace(/[^a-zA-Z0-9가-힣]/g, '');
+      // 간단한 해시: 문자열을 숫자로 변환
+      let hash = 0;
+      for (let i = 0; i < base.length; i++) {
+        hash = ((hash << 5) - hash) + base.charCodeAt(i);
+        hash = hash & hash; // 32bit integer로 변환
+      }
+      return `REF-${Math.abs(hash).toString(36).toUpperCase().slice(0, 8)}`;
+    };
+
+    const referralCode = generateReferralCode();
     const referralLink = `https://ai-planx.com/signup?ref=${referralCode}`;
 
     useEffect(() => {

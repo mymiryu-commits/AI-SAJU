@@ -8,6 +8,7 @@ export interface EssenceCard {
   dayMaster: string;          // 일간 (갑, 을, 병, 정, 무, 기, 경, 신, 임, 계)
   flower: string;             // 꽃 이름
   flowerKorean: string;       // 꽃 한글명
+  category: 'flower' | 'tree'; // 카테고리 (꽃 또는 나무)
   keywords: string[];         // 핵심 키워드 3개
   story: string;              // 스토리텔링 설명
   imageKey: string;           // 이미지 키
