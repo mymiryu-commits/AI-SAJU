@@ -493,295 +493,130 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     user.bloodType
   );
 
-  // ========== 1. 오프닝 - 전문가 스타일 후킹 ==========
+  // ========== 1. 오프닝 (간결화) ==========
   const birthTimeKorean = formatTimeToNaturalKorean(user.birthTime);
-  const essenceCardData = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
+  const essenceCard = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
 
   sections.push({
     title: '인트로',
-    content: `AI 운명 상담가가 전해드리는 ${user.name}님만의 특별한 운명 분석입니다. ` +
-             `지금부터 동양 최고의 명리학, 사주 분석을 시작합니다.`,
-    pauseAfter: 2500
-  });
-
-  sections.push({
-    title: '후킹',
-    content: `${user.name}님, 당신은 ${dayMasterPro.hanja}의 기운을 타고났습니다. ` +
-             `${dayMasterPro.poeticTitle}로 불리는 이 명은, ${dayMasterPro.professionalDesc.slice(0, 80)}. ` +
-             `지금부터 이 명이 어떤 의미인지 자세히 풀어드리겠습니다.`,
-    pauseAfter: 3000
-  });
-
-  // ========== 2. 운명 정체성 ==========
-  sections.push({
-    title: '운명 정체성',
-    content: `${identityTitle.mainTitle}. ` +
-             `"${identityTitle.subTitle}" ` +
-             `이것이 당신의 운명 정체성입니다. 기억해 두세요.`,
-    pauseAfter: 2500
-  });
-
-  // ========== 3. 프로필 소개 ==========
-  const formattedDate = user.birthDate.replace(/-/g, '년 ').replace(/년 (\d+)$/, '월 $1일');
-  sections.push({
-    title: '프로필',
-    content: `${user.name}님은 ${formattedDate}, ${birthTimeKorean}에 태어나셨어요. ` +
-             `${zodiac}띠이시고, 올해로 ${age}세가 되셨네요. ` +
-             `${age}세라면 인생에서 "${lifeStage.theme}"의 시기입니다. ${lifeStage.advice}`,
+    content: `${user.name}님의 사주 분석을 시작합니다. ` +
+             `당신은 ${dayMasterPro.hanja}, ${dayMasterPro.poeticTitle}의 기운을 타고났습니다. ` +
+             `이게 무슨 의미인지 하나씩 알려드릴게요.`,
     pauseAfter: 2000
   });
 
-  // ========== 4. 본질 카드 + 전문 용어 ==========
-  const essenceCard = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
-  const categoryText = essenceCard.category === 'tree' ? '나무로' : '꽃으로';
+  // ========== 2. 핵심 정체성 (운명 정체성 + 본질 통합) ==========
+  const categoryText = essenceCard.category === 'tree' ? '나무' : '꽃';
   sections.push({
-    title: '본질 카드',
-    content: `당신의 일간(日干)은 ${dayMasterPro.hanja}입니다. ` +
-             `${dayMasterPro.symbol}에 비유되며, ${dayMasterPro.nature}의 기운을 가졌습니다. ` +
-             `당신을 ${categoryText} 표현하면 "${essenceCard.symbol}"입니다. ` +
-             `${essenceCard.story} ` +
-             `이게 바로 당신의 타고난 본질이에요.`,
+    title: '핵심 정체성',
+    content: `${identityTitle.mainTitle}. "${identityTitle.subTitle}" ` +
+             `일간이란 생일의 천간으로, 당신의 본질을 결정합니다. ` +
+             `${dayMasterPro.hanja}은 ${dayMasterPro.symbol}의 성질로, ${essenceCard.symbol}(${categoryText})에 비유됩니다. ` +
+             `${essenceCard.story.slice(0, 100)}`,
     pauseAfter: 2500
   });
 
-  // ========== 5. 숨겨진 성격 (소름 포인트) ==========
+  // ========== 3. 사주에서 본 구체적 성격 (바넘 효과 제거) ==========
+  // 일간별 구체적 특성 - 막연한 "소름" 표현 제거, 구체적 근거 제시
+  const specificTrait = getSpecificDayMasterTrait(dayStem, age, user.gender);
   sections.push({
-    title: '숨겨진 속마음',
-    content: `${user.name}님, 여기서 소름 돋는 이야기를 하나 해드릴게요. ` +
-             `${dayMasterPro.hiddenTrait}. ` +
-             `맞으시죠? 이건 사주에서만 알 수 있는 당신의 숨겨진 속마음입니다.`,
-    pauseAfter: 2500
+    title: '성격 분석',
+    content: `${dayMasterPro.hanja} 일간의 특징을 말씀드릴게요. ` +
+             `${specificTrait.corePattern} ` +
+             `이건 ${dayMasterPro.nature}의 기운에서 비롯된 성향입니다. ` +
+             `${specificTrait.behaviorExample}`,
+    pauseAfter: 2000
   });
 
-  // ========== 4. 혈액형 + 사주 + MBTI 통합 분석 (있으면) ==========
+  // ========== 4. 혈액형 + 사주 통합 (있으면, 압축) ==========
   const bloodType = (user as any).bloodType;
   if (bloodType) {
     const bloodIntegration = generateBloodTypeIntegration(bloodType, dayStem, user.mbti);
     sections.push({
-      title: '혈액형 통합 분석',
-      content: `${bloodType}형인 당신, 단순한 혈액형 분석이 아닌 사주와 결합한 깊은 통찰을 드릴게요. ` +
-               `${bloodIntegration.sajuChemistry.slice(0, 150)}. ` +
-               `${bloodIntegration.hiddenPower}`,
-      pauseAfter: 3000
-    });
-
-    sections.push({
-      title: '혈액형 성장 포인트',
-      content: `${user.name}님, 성장을 위한 조언도 드릴게요. ` +
-               `주의할 점: ${bloodIntegration.growthTrap} ` +
-               `가장 빛나는 환경은요, ${bloodIntegration.optimalEnvironment}`,
-      pauseAfter: 2500
-    });
-  }
-
-  // ========== 5. 띠별 성격 ==========
-  if (zodiac && ZODIAC_COMPATIBILITY[zodiac]) {
-    const zodiacInfo = ZODIAC_COMPATIBILITY[zodiac];
-    sections.push({
-      title: '띠 성격',
-      content: `${zodiac}띠인 당신은요, ${zodiacInfo.personality}`,
-      pauseAfter: 1500
-    });
-  }
-
-  // ========== 6. 잘 맞는 사람, 안 맞는 사람 ==========
-  const compatibility = DAYMASTER_COMPATIBILITY[dayMaster] || DAYMASTER_COMPATIBILITY['갑'];
-  sections.push({
-    title: '인연 궁합',
-    content: `이제 중요한 이야기를 할게요. 당신과 잘 맞는 사람, 그리고 조심해야 할 사람이에요. ` +
-             `당신과 찰떡궁합인 사람은 "${compatibility.bestMatch.join('", "')}" 일간을 가진 사람이에요. ` +
-             `${compatibility.bestMatchReason} ` +
-             `반면에 "${compatibility.worstMatch.join('", "')}" 일간을 가진 사람과는 마찰이 있을 수 있어요. ` +
-             `${compatibility.worstMatchReason}`,
-    pauseAfter: 2500
-  });
-
-  // 띠 궁합도 추가
-  if (zodiac && ZODIAC_COMPATIBILITY[zodiac]) {
-    const zodiacInfo = ZODIAC_COMPATIBILITY[zodiac];
-    sections.push({
-      title: '띠 궁합',
-      content: `띠로 보면, ${zodiacInfo.bestZodiac.join('띠, ')}띠와 잘 맞아요. 서로 기운이 통해서 편안한 관계가 됩니다. ` +
-               `${zodiacInfo.worstZodiac.join('띠, ')}띠와는 처음엔 끌릴 수 있지만, 오래 가면 힘들 수 있어요. 조금 거리를 두는 게 좋습니다.`,
+      title: '혈액형-사주 조합',
+      content: `${bloodType}형과 ${dayMasterPro.hanja} 일간의 조합 분석입니다. ` +
+               `${bloodIntegration.sajuChemistry.slice(0, 120)} ` +
+               `성장 포인트: ${bloodIntegration.growthTrap.slice(0, 60)}`,
       pauseAfter: 2000
     });
   }
 
-  // ========== 7. 이성관/관계운 분석 - 결혼 상태 맞춤형 ==========
+  // ========== 5. 인연 분석 (궁합 + 띠 통합, 중복 제거) ==========
+  const compatibility = DAYMASTER_COMPATIBILITY[dayMaster] || DAYMASTER_COMPATIBILITY['갑'];
+  let relationContent = `인연 분석입니다. ` +
+    `${compatibility.bestMatch.join(', ')} 일간 사람과 잘 맞습니다. ${compatibility.bestMatchReason.slice(0, 80)} ` +
+    `반면 ${compatibility.worstMatch.join(', ')} 일간과는 조율이 필요합니다.`;
+
+  if (zodiac && ZODIAC_COMPATIBILITY[zodiac]) {
+    const zodiacInfo = ZODIAC_COMPATIBILITY[zodiac];
+    relationContent += ` 띠로는 ${zodiacInfo.bestZodiac.join(', ')}띠와 잘 맞고, ${zodiacInfo.worstZodiac.join(', ')}띠와는 거리를 두세요.`;
+  }
+
+  sections.push({
+    title: '인연 분석',
+    content: relationContent,
+    pauseAfter: 2500
+  });
+
+  // ========== 6. 이성관/관계운 (압축 버전) ==========
   const maritalStatus = user.maritalStatus || 'single';
   const idealPartner = getIdealPartnerByDaymaster(dayMaster, user.gender || 'male');
 
   if (maritalStatus === 'married' || maritalStatus === 'remarried') {
-    // 기혼자/재혼자용 - 배우자 관계 조언
-    const isRemarried = maritalStatus === 'remarried';
     sections.push({
-      title: '부부 관계 서론',
-      content: `${user.name}님, 이제 ${isRemarried ? '지금의 반려자와의' : '부부'} 관계에 대해 말씀드릴게요. ` +
-               `결혼 생활에서 가장 중요한 것은 서로에 대한 이해와 존중입니다. ` +
-               `사주를 통해 ${isRemarried ? '현재' : ''} 배우자와의 조화로운 관계를 위한 조언을 드리겠습니다.`,
-      pauseAfter: 2500
+      title: '부부 관계',
+      content: `부부 관계 조언입니다. ${idealPartner.marriedAdvice || idealPartner.traits} ` +
+               `핵심 팁: 감사 표현, 둘만의 시간, 개인 공간 존중. 이 세 가지를 실천하세요.`,
+      pauseAfter: 2000
     });
-
-    sections.push({
-      title: '배우자와의 궁합',
-      content: `당신의 사주에서 보면, ${idealPartner.marriedAdvice || idealPartner.traits} ` +
-               `배우자와 갈등이 생길 때는 상대의 입장에서 한 번 더 생각해보세요. ` +
-               `특히 ${idealPartner.conflictAreas || '사소한 일상의 결정'}에서 의견 차이가 있을 수 있어요.`,
-      pauseAfter: 2500
-    });
-
-    sections.push({
-      title: '관계 개선 조언',
-      content: `부부 관계를 더 좋게 만드는 팁을 드릴게요. ` +
-               `첫째, 감사의 말을 자주 표현하세요. 당연하다고 생각하는 것들에 고마움을 전해보세요. ` +
-               `둘째, 함께하는 시간을 의도적으로 만드세요. 바쁜 일상 속에서도 둘만의 시간이 필요합니다. ` +
-               `셋째, 서로의 개인 시간과 공간을 존중해주세요. ` +
-               `이 세 가지만 실천해도 관계가 한층 깊어질 거예요.`,
-      pauseAfter: 3000
-    });
-
-    if (user.hasChildren) {
-      sections.push({
-        title: '가정 운세',
-        content: `자녀가 있으시니, 가정 전체의 화목에 대해서도 말씀드릴게요. ` +
-                 `부모의 관계가 좋으면 자녀에게도 긍정적인 영향을 미칩니다. ` +
-                 `가족 간의 대화 시간을 꼭 챙기시고, 서로의 이야기에 귀 기울여주세요.`,
-        pauseAfter: 2000
-      });
-    }
   } else if (maritalStatus === 'divorced') {
-    // 이혼자용 - 치유와 새로운 시작
     sections.push({
       title: '새로운 시작',
-      content: `${user.name}님, 인생에서 힘든 시간을 보내셨을 수 있어요. ` +
-               `하지만 사주에서 보면, 모든 끝은 새로운 시작을 의미합니다. ` +
-               `과거의 경험은 당신을 더 강하고 현명하게 만들어주었습니다.`,
-      pauseAfter: 2500
-    });
-
-    sections.push({
-      title: '치유의 시간',
-      content: `지금 가장 중요한 것은 자신을 돌보는 시간입니다. ` +
-               `새로운 인연을 급하게 찾기보다, 먼저 내면의 상처를 치유하세요. ` +
-               `당신의 사주에서 ${idealPartner.healingAdvice || '조용한 취미 활동이나 자기 계발'}이 큰 도움이 될 거예요.`,
-      pauseAfter: 2500
-    });
-
-    sections.push({
-      title: '미래의 인연',
-      content: `준비가 되셨을 때, 좋은 인연은 분명 다시 찾아옵니다. ` +
-               `${idealPartner.traits} ` +
-               `이전의 실패를 거울삼아, 더 나은 선택을 하실 수 있을 거예요. ` +
-               `천천히, 자신의 속도로 나아가세요.`,
-      pauseAfter: 2500
+      content: `지금은 자신을 돌보는 시간이 필요합니다. ` +
+               `${idealPartner.healingAdvice || '조용한 취미 활동'}이 도움됩니다. ` +
+               `준비되면 ${idealPartner.traits.slice(0, 60)} 같은 분과 좋은 인연이 올 거예요.`,
+      pauseAfter: 2000
     });
   } else {
-    // 미혼자용 - 기존 연애/만남 조언
-    sections.push({
-      title: '이성관 서론',
-      content: `${user.name}님, 여기서 정말 중요한 이야기를 드릴게요. ` +
-               `살면서 좋은 이성을 만나는 것은 인생의 큰 축이 바뀌는 일입니다. ` +
-               `누구를 만나느냐에 따라 10년, 20년의 행복이 결정됩니다. ` +
-               `그래서 사주에서 이성운은 가장 신중하게 봐야 할 부분이에요.`,
-      pauseAfter: 2500
-    });
-
     sections.push({
       title: '이상적 파트너',
-      content: `당신에게 맞는 이상적인 파트너는 어떤 사람일까요? ` +
-               `${idealPartner.traits} ` +
-               `${idealPartner.compatibility}`,
+      content: `이성 관계입니다. 당신에게 맞는 파트너: ${idealPartner.traits.slice(0, 80)} ` +
+               `주의할 유형: ${idealPartner.warningTypes.slice(0, 60)} ` +
+               `만남 장소: ${idealPartner.whereToMeet.slice(0, 50)}`,
       pauseAfter: 2500
-    });
-
-    sections.push({
-      title: '주의할 이성',
-      content: `반대로, 이런 사람은 조심하셔야 해요. ` +
-               `${idealPartner.warningTypes} ` +
-               `첫인상이 좋아도 시간을 두고 확인하세요. 급하게 결정하면 후회할 수 있습니다.`,
-      pauseAfter: 2000
-    });
-
-    sections.push({
-      title: '인연 만나기',
-      content: `좋은 인연은 어디서 만날까요? ` +
-               `${idealPartner.whereToMeet} ` +
-               `억지로 찾기보다, 자신을 가꾸면서 자연스럽게 만나는 게 가장 좋습니다.`,
-      pauseAfter: 2000
-    });
-
-    sections.push({
-      title: '파트너 체크',
-      content: `지금 만나는 분이 있다면, 이 다섯 가지를 체크해보세요. ` +
-               `첫째, 당신의 말을 끝까지 듣고 공감해주는가. ` +
-               `둘째, 작은 약속도 성실하게 지키는가. ` +
-               `셋째, 갈등 상황에서 해결하려고 노력하는가. ` +
-               `넷째, 당신의 가족과 친구를 존중하는가. ` +
-               `다섯째, 미래에 대한 비전이 비슷한가. ` +
-               `세 개 이상 해당된다면 좋은 인연일 가능성이 높습니다.`,
-      pauseAfter: 3000
     });
   }
 
-  // ========== 8. 빛나는 환경 vs 피해야 할 환경 ==========
+  // ========== 7. 직업/환경 (중복 번호 수정, 압축) ==========
   sections.push({
     title: '환경 분석',
-    content: `이제 직업과 환경 이야기입니다. 당신이 어디서 가장 빛나는지 말씀드릴게요. ` +
-             `${compatibility.bestEnvironment} ` +
-             `구체적으로 말하면, ${compatibility.shineIn} 같은 분야에서 당신의 재능이 폭발합니다. ` +
-             `반대로, ${compatibility.avoidEnvironment} ` +
-             `그리고 이 말을 기억하세요. ${compatibility.warningSign}`,
+    content: `직업/환경입니다. 빛나는 곳: ${compatibility.shineIn}. ` +
+             `피할 곳: ${compatibility.avoidEnvironment.slice(0, 50)} ` +
+             `주의: ${compatibility.warningSign.slice(0, 50)}`,
+    pauseAfter: 2000
+  });
+
+  // ========== 8. 오행 + 용신 (에너지 카드와 통합) ==========
+  const energyCard = ENERGY_CARD_STORIES[primaryYongsin] || ENERGY_CARD_STORIES['wood'];
+  const ohengStory = generateOhengStory(oheng, yongsin, gisin);
+  sections.push({
+    title: '오행과 용신',
+    content: `오행은 나무·불·흙·쇠·물 다섯 기운입니다. ` +
+             `${ohengStory.slice(0, 150)} ` +
+             `당신의 용신(필요한 기운) 동물은 "${energyCard.animal}". ${energyCard.story.slice(0, 80)}`,
     pauseAfter: 2500
   });
 
-  // ========== 8. 에너지 카드 - 필요한 기운 ==========
-  const energyCard = ENERGY_CARD_STORIES[primaryYongsin] || ENERGY_CARD_STORIES['wood'];
-  sections.push({
-    title: '에너지 카드',
-    content: `지금 당신에게 필요한 기운을 알려드릴게요. ` +
-             `당신의 에너지 동물은 "${energyCard.animal}"입니다. ` +
-             `${energyCard.story}`,
-    pauseAfter: 2000
-  });
-
-  // ========== 9. 오행 분석 ==========
-  const ohengStory = generateOhengStory(oheng, yongsin, gisin);
-  sections.push({
-    title: '오행 이야기',
-    content: ohengStory,
-    pauseAfter: 2000
-  });
-
-  // ========== 10. 장단점 솔직하게 ==========
-  sections.push({
-    title: '솔직한 조언',
-    content: `${user.name}님, 솔직하게 말씀드릴게요. ` +
-             `당신의 가장 큰 장점은 한번 마음 먹으면 끝까지 가는 끈기입니다. ` +
-             `하지만 단점도 있어요. 때로는 너무 완고해서 다른 의견을 듣지 않을 때가 있습니다. ` +
-             `이 단점을 인정하고 조금씩 유연해지면, 당신의 장점이 더 빛날 거예요.`,
-    pauseAfter: 2000
-  });
-
-  // ========== 11. 프리미엄 콘텐츠 ==========
+  // ========== 9. 프리미엄 콘텐츠 (있으면, 압축) ==========
   if (premium) {
     if (premium.lifeTimeline) {
       const timelineStory = generateTimelineStory(premium.lifeTimeline, user.name, targetYear);
       sections.push({
-        title: '인생 타임라인',
-        content: timelineStory,
+        title: '인생 흐름',
+        content: timelineStory.slice(0, 200),
         pauseAfter: 2000
       });
     }
-
-    if (premium.monthlyActionPlan?.length) {
-      const monthlyStory = generateMonthlyStory(premium.monthlyActionPlan, targetYear);
-      sections.push({
-        title: '월별 운세',
-        content: monthlyStory,
-        pauseAfter: 2000
-      });
-    }
-
     if (premium.lifeTimeline?.goldenWindows?.length) {
       const goldenStory = generateGoldenWindowStory(premium.lifeTimeline.goldenWindows);
       sections.push({
@@ -792,129 +627,79 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     }
   }
 
-  // ========== 12. 행운 정보 ==========
-  const luckyNumbers = getLuckyNumbers(primaryYongsin);
-  const luckyDirection = getLuckyDirection(primaryYongsin);
-  sections.push({
-    title: '행운 카드',
-    content: `마지막으로 행운을 높이는 팁을 드릴게요. ` +
-             `당신의 행운 숫자는 ${luckyNumbers.join('과 ')}입니다. 비밀번호나 중요한 선택에 참고하세요. ` +
-             `${getLuckyMonths(primaryYongsin)}에는 새로운 시작에 유리하고, ` +
-             `${luckyDirection} 방향에서 좋은 기운이 흘러옵니다. ` +
-             `여행이나 이사를 생각하신다면 이 방향을 고려해보세요.`,
-    pauseAfter: 2000
-  });
-
-  // ========== 13. 황금 기회일 ==========
+  // ========== 10. 황금 기회일 (날짜 근거 추가) ==========
   const goldenTimes = calculateGoldenTimes(user.birthDate, dayStem, yongsin || ['wood'], targetYear);
+  const currentMonth = new Date().getMonth() + 1;
+
   if (goldenTimes.length > 0) {
     const firstGolden = goldenTimes[0];
+    // 날짜 선정 근거 설명 추가
+    const dateReason = getGoldenDateReason(dayStem, firstGolden.date, yongsin || ['wood']);
     sections.push({
       title: '황금 기회일',
-      content: `${user.name}님, 특별히 기억해야 할 날을 알려드릴게요. ` +
-               `${firstGolden.date}은 당신에게 "천을귀인(天乙貴人)"이 임하는 황금 기회의 날입니다. ` +
-               `이 날은 ${firstGolden.action}. ` +
-               `달력에 꼭 표시해 두세요. 이 기운을 놓치면 아깝습니다.`,
-      pauseAfter: 2500
+      content: `${firstGolden.date}이 특별한 이유를 알려드릴게요. ` +
+               `이 날은 ${dateReason.reason}. ` +
+               `천을귀인은 하늘이 보내는 귀한 도움의 기운입니다. ` +
+               `${firstGolden.action} 실천 난이도: ★☆☆ (쉬움)`,
+      pauseAfter: 2000
     });
   }
 
-  // ========== 14. 이번 달 금기 사항 ==========
-  const currentMonth = new Date().getMonth() + 1;
+  // ========== 11. 이번 달 운세 + 행운 정보 (통합, 압축) ==========
+  const luckyNumbers = getLuckyNumbers(primaryYongsin);
+  const luckyDirection = getLuckyDirection(primaryYongsin);
   const monthlyTaboo = getMonthlyTaboo(currentMonth, primaryYongsin);
+
   sections.push({
-    title: '월별 주의사항',
-    content: `${currentMonth}월 주의사항을 알려드릴게요. ` +
-             `이번 달은 ${monthlyTaboo.avoidAction}. 이건 피하시는 게 좋습니다. ` +
-             `반면에, ${monthlyTaboo.luckyItem}을 가까이 두시면 운이 열립니다. ` +
-             `${monthlyTaboo.luckyColor} 계열의 옷을 입으시면 더욱 좋고요. ` +
-             `작은 것 하나가 운을 바꿉니다. 실천해 보세요.`,
+    title: '이번 달 운세',
+    content: `${currentMonth}월 핵심입니다. ` +
+             `행운 숫자: ${luckyNumbers.join(', ')}. 행운 방향: ${luckyDirection}. ` +
+             `피할 것: ${monthlyTaboo.avoidAction}. ` +
+             `행운 아이템: ${monthlyTaboo.luckyItem}(${monthlyTaboo.luckyColor}색). ` +
+             `실천 난이도: ★☆☆ (아이템 착용), ★★☆ (방향 활용)`,
     pauseAfter: 2500
   });
 
-  // ========== 15. 개운 처방전 ==========
+  // ========== 12. 개운 처방전 (난이도별 실천법 추가) ==========
   const prescriptions = generateFortunePrescriptions(yongsin || ['wood'], gisin || ['fire']);
   if (prescriptions.length > 0) {
     const envRx = prescriptions.find(p => p.category === '환경');
     const avoidRx = prescriptions.find(p => p.category === '피할 것');
 
-    let rxContent = `마지막으로 일상에서 실천할 수 있는 개운법(開運法)을 알려드릴게요. `;
+    let rxContent = `개운법, 운을 여는 방법입니다. `;
     if (envRx) {
-      rxContent += `${envRx.item}을 ${envRx.howTo} `;
+      rxContent += `${envRx.item}: ${envRx.howTo} (★☆☆ 쉬움). `;
     }
     if (avoidRx) {
-      rxContent += `반면에, ${avoidRx.item}은 조금 줄이시는 게 좋겠습니다. `;
+      rxContent += `피할 것: ${avoidRx.item} (★★☆ 보통).`;
     }
-    rxContent += `이런 작은 변화가 운의 흐름을 바꿉니다.`;
 
     sections.push({
-      title: '개운 처방전',
+      title: '개운 처방',
       content: rxContent,
-      pauseAfter: 2500
+      pauseAfter: 2000
     });
   }
 
-  // ========== 16. 선천적 vs 후천적 기질 분석 ==========
-  const zodiacSign = getZodiacSignFromDate(user.birthDate);
+  // ========== 13. 선천/후천 기질 (압축) ==========
+  const userZodiacSign = getZodiacSignFromDate(user.birthDate);
   const traitAnalysis = generateTraitAnalysis(
     dayStem,
     user.mbti,
     user.bloodType,
-    zodiacSign,
+    userZodiacSign,
     age
   );
 
   sections.push({
     title: '기질 분석',
-    content: `${user.name}님, 이제 당신이 타고난 것과 환경에서 배운 것을 구분해서 말씀드릴게요. ` +
-             `선천적으로 당신은 ${traitAnalysis.innate.corePersonality}. ` +
-             `타고난 재능은 ${traitAnalysis.innate.naturalTalent}이고, ` +
-             `인생의 큰 테마는 "${traitAnalysis.innate.lifeTheme}"입니다. ` +
-             `반면 후천적으로는 ${traitAnalysis.acquired.learnedBehavior} ` +
-             `스트레스를 받으면 ${traitAnalysis.acquired.copingStyle} ` +
-             `앞으로의 성장 방향은 ${traitAnalysis.acquired.growthDirection}`,
-    pauseAfter: 3500
-  });
-
-  // ========== 17. 이번 달 상세 운세 ==========
-  const monthlyFortune = generateMonthlyFortune(
-    dayStem,
-    yongsin?.map(y => y as string) || ['wood'],
-    targetYear,
-    currentMonth
-  );
-
-  sections.push({
-    title: '이번 달 베스트 데이',
-    content: `${currentMonth}월 가장 좋은 날을 알려드릴게요. ` +
-             `${currentMonth}월 ${monthlyFortune.bestDays[0]?.day}일은 ${monthlyFortune.bestDays[0]?.reason}. ` +
-             `이 날은 ${monthlyFortune.bestDays[0]?.action}. ` +
-             `반면에 ${currentMonth}월 ${monthlyFortune.avoidDays[0]?.day}일은 조심하세요. ` +
-             `${monthlyFortune.avoidDays[0]?.reason}. ${monthlyFortune.avoidDays[0]?.warning}`,
-    pauseAfter: 2500
-  });
-
-  // 로또 및 행운의 숫자
-  sections.push({
-    title: '행운의 숫자',
-    content: `이번 달 행운의 숫자는 ${monthlyFortune.luckyNumbers.join(', ')}입니다. ` +
-             `로또 번호 추천은 ${monthlyFortune.lottoNumbers.join(', ')}예요. ` +
-             `물론 참고용이니까요, 과도한 기대는 금물입니다. 하지만 기운이 좋을 때 시도하면 분명 다릅니다.`,
+    content: `선천 기질: ${traitAnalysis.innate.corePersonality.slice(0, 60)}. ` +
+             `타고난 재능: ${traitAnalysis.innate.naturalTalent.slice(0, 40)}. ` +
+             `성장 방향: ${traitAnalysis.acquired.growthDirection.slice(0, 60)}`,
     pauseAfter: 2000
   });
 
-  // 함께할 사람 / 피할 사람
-  sections.push({
-    title: '인연 관리',
-    content: `${currentMonth}월에 특히 함께하면 좋은 사람 유형이 있어요. ` +
-             `${monthlyFortune.bestPeopleTypes[0]?.type}. ${monthlyFortune.bestPeopleTypes[0]?.reason} ` +
-             `반면에 거리를 둬야 할 유형도 있어요. ` +
-             `${monthlyFortune.avoidPeopleTypes[0]?.type}. ${monthlyFortune.avoidPeopleTypes[0]?.reason} ` +
-             `${monthlyFortune.avoidPeopleTypes[0]?.howToHandle}`,
-    pauseAfter: 3000
-  });
-
-  // ========== 18. 5대 영역 성장 전략 ==========
+  // ========== 14. 5대 영역 성장 전략 (핵심만) ==========
   const growthStrategy = generateGrowthStrategy(
     dayStem,
     yongsin?.map(y => y as string) || ['wood'],
@@ -922,55 +707,39 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     age
   );
 
+  // 성장 전략은 핵심만 압축
   sections.push({
     title: '성장 전략',
-    content: `${user.name}님의 5대 영역 성장 전략을 말씀드릴게요. ` +
-             `인맥 관리는요, ${growthStrategy.people.advice} ${growthStrategy.people.action} ` +
-             `행운을 끌어당기려면, ${growthStrategy.luck.advice} ${growthStrategy.luck.action} ` +
-             `재정적으로는, ${growthStrategy.economy.advice} ` +
-             `사랑 운을 높이려면, ${growthStrategy.love.advice} ` +
-             `그리고 환경적으로, ${growthStrategy.environment.advice} ` +
-             `이 다섯 가지 영역에서 균형을 잡으면, 삶 전체가 상승합니다.`,
-    pauseAfter: 4000
+    content: `5대 영역 핵심입니다. ` +
+             `인맥: ${growthStrategy.people.advice.slice(0, 40)} ` +
+             `재정: ${growthStrategy.economy.advice.slice(0, 40)} ` +
+             `사랑: ${growthStrategy.love.advice.slice(0, 40)}`,
+    pauseAfter: 2000
   });
 
-  // ========== 19. 가족/자녀 조언 (해당 시) ==========
+  // ========== 15. 가족 조언 (해당 시, 압축) ==========
   const hasChildren = user.hasChildren === true;
-  const familyAdvice = generateFamilyAdvice(dayStem, hasChildren, user.mbti);
-
   if (hasChildren || maritalStatus === 'married' || maritalStatus === 'remarried') {
+    const familyAdvice = generateFamilyAdvice(dayStem, hasChildren, user.mbti);
     sections.push({
       title: '가족 조언',
-      content: `가정에 대해서도 말씀드릴게요. ` +
-               `부모로서 당신의 강점은요, ${familyAdvice.parentStrength} ` +
-               `자녀 양육에서는, ${familyAdvice.childGuidance} ` +
-               `가족 화합을 위해서는, ${familyAdvice.familyHarmony} ` +
-               `세대 간 소통 팁도 드릴게요. ${familyAdvice.intergenerational}`,
-      pauseAfter: 3000
+      content: `가정 핵심: ${familyAdvice.parentStrength.slice(0, 50)} ` +
+               `화합 팁: ${familyAdvice.familyHarmony.slice(0, 50)}`,
+      pauseAfter: 1500
     });
   }
 
-  // ========== 20. 클로징 ==========
+  // ========== 16. 마무리 (바넘 효과 제거, 간결화) ==========
   sections.push({
     title: '마무리',
-    content: `${user.name}님, 긴 이야기 끝까지 들어주셔서 감사합니다. ` +
-             `오늘 들은 이야기 중에 "아, 이건 정말 나네" 하고 고개를 끄덕인 부분이 있으셨을 거예요. ` +
-             `그 느낌을 기억해주세요. 그게 당신을 이해하는 첫걸음입니다. ` +
-             `운명은 정해진 게 아니라, 알고 대비하면 바꿀 수 있습니다. ` +
-             `사주가 당신의 길을 정하는 것이 아니라, 당신이 이 운세를 어떻게 "사용"할지가 중요합니다. ` +
-             `이 분석이 당신의 인생에 작은 나침반이 되기를 바랍니다. ` +
-             `${user.name}님의 앞날에 좋은 일만 가득하기를 진심으로 기원합니다.`,
+    content: `${user.name}님, 분석을 마무리하겠습니다. ` +
+             `사주는 운명을 정하는 것이 아니라 나침반입니다. ` +
+             `오늘 알려드린 황금 기회일과 개운법을 실천해 보세요. ` +
+             `앞날에 좋은 일이 가득하길 바랍니다.`,
     pauseAfter: 1500
   });
 
-  // ========== 17. 아웃트로 ==========
-  sections.push({
-    title: '아웃트로',
-    content: `이 분석이 도움이 되셨다면, 소중한 분께 공유해 보세요. ` +
-             `더 자세한 분석은 AI 플랜엑스 닷컴에서 확인하실 수 있습니다. ` +
-             `AI 플랜엑스, 당신의 운명과 함께합니다.`,
-    pauseAfter: 0
-  });
+  // 아웃트로 제거 (중복, 광고성)
 
   // 예상 시간 계산 (한글 약 4~5글자/초)
   const totalChars = sections.reduce((sum, s) => sum + s.content.length, 0);
@@ -1067,6 +836,99 @@ function getYongsinAdvice(element: Element): string {
   };
 
   return advices[element] || '';
+}
+
+/**
+ * 일간별 구체적 행동 패턴 - 바넘 효과 제거용
+ * 막연한 "소름 돋는" 표현 대신 구체적 행동 예시 제공
+ */
+function getSpecificDayMasterTrait(
+  dayStem: string,
+  age: number,
+  gender?: string
+): { corePattern: string; behaviorExample: string } {
+  const traits: Record<string, { corePattern: string; behaviorExample: string }> = {
+    '甲': {
+      corePattern: '새로운 프로젝트를 시작할 때 가장 에너지가 넘칩니다. 반면 같은 일을 반복하면 금방 지칩니다',
+      behaviorExample: '예를 들어, 회의에서 첫 발언을 하거나 팀을 이끄는 역할에서 빛납니다'
+    },
+    '乙': {
+      corePattern: '직접 부딪히기보다 상황을 관찰하고 적응하는 전략을 씁니다',
+      behaviorExample: '갈등 상황에서 정면 대결보다 우회적으로 해결하려는 경향이 있습니다'
+    },
+    '丙': {
+      corePattern: '사람들 앞에서 말할 때 에너지가 올라갑니다. 혼자 조용히 일하면 답답해합니다',
+      behaviorExample: '발표, 미팅, 이벤트 등 주목받는 상황에서 실력 이상의 성과를 냅니다'
+    },
+    '丁': {
+      corePattern: '깊이 있는 1:1 대화를 선호합니다. 다수 앞에서는 에너지가 소모됩니다',
+      behaviorExample: '소수의 깊은 관계를 오래 유지하는 편입니다'
+    },
+    '戊': {
+      corePattern: '급격한 변화보다 점진적 발전을 추구합니다. 결정에 시간이 걸립니다',
+      behaviorExample: '중요한 결정 전에 여러 번 확인하고 준비하는 편입니다'
+    },
+    '己': {
+      corePattern: '디테일에 강하고 완벽을 추구합니다. 대충 넘어가는 걸 못합니다',
+      behaviorExample: '작은 실수도 신경 쓰이고, 마감 직전까지 수정하는 경향이 있습니다'
+    },
+    '庚': {
+      corePattern: '결단이 빠르고 명확합니다. 애매한 상황을 싫어합니다',
+      behaviorExample: 'YES/NO가 분명하고, 한번 결정하면 번복하지 않습니다'
+    },
+    '辛': {
+      corePattern: '품질과 완성도에 민감합니다. 평범한 것에 만족하지 못합니다',
+      behaviorExample: '같은 일을 해도 더 세련되고 정교하게 하려는 성향이 있습니다'
+    },
+    '壬': {
+      corePattern: '큰 그림을 보는 능력이 있습니다. 세부 사항보다 전체 흐름을 봅니다',
+      behaviorExample: '전략 수립이나 장기 계획에서 강점을 보입니다'
+    },
+    '癸': {
+      corePattern: '직관과 감수성이 뛰어납니다. 논리보다 느낌으로 판단할 때가 많습니다',
+      behaviorExample: '사람의 감정을 빨리 읽고, 분위기 파악이 빠릅니다'
+    }
+  };
+
+  return traits[dayStem] || traits['甲'];
+}
+
+/**
+ * 황금 기회일 선정 근거 설명
+ * "왜 이 날인가"에 대한 구체적 이유 제공
+ */
+function getGoldenDateReason(
+  dayStem: string,
+  date: string,
+  yongsin: Element[]
+): { reason: string } {
+  // 일간별 귀인(貴人) 관계 설명
+  const guirenRelations: Record<string, string> = {
+    '甲': '갑목 일간에게 축(丑)과 미(未) 토의 날이 천을귀인이 됩니다. 이 날은 귀한 사람의 도움이 오는 날입니다',
+    '乙': '을목 일간에게 자(子)와 신(申)의 날이 천을귀인입니다. 이 날 시작한 일에 조력자가 나타납니다',
+    '丙': '병화 일간에게 해(亥)와 유(酉)의 날이 천을귀인입니다. 이 날 만난 사람이 귀인이 될 수 있습니다',
+    '丁': '정화 일간에게 해(亥)와 유(酉)의 날이 천을귀인입니다. 중요한 결정에 좋은 날입니다',
+    '戊': '무토 일간에게 축(丑)과 미(未)의 날이 천을귀인입니다. 안정적인 시작에 좋습니다',
+    '己': '기토 일간에게 자(子)와 신(申)의 날이 천을귀인입니다. 계약이나 협상에 유리합니다',
+    '庚': '경금 일간에게 축(丑)과 미(未)의 날이 천을귀인입니다. 결단을 내리기 좋은 날입니다',
+    '辛': '신금 일간에게 인(寅)과 오(午)의 날이 천을귀인입니다. 새로운 인연을 만나기 좋습니다',
+    '壬': '임수 일간에게 묘(卯)와 사(巳)의 날이 천을귀인입니다. 큰 계획을 세우기 좋습니다',
+    '癸': '계수 일간에게 묘(卯)와 사(巳)의 날이 천을귀인입니다. 직관이 맑아지는 날입니다'
+  };
+
+  // 용신과의 관계 추가
+  const yongsinElement = yongsin[0] || 'wood';
+  const yongsinBoost: Record<string, string> = {
+    'wood': '또한 이 날은 목(木) 기운이 강해 당신의 용신과 맞습니다',
+    'fire': '이 날은 화(火) 기운이 활성화되어 당신에게 필요한 에너지가 충만합니다',
+    'earth': '이 날은 토(土) 기운이 안정되어 당신의 운을 받쳐줍니다',
+    'metal': '이 날은 금(金) 기운이 예리해져 당신의 결단력이 높아집니다',
+    'water': '이 날은 수(水) 기운이 깊어져 당신의 지혜가 빛납니다'
+  };
+
+  return {
+    reason: `${guirenRelations[dayStem] || guirenRelations['甲']}. ${yongsinBoost[yongsinElement] || ''}`
+  };
 }
 
 /**
