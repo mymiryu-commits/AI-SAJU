@@ -258,6 +258,9 @@ export async function POST(request: NextRequest) {
 
         if (saveResult.id) {
           analysisId = saveResult.id;
+          console.log('분석 결과 저장 완료:', analysisId);
+        } else {
+          console.error('분석 결과 저장 실패:', saveResult.error);
         }
 
         // 포인트 잔액 업데이트

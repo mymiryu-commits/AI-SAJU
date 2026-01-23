@@ -170,63 +170,100 @@ export async function saveAnalysisResult(
     audioUrl?: string;
   }
 ): Promise<{ id: string | null; error?: string }> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { saju, oheng, scores, yongsin, gisin, personality, peerComparison } = result;
+    // 인증 상태 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('분석 저장 실패: 인증 오류', authError);
+      return { id: null, error: '인증되지 않은 사용자' };
+    }
 
-  // result_summary에 모든 메타 정보 포함 (DB 스키마에 맞게)
-  const resultSummary = {
-    saju: {
-      year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
-      month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
-      day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
-      time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
-    },
-    scores,
-    zodiac: saju.year.zodiac,
-    dayMaster: saju.day.heavenlyStem,
-    yongsin,
-    gisin,
-    // 프리미엄/블라인드 상태를 result_summary에 저장
-    isPremium: options.isPremium,
-    isBlinded: options.isBlinded,
-    unblindPrice: options.isBlinded ? 500 : null,
-    zodiacIncluded: !!options.zodiacData,
-    zodiacData: options.zodiacData,
-  };
+    // userId가 현재 인증된 사용자와 일치하는지 확인
+    if (user.id !== userId) {
+      console.error('분석 저장 실패: 사용자 ID 불일치', { expected: userId, actual: user.id });
+      return { id: null, error: '사용자 ID 불일치' };
+    }
 
-  // DB 스키마에 맞는 insert 데이터
-  const insertData: Record<string, unknown> = {
-    user_id: userId,
-    type: 'saju',
-    subtype: options.productType,
-    input_data: result.user,
-    result_summary: resultSummary,
-    result_full: result,
-    keywords: [
-      saju.day.element,
-      saju.year.zodiac,
-      ...(yongsin || []),
-      result.user.currentConcern || 'none',
-    ],
-    scores,
-    pdf_url: options.pdfUrl || null,
-    audio_url: options.audioUrl || null,
-    price_paid: options.pointsPaid || 0,
-  };
+    const { saju, oheng, scores, yongsin, gisin, personality, peerComparison } = result;
 
-  const { data, error } = await (supabase as any)
-    .from('fortune_analyses')
-    .insert(insertData)
-    .select('id')
-    .single();
+    // result_summary에 모든 메타 정보 포함 (DB 스키마에 맞게)
+    const resultSummary = {
+      saju: {
+        year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
+        month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
+        day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
+        time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
+      },
+      scores,
+      zodiac: saju.year.zodiac,
+      dayMaster: saju.day.heavenlyStem,
+      yongsin,
+      gisin,
+      // 프리미엄/블라인드 상태를 result_summary에 저장
+      isPremium: options.isPremium,
+      isBlinded: options.isBlinded,
+      unblindPrice: options.isBlinded ? 500 : null,
+      zodiacIncluded: !!options.zodiacData,
+      zodiacData: options.zodiacData,
+    };
 
-  if (error) {
-    console.error('분석 결과 저장 실패:', error.message, error.details, error.hint);
-    return { id: null, error: error.message };
+    // 45일 만료일 계산
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 45);
+
+    // DB 스키마에 맞는 insert 데이터
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      type: 'saju',
+      subtype: options.productType,
+      input_data: result.user,
+      result_summary: resultSummary,
+      result_full: result,
+      keywords: [
+        saju.day.element,
+        saju.year.zodiac,
+        ...(yongsin || []),
+        result.user.currentConcern || 'none',
+      ],
+      scores,
+      pdf_url: options.pdfUrl || null,
+      audio_url: options.audioUrl || null,
+      price_paid: options.pointsPaid || 0,
+      // 추가 컬럼 (005 마이그레이션)
+      is_premium: options.isPremium,
+      is_blinded: options.isBlinded,
+      unblind_price: options.isBlinded ? 500 : null,
+      expires_at: expiresAt.toISOString(),
+      zodiac_included: !!options.zodiacData,
+      zodiac_data: options.zodiacData || null,
+    };
+
+    console.log('분석 저장 시도:', { userId, productType: options.productType, isPremium: options.isPremium });
+
+    const { data, error } = await (supabase as any)
+      .from('fortune_analyses')
+      .insert(insertData)
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('분석 결과 저장 실패:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      return { id: null, error: error.message };
+    }
+
+    console.log('분석 저장 성공:', data.id);
+    return { id: data.id };
+  } catch (err) {
+    console.error('분석 저장 예외:', err);
+    return { id: null, error: err instanceof Error ? err.message : '알 수 없는 오류' };
   }
-
-  return { id: data.id };
 }
 
 /**
