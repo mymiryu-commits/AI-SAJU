@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // 결제 레코드 조회
-    const { data: payment, error: paymentError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: payment, error: paymentError } = await (supabase as any)
       .from('voucher_payments')
       .select('*, voucher_packages(*)')
       .eq('order_id', orderId)
@@ -66,7 +67,8 @@ export async function GET(request: NextRequest) {
     if (!confirmResponse.ok) {
       console.error('Toss confirm failed:', confirmData);
       // 결제 실패 처리
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('voucher_payments')
         .update({
           status: 'failed',
@@ -86,7 +88,8 @@ export async function GET(request: NextRequest) {
     expiresAt.setDate(expiresAt.getDate() + (pkg?.validity_days || 365));
 
     // 이용권 생성
-    const { data: voucher, error: voucherError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: voucher, error: voucherError } = await (supabase as any)
       .from('user_vouchers')
       .insert({
         user_id: payment.user_id,
@@ -109,7 +112,8 @@ export async function GET(request: NextRequest) {
     if (voucherError) {
       console.error('Voucher creation error:', voucherError);
       // 결제는 성공했지만 이용권 생성 실패 - 수동 처리 필요
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('voucher_payments')
         .update({
           status: 'completed',
@@ -124,7 +128,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 결제 레코드 업데이트
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('voucher_payments')
       .update({
         status: 'completed',
@@ -139,7 +144,8 @@ export async function GET(request: NextRequest) {
 
     // 프로모션 판매 수량 업데이트
     if (pkg?.is_promotion && pkg?.promotion_limit) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('voucher_packages')
         .update({
           promotion_sold: (pkg.promotion_sold || 0) + 1,

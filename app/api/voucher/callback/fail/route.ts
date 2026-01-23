@@ -21,14 +21,16 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // 결제 레코드 조회 및 실패 상태로 업데이트
-    const { data: payment, error: paymentError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: payment, error: paymentError } = await (supabase as any)
       .from('voucher_payments')
       .select('*')
       .eq('order_id', orderId)
       .single();
 
     if (!paymentError && payment) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('voucher_payments')
         .update({
           status: 'failed',

@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 선물 정보 조회
-    const { data: gift, error: giftError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: gift, error: giftError }: { data: any; error: any } = await (supabase as any)
       .from('voucher_gifts')
       .select('*, sender:sender_id(email, user_metadata)')
       .eq('gift_code', code.toUpperCase())
@@ -78,7 +79,8 @@ export async function POST(request: NextRequest) {
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
     // 수신자의 이용권 생성
-    const { data: newVoucher, error: voucherError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newVoucher, error: voucherError } = await (supabase as any)
       .from('user_vouchers')
       .insert({
         user_id: user.id,
@@ -105,7 +107,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 선물 상태 업데이트
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('voucher_gifts')
       .update({
         status: 'claimed',
@@ -161,7 +164,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // 선물 정보 조회 (민감 정보 제외)
-    const { data: gift, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: gift, error }: { data: any; error: any } = await (supabase as any)
       .from('voucher_gifts')
       .select('service_type, quantity, message, status, expires_at, sender:sender_id(user_metadata)')
       .eq('gift_code', code.toUpperCase())

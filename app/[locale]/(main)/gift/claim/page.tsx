@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -49,7 +49,7 @@ interface GiftInfo {
   is_claimable: boolean;
 }
 
-export default function GiftClaimPage() {
+function GiftClaimPageContent() {
   const { user, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -355,5 +355,21 @@ export default function GiftClaimPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function GiftClaimPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        <Card className="p-8 text-center">
+          <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </Card>
+      </div>
+    }>
+      <GiftClaimPageContent />
+    </Suspense>
   );
 }

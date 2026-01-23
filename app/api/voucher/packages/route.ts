@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const serviceType = searchParams.get('service_type');
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('voucher_packages')
       .select('*')
       .eq('is_active', true)
@@ -32,7 +33,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 프로모션 패키지의 남은 수량 계산
-    const packagesWithAvailability = packages?.map(pkg => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const packagesWithAvailability = packages?.map((pkg: any) => ({
       ...pkg,
       promotion_remaining: pkg.promotion_limit
         ? pkg.promotion_limit - (pkg.promotion_sold || 0)

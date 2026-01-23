@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from '@/i18n/routing';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,7 @@ const serviceTypeConfig: Record<string, { icon: typeof Sparkles; label: string; 
   },
 };
 
-export default function VouchersPage() {
+function VouchersPageContent() {
   const { user, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
 
@@ -680,5 +680,21 @@ function VoucherUsageHistory() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function VouchersPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Card className="p-8 text-center">
+          <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
+          <p className="text-muted-foreground">데이터를 불러오는 중...</p>
+        </Card>
+      </div>
+    }>
+      <VouchersPageContent />
+    </Suspense>
   );
 }

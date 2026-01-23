@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 패키지 정보 조회
-    const { data: pkg, error: pkgError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pkg, error: pkgError } = await (supabase as any)
       .from('voucher_packages')
       .select('*')
       .eq('id', packageId)
@@ -55,7 +56,8 @@ export async function POST(request: NextRequest) {
     const orderId = `VOUCHER-${Date.now()}-${nanoid(8)}`;
 
     // 결제 대기 레코드 생성
-    const { data: payment, error: paymentError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: payment, error: paymentError } = await (supabase as any)
       .from('voucher_payments')
       .insert({
         user_id: user.id,

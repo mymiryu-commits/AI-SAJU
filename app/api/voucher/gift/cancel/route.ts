@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 선물 정보 조회
-    const { data: gift, error: giftError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: gift, error: giftError } = await (supabase as any)
       .from('voucher_gifts')
       .select('*')
       .eq('id', gift_id)
@@ -59,7 +60,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 발송자의 이용권 복구
-    const { data: voucher, error: voucherError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: voucher, error: voucherError } = await (supabase as any)
       .from('user_vouchers')
       .select('*')
       .eq('id', gift.sender_voucher_id)
@@ -73,7 +75,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 이용권 복구
-    const { error: updateVoucherError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateVoucherError } = await (supabase as any)
       .from('user_vouchers')
       .update({
         used_quantity: Math.max(0, voucher.used_quantity - gift.quantity),
@@ -89,7 +92,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 선물 상태 업데이트
-    const { error: updateGiftError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateGiftError } = await (supabase as any)
       .from('voucher_gifts')
       .update({
         status: 'cancelled',
@@ -98,7 +102,8 @@ export async function POST(request: NextRequest) {
 
     if (updateGiftError) {
       // 롤백: 이용권 다시 차감
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('user_vouchers')
         .update({
           used_quantity: voucher.used_quantity,

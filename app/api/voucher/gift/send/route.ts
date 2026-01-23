@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 보유 이용권 확인
-    const { data: voucher, error: voucherError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: voucher, error: voucherError } = await (supabase as any)
       .from('user_vouchers')
       .select('*')
       .eq('id', voucher_id)
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
     // 수신자가 이미 가입한 회원인지 확인
     let recipientId = null;
     if (recipient_email) {
-      const { data: existingUser } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingUser } = await (supabase as any)
         .from('users')
         .select('id')
         .eq('email', recipient_email)
@@ -81,7 +83,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 선물 레코드 생성
-    const { data: gift, error: giftError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: gift, error: giftError } = await (supabase as any)
       .from('voucher_gifts')
       .insert({
         sender_id: user.id,
@@ -109,7 +112,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 발송자의 이용권에서 차감
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('user_vouchers')
       .update({
         used_quantity: voucher.used_quantity + quantity,
@@ -119,7 +123,8 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       // 롤백: 선물 레코드 삭제
-      await supabase.from('voucher_gifts').delete().eq('id', gift.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('voucher_gifts').delete().eq('id', gift.id);
 
       return NextResponse.json(
         { error: '이용권 차감에 실패했습니다.' },

@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용 로그 조회
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('voucher_usage_log')
       .select('*, user_vouchers(package_id, voucher_packages(name))', { count: 'exact' })
       .eq('user_id', user.id)

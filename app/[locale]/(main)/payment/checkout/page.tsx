@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -199,5 +199,21 @@ export default function CheckoutPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        <Card className="text-center p-8">
+          <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
+          <p className="text-muted-foreground">결제 정보를 불러오는 중...</p>
+        </Card>
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

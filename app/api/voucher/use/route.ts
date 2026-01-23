@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 저장 함수 호출로 이용권 사용
-    const { data, error } = await supabase.rpc('use_voucher', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc('use_voucher', {
       p_user_id: user.id,
       p_service_type: service_type,
       p_quantity: quantity,
@@ -45,19 +46,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = data as any;
+
     // 저장 함수 결과 확인
-    if (!data?.success) {
+    if (!result?.success) {
       return NextResponse.json(
-        { error: data?.error || '사용 가능한 이용권이 없습니다.' },
+        { error: result?.error || '사용 가능한 이용권이 없습니다.' },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      voucher_id: data.voucher_id,
-      remaining: data.remaining,
-      message: `이용권을 사용했습니다. 남은 횟수: ${data.remaining}회`,
+      voucher_id: result.voucher_id,
+      remaining: result.remaining,
+      message: `이용권을 사용했습니다. 남은 횟수: ${result.remaining}회`,
     });
   } catch (error) {
     console.error('Voucher use API error:', error);

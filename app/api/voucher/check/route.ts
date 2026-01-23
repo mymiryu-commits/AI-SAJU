@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 서비스 타입별 조회 또는 전체 조회
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('user_vouchers')
       .select('*')
       .eq('user_id', user.id)
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
     // 서비스 타입별 합계 계산
     const summary: Record<string, { total: number; expiring_soon: number }> = {};
 
-    vouchers?.forEach(voucher => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vouchers?.forEach((voucher: any) => {
       const type = voucher.service_type;
       if (!summary[type]) {
         summary[type] = { total: 0, expiring_soon: 0 };

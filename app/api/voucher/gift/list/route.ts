@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'all';
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('voucher_gifts')
       .select(`
         *,
@@ -49,7 +50,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 민감 정보 제거 및 데이터 가공
-    const processedGifts = gifts?.map(gift => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const processedGifts = gifts?.map((gift: any) => ({
       id: gift.id,
       service_type: gift.service_type,
       quantity: gift.quantity,
