@@ -113,9 +113,9 @@ export function Footer() {
         <div className="mt-8 pt-8 border-t">
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>플랜엑스솔루션 주식회사</strong></p>
-            <p>대표: 김형석 | 사업자등록번호: 786-87-03494</p>
-            <p>고객센터: 1588-5617 (평일 09:00 ~ 18:00)</p>
-            <p>이메일: mymiryu@gmail.com</p>
+            <p>대표: 김형석 | 사업자등록번호: 786-87-03494 | 통신판매업: 신고예정</p>
+            <p>주소: 강원특별자치도 춘천시 춘천순환로 108, 501호</p>
+            <p>고객센터: 1588-5617 (평일 09:00~18:00) | 이메일: mymiryu@gmail.com</p>
           </div>
         </div>
 

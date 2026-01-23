@@ -484,6 +484,277 @@ export interface Database {
           updated_by?: string | null
         }
       }
+      voucher_packages: {
+        Row: {
+          id: string
+          service_type: string
+          name: string
+          description: string | null
+          quantity: number
+          regular_price: number
+          sale_price: number
+          unit_price: number
+          discount_rate: number
+          discount_label: string | null
+          is_active: boolean
+          is_promotion: boolean
+          promotion_limit: number | null
+          promotion_sold: number
+          validity_days: number
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          service_type: string
+          name: string
+          description?: string | null
+          quantity: number
+          regular_price: number
+          sale_price: number
+          unit_price: number
+          discount_rate?: number
+          discount_label?: string | null
+          is_active?: boolean
+          is_promotion?: boolean
+          promotion_limit?: number | null
+          promotion_sold?: number
+          validity_days?: number
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          service_type?: string
+          name?: string
+          description?: string | null
+          quantity?: number
+          regular_price?: number
+          sale_price?: number
+          unit_price?: number
+          discount_rate?: number
+          discount_label?: string | null
+          is_active?: boolean
+          is_promotion?: boolean
+          promotion_limit?: number | null
+          promotion_sold?: number
+          validity_days?: number
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_vouchers: {
+        Row: {
+          id: string
+          user_id: string
+          package_id: string | null
+          service_type: string
+          total_quantity: number
+          used_quantity: number
+          remaining_quantity: number
+          purchase_price: number
+          unit_price: number
+          payment_id: string | null
+          order_id: string | null
+          status: string
+          source: string
+          source_user_id: string | null
+          expires_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          package_id?: string | null
+          service_type: string
+          total_quantity: number
+          used_quantity?: number
+          remaining_quantity: number
+          purchase_price: number
+          unit_price: number
+          payment_id?: string | null
+          order_id?: string | null
+          status?: string
+          source?: string
+          source_user_id?: string | null
+          expires_at: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          package_id?: string | null
+          service_type?: string
+          total_quantity?: number
+          used_quantity?: number
+          remaining_quantity?: number
+          purchase_price?: number
+          unit_price?: number
+          payment_id?: string | null
+          order_id?: string | null
+          status?: string
+          source?: string
+          source_user_id?: string | null
+          expires_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      voucher_usage_log: {
+        Row: {
+          id: string
+          voucher_id: string
+          user_id: string
+          service_type: string
+          quantity_used: number
+          related_id: string | null
+          related_type: string | null
+          metadata: Json | null
+          used_at: string
+        }
+        Insert: {
+          id?: string
+          voucher_id: string
+          user_id: string
+          service_type: string
+          quantity_used?: number
+          related_id?: string | null
+          related_type?: string | null
+          metadata?: Json | null
+          used_at?: string
+        }
+        Update: {
+          id?: string
+          voucher_id?: string
+          user_id?: string
+          service_type?: string
+          quantity_used?: number
+          related_id?: string | null
+          related_type?: string | null
+          metadata?: Json | null
+          used_at?: string
+        }
+      }
+      voucher_gifts: {
+        Row: {
+          id: string
+          sender_id: string
+          sender_voucher_id: string
+          service_type: string
+          quantity: number
+          recipient_id: string | null
+          recipient_phone: string | null
+          recipient_email: string | null
+          gift_code: string | null
+          gift_url: string | null
+          message: string | null
+          status: string
+          expires_at: string
+          claimed_at: string | null
+          claimed_voucher_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sender_id: string
+          sender_voucher_id: string
+          service_type: string
+          quantity: number
+          recipient_id?: string | null
+          recipient_phone?: string | null
+          recipient_email?: string | null
+          gift_code?: string | null
+          gift_url?: string | null
+          message?: string | null
+          status?: string
+          expires_at: string
+          claimed_at?: string | null
+          claimed_voucher_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sender_id?: string
+          sender_voucher_id?: string
+          service_type?: string
+          quantity?: number
+          recipient_id?: string | null
+          recipient_phone?: string | null
+          recipient_email?: string | null
+          gift_code?: string | null
+          gift_url?: string | null
+          message?: string | null
+          status?: string
+          expires_at?: string
+          claimed_at?: string | null
+          claimed_voucher_id?: string | null
+          created_at?: string
+        }
+      }
+      voucher_payments: {
+        Row: {
+          id: string
+          user_id: string
+          payment_key: string | null
+          order_id: string
+          order_name: string | null
+          amount: number
+          method: string | null
+          status: string
+          refund_amount: number
+          refund_reason: string | null
+          refunded_at: string | null
+          voucher_id: string | null
+          package_id: string | null
+          response_data: Json | null
+          created_at: string
+          approved_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          payment_key?: string | null
+          order_id: string
+          order_name?: string | null
+          amount: number
+          method?: string | null
+          status?: string
+          refund_amount?: number
+          refund_reason?: string | null
+          refunded_at?: string | null
+          voucher_id?: string | null
+          package_id?: string | null
+          response_data?: Json | null
+          created_at?: string
+          approved_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          payment_key?: string | null
+          order_id?: string
+          order_name?: string | null
+          amount?: number
+          method?: string | null
+          status?: string
+          refund_amount?: number
+          refund_reason?: string | null
+          refunded_at?: string | null
+          voucher_id?: string | null
+          package_id?: string | null
+          response_data?: Json | null
+          created_at?: string
+          approved_at?: string | null
+          updated_at?: string
+        }
+      }
     }
     Views: {
       lotto_total_stats: {

@@ -156,6 +156,46 @@ export default function RefundPolicyPage() {
             </ol>
           </section>
 
+          <section>
+            <h2 className="text-xl font-semibold mb-4">제7조 (횟수권/이용권 환불)</h2>
+            <ol className="list-decimal pl-6 space-y-3">
+              <li>
+                <strong>환불 계산 기준:</strong> 횟수권 환불 시 사용분은 정가 기준으로 차감합니다.
+                <p className="text-sm text-muted-foreground mt-1">
+                  환불금액 = 결제금액 - (사용횟수 × 정가)
+                </p>
+              </li>
+              <li>
+                <strong>서비스별 정가:</strong>
+                <ul className="list-disc pl-4 mt-2 space-y-1">
+                  <li>사주 완전분석: 1회 29,900원</li>
+                  <li>QR코드 생성: 1회 500원</li>
+                  <li>로또번호 AI추천: 1회 500원</li>
+                </ul>
+              </li>
+              <li>
+                <strong>환불 예시:</strong>
+                <div className="bg-muted/50 p-3 rounded-lg mt-2 text-sm">
+                  <p>• 사주분석 10회권 97,000원 구매, 2회 사용 후 환불 시</p>
+                  <p>• 환불금액: 97,000 - (2 × 29,900) = <strong>37,200원</strong></p>
+                  <p className="text-muted-foreground mt-1">※ 사용분이 결제금액을 초과하면 환불금액은 0원</p>
+                </div>
+              </li>
+              <li>
+                <strong>환불 제한:</strong>
+                <ul className="list-disc pl-4 mt-2 space-y-1">
+                  <li>선물받은 이용권은 환불 불가</li>
+                  <li>타인에게 선물한 이용권은 환불 불가</li>
+                  <li>이벤트/프로모션으로 무료 지급된 이용권은 환불 불가</li>
+                </ul>
+              </li>
+              <li>
+                <strong>유효기간:</strong> 이용권의 유효기간은 구매일로부터 1년이며,
+                유효기간 경과 후 미사용분은 소멸됩니다.
+              </li>
+            </ol>
+          </section>
+
           <section className="border-t pt-6 mt-8">
             <h2 className="text-xl font-semibold mb-4">부칙</h2>
             <p>본 환불 정책은 2025년 1월 1일부터 시행합니다.</p>
@@ -164,10 +204,13 @@ export default function RefundPolicyPage() {
           <section className="bg-muted/50 p-4 rounded-lg mt-8">
             <h3 className="font-semibold mb-2">환불 문의</h3>
             <ul className="text-sm space-y-1">
-              <li>고객센터: 1588-5617 (평일 09:00 ~ 18:00)</li>
+              <li>고객센터: 1588-5617 (평일 09:00~18:00, 점심 12:00~13:00)</li>
               <li>이메일: mymiryu@gmail.com</li>
               <li>상호: 플랜엑스솔루션 주식회사</li>
+              <li>대표자: 김형석</li>
               <li>사업자등록번호: 786-87-03494</li>
+              <li>통신판매업 신고번호: 신고예정</li>
+              <li>주소: 강원특별자치도 춘천시 춘천순환로 108, 501호</li>
             </ul>
           </section>
         </CardContent>
