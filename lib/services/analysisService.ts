@@ -174,25 +174,34 @@ export async function saveAnalysisResult(
 
   const { saju, oheng, scores, yongsin, gisin, personality, peerComparison } = result;
 
-  // 기본 insert 데이터 (expires_at 컬럼이 없을 수 있으므로 제외)
+  // result_summary에 모든 메타 정보 포함 (DB 스키마에 맞게)
+  const resultSummary = {
+    saju: {
+      year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
+      month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
+      day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
+      time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
+    },
+    scores,
+    zodiac: saju.year.zodiac,
+    dayMaster: saju.day.heavenlyStem,
+    yongsin,
+    gisin,
+    // 프리미엄/블라인드 상태를 result_summary에 저장
+    isPremium: options.isPremium,
+    isBlinded: options.isBlinded,
+    unblindPrice: options.isBlinded ? 500 : null,
+    zodiacIncluded: !!options.zodiacData,
+    zodiacData: options.zodiacData,
+  };
+
+  // DB 스키마에 맞는 insert 데이터
   const insertData: Record<string, unknown> = {
     user_id: userId,
     type: 'saju',
     subtype: options.productType,
     input_data: result.user,
-    result_summary: {
-      saju: {
-        year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
-        month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
-        day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
-        time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null,
-      },
-      scores,
-      zodiac: saju.year.zodiac,
-      dayMaster: saju.day.heavenlyStem,
-      yongsin,
-      gisin,
-    },
+    result_summary: resultSummary,
     result_full: result,
     keywords: [
       saju.day.element,
@@ -201,13 +210,8 @@ export async function saveAnalysisResult(
       result.user.currentConcern || 'none',
     ],
     scores,
-    is_premium: options.isPremium,
-    is_blinded: options.isBlinded,
-    unblind_price: options.isBlinded ? 500 : null,
-    zodiac_included: !!options.zodiacData,
-    zodiac_data: options.zodiacData,
-    pdf_url: options.pdfUrl,
-    audio_url: options.audioUrl,
+    pdf_url: options.pdfUrl || null,
+    audio_url: options.audioUrl || null,
     price_paid: options.pointsPaid || 0,
   };
 
@@ -218,7 +222,7 @@ export async function saveAnalysisResult(
     .single();
 
   if (error) {
-    console.error('분석 결과 저장 실패:', error);
+    console.error('분석 결과 저장 실패:', error.message, error.details, error.hint);
     return { id: null, error: error.message };
   }
 
@@ -250,22 +254,31 @@ export async function getAnalysisById(
     return { analysis: null, canAccess: false, isBlinded: false };
   }
 
-  // 만료 체크
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+  // result_summary에서 블라인드 정보 추출
+  const resultSummary = data.result_summary || {};
+  const isBlinded = resultSummary.isBlinded || false;
+  const unblindPrice = resultSummary.unblindPrice || 500;
+
+  // 45일 만료 체크
+  const createdAt = new Date(data.created_at);
+  const expiresAt = new Date(createdAt);
+  expiresAt.setDate(expiresAt.getDate() + 45);
+
+  if (new Date() > expiresAt) {
     // 만료됨 - PDF/음성 URL 제거
     return {
       analysis: { ...data, pdf_url: null, audio_url: null },
       canAccess: true,
-      isBlinded: data.is_blinded,
-      unblindPrice: data.unblind_price,
+      isBlinded,
+      unblindPrice,
     };
   }
 
   return {
     analysis: data,
     canAccess: true,
-    isBlinded: data.is_blinded,
-    unblindPrice: data.unblind_price,
+    isBlinded,
+    unblindPrice,
   };
 }
 
@@ -290,7 +303,7 @@ export async function getUserAnalysisHistory(
 
   let query = (supabase as any)
     .from('fortune_analyses')
-    .select('id, type, subtype, input_data, result_summary, scores, is_premium, is_blinded, pdf_url, audio_url, created_at', { count: 'exact' })
+    .select('id, type, subtype, input_data, result_summary, scores, price_paid, pdf_url, audio_url, created_at', { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -299,8 +312,9 @@ export async function getUserAnalysisHistory(
     query = query.eq('type', type);
   }
 
+  // onlyPremium 필터: price_paid > 0 체크
   if (onlyPremium) {
-    query = query.eq('is_premium', true);
+    query = query.gt('price_paid', 0);
   }
 
   const { data, count, error } = await query;
@@ -345,12 +359,18 @@ export async function unblindAnalysis(
     return { success: false, error: deductResult.error };
   }
 
-  // 블라인드 해제
+  // 블라인드 해제 - result_summary 업데이트
+  const currentSummary = analysis.result_summary || {};
+  const updatedSummary = {
+    ...currentSummary,
+    isBlinded: false,
+    isPremium: true,
+  };
+
   const { error } = await (supabase as any)
     .from('fortune_analyses')
     .update({
-      is_blinded: false,
-      is_premium: true,
+      result_summary: updatedSummary,
     })
     .eq('id', analysisId);
 

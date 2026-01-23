@@ -70,6 +70,9 @@ export async function GET(request: NextRequest) {
       const canDownload = new Date() <= downloadExpiresAt;
       const daysUntilExpire = Math.max(0, Math.ceil((downloadExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
+      // 프리미엄 여부 확인: price_paid > 0 또는 result_summary.isPremium
+      const isPremium = analysis.price_paid > 0 || resultSummary.isPremium === true;
+
       return {
         id: analysis.id,
         type: analysis.type,
@@ -77,10 +80,11 @@ export async function GET(request: NextRequest) {
         title: getTypeTitle(analysis.type),
         subtitle: getSubtitle(analysis, inputData, resultFull),
         date: analysis.created_at,
-        isPremium: analysis.price_paid > 0,
+        isPremium,
+        isBlinded: resultSummary.isBlinded || false,
         result: {
           summary: resultSummary.summary || resultFull.summary || '',
-          score: scores.overall || resultSummary.score || 0,
+          score: scores.overall || resultSummary.score || resultSummary.scores?.overall || 0,
         },
         saved: resultSummary.saved || false,
         hasPdf: !!analysis.pdf_url,
