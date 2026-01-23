@@ -61,3 +61,16 @@ export {
   type GoldenTime,
   type FortunePrescription
 } from './professionalTerms';
+
+// 차별화된 콘텐츠 시스템 (사주+MBTI+별자리+혈액형 통합)
+export {
+  generateTraitAnalysis,
+  generateMonthlyFortune,
+  generateGrowthStrategy,
+  generateFamilyAdvice,
+  DIFFERENTIATION_POINTS,
+  type TraitAnalysis,
+  type MonthlyFortune,
+  type GrowthStrategy,
+  type FamilyAdvice
+} from './differentiatedContent';

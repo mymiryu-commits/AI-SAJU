@@ -43,6 +43,12 @@ import {
   getHiddenTraitMessage,
   calculateGoldenTimes,
   generateFortunePrescriptions,
+  // 차별화된 콘텐츠 시스템
+  generateTraitAnalysis,
+  generateMonthlyFortune,
+  generateGrowthStrategy,
+  generateFamilyAdvice,
+  DIFFERENTIATION_POINTS,
   type MBTIType
 } from '../mappings';
 import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
@@ -98,6 +104,26 @@ function getElementKorean(element: string): string {
     '목': '목', '화': '화', '토': '토', '금': '금', '수': '수'
   };
   return mapping[element] || '목';
+}
+
+// 생년월일로 별자리 계산
+function getZodiacSignFromBirthDate(birthDate: string): string {
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return '양자리';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return '황소자리';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) return '쌍둥이자리';
+  if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) return '게자리';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return '사자자리';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return '처녀자리';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return '천칭자리';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return '전갈자리';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return '사수자리';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return '염소자리';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return '물병자리';
+  return '물고기자리';
 }
 
 // Element 영어 → 한글 키 변환
@@ -2591,6 +2617,239 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     doc.text(line, margin, yPos);
     yPos += 5;
   });
+
+  // ========== 16. 선천적/후천적 기질 분석 (차별화된 콘텐츠) ==========
+  doc.addPage();
+  yPos = margin;
+
+  const dayStemForTrait = saju.day?.heavenlyStem || '甲';
+  const userZodiacSign = getZodiacSignFromBirthDate(user.birthDate);
+  const traitAnalysis = generateTraitAnalysis(
+    dayStemForTrait,
+    mbtiType,
+    bloodType,
+    userZodiacSign,
+    userAge
+  );
+
+  addSectionTitle('16. 선천적 기질 vs 후천적 기질');
+
+  addSubSection('🌟 선천적 기질 (타고난 본성)');
+  const innateLines = doc.splitTextToSize(
+    `핵심 성격: ${traitAnalysis.innate.corePersonality}\n\n` +
+    `숨겨진 잠재력: ${traitAnalysis.innate.hiddenPotential}\n\n` +
+    `천부적 재능: ${traitAnalysis.innate.naturalTalent}\n\n` +
+    `인생 테마: ${traitAnalysis.innate.lifeTheme}`,
+    contentWidth
+  );
+  innateLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 5;
+
+  addSubSection('🔄 후천적 기질 (환경과 학습으로 형성됨)');
+  const acquiredLines = doc.splitTextToSize(
+    `학습된 행동: ${traitAnalysis.acquired.learnedBehavior}\n\n` +
+    `사회적 페르소나: ${traitAnalysis.acquired.socialMask}\n\n` +
+    `스트레스 대응: ${traitAnalysis.acquired.copingStyle}\n\n` +
+    `성장 방향: ${traitAnalysis.acquired.growthDirection}`,
+    contentWidth
+  );
+  acquiredLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 5;
+
+  addSubSection('💫 통합 인사이트');
+  const synthesisLines = doc.splitTextToSize(
+    `현재 상태: ${traitAnalysis.synthesis.currentState}\n\n` +
+    `미래 전망: ${traitAnalysis.synthesis.futureProjection}\n\n` +
+    `핵심 조언: ${traitAnalysis.synthesis.keyAdvice}`,
+    contentWidth
+  );
+  synthesisLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+
+  // ========== 17. 이번 달 상세 운세 ==========
+  doc.addPage();
+  yPos = margin;
+
+  const thisMonth = new Date().getMonth() + 1;
+  const monthlyFortune = generateMonthlyFortune(
+    dayStemForTrait,
+    yongsin?.map(y => y as string) || ['wood'],
+    targetYear,
+    thisMonth
+  );
+
+  addSectionTitle(`17. ${thisMonth}월 상세 운세`);
+
+  // 베스트 데이
+  addSubSection('🏆 이번 달 최고의 날');
+  monthlyFortune.bestDays.forEach(bd => {
+    addText(`${thisMonth}월 ${bd.day}일 - ${bd.reason}`);
+    addText(`   → 추천 행동: ${bd.action}`);
+  });
+  yPos += 3;
+
+  // 좋은 날
+  addSubSection('✅ 좋은 날');
+  monthlyFortune.goodDays.forEach(gd => {
+    addText(`${thisMonth}월 ${gd.day}일 - ${gd.reason}`);
+  });
+  yPos += 3;
+
+  // 피해야 할 날
+  addSubSection('⚠️ 주의가 필요한 날');
+  monthlyFortune.avoidDays.forEach(ad => {
+    addText(`${thisMonth}월 ${ad.day}일 - ${ad.reason}`);
+    addText(`   ⚡ ${ad.warning}`);
+  });
+  yPos += 3;
+
+  // 로또 번호
+  addSubSection('🎰 이번 달 행운의 숫자');
+  addText(`행운의 숫자: ${monthlyFortune.luckyNumbers.join(', ')}`);
+  addText(`로또 추천 번호: ${monthlyFortune.lottoNumbers.join(', ')}`);
+  addText('* 참고용이며, 도박을 조장하지 않습니다.');
+  yPos += 5;
+
+  // 함께해야 할 사람 유형
+  addSubSection('💚 이번 달 함께하면 좋은 사람');
+  monthlyFortune.bestPeopleTypes.forEach(bp => {
+    const bpLines = doc.splitTextToSize(`• ${bp.type}: ${bp.reason}`, contentWidth - 5);
+    bpLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+  });
+  yPos += 3;
+
+  // 피해야 할 사람 유형
+  addSubSection('💔 이번 달 거리를 둘 사람');
+  monthlyFortune.avoidPeopleTypes.forEach(ap => {
+    const apLines = doc.splitTextToSize(`• ${ap.type}: ${ap.reason}`, contentWidth - 5);
+    apLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    addText(`   → 대처법: ${ap.howToHandle}`);
+  });
+
+  // ========== 18. 5대 영역 성장 전략 ==========
+  doc.addPage();
+  yPos = margin;
+
+  const growthStrategy = generateGrowthStrategy(
+    dayStemForTrait,
+    yongsin?.map(y => y as string) || ['wood'],
+    mbtiType,
+    userAge
+  );
+
+  addSectionTitle('18. 5대 영역 성장 전략');
+
+  addSubSection('👥 인맥 (People)');
+  addText(`조언: ${growthStrategy.people.advice}`);
+  addText(`실천: ${growthStrategy.people.action}`);
+  yPos += 3;
+
+  addSubSection('🍀 행운 (Luck)');
+  addText(`조언: ${growthStrategy.luck.advice}`);
+  addText(`실천: ${growthStrategy.luck.action}`);
+  yPos += 3;
+
+  addSubSection('💰 경제 (Economy)');
+  addText(`조언: ${growthStrategy.economy.advice}`);
+  addText(`실천: ${growthStrategy.economy.action}`);
+  yPos += 3;
+
+  addSubSection('❤️ 사랑 (Love)');
+  addText(`조언: ${growthStrategy.love.advice}`);
+  addText(`실천: ${growthStrategy.love.action}`);
+  yPos += 3;
+
+  addSubSection('🏠 환경 (Environment)');
+  addText(`조언: ${growthStrategy.environment.advice}`);
+  addText(`실천: ${growthStrategy.environment.action}`);
+  yPos += 5;
+
+  // 차별화 포인트
+  addSubSection('✨ 우리 분석의 차별점');
+  DIFFERENTIATION_POINTS.points.slice(0, 3).forEach(point => {
+    addText(`기존: ${point.traditional}`);
+    addText(`→ 우리: ${point.ours}`);
+    yPos += 2;
+  });
+  addText(`\n"${DIFFERENTIATION_POINTS.closingMessage}"`);
+
+  // ========== 19. 가족/자녀 관계 조언 ==========
+  doc.addPage();
+  yPos = margin;
+
+  const hasChildren = user.hasChildren === true;
+  const familyAdvice = generateFamilyAdvice(
+    dayStemForTrait,
+    hasChildren,
+    mbtiType
+  );
+
+  addSectionTitle('19. 가족 관계 성장 가이드');
+
+  addSubSection('👨‍👩‍👧 부모로서의 강점');
+  const parentLines = doc.splitTextToSize(familyAdvice.parentStrength, contentWidth);
+  parentLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  addSubSection('👶 자녀 양육 방향');
+  const childLines = doc.splitTextToSize(familyAdvice.childGuidance, contentWidth);
+  childLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  addSubSection('🏡 가족 화합 팁');
+  const harmonyLines = doc.splitTextToSize(familyAdvice.familyHarmony, contentWidth);
+  harmonyLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 3;
+
+  addSubSection('🔗 세대 간 소통');
+  const intergenLines = doc.splitTextToSize(familyAdvice.intergenerational, contentWidth);
+  intergenLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  yPos += 5;
+
+  // 업그레이드 유도
+  doc.setFontSize(9);
+  const upgradeLines = doc.splitTextToSize(familyAdvice.upgradeHint, contentWidth);
+  upgradeLines.forEach((line: string) => {
+    checkNewPage();
+    doc.text(line, margin, yPos);
+    yPos += 5;
+  });
+  doc.setFontSize(10);
 
   // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
   doc.addPage();

@@ -25,6 +25,12 @@ import {
   calculateGoldenTimes,
   generateFortunePrescriptions
 } from '../mappings/professionalTerms';
+import {
+  generateTraitAnalysis,
+  generateMonthlyFortune,
+  generateGrowthStrategy,
+  generateFamilyAdvice
+} from '../mappings/differentiatedContent';
 
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
@@ -134,6 +140,28 @@ function minuteToSinoKorean(num: number): string {
   const unitDigit = num % 10;
 
   return tens[tenDigit] + (unitDigit > 0 ? units[unitDigit] : '');
+}
+
+/**
+ * 생년월일로 별자리 계산
+ */
+function getZodiacSignFromDate(birthDate: string): string {
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return '양자리';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return '황소자리';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) return '쌍둥이자리';
+  if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) return '게자리';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return '사자자리';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return '처녀자리';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return '천칭자리';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return '전갈자리';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return '사수자리';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return '염소자리';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return '물병자리';
+  return '물고기자리';
 }
 
 // ========== 카드 기반 스토리텔링 데이터 ==========
@@ -818,7 +846,103 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     });
   }
 
-  // ========== 16. 클로징 ==========
+  // ========== 16. 선천적 vs 후천적 기질 분석 ==========
+  const zodiacSign = getZodiacSignFromDate(user.birthDate);
+  const traitAnalysis = generateTraitAnalysis(
+    dayStem,
+    user.mbti,
+    user.bloodType,
+    zodiacSign,
+    age
+  );
+
+  sections.push({
+    title: '기질 분석',
+    content: `${user.name}님, 이제 당신이 타고난 것과 환경에서 배운 것을 구분해서 말씀드릴게요. ` +
+             `선천적으로 당신은 ${traitAnalysis.innate.corePersonality}. ` +
+             `타고난 재능은 ${traitAnalysis.innate.naturalTalent}이고, ` +
+             `인생의 큰 테마는 "${traitAnalysis.innate.lifeTheme}"입니다. ` +
+             `반면 후천적으로는 ${traitAnalysis.acquired.learnedBehavior} ` +
+             `스트레스를 받으면 ${traitAnalysis.acquired.copingStyle} ` +
+             `앞으로의 성장 방향은 ${traitAnalysis.acquired.growthDirection}`,
+    pauseAfter: 3500
+  });
+
+  // ========== 17. 이번 달 상세 운세 ==========
+  const monthlyFortune = generateMonthlyFortune(
+    dayStem,
+    yongsin?.map(y => y as string) || ['wood'],
+    targetYear,
+    currentMonth
+  );
+
+  sections.push({
+    title: '이번 달 베스트 데이',
+    content: `${currentMonth}월 가장 좋은 날을 알려드릴게요. ` +
+             `${currentMonth}월 ${monthlyFortune.bestDays[0]?.day}일은 ${monthlyFortune.bestDays[0]?.reason}. ` +
+             `이 날은 ${monthlyFortune.bestDays[0]?.action}. ` +
+             `반면에 ${currentMonth}월 ${monthlyFortune.avoidDays[0]?.day}일은 조심하세요. ` +
+             `${monthlyFortune.avoidDays[0]?.reason}. ${monthlyFortune.avoidDays[0]?.warning}`,
+    pauseAfter: 2500
+  });
+
+  // 로또 및 행운의 숫자
+  sections.push({
+    title: '행운의 숫자',
+    content: `이번 달 행운의 숫자는 ${monthlyFortune.luckyNumbers.join(', ')}입니다. ` +
+             `로또 번호 추천은 ${monthlyFortune.lottoNumbers.join(', ')}예요. ` +
+             `물론 참고용이니까요, 과도한 기대는 금물입니다. 하지만 기운이 좋을 때 시도하면 분명 다릅니다.`,
+    pauseAfter: 2000
+  });
+
+  // 함께할 사람 / 피할 사람
+  sections.push({
+    title: '인연 관리',
+    content: `${currentMonth}월에 특히 함께하면 좋은 사람 유형이 있어요. ` +
+             `${monthlyFortune.bestPeopleTypes[0]?.type}. ${monthlyFortune.bestPeopleTypes[0]?.reason} ` +
+             `반면에 거리를 둬야 할 유형도 있어요. ` +
+             `${monthlyFortune.avoidPeopleTypes[0]?.type}. ${monthlyFortune.avoidPeopleTypes[0]?.reason} ` +
+             `${monthlyFortune.avoidPeopleTypes[0]?.howToHandle}`,
+    pauseAfter: 3000
+  });
+
+  // ========== 18. 5대 영역 성장 전략 ==========
+  const growthStrategy = generateGrowthStrategy(
+    dayStem,
+    yongsin?.map(y => y as string) || ['wood'],
+    user.mbti,
+    age
+  );
+
+  sections.push({
+    title: '성장 전략',
+    content: `${user.name}님의 5대 영역 성장 전략을 말씀드릴게요. ` +
+             `인맥 관리는요, ${growthStrategy.people.advice} ${growthStrategy.people.action} ` +
+             `행운을 끌어당기려면, ${growthStrategy.luck.advice} ${growthStrategy.luck.action} ` +
+             `재정적으로는, ${growthStrategy.economy.advice} ` +
+             `사랑 운을 높이려면, ${growthStrategy.love.advice} ` +
+             `그리고 환경적으로, ${growthStrategy.environment.advice} ` +
+             `이 다섯 가지 영역에서 균형을 잡으면, 삶 전체가 상승합니다.`,
+    pauseAfter: 4000
+  });
+
+  // ========== 19. 가족/자녀 조언 (해당 시) ==========
+  const hasChildren = user.hasChildren === true;
+  const familyAdvice = generateFamilyAdvice(dayStem, hasChildren, user.mbti);
+
+  if (hasChildren || maritalStatus === 'married' || maritalStatus === 'remarried') {
+    sections.push({
+      title: '가족 조언',
+      content: `가정에 대해서도 말씀드릴게요. ` +
+               `부모로서 당신의 강점은요, ${familyAdvice.parentStrength} ` +
+               `자녀 양육에서는, ${familyAdvice.childGuidance} ` +
+               `가족 화합을 위해서는, ${familyAdvice.familyHarmony} ` +
+               `세대 간 소통 팁도 드릴게요. ${familyAdvice.intergenerational}`,
+      pauseAfter: 3000
+    });
+  }
+
+  // ========== 20. 클로징 ==========
   sections.push({
     title: '마무리',
     content: `${user.name}님, 긴 이야기 끝까지 들어주셔서 감사합니다. ` +
