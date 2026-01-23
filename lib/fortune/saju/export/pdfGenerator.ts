@@ -35,6 +35,14 @@ import {
   GENERATING_RELATIONS,
   CONTROLLING_RELATIONS,
   ELEMENT_INFO,
+  // 전문 명리학 용어 시스템
+  DAY_MASTER_PROFESSIONAL,
+  STRATEGIC_ADVICE,
+  getMonthlyTaboo,
+  generateIdentityTitle,
+  getHiddenTraitMessage,
+  calculateGoldenTimes,
+  generateFortunePrescriptions,
   type MBTIType
 } from '../mappings';
 import { ESSENCE_CARDS, ENERGY_CARDS, TALENT_CARDS } from '../cards/cardData';
@@ -1189,6 +1197,163 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       yPos += 5;
     });
   }
+
+  // ========== 전문가 분석: 운명 정체성 페이지 ==========
+  doc.addPage();
+  yPos = margin;
+
+  const dayStem = saju.day?.heavenlyStem || '甲';
+  const dayMasterPro = DAY_MASTER_PROFESSIONAL[dayStem];
+  const identityTitle = generateIdentityTitle(
+    user.name,
+    dayStem,
+    yongsin || ['wood'],
+    user.mbti,
+    user.bloodType
+  );
+
+  // 킬러 타이틀
+  doc.setFontSize(14);
+  doc.text('✧ 당신의 운명 정체성 ✧', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  doc.setFontSize(12);
+  const mainTitleLines = doc.splitTextToSize(identityTitle.mainTitle, contentWidth - 20);
+  mainTitleLines.forEach((line: string) => {
+    doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 8;
+  });
+  yPos += 5;
+
+  doc.setFontSize(10);
+  doc.text(`"${identityTitle.subTitle}"`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15;
+
+  // 일간 전문 분석
+  if (dayMasterPro) {
+    doc.setFontSize(11);
+    doc.text(`【${dayMasterPro.hanja}】 ${dayMasterPro.poeticTitle}`, margin, yPos);
+    yPos += 10;
+
+    doc.setFontSize(9);
+    const proDescLines = doc.splitTextToSize(dayMasterPro.professionalDesc, contentWidth);
+    proDescLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 8;
+
+    // 핵심 키워드
+    doc.setFontSize(10);
+    doc.text(`핵심 키워드: ${dayMasterPro.coreKeyword}`, margin, yPos);
+    yPos += 8;
+
+    // 인생 주제
+    doc.text(`인생 주제: ${dayMasterPro.lifeTheme}`, margin, yPos);
+    yPos += 12;
+
+    // 숨겨진 성격 (소름 포인트)
+    doc.setFontSize(11);
+    doc.text('🔮 당신만 아는 은밀한 속마음', margin, yPos);
+    yPos += 8;
+
+    const hiddenTrait = getHiddenTraitMessage(dayStem, user.mbti);
+    doc.setFontSize(9);
+    const hiddenLines = doc.splitTextToSize(hiddenTrait, contentWidth);
+    hiddenLines.forEach((line: string) => {
+      checkNewPage();
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    });
+    yPos += 10;
+  }
+
+  // 황금 기회일
+  const goldenTimes = calculateGoldenTimes(user.birthDate, dayStem, yongsin || ['wood'], targetYear);
+  if (goldenTimes.length > 0) {
+    doc.setFontSize(11);
+    doc.text(`⭐ ${targetYear}년 황금 기회일 (Golden Time)`, margin, yPos);
+    yPos += 10;
+
+    doc.setFontSize(9);
+    goldenTimes.forEach((gt, idx) => {
+      checkNewPage();
+      doc.text(`${idx + 1}. ${gt.date}`, margin, yPos);
+      yPos += 5;
+      const reasonLines = doc.splitTextToSize(`   ${gt.reason}`, contentWidth - 10);
+      reasonLines.forEach((line: string) => {
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+      doc.text(`   → ${gt.action}`, margin, yPos);
+      yPos += 7;
+    });
+    yPos += 8;
+  }
+
+  // 개운 처방전
+  const prescriptions = generateFortunePrescriptions(yongsin || ['wood'], gisin || ['fire']);
+  if (prescriptions.length > 0) {
+    checkNewPage(60);
+    doc.setFontSize(11);
+    doc.text('💊 개운(開運) 처방전', margin, yPos);
+    yPos += 10;
+
+    doc.setFontSize(9);
+    prescriptions.forEach(rx => {
+      checkNewPage();
+      doc.text(`[${rx.category}] ${rx.item}`, margin, yPos);
+      yPos += 5;
+      const howToLines = doc.splitTextToSize(`  → ${rx.howTo}`, contentWidth - 10);
+      howToLines.forEach((line: string) => {
+        doc.text(line, margin, yPos);
+        yPos += 5;
+      });
+      yPos += 3;
+    });
+  }
+
+  // 이번 달 금기 사항
+  const currentMonth = new Date().getMonth() + 1;
+  const monthlyTaboo = getMonthlyTaboo(currentMonth, primaryYongsin);
+
+  checkNewPage(50);
+  doc.setFontSize(11);
+  doc.text(`⚠️ ${currentMonth}월 주의 사항 & 행운 아이템`, margin, yPos);
+  yPos += 10;
+
+  doc.setFontSize(9);
+  doc.text(`❌ 피해야 할 것:`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 음식: ${monthlyTaboo.avoidFood}`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 색상: ${monthlyTaboo.avoidColor}`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 행동: ${monthlyTaboo.avoidAction}`, margin, yPos);
+  yPos += 8;
+
+  doc.text(`✅ 행운을 부르는 것:`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 음식: ${monthlyTaboo.luckyFood}`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 색상: ${monthlyTaboo.luckyColor}`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 방향: ${monthlyTaboo.luckyDirection}`, margin, yPos);
+  yPos += 5;
+  doc.text(`   • 행운 아이템: ${monthlyTaboo.luckyItem}`, margin, yPos);
+  yPos += 10;
+
+  // 부적 메시지
+  doc.setFontSize(10);
+  doc.text('🔯 디지털 부적', margin, yPos);
+  yPos += 8;
+  doc.setFontSize(9);
+  const amuletLines = doc.splitTextToSize(`"${monthlyTaboo.amuletMessage}"`, contentWidth - 20);
+  amuletLines.forEach((line: string) => {
+    doc.text(line, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 5;
+  });
 
   // ========== 올해 운영 대시보드 (Day7 추가) ==========
   doc.addPage();

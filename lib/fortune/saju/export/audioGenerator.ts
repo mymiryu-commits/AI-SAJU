@@ -3,6 +3,7 @@
  *
  * TTS(Text-to-Speech) 서비스를 사용하여 음성 파일 생성
  * 스토리텔링 기반의 감성적인 나레이션 지원
+ * 전문 명리학 용어를 활용한 신뢰도 높은 분석
  * 지원 서비스: Google Cloud TTS, Naver Clova, OpenAI TTS
  */
 
@@ -15,6 +16,15 @@ import type {
   Element
 } from '@/types/saju';
 import { ELEMENT_KOREAN, CAREER_KOREAN } from '@/types/saju';
+import {
+  DAY_MASTER_PROFESSIONAL,
+  STRATEGIC_ADVICE,
+  getMonthlyTaboo,
+  generateIdentityTitle,
+  getHiddenTraitMessage,
+  calculateGoldenTimes,
+  generateFortunePrescriptions
+} from '../mappings/professionalTerms';
 
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
@@ -430,6 +440,7 @@ function getLifeStage(age: number): LifeStageAdvice {
 
 /**
  * 스토리텔링 기반 나레이션 스크립트 생성 (풍부한 분석 포함)
+ * 전문 명리학 용어를 활용한 신뢰도 높은 분석
  */
 export function generateNarrationScript(options: AudioGeneratorOptions): NarrationScript {
   const { user, saju, oheng, yongsin, gisin, premium, targetYear = 2026 } = options;
@@ -437,32 +448,51 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
 
   // 기본 정보 추출
   const dayMaster = saju.day?.stemKorean || '갑';
+  const dayStem = saju.day?.heavenlyStem || '甲';
   const primaryYongsin = yongsin?.[0] || 'wood';
   const zodiac = saju.year?.zodiac || '';
   const age = calculateKoreanAge(user.birthDate);
   const lifeStage = getLifeStage(age);
 
-  // ========== 1. 오프닝 - 스토리텔링 후킹 ==========
+  // 전문 명리학 용어 가져오기
+  const dayMasterPro = DAY_MASTER_PROFESSIONAL[dayStem] || DAY_MASTER_PROFESSIONAL['甲'];
+  const identityTitle = generateIdentityTitle(
+    user.name,
+    dayStem,
+    yongsin || ['wood'],
+    user.mbti,
+    user.bloodType
+  );
+
+  // ========== 1. 오프닝 - 전문가 스타일 후킹 ==========
   const birthTimeKorean = formatTimeToNaturalKorean(user.birthTime);
   const essenceCardData = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
 
   sections.push({
     title: '인트로',
-    content: `신점 AI, 당신의 타고난 본질과 후천적 기질을 들여다봅니다. ` +
-             `AI-PLANX가 전해드리는 ${user.name}님만의 특별한 운명 이야기입니다.`,
+    content: `AI 운명 상담가가 전해드리는 ${user.name}님만의 특별한 운명 분석입니다. ` +
+             `지금부터 동양 최고의 명리학, 사주 분석을 시작합니다.`,
     pauseAfter: 2500
   });
 
   sections.push({
     title: '후킹',
-    content: `${essenceCardData.trait} ${user.name}님. ` +
-             `지금부터 당신의 사주를 검토하겠습니다. ` +
-             `이 분석은 생년월일, 사주팔자, 그리고 타고난 기운을 바탕으로 만들어졌습니다. ` +
-             `편안하게 귀 기울여 주세요.`,
-    pauseAfter: 2000
+    content: `${user.name}님, 당신은 ${dayMasterPro.hanja}의 기운을 타고났습니다. ` +
+             `${dayMasterPro.poeticTitle}로 불리는 이 명은, ${dayMasterPro.professionalDesc.slice(0, 80)}. ` +
+             `지금부터 이 명이 어떤 의미인지 자세히 풀어드리겠습니다.`,
+    pauseAfter: 3000
   });
 
-  // ========== 2. 프로필 소개 ==========
+  // ========== 2. 운명 정체성 ==========
+  sections.push({
+    title: '운명 정체성',
+    content: `${identityTitle.mainTitle}. ` +
+             `"${identityTitle.subTitle}" ` +
+             `이것이 당신의 운명 정체성입니다. 기억해 두세요.`,
+    pauseAfter: 2500
+  });
+
+  // ========== 3. 프로필 소개 ==========
   const formattedDate = user.birthDate.replace(/-/g, '년 ').replace(/년 (\d+)$/, '월 $1일');
   sections.push({
     title: '프로필',
@@ -472,15 +502,25 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2000
   });
 
-  // ========== 3. 본질 카드 - 나는 누구인가 ==========
+  // ========== 4. 본질 카드 + 전문 용어 ==========
   const essenceCard = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
   const categoryText = essenceCard.category === 'tree' ? '나무로' : '꽃으로';
   sections.push({
     title: '본질 카드',
-    content: `먼저, 당신이 어떤 사람인지 이야기해 볼게요. ` +
+    content: `당신의 일간(日干)은 ${dayMasterPro.hanja}입니다. ` +
+             `${dayMasterPro.symbol}에 비유되며, ${dayMasterPro.nature}의 기운을 가졌습니다. ` +
              `당신을 ${categoryText} 표현하면 "${essenceCard.symbol}"입니다. ` +
              `${essenceCard.story} ` +
-             `이게 바로 당신의 타고난 본질이에요. 부정하지 마세요. 그게 당신의 힘입니다.`,
+             `이게 바로 당신의 타고난 본질이에요.`,
+    pauseAfter: 2500
+  });
+
+  // ========== 5. 숨겨진 성격 (소름 포인트) ==========
+  sections.push({
+    title: '숨겨진 속마음',
+    content: `${user.name}님, 여기서 소름 돋는 이야기를 하나 해드릴게요. ` +
+             `${dayMasterPro.hiddenTrait}. ` +
+             `맞으시죠? 이건 사주에서만 알 수 있는 당신의 숨겨진 속마음입니다.`,
     pauseAfter: 2500
   });
 
@@ -729,19 +769,69 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2000
   });
 
-  // ========== 13. 클로징 ==========
+  // ========== 13. 황금 기회일 ==========
+  const goldenTimes = calculateGoldenTimes(user.birthDate, dayStem, yongsin || ['wood'], targetYear);
+  if (goldenTimes.length > 0) {
+    const firstGolden = goldenTimes[0];
+    sections.push({
+      title: '황금 기회일',
+      content: `${user.name}님, 특별히 기억해야 할 날을 알려드릴게요. ` +
+               `${firstGolden.date}은 당신에게 "천을귀인(天乙貴人)"이 임하는 황금 기회의 날입니다. ` +
+               `이 날은 ${firstGolden.action}. ` +
+               `달력에 꼭 표시해 두세요. 이 기운을 놓치면 아깝습니다.`,
+      pauseAfter: 2500
+    });
+  }
+
+  // ========== 14. 이번 달 금기 사항 ==========
+  const currentMonth = new Date().getMonth() + 1;
+  const monthlyTaboo = getMonthlyTaboo(currentMonth, primaryYongsin);
+  sections.push({
+    title: '월별 주의사항',
+    content: `${currentMonth}월 주의사항을 알려드릴게요. ` +
+             `이번 달은 ${monthlyTaboo.avoidAction}. 이건 피하시는 게 좋습니다. ` +
+             `반면에, ${monthlyTaboo.luckyItem}을 가까이 두시면 운이 열립니다. ` +
+             `${monthlyTaboo.luckyColor} 계열의 옷을 입으시면 더욱 좋고요. ` +
+             `작은 것 하나가 운을 바꿉니다. 실천해 보세요.`,
+    pauseAfter: 2500
+  });
+
+  // ========== 15. 개운 처방전 ==========
+  const prescriptions = generateFortunePrescriptions(yongsin || ['wood'], gisin || ['fire']);
+  if (prescriptions.length > 0) {
+    const envRx = prescriptions.find(p => p.category === '환경');
+    const avoidRx = prescriptions.find(p => p.category === '피할 것');
+
+    let rxContent = `마지막으로 일상에서 실천할 수 있는 개운법(開運法)을 알려드릴게요. `;
+    if (envRx) {
+      rxContent += `${envRx.item}을 ${envRx.howTo} `;
+    }
+    if (avoidRx) {
+      rxContent += `반면에, ${avoidRx.item}은 조금 줄이시는 게 좋겠습니다. `;
+    }
+    rxContent += `이런 작은 변화가 운의 흐름을 바꿉니다.`;
+
+    sections.push({
+      title: '개운 처방전',
+      content: rxContent,
+      pauseAfter: 2500
+    });
+  }
+
+  // ========== 16. 클로징 ==========
   sections.push({
     title: '마무리',
     content: `${user.name}님, 긴 이야기 끝까지 들어주셔서 감사합니다. ` +
              `오늘 들은 이야기 중에 "아, 이건 정말 나네" 하고 고개를 끄덕인 부분이 있으셨을 거예요. ` +
              `그 느낌을 기억해주세요. 그게 당신을 이해하는 첫걸음입니다. ` +
              `운명은 정해진 게 아니라, 알고 대비하면 바꿀 수 있습니다. ` +
+             `사주가 당신의 길을 정하는 것이 아니라, 당신이 이 운세를 어떻게 "사용"할지가 중요합니다. ` +
              `이 분석이 당신의 인생에 작은 나침반이 되기를 바랍니다. ` +
              `${user.name}님의 앞날에 좋은 일만 가득하기를 진심으로 기원합니다.`,
     pauseAfter: 1500
   });
 
-  // ========== 14. 아웃트로 ==========
+  // ========== 17. 아웃트로 ==========
   sections.push({
     title: '아웃트로',
     content: `이 분석이 도움이 되셨다면, 소중한 분께 공유해 보세요. ` +

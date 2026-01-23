@@ -44,3 +44,20 @@ export {
   type GeneratingRelation,
   type ControllingRelation
 } from './poeticExpressions';
+
+// 전문 명리학 용어 시스템
+export {
+  DAY_MASTER_PROFESSIONAL,
+  STRATEGIC_ADVICE,
+  getMonthlyTaboo,
+  generateIdentityTitle,
+  getHiddenTraitMessage,
+  calculateGoldenTimes,
+  generateFortunePrescriptions,
+  type DayMasterProfessional,
+  type StrategicAdvice,
+  type MonthlyTaboo,
+  type IdentityTitle,
+  type GoldenTime,
+  type FortunePrescription
+} from './professionalTerms';
