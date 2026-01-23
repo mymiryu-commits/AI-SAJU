@@ -224,9 +224,11 @@ export default function PrivacyPolicyPage() {
             <h3 className="font-semibold mb-2">사업자 정보</h3>
             <ul className="text-sm space-y-1">
               <li>상호: 플랜엑스솔루션 주식회사</li>
-              <li>사업자등록번호: 786-87-03494</li>
               <li>대표자: 김형석</li>
-              <li>고객센터: 1588-5617</li>
+              <li>사업자등록번호: 786-87-03494</li>
+              <li>통신판매업 신고번호: 신고예정</li>
+              <li>주소: 강원특별자치도 춘천시 춘천순환로 108, 501호</li>
+              <li>고객센터: 1588-5617 (평일 09:00~18:00)</li>
               <li>이메일: mymiryu@gmail.com</li>
             </ul>
           </section>

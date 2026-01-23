@@ -164,10 +164,13 @@ export default function RefundPolicyPage() {
           <section className="bg-muted/50 p-4 rounded-lg mt-8">
             <h3 className="font-semibold mb-2">환불 문의</h3>
             <ul className="text-sm space-y-1">
-              <li>고객센터: 1588-5617 (평일 09:00 ~ 18:00)</li>
+              <li>고객센터: 1588-5617 (평일 09:00~18:00, 점심 12:00~13:00)</li>
               <li>이메일: mymiryu@gmail.com</li>
               <li>상호: 플랜엑스솔루션 주식회사</li>
+              <li>대표자: 김형석</li>
               <li>사업자등록번호: 786-87-03494</li>
+              <li>통신판매업 신고번호: 신고예정</li>
+              <li>주소: 강원특별자치도 춘천시 춘천순환로 108, 501호</li>
             </ul>
           </section>
         </CardContent>
