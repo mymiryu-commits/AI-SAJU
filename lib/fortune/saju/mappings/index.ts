@@ -68,6 +68,7 @@ export {
   generateMonthlyFortune,
   generateGrowthStrategy,
   generateFamilyAdvice,
+  generateBloodTypeIntegration,
   DIFFERENTIATION_POINTS,
   type TraitAnalysis,
   type MonthlyFortune,

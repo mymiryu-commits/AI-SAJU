@@ -212,32 +212,171 @@ const ZODIAC_INNATE: Record<string, { trait: string; strength: string; challenge
   '물고기자리': { trait: '공감력과 상상력', strength: '직관과 치유력', challenge: '경계 설정' }
 };
 
-// 혈액형별 후천적 사회화 패턴
-const BLOODTYPE_ACQUIRED: Record<string, { social: string; stress: string; relationship: string }> = {
+// ========== 혈액형 + 사주 + MBTI 통합 분석 시스템 ==========
+// 단순 혈액형 분석이 아닌, 사주/MBTI와의 시너지/충돌 분석
+
+interface BloodTypeIntegration {
+  // 사주 일간과의 화학작용
+  sajuSynergy: Record<string, string>;
+  // MBTI와의 화학작용
+  mbtiSynergy: Record<string, string>;
+  // 숨겨진 잠재력 (다른 도구에서 안 보이는 것)
+  hiddenPower: string;
+  // 성장 함정 (주의할 점)
+  growthTrap: string;
+  // 최적 환경
+  optimalEnvironment: string;
+}
+
+const BLOODTYPE_INTEGRATION: Record<string, BloodTypeIntegration> = {
   'A': {
-    social: '조화를 중시하고 규칙을 따르는 방식으로 사회화되었습니다',
-    stress: '완벽해야 한다는 압박과 타인의 시선에 민감합니다',
-    relationship: '신뢰 쌓는 데 시간이 걸리지만 한번 열면 깊게 연결됩니다'
+    sajuSynergy: {
+      '甲': 'A형의 신중함이 갑목(甲)의 추진력에 브레이크 역할을 해, 무모한 실패를 방지합니다. 다만 너무 신중하면 기회를 놓칠 수 있어요.',
+      '乙': '완벽한 조화! A형의 섬세함과 을목(乙)의 유연성이 만나 사람을 움직이는 부드러운 리더십을 발휘합니다.',
+      '丙': 'A형의 내향성과 병화(丙)의 외향성 사이에서 내적 갈등이 있습니다. 하지만 이 긴장이 깊이 있는 매력을 만듭니다.',
+      '丁': '뛰어난 궁합! A형의 꼼꼼함과 정화(丁)의 통찰력이 합쳐져 전문가로서 최고의 역량을 발휘합니다.',
+      '戊': 'A형의 규칙 중시와 무토(戊)의 안정감이 시너지를 이뤄 조직에서 신뢰받는 인재가 됩니다.',
+      '己': 'A형의 배려와 기토(己)의 헌신이 합쳐져 주변을 성장시키는 멘토 역할을 탁월하게 수행합니다.',
+      '庚': '흥미로운 조합! A형의 신중함이 경금(庚)의 결단력과 충돌하지만, 이를 통합하면 실수 없는 실행력이 됩니다.',
+      '辛': 'A형의 완벽주의와 신금(辛)의 정교함이 만나 예술적 완성도가 매우 높아집니다. 다만 스스로를 너무 압박하지 마세요.',
+      '壬': 'A형의 틀 안에서 임수(壬)의 자유로움이 갈등합니다. 이 긴장을 창작 에너지로 승화시키면 독창적 결과물이 나옵니다.',
+      '癸': '감성적 깊이의 조합. A형의 내성적 면과 계수(癸)의 직관이 합쳐져 타인의 마음을 깊이 읽습니다.',
+    },
+    mbtiSynergy: {
+      'I': 'A형 + 내향(I)은 자연스러운 조합. 깊이 있는 관계를 형성하고 신중한 의사결정을 합니다. 다만 행동력을 의식적으로 키우세요.',
+      'E': 'A형이면서 외향(E)은 내면의 갈등이 있습니다. 사교적이지만 혼자만의 시간이 꼭 필요해요. 이 균형을 지키세요.',
+      'T': 'A형의 감수성과 사고(T)의 논리가 합쳐지면 감정을 배제한 냉정함이 될 수 있어요. 가끔은 마음의 소리도 들어주세요.',
+      'F': '완벽한 시너지! A형의 배려심과 감정(F)이 합쳐져 주변 사람들에게 큰 위안이 됩니다.',
+      'J': 'A형 + 판단(J)은 계획적이고 체계적. 다만 예상 밖 상황에 유연하게 대처하는 연습이 필요합니다.',
+      'P': 'A형의 규칙 중시와 인식(P)의 유연함이 충돌합니다. 이 긴장을 적응력으로 전환하세요.',
+    },
+    hiddenPower: '겉으로는 순응적으로 보이지만, 조용히 상황을 분석하고 최적의 타이밍에 결정적 한 마디를 던지는 능력이 있습니다. 이 "조용한 영향력"을 활용하세요.',
+    growthTrap: '타인의 기대에 맞추느라 자신의 진짜 욕구를 억압하는 경향. 가끔은 "나는 이게 싫어"라고 말하는 연습을 하세요.',
+    optimalEnvironment: '명확한 역할과 평가 기준이 있고, 전문성을 인정받는 환경에서 최고의 성과를 냅니다.'
   },
   'B': {
-    social: '자유롭게 자기 방식을 추구하며 사회화되었습니다',
-    stress: '구속받는 느낌과 오해받는 것에 스트레스를 받습니다',
-    relationship: '독립성을 존중받으면 가장 충성스러운 파트너가 됩니다'
+    sajuSynergy: {
+      '甲': '완벽한 시너지! B형의 자유로움과 갑목(甲)의 추진력이 합쳐져 새로운 영역을 개척하는 선구자가 됩니다.',
+      '乙': 'B형의 독립성과 을목(乙)의 유연함이 합쳐져 어디서든 적응하면서 자기 색깔을 지키는 능력이 됩니다.',
+      '丙': '폭발적 조합! B형과 병화(丙) 모두 에너지가 넘쳐 엄청난 추진력을 보여주지만, 번아웃 주의가 필요해요.',
+      '丁': 'B형의 자유분방함과 정화(丁)의 집중력 사이에 갈등이 있습니다. 관심사를 하나로 좁히면 대가(大家)가 됩니다.',
+      '戊': 'B형의 변화 추구와 무토(戊)의 안정감이 충돌합니다. 이 긴장을 "창의적 안정"으로 승화시키세요.',
+      '己': 'B형의 독립성과 기토(己)의 배려심이 합쳐져 자유롭지만 책임감 있는 독특한 매력이 됩니다.',
+      '庚': '강력한 조합! B형과 경금(庚) 모두 직진형이라 목표를 향해 거침없이 나아갑니다. 다만 주변과의 마찰 관리 필요.',
+      '辛': 'B형의 자유로움과 신금(辛)의 정교함이 합쳐져 독창적이면서도 완성도 높은 결과물을 만듭니다.',
+      '壬': '최고의 궁합! B형과 임수(壬) 모두 자유와 흐름을 중시해 어떤 제약도 창의적으로 돌파합니다.',
+      '癸': 'B형의 외향적 자유로움과 계수(癸)의 내향적 깊이가 독특하게 조합됩니다. 혼자만의 창작 시간을 확보하세요.',
+    },
+    mbtiSynergy: {
+      'I': 'B형이면서 내향(I)은 "나만의 세계"가 매우 풍부합니다. 이 내면세계를 표현하면 독창적 결과물이 됩니다.',
+      'E': 'B형 + 외향(E)은 자연스러운 조합. 어디서든 분위기 메이커가 되지만, 깊은 관계 형성에 시간을 투자하세요.',
+      'T': 'B형의 직관과 사고(T)의 논리가 합쳐져 논리적이면서도 창의적인 문제 해결이 가능합니다.',
+      'F': 'B형 + 감정(F)은 감수성이 풍부합니다. 이 감정을 창작 에너지로 활용하세요.',
+      'J': 'B형의 자유로움과 판단(J)의 계획성이 충돌합니다. 큰 틀만 정하고 디테일은 유연하게 가세요.',
+      'P': '완벽한 시너지! B형 + 인식(P)은 상황에 따라 최적의 대응을 하는 적응력이 뛰어납니다.',
+    },
+    hiddenPower: '남들이 "이건 안 돼"라고 할 때 "왜 안 돼?"라고 질문하는 용기. 이 질문이 새로운 가능성을 열어줍니다. 오해받는 것을 두려워하지 마세요.',
+    growthTrap: '자유를 추구하다가 책임을 회피하는 것처럼 보일 수 있어요. 자유와 책임은 함께 간다는 것을 기억하세요.',
+    optimalEnvironment: '자율성이 보장되고, 결과로 평가받는 환경에서 최고의 성과를 냅니다. 창업이나 프리랜서에 적합해요.'
   },
   'O': {
-    social: '리더십과 사교성을 발휘하며 사회화되었습니다',
-    stress: '통제력 상실과 무력감에 취약합니다',
-    relationship: '넓은 인맥을 가지지만 진짜 속마음은 소수에게만 엽니다'
+    sajuSynergy: {
+      '甲': '황금 조합! O형의 리더십과 갑목(甲)의 추진력이 합쳐져 천생 리더의 기질이 됩니다. 다만 독단에 주의하세요.',
+      '乙': 'O형의 외향성과 을목(乙)의 유연함이 합쳐져 사람을 끌어당기는 매력이 됩니다. 인맥이 자산이에요.',
+      '丙': '에너지 폭발! O형과 병화(丙) 모두 중심에 서려는 성향이라 리더십 경쟁이 일어날 수 있어요. 역할 분담이 중요합니다.',
+      '丁': 'O형의 대범함과 정화(丁)의 섬세함이 조화를 이뤄 리더이면서도 디테일을 놓치지 않습니다.',
+      '戊': '안정된 리더십! O형과 무토(戊)의 신뢰감이 합쳐져 조직의 든든한 중심이 됩니다.',
+      '己': 'O형의 외향성과 기토(己)의 내향성 사이에 갈등이 있습니다. 밖에서 이끌고 안에서 돌보는 균형을 찾으세요.',
+      '庚': '최강 조합! O형과 경금(庚) 모두 목표 지향적이라 결과를 내는 데 탁월합니다. 다만 과정의 인간관계도 중요해요.',
+      '辛': 'O형의 대범함과 신금(辛)의 섬세함이 충돌합니다. 이 긴장을 "큰 그림 + 완벽한 디테일"로 승화시키세요.',
+      '壬': 'O형의 리더십과 임수(壬)의 지혜가 합쳐져 상황을 읽고 유연하게 대응하는 지휘관이 됩니다.',
+      '癸': 'O형의 외향성과 계수(癸)의 내향성이 독특하게 조합됩니다. 겉으로는 사교적이지만 내면은 매우 깊어요.',
+    },
+    mbtiSynergy: {
+      'I': 'O형이면서 내향(I)은 드문 조합. 필요할 때만 리더십을 발휘하는 "조용한 리더" 스타일입니다.',
+      'E': '완벽한 시너지! O형 + 외향(E)은 타고난 사교 능력. 인맥이 모든 기회의 문을 열어줍니다.',
+      'T': 'O형의 리더십과 사고(T)의 논리가 합쳐져 설득력 있는 논리적 리더가 됩니다.',
+      'F': 'O형 + 감정(F)은 카리스마 있으면서 따뜻한 리더. 사람들이 자발적으로 따릅니다.',
+      'J': 'O형 + 판단(J)은 목표와 계획이 명확한 실행형 리더. 조직을 효율적으로 이끕니다.',
+      'P': 'O형의 목표 지향과 인식(P)의 유연함이 합쳐져 상황 대응력이 뛰어난 리더가 됩니다.',
+    },
+    hiddenPower: '위기 상황에서 오히려 침착해지고 결단력이 높아지는 특성. 평상시보다 긴급 상황에서 진가를 발휘합니다. 이 "위기 대응 능력"을 믿으세요.',
+    growthTrap: '모든 것을 컨트롤하려는 욕구가 강해 위임을 못 할 수 있어요. "나 없이도 돌아가게" 만드는 것이 진짜 리더십입니다.',
+    optimalEnvironment: '도전적인 목표가 있고, 성과가 보상으로 이어지는 환경에서 최고의 성과를 냅니다.'
   },
   'AB': {
-    social: '다양한 면을 상황에 맞게 보여주며 사회화되었습니다',
-    stress: '이해받지 못한다는 느낌에 외로워집니다',
-    relationship: '복잡한 내면을 가졌지만 진정한 연결을 갈망합니다'
+    sajuSynergy: {
+      '甲': 'AB형의 복잡한 내면과 갑목(甲)의 단순 추진력이 충돌합니다. 결정하기 전에 너무 오래 고민하지 마세요.',
+      '乙': '뛰어난 조화! AB형의 다면성과 을목(乙)의 유연함이 합쳐져 어떤 상대와도 맞출 수 있는 카멜레온 능력이 됩니다.',
+      '丙': 'AB형의 내향적 면과 병화(丙)의 외향성 사이에서 복잡한 내면 역학이 있습니다. 이 복잡함이 매력입니다.',
+      '丁': '최고의 궁합! AB형의 분석력과 정화(丁)의 통찰력이 합쳐져 남들이 못 보는 것을 봅니다.',
+      '戊': 'AB형의 변화무쌍함과 무토(戊)의 안정감이 균형을 이뤄 기반이 탄탄한 혁신가가 됩니다.',
+      '己': 'AB형의 복잡함과 기토(己)의 배려가 합쳐져 다양한 사람을 이해하고 연결하는 능력이 됩니다.',
+      '庚': 'AB형의 다면성과 경금(庚)의 결단력이 충돌합니다. 중요한 결정은 하나의 기준으로 밀고 나가세요.',
+      '辛': '완벽한 시너지! AB형과 신금(辛) 모두 정교하고 완벽을 추구해 예술적 완성도가 높습니다.',
+      '壬': 'AB형의 복잡함과 임수(壬)의 깊이가 합쳐져 철학적이고 지적인 매력이 됩니다.',
+      '癸': '최고의 조합! AB형과 계수(癸) 모두 직관적이고 감수성이 풍부해 예술가/치유자에 적합합니다.',
+    },
+    mbtiSynergy: {
+      'I': '완벽한 시너지! AB형 + 내향(I)은 깊은 내면세계를 가진 사색가. 이 깊이가 독창적 관점을 만듭니다.',
+      'E': 'AB형이면서 외향(E)은 사교적이지만 진짜 속마음은 숨깁니다. 가까운 사람에게는 진심을 열어보세요.',
+      'T': 'AB형의 감수성과 사고(T)의 논리가 독특하게 조합됩니다. 논리와 직관 모두 활용하세요.',
+      'F': 'AB형 + 감정(F)은 타인의 감정을 깊이 이해합니다. 다만 감정에 휩쓸리지 않는 연습도 필요해요.',
+      'J': 'AB형의 변화무쌍함과 판단(J)의 계획성이 충돌합니다. 유연한 계획을 세우세요.',
+      'P': 'AB형 + 인식(P)은 상황에 따라 최적의 모습을 보여주는 적응력이 뛰어납니다.',
+    },
+    hiddenPower: '서로 다른 세계 사이를 연결하는 "번역가" 능력. 다른 사람들이 이해 못 하는 것을 설명하고, 반대 의견을 중재하는 역할에서 빛납니다.',
+    growthTrap: '너무 많은 가능성을 보느라 결정을 못 내리는 경향. "틀려도 괜찮다"는 마인드로 일단 선택하세요.',
+    optimalEnvironment: '다양성이 존중되고, 창의적 해결책이 필요한 환경에서 최고의 성과를 냅니다. 연구/기획/중재 역할에 적합해요.'
   }
 };
 
 /**
- * 통합 기질 분석 생성
+ * 혈액형 + 사주 + MBTI 통합 분석
+ */
+export function generateBloodTypeIntegration(
+  bloodType: string,
+  dayStem: string,
+  mbti?: string
+): {
+  sajuChemistry: string;
+  mbtiChemistry: string;
+  hiddenPower: string;
+  growthTrap: string;
+  optimalEnvironment: string;
+  combinedInsight: string;
+} {
+  const integration = BLOODTYPE_INTEGRATION[bloodType] || BLOODTYPE_INTEGRATION['A'];
+  const sajuChem = integration.sajuSynergy[dayStem] || integration.sajuSynergy['甲'];
+
+  // MBTI 첫 글자로 I/E, 마지막 글자로 J/P, 3번째 글자로 T/F 구분
+  let mbtiChem = '';
+  if (mbti && mbti.length === 4) {
+    const ie = integration.mbtiSynergy[mbti[0]] || '';
+    const tf = integration.mbtiSynergy[mbti[2]] || '';
+    const jp = integration.mbtiSynergy[mbti[3]] || '';
+    mbtiChem = `${ie} ${tf} ${jp}`.trim();
+  }
+
+  // 종합 인사이트 생성
+  const combinedInsight = `${bloodType}형이면서 ${dayStem} 일간인 당신은 ${integration.hiddenPower.split('.')[0]}. ` +
+    (mbti ? `${mbti} 성향까지 더해져 ` : '') +
+    `이것이 당신만의 독특한 강점입니다.`;
+
+  return {
+    sajuChemistry: sajuChem,
+    mbtiChemistry: mbtiChem || '개인의 MBTI에 따라 다양한 조합이 가능합니다.',
+    hiddenPower: integration.hiddenPower,
+    growthTrap: integration.growthTrap,
+    optimalEnvironment: integration.optimalEnvironment,
+    combinedInsight
+  };
+}
+
+// 기존 단순 혈액형 패턴은 제거하고 통합 분석에 포함
+
+/**
+ * 통합 기질 분석 생성 (사주 + MBTI + 별자리 + 혈액형)
  */
 export function generateTraitAnalysis(
   dayStem: string,
@@ -249,18 +388,26 @@ export function generateTraitAnalysis(
   const innateData = INNATE_BY_DAYMASTER[dayStem] || INNATE_BY_DAYMASTER['甲'];
   const acquiredData = mbti ? ACQUIRED_BY_MBTI[mbti] : null;
   const zodiacData = zodiacSign ? ZODIAC_INNATE[zodiacSign] : null;
-  const bloodData = bloodType ? BLOODTYPE_ACQUIRED[bloodType] : null;
+
+  // 혈액형 + 사주 + MBTI 통합 분석 (새로운 시스템)
+  const bloodIntegration = bloodType ? generateBloodTypeIntegration(bloodType, dayStem, mbti) : null;
 
   // 선천적 기질 조합
   let innateCore = innateData.core;
   if (zodiacData) {
-    innateCore += `, 그리고 ${zodiacSign}의 ${zodiacData.trait}이 더해져`;
+    innateCore += `, 그리고 ${zodiacSign}의 ${zodiacData.trait}이 더해져 독특한 조합을 이룹니다`;
   }
 
-  // 후천적 기질 조합
+  // 후천적 기질 조합 (혈액형 통합 분석 활용)
   let acquiredBehavior = acquiredData?.behavior || '환경에 따라 다양하게 적응해왔습니다';
-  if (bloodData) {
-    acquiredBehavior = `${bloodData.social} ${acquiredData?.behavior || ''}`;
+  if (bloodIntegration) {
+    acquiredBehavior = bloodIntegration.sajuChemistry;
+  }
+
+  // 스트레스 대응 (혈액형 성장 함정 활용)
+  let copingStyle = acquiredData?.coping || '나름의 방식으로 스트레스를 관리합니다';
+  if (bloodIntegration) {
+    copingStyle = `주의: ${bloodIntegration.growthTrap}`;
   }
 
   // 미래 투영 (나이에 따라)
@@ -275,6 +422,12 @@ export function generateTraitAnalysis(
     futureProjection = `인생의 깊이가 빛나는 시기입니다. ${innateData.potential}이 후대에 전해지는 유산이 됩니다.`;
   }
 
+  // 통합 인사이트 (혈액형 숨겨진 능력 포함)
+  let keyAdvice = `${zodiacData?.challenge || innateData.theme}에 주의하면서, ${acquiredData?.growth || '꾸준히 성장하세요'}`;
+  if (bloodIntegration) {
+    keyAdvice = `숨겨진 강점: ${bloodIntegration.hiddenPower.split('.')[0]}. ${bloodIntegration.optimalEnvironment}`;
+  }
+
   return {
     innate: {
       corePersonality: innateCore,
@@ -284,14 +437,14 @@ export function generateTraitAnalysis(
     },
     acquired: {
       learnedBehavior: acquiredBehavior,
-      socialMask: acquiredData?.mask || '상황에 맞는 모습을 보여주지만',
-      copingStyle: acquiredData?.coping || (bloodData?.stress || '나름의 방식으로 스트레스를 관리합니다'),
+      socialMask: acquiredData?.mask || '상황에 맞는 모습을 보여주지만, 내면에는 다른 모습이 있습니다',
+      copingStyle,
       growthDirection: acquiredData?.growth || '자기 이해를 통해 성장합니다'
     },
     synthesis: {
-      currentState: `선천적으로 ${innateData.core}을 타고났고, 후천적으로 ${acquiredData?.behavior?.slice(0, 30) || '환경에 적응하며'}... 살아왔습니다.`,
+      currentState: bloodIntegration?.combinedInsight || `선천적으로 ${innateData.core}을 타고났고, 후천적으로 환경에 적응하며 성장해왔습니다.`,
       futureProjection,
-      keyAdvice: `${zodiacData?.challenge || innateData.theme}에 주의하면서, ${acquiredData?.growth || '꾸준히 성장하세요'}`
+      keyAdvice
     }
   };
 }

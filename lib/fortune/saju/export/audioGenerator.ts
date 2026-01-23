@@ -29,7 +29,8 @@ import {
   generateTraitAnalysis,
   generateMonthlyFortune,
   generateGrowthStrategy,
-  generateFamilyAdvice
+  generateFamilyAdvice,
+  generateBloodTypeIntegration
 } from '../mappings/differentiatedContent';
 
 // TTS 제공자 타입
@@ -552,17 +553,24 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2500
   });
 
-  // ========== 4. 혈액형 분석 (있으면) ==========
+  // ========== 4. 혈액형 + 사주 + MBTI 통합 분석 (있으면) ==========
   const bloodType = (user as any).bloodType;
-  if (bloodType && BLOOD_TYPE_STORIES[bloodType]) {
-    const blood = BLOOD_TYPE_STORIES[bloodType];
+  if (bloodType) {
+    const bloodIntegration = generateBloodTypeIntegration(bloodType, dayStem, user.mbti);
     sections.push({
-      title: '혈액형 분석',
-      content: `${bloodType}형인 당신의 특징을 말씀드릴게요. ` +
-               `${blood.strength} ` +
-               `${blood.weakness} ` +
-               `스트레스를 받을 때는 어떠세요? ${blood.stress}`,
-      pauseAfter: 2000
+      title: '혈액형 통합 분석',
+      content: `${bloodType}형인 당신, 단순한 혈액형 분석이 아닌 사주와 결합한 깊은 통찰을 드릴게요. ` +
+               `${bloodIntegration.sajuChemistry.slice(0, 150)}. ` +
+               `${bloodIntegration.hiddenPower}`,
+      pauseAfter: 3000
+    });
+
+    sections.push({
+      title: '혈액형 성장 포인트',
+      content: `${user.name}님, 성장을 위한 조언도 드릴게요. ` +
+               `주의할 점: ${bloodIntegration.growthTrap} ` +
+               `가장 빛나는 환경은요, ${bloodIntegration.optimalEnvironment}`,
+      pauseAfter: 2500
     });
   }
 
