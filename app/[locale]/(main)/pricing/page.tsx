@@ -18,45 +18,49 @@ import {
   Clock,
   FileText,
   Volume2,
+  ChevronDown,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// 사주분석 패키지
+// 사주분석 패키지 - 1회권 기준 14,900원
 const sajuPackages = [
   {
     name: '1회권',
     quantity: 1,
     regularPrice: 29900,
     salePrice: 14900,
-    discount: '50%',
-    label: '런칭특가',
-    popular: false,
-    limitedOffer: true,
+    baseDiscount: 50, // 정가 대비 할인
+    extraDiscount: 0,  // 1회권 대비 추가 할인
   },
   {
     name: '3회권',
     quantity: 3,
     regularPrice: 79900,
     salePrice: 38900,
-    discount: '51%',
-    label: '런칭특가',
-    popular: false,
+    baseDiscount: 51,
+    extraDiscount: 13, // 1회당 12,967원 → 14,900원 대비 13% 추가할인
   },
   {
     name: '5회권',
     quantity: 5,
     regularPrice: 119900,
     salePrice: 59900,
-    discount: '50%',
-    label: '런칭특가',
-    popular: false,
+    baseDiscount: 50,
+    extraDiscount: 20, // 1회당 11,980원 → 14,900원 대비 20% 추가할인
   },
   {
     name: '10회권',
     quantity: 10,
     regularPrice: 199900,
     salePrice: 97000,
-    discount: '51%',
-    label: '추천',
+    baseDiscount: 51,
+    extraDiscount: 35, // 1회당 9,700원 → 14,900원 대비 35% 추가할인
     popular: true,
   },
   {
@@ -64,18 +68,17 @@ const sajuPackages = [
     quantity: 30,
     regularPrice: 449000,
     salePrice: 299000,
-    discount: '33%',
-    label: null,
-    popular: false,
+    baseDiscount: 33,
+    extraDiscount: 33, // 1회당 9,967원 → 14,900원 대비 33% 추가할인
   },
   {
     name: '50회권',
     quantity: 50,
     regularPrice: 749000,
     salePrice: 399000,
-    discount: '47%',
-    label: '최대할인',
-    popular: false,
+    baseDiscount: 47,
+    extraDiscount: 46, // 1회당 7,980원 → 14,900원 대비 46% 추가할인
+    bestValue: true,
   },
 ];
 
@@ -131,10 +134,14 @@ const b2bPackages = [
 
 export default function PricingPage() {
   const [activeTab, setActiveTab] = useState('personal');
+  const [selectedQuantity, setSelectedQuantity] = useState('1');
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
   };
+
+  const selectedPackage = sajuPackages.find(pkg => pkg.quantity.toString() === selectedQuantity) || sajuPackages[0];
+  const basePackage = sajuPackages[0]; // 1회권
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -164,7 +171,7 @@ export default function PricingPage() {
 
         {/* 개인 요금제 */}
         <TabsContent value="personal" className="mt-8">
-          {/* 사주분석 */}
+          {/* 사주분석 - 심플 UI */}
           <div className="mb-16">
             <div className="flex items-center justify-center gap-3 mb-8">
               <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
@@ -176,36 +183,79 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
-              {sajuPackages.map((pkg) => (
-                <Card
-                  key={pkg.quantity}
-                  className={`relative ${pkg.popular ? 'border-primary shadow-lg ring-2 ring-primary' : ''}`}
-                >
-                  {pkg.label && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className={pkg.popular ? 'bg-primary' : 'bg-red-500'}>
-                        {pkg.label}
-                      </Badge>
-                    </div>
-                  )}
-                  <CardContent className="p-4 pt-6 text-center">
-                    <h3 className="font-bold text-lg mb-2">{pkg.name}</h3>
-                    <p className="text-sm text-muted-foreground line-through">
-                      {formatPrice(pkg.regularPrice)}원
+            {/* 메인 가격 카드 */}
+            <div className="max-w-md mx-auto">
+              <Card className="relative border-2 border-primary shadow-xl">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-red-500 text-white px-4 py-1">
+                    런칭특가 {selectedPackage.baseDiscount}% 할인
+                  </Badge>
+                </div>
+
+                <CardContent className="p-8 pt-10 text-center">
+                  {/* 수량 선택 드롭다운 */}
+                  <div className="mb-6">
+                    <Select value={selectedQuantity} onValueChange={setSelectedQuantity}>
+                      <SelectTrigger className="w-48 mx-auto text-lg font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sajuPackages.map((pkg) => (
+                          <SelectItem key={pkg.quantity} value={pkg.quantity.toString()}>
+                            <div className="flex items-center justify-between gap-4">
+                              <span>{pkg.name}</span>
+                              {pkg.extraDiscount > 0 && (
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                  +{pkg.extraDiscount}% 추가할인
+                                </Badge>
+                              )}
+                              {pkg.popular && (
+                                <Badge className="text-xs bg-primary">추천</Badge>
+                              )}
+                              {pkg.bestValue && (
+                                <Badge className="text-xs bg-amber-500">최대할인</Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 가격 표시 */}
+                  <div className="mb-4">
+                    <p className="text-lg text-muted-foreground line-through">
+                      {formatPrice(selectedPackage.regularPrice)}원
                     </p>
-                    <p className="text-2xl font-bold text-primary">
-                      {formatPrice(pkg.salePrice)}원
+                    <p className="text-4xl font-bold text-primary my-2">
+                      {formatPrice(selectedPackage.salePrice)}원
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      1회당 {formatPrice(Math.round(pkg.salePrice / pkg.quantity))}원
-                    </p>
-                    <Badge variant="outline" className="mt-2 text-red-500 border-red-500">
-                      {pkg.discount} 할인
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
+
+                    {/* 추가 할인 표시 (1회권 제외) */}
+                    {selectedPackage.extraDiscount > 0 && (
+                      <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-4 py-2 rounded-full mt-2">
+                        <Check className="h-4 w-4" />
+                        <span className="font-medium">1회권 대비 {selectedPackage.extraDiscount}% 추가할인</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 구매 버튼 */}
+                  <Link href="/my/vouchers">
+                    <Button size="lg" className="w-full text-lg py-6 mt-4">
+                      구매하기
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              {/* 다회권 혜택 안내 */}
+              <div className="mt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  💡 다회권 구매 시 최대 <span className="text-green-600 font-semibold">46% 추가 할인</span>
+                </p>
+              </div>
             </div>
 
             {/* 사주분석 포함 내용 */}
