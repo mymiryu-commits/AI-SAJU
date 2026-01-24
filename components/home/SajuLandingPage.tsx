@@ -229,7 +229,7 @@ export default function SajuLandingPage() {
           </div>
 
           {/* Service Cards Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">
             {serviceCards.map((card, index) => {
               const Icon = card.icon;
               const imageUrl = cardImages[card.id as keyof ServiceCardImages];
@@ -241,39 +241,69 @@ export default function SajuLandingPage() {
                   className="group block"
                 >
                   <div
-                    className={`bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full ${card.shadowColor}`}
+                    className={`relative bg-card rounded-3xl overflow-hidden transition-all duration-500 h-full
+                      shadow-lg hover:shadow-2xl hover:-translate-y-2
+                      border border-border/50 hover:border-purple-200 dark:hover:border-purple-800/50
+                      ${card.shadowColor}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Card Image Area */}
-                    <div className={`relative h-40 md:h-48 overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${card.gradient}` : ''}`}>
+                    <div className={`relative aspect-[4/3] overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${card.gradient}` : ''}`}>
                       {imageUrl ? (
                         /* 업로드된 이미지 표시 */
-                        <Image
-                          src={imageUrl}
-                          alt={card.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                        <>
+                          <Image
+                            src={imageUrl}
+                            alt={card.title}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                          {/* 이미지 오버레이 */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        </>
                       ) : (
                         /* 기본 아이콘 표시 */
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                        <>
+                          {/* 배경 패턴 */}
+                          <div className="absolute inset-0 opacity-30">
+                            <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
+                            <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/20 rounded-full blur-xl" />
                           </div>
-                        </div>
+                          {/* 아이콘 */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-white/30 rounded-full blur-xl scale-150 group-hover:scale-175 transition-transform duration-500" />
+                              <div className="relative w-18 h-18 md:w-22 md:h-22 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
+                                <Icon className="h-9 w-9 md:h-11 md:w-11 text-white drop-shadow-lg" />
+                              </div>
+                            </div>
+                          </div>
+                          {/* 하단 그라데이션 */}
+                          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
+                        </>
                       )}
                     </div>
 
-                    {/* Card Button */}
-                    <div className="p-3 md:p-4">
+                    {/* Card Button Area */}
+                    <div className="p-4 md:p-5 bg-gradient-to-b from-card to-muted/20">
                       <Button
                         variant="ghost"
-                        className="w-full justify-center group hover:bg-primary/5 text-sm"
+                        className="w-full justify-center font-medium text-sm md:text-base py-5
+                          bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20
+                          hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/40 dark:hover:to-pink-900/40
+                          border border-purple-100 dark:border-purple-800/30
+                          rounded-xl transition-all duration-300
+                          group-hover:shadow-md"
                       >
-                        <span>시작하기</span>
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">
+                          시작하기
+                        </span>
+                        <ArrowRight className="ml-2 h-4 w-4 text-purple-500 group-hover:translate-x-1 transition-transform duration-300" />
                       </Button>
                     </div>
+
+                    {/* Decorative corner gradient */}
+                    <div className={`absolute -top-12 -right-12 w-24 h-24 bg-gradient-to-br ${card.gradient} opacity-20 rounded-full blur-2xl group-hover:opacity-30 transition-opacity duration-500`} />
                   </div>
                 </Link>
               );
