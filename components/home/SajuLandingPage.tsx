@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +18,17 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import PremiumShowcase from '@/components/home/PremiumShowcase';
+
+// 서비스 카드 이미지 타입
+interface ServiceCardImages {
+  daily_fortune?: string;
+  saju_basic?: string;
+  saju_advanced?: string;
+  ai_chat?: string;
+  compatibility?: string;
+  tarot?: string;
+  lotto?: string;
+}
 
 // 서비스 카드 데이터
 const serviceCards = [
@@ -108,6 +120,25 @@ const serviceCards = [
 ];
 
 export default function SajuLandingPage() {
+  const [cardImages, setCardImages] = useState<ServiceCardImages>({});
+
+  useEffect(() => {
+    // 서비스 카드 이미지 설정 가져오기
+    const fetchCardImages = async () => {
+      try {
+        const response = await fetch('/api/site-settings?key=service_card_images');
+        const result = await response.json();
+        if (result.data?.value) {
+          setCardImages(result.data.value);
+        }
+      } catch (error) {
+        console.error('Error fetching card images:', error);
+      }
+    };
+
+    fetchCardImages();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* ===== HERO SECTION ===== */}
@@ -201,6 +232,7 @@ export default function SajuLandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {serviceCards.map((card, index) => {
               const Icon = card.icon;
+              const imageUrl = cardImages[card.id as keyof ServiceCardImages];
 
               return (
                 <Link
@@ -212,13 +244,24 @@ export default function SajuLandingPage() {
                     className={`bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full ${card.shadowColor}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Card Image Area - 이미지 업로드 시 이 영역에 이미지가 표시됨 */}
-                    <div className={`relative h-40 md:h-48 bg-gradient-to-br ${card.gradient} overflow-hidden`}>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                    {/* Card Image Area */}
+                    <div className={`relative h-40 md:h-48 overflow-hidden ${!imageUrl ? `bg-gradient-to-br ${card.gradient}` : ''}`}>
+                      {imageUrl ? (
+                        /* 업로드된 이미지 표시 */
+                        <Image
+                          src={imageUrl}
+                          alt={card.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        /* 기본 아이콘 표시 */
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Card Button */}
