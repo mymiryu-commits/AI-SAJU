@@ -39,6 +39,7 @@ const serviceCards = [
     description: '오늘 하루의 운세를 확인하세요',
     href: '/fortune',
     icon: Sun,
+    buttonText: '운세 확인하기',
     price: '무료',
     priceColor: 'text-green-600',
     gradient: 'from-amber-400 to-orange-500',
@@ -51,6 +52,7 @@ const serviceCards = [
     description: '타고난 운명과 성격을 분석합니다',
     href: '/fortune/saju',
     icon: Star,
+    buttonText: '사주 분석하기',
     price: '500P',
     priceColor: 'text-blue-600',
     gradient: 'from-blue-400 to-indigo-500',
@@ -63,6 +65,7 @@ const serviceCards = [
     description: '십신, 신살, 12운성 상세 분석',
     href: '/saju/advanced',
     icon: Moon,
+    buttonText: '심층 분석하기',
     price: '1,000P',
     priceColor: 'text-purple-600',
     gradient: 'from-purple-400 to-violet-500',
@@ -75,6 +78,7 @@ const serviceCards = [
     description: 'AI와 대화로 깊은 상담을 받으세요',
     href: '/saju/chat',
     icon: MessageCircle,
+    buttonText: 'AI 상담하기',
     price: '프리미엄',
     priceColor: 'text-rose-600',
     gradient: 'from-rose-400 to-pink-500',
@@ -88,6 +92,7 @@ const serviceCards = [
     description: '두 사람의 궁합을 확인하세요',
     href: '/fortune/compatibility',
     icon: Heart,
+    buttonText: '궁합 보기',
     price: '800P',
     priceColor: 'text-pink-600',
     gradient: 'from-pink-400 to-rose-500',
@@ -100,6 +105,7 @@ const serviceCards = [
     description: '카드가 전하는 메시지를 확인하세요',
     href: '/fortune/tarot',
     icon: Sparkles,
+    buttonText: '타로 보기',
     price: '500P',
     priceColor: 'text-violet-600',
     gradient: 'from-violet-400 to-purple-500',
@@ -112,6 +118,7 @@ const serviceCards = [
     description: '사주 기반 행운의 번호를 받아보세요',
     href: '/lotto',
     icon: Dices,
+    buttonText: '번호 추천받기',
     price: '무료',
     priceColor: 'text-green-600',
     gradient: 'from-emerald-400 to-teal-500',
@@ -296,7 +303,7 @@ export default function SajuLandingPage() {
                           group-hover:shadow-md"
                       >
                         <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">
-                          시작하기
+                          {card.buttonText}
                         </span>
                         <ArrowRight className="ml-2 h-4 w-4 text-purple-500 group-hover:translate-x-1 transition-transform duration-300" />
                       </Button>
