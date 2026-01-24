@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/database';
 
+// Route segment config for larger file uploads
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 type UsersRow = Database['public']['Tables']['users']['Row'];
 
 // POST - Upload hero image to Supabase Storage (admin only)
