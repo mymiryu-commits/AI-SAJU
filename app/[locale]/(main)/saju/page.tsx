@@ -1,5 +1,5 @@
-import PremiumShowcase from '@/components/home/PremiumShowcase';
+import SajuLandingPage from '@/components/home/SajuLandingPage';
 
 export default function SajuPage() {
-  return <PremiumShowcase />;
+  return <SajuLandingPage />;
 }
