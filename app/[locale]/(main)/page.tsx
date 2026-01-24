@@ -17,6 +17,7 @@ import {
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import type { Database } from '@/types/database';
+import PremiumShowcase from '@/components/home/PremiumShowcase';
 
 type SiteSettingsRow = Database['public']['Tables']['site_settings']['Row'];
 
@@ -449,6 +450,9 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+
+      {/* ===== PREMIUM SHOWCASE ===== */}
+      <PremiumShowcase />
 
       {/* Bottom Spacer */}
       <div className="h-8" />
