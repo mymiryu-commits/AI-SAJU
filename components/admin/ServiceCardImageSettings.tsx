@@ -18,6 +18,7 @@ import {
   Sparkles,
   Dices,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export interface ServiceCardImages {
   daily_fortune?: string;
@@ -51,6 +52,7 @@ export default function ServiceCardImageSettings({ onSave }: ServiceCardImageSet
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const supabase = createClient();
 
   useEffect(() => {
     fetchImages();
@@ -77,24 +79,44 @@ export default function ServiceCardImageSettings({ onSave }: ServiceCardImageSet
     setMessage(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', `service_${cardId}`);
-
-      const response = await fetch('/api/site-settings/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || '업로드 실패');
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('지원하지 않는 파일 형식입니다. (JPEG, PNG, WebP, GIF만 가능)');
       }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error('파일 크기가 5MB를 초과합니다.');
+      }
+
+      // Generate unique filename
+      const ext = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const filename = `service-card-${cardId}-${timestamp}.${ext}`;
+
+      // Upload directly to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('hero-images')
+        .upload(filename, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('이미지 업로드에 실패했습니다: ' + uploadError.message);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('hero-images')
+        .getPublicUrl(filename);
 
       setImages(prev => ({
         ...prev,
-        [cardId]: result.url,
+        [cardId]: publicUrl,
       }));
 
       setMessage({ type: 'success', text: '이미지가 업로드되었습니다' });
