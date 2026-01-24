@@ -24,10 +24,9 @@ import {
   WinningDashboard,
 } from '@/components/lotto';
 import {
-  loadLottoHistory,
   analyzePatterns,
   getTimeUntilNextDraw,
-  getCurrentRound,
+  getLatestCompletedRound,
 } from '@/lib/lotto';
 import type { LottoResult, PatternAnalysis, FilterConfig } from '@/types/lotto';
 import { DEFAULT_FILTER_CONFIG } from '@/types/lotto';
@@ -39,14 +38,26 @@ export default function LottoPage() {
   const [filterConfig, setFilterConfig] = useState<FilterConfig>(DEFAULT_FILTER_CONFIG);
   const [savedGames, setSavedGames] = useState<number[][]>([]);
 
-  // 데이터 로드
+  // 데이터 로드 (API에서 Supabase 데이터 가져오기)
   useEffect(() => {
-    const data = loadLottoHistory();
-    setResults(data);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/lotto/history?limit=50');
+        const data = await response.json();
 
-    if (data.length > 0) {
-      setAnalysis(analyzePatterns(data, 10));
-    }
+        if (data.success && data.results) {
+          setResults(data.results);
+          // 결과가 있으면 클라이언트에서 분석 수행
+          if (data.results.length > 0) {
+            setAnalysis(analyzePatterns(data.results, 10));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch lotto history:', error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // 카운트다운 업데이트
@@ -63,7 +74,7 @@ export default function LottoPage() {
 
   // 최신 당첨번호
   const latestResult = results[0];
-  const nextRound = getCurrentRound() + 1;
+  const nextRound = getLatestCompletedRound() + 1;
 
   // 게임 저장 핸들러
   const handleSaveGames = (games: number[][]) => {
