@@ -212,39 +212,24 @@ export default function SajuLandingPage() {
                     className={`bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full ${card.shadowColor}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Card Image or Gradient */}
-                    <div className={`relative h-32 md:h-40 bg-gradient-to-br ${card.gradient} overflow-hidden`}>
+                    {/* Card Image Area - 이미지 업로드 시 이 영역에 이미지가 표시됨 */}
+                    <div className={`relative h-40 md:h-48 bg-gradient-to-br ${card.gradient} overflow-hidden`}>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Icon className="h-12 w-12 md:h-16 md:w-16 text-white/80" />
-                      </div>
-                      {/* Price Badge */}
-                      <div className="absolute top-3 right-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold bg-white/90 dark:bg-gray-900/90 ${card.priceColor}`}>
-                          {card.price}
-                        </span>
-                      </div>
-                      {/* Premium Badge */}
-                      {card.isPremium && (
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white flex items-center gap-1">
-                            <Crown className="h-3 w-3" />
-                            VIP
-                          </span>
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
                         </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Card Content */}
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        {card.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {card.subtitle}
-                      </p>
-                      <p className="text-sm text-muted-foreground hidden md:block">
-                        {card.description}
-                      </p>
+                    {/* Card Button */}
+                    <div className="p-3 md:p-4">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-center group hover:bg-primary/5 text-sm"
+                      >
+                        <span>시작하기</span>
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
                     </div>
                   </div>
                 </Link>
