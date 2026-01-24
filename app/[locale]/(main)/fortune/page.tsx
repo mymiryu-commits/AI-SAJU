@@ -24,69 +24,45 @@ import {
 const fortuneServices = [
   {
     key: 'saju',
-    title: '사주팔자',
-    description: '생년월일시로 보는 평생 운세와 성격 분석',
     icon: Zap,
     gradient: 'from-amber-500 to-orange-600',
     shadowColor: 'shadow-amber-500/25',
     href: '/fortune/saju',
-    free: true,
-    popular: true,
   },
   {
     key: 'zodiac',
-    title: '별자리 운세',
-    description: '12궁 별자리로 보는 성격과 오늘의 운세',
     icon: Star,
     gradient: 'from-indigo-500 to-purple-600',
     shadowColor: 'shadow-indigo-500/25',
     href: '/fortune/zodiac',
-    free: true,
-    popular: false,
   },
   {
     key: 'face',
-    title: '관상 분석',
-    description: 'AI가 분석하는 얼굴 관상과 운명',
     icon: Eye,
     gradient: 'from-purple-500 to-indigo-600',
     shadowColor: 'shadow-purple-500/25',
     href: '/fortune/face',
-    free: false,
-    popular: false,
   },
   {
     key: 'daily',
-    title: '오늘의 운세',
-    description: '매일 업데이트되는 맞춤 일일 운세',
     icon: Calendar,
     gradient: 'from-emerald-500 to-teal-600',
     shadowColor: 'shadow-emerald-500/25',
     href: '/fortune/free',
-    free: true,
-    popular: false,
   },
   {
     key: 'tarot',
-    title: '타로 카드',
-    description: 'AI 타로 리딩으로 미래를 점쳐보세요',
     icon: Moon,
     gradient: 'from-violet-500 to-purple-600',
     shadowColor: 'shadow-violet-500/25',
     href: '/fortune/tarot',
-    free: true,
-    popular: false,
   },
   {
     key: 'compatibility',
-    title: '궁합 분석',
-    description: '연인, 친구, 동료와의 궁합 확인',
     icon: Heart,
     gradient: 'from-rose-500 to-pink-600',
     shadowColor: 'shadow-rose-500/25',
     href: '/fortune/compatibility',
-    free: false,
-    popular: false,
   },
 ];
 
@@ -196,49 +172,30 @@ export default function FortunePage() {
               <Link key={service.key} href={service.href}>
                 <Card
                   className={cn(
-                    'relative h-full cursor-pointer overflow-hidden',
+                    'relative h-full cursor-pointer overflow-hidden group',
                     'fortune-service-card border-0 shadow-lg',
                     'bg-gradient-to-br from-card via-card to-muted/30'
                   )}
                 >
-                  {/* Popular Badge */}
-                  {service.popular && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
-                        <Crown className="mr-1 h-3 w-3" />
-                        인기
-                      </Badge>
+                  {/* 이미지 배경 영역 - 이미지 업로드 시 이 영역에 이미지가 표시됨 */}
+                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+                    {/* 기본 아이콘 (이미지 없을 때) */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div
+                        className={cn(
+                          'w-20 h-20 rounded-full flex items-center justify-center',
+                          'bg-gradient-to-br shadow-lg',
+                          'group-hover:scale-110 transition-transform',
+                          service.gradient,
+                          service.shadowColor
+                        )}
+                      >
+                        <Icon className="h-10 w-10 text-white" />
+                      </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Free Badge */}
-                  {service.free && !service.popular && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        무료
-                      </Badge>
-                    </div>
-                  )}
-
-                  <CardContent className="p-6">
-                    {/* Icon */}
-                    <div
-                      className={cn(
-                        'w-14 h-14 rounded-2xl mb-5 flex items-center justify-center',
-                        'bg-gradient-to-br shadow-lg',
-                        service.gradient,
-                        service.shadowColor
-                      )}
-                    >
-                      <Icon className="h-7 w-7 text-white" />
-                    </div>
-
-                    {/* Content */}
-                    <h3 className="text-xl font-bold mb-2">{service.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-5">
-                      {service.description}
-                    </p>
-
+                  <CardContent className="p-4">
                     {/* Button */}
                     <Button
                       variant="ghost"
