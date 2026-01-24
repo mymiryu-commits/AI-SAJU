@@ -184,78 +184,55 @@ export default function PricingPage() {
             </div>
 
             {/* 메인 가격 카드 */}
-            <div className="max-w-md mx-auto">
-              <Card className="relative border-2 border-primary shadow-xl">
+            <div className="max-w-sm mx-auto">
+              <Card className="relative border-2 border-primary shadow-lg">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-red-500 text-white px-4 py-1">
-                    런칭특가 {selectedPackage.baseDiscount}% 할인
-                  </Badge>
+                  <Badge className="bg-red-500 text-white px-3">런칭특가</Badge>
                 </div>
 
-                <CardContent className="p-8 pt-10 text-center">
-                  {/* 수량 선택 드롭다운 */}
-                  <div className="mb-6">
+                <CardContent className="p-6 pt-8">
+                  {/* 수량 선택 */}
+                  <div className="mb-5">
                     <Select value={selectedQuantity} onValueChange={setSelectedQuantity}>
-                      <SelectTrigger className="w-48 mx-auto text-lg font-semibold">
+                      <SelectTrigger className="w-full h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {sajuPackages.map((pkg) => (
                           <SelectItem key={pkg.quantity} value={pkg.quantity.toString()}>
-                            <div className="flex items-center justify-between gap-4">
+                            <span className="flex justify-between items-center w-full gap-8">
                               <span>{pkg.name}</span>
-                              {pkg.extraDiscount > 0 && (
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                  +{pkg.extraDiscount}% 추가할인
-                                </Badge>
-                              )}
-                              {pkg.popular && (
-                                <Badge className="text-xs bg-primary">추천</Badge>
-                              )}
-                              {pkg.bestValue && (
-                                <Badge className="text-xs bg-amber-500">최대할인</Badge>
-                              )}
-                            </div>
+                              <span className="text-muted-foreground">{formatPrice(pkg.salePrice)}원</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* 가격 표시 */}
-                  <div className="mb-4">
-                    <p className="text-lg text-muted-foreground line-through">
+                  {/* 가격 */}
+                  <div className="text-center mb-5">
+                    <p className="text-sm text-muted-foreground line-through">
                       {formatPrice(selectedPackage.regularPrice)}원
                     </p>
-                    <p className="text-4xl font-bold text-primary my-2">
+                    <p className="text-3xl font-bold text-primary">
                       {formatPrice(selectedPackage.salePrice)}원
                     </p>
-
-                    {/* 추가 할인 표시 (1회권 제외) */}
                     {selectedPackage.extraDiscount > 0 && (
-                      <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-4 py-2 rounded-full mt-2">
-                        <Check className="h-4 w-4" />
-                        <span className="font-medium">1회권 대비 {selectedPackage.extraDiscount}% 추가할인</span>
-                      </div>
+                      <p className="text-sm text-green-600 mt-1">
+                        1회권 대비 {selectedPackage.extraDiscount}% 추가할인
+                      </p>
                     )}
                   </div>
 
                   {/* 구매 버튼 */}
                   <Link href="/my/vouchers">
-                    <Button size="lg" className="w-full text-lg py-6 mt-4">
+                    <Button size="lg" className="w-full">
                       구매하기
-                      <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
-
-              {/* 다회권 혜택 안내 */}
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  💡 다회권 구매 시 최대 <span className="text-green-600 font-semibold">46% 추가 할인</span>
-                </p>
-              </div>
             </div>
 
             {/* 사주분석 포함 내용 */}
