@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Sparkles,
@@ -151,22 +151,17 @@ function FortuneServices({ locale }: { locale: string }) {
           const Icon = service.icon;
           return (
             <Link key={service.key} href={service.href}>
-              <Card className="card-hover h-full cursor-pointer relative overflow-hidden">
-                {service.free && (
-                  <Badge className="absolute top-4 right-4 bg-green-500">
-                    Free
-                  </Badge>
-                )}
-                <CardHeader>
-                  <div className={`w-12 h-12 rounded-lg ${service.color} flex items-center justify-center mb-4`}>
-                    <Icon className="h-6 w-6 text-white" />
+              <Card className="card-hover h-full cursor-pointer relative overflow-hidden group">
+                {/* 이미지 배경 영역 - 이미지 업로드 시 이 영역에 이미지가 표시됨 */}
+                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+                  {/* 기본 아이콘 (이미지 없을 때) */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className={`w-20 h-20 rounded-full ${service.color} flex items-center justify-center opacity-80 group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-10 w-10 text-white" />
+                    </div>
                   </div>
-                  <CardTitle>{t(service.key)}</CardTitle>
-                  <CardDescription>
-                    Discover your fortune with AI-powered {service.key} analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+                </div>
+                <CardContent className="p-4">
                   <Button variant="outline" className="w-full group">
                     Try Now
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
