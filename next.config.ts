@@ -36,6 +36,11 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_COMMIT_HASH: gitInfo.commitHash,
     NEXT_PUBLIC_COMMIT_DATE: gitInfo.commitDate,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
 };
 
 export default withNextIntl(nextConfig);
