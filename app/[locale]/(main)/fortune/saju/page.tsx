@@ -1,518 +1,569 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle, Coins, BookOpen, MessageCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/lib/hooks/useAuth';
-
-// 새로 구현한 컴포넌트들
 import {
-  SajuInputForm,
-  SajuResultCard,
-  PaywallModal
-} from '@/components/fortune/saju';
+  Sparkles,
+  Sun,
+  Crown,
+  MessageCircle,
+  Heart,
+  Flower2,
+  Ticket,
+  QrCode,
+  ArrowRight,
+  CheckCircle,
+  Gift,
+  Lock,
+  Clock,
+  Star,
+  Coins,
+  Activity,
+  Briefcase,
+  Calendar,
+  TrendingUp,
+  Zap,
+  Users,
+  Timer,
+  ChevronRight,
+} from 'lucide-react';
 
-// 타입
-import type { UserInput, AnalysisResult, PRODUCTS } from '@/types/saju';
-
-interface ConversionData {
-  paywallTemplate: {
-    type: "freeToPaywall" | "timing" | "family" | "peer" | "exit" | "group";
-    headline: string;
-    bullets: string[];
-    urgency: string;
-    cta: string;
-    discount?: { amount: number; expiresIn: number };
+// 오늘의 운세 생성
+function generateDailyFortune(date: Date) {
+  const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+  const random = (min: number, max: number) => {
+    const x = Math.sin(seed * 9999) * 10000;
+    return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
   };
-  urgencyBanner: { message: string; subMessage: string };
-  socialProof: { message: string };
-  productRecommendation: { productId: string; reason: string };
+
+  return {
+    overall: random(60, 95),
+    wealth: random(55, 98),
+    love: random(50, 95),
+    career: random(60, 95),
+    health: random(55, 90),
+    luckyTime: `${random(9, 18)}:00`,
+    luckyColor: ['보라', '파랑', '초록', '빨강', '노랑', '주황'][random(0, 5)],
+    luckyNumber: random(1, 45),
+    message: [
+      '오늘은 새로운 시작에 좋은 날입니다. 직감을 믿으세요.',
+      '인간관계에 집중하세요. 좋은 대화가 기회를 가져옵니다.',
+      '오늘의 재정 결정은 장기적인 영향을 미칩니다.',
+      '자기 관리에 시간을 투자하세요. 건강이 재산입니다.',
+      '창의적인 활동이 예상치 못한 보상을 가져옵니다.',
+      '다른 사람들에게 인내심을 가지세요. 친절은 열 배로 돌아옵니다.',
+    ][random(0, 5)],
+  };
 }
 
-// 상품 레벨 타입
-type ProductLevel = 'free' | 'basic' | 'deep' | 'premium' | 'vip';
+// 서비스 정의
+const services = [
+  {
+    id: 'daily-fortune',
+    title: '오늘의 운세',
+    description: '매일 무료로 확인하는 나의 오늘 운세',
+    icon: Sun,
+    gradient: 'from-amber-400 via-orange-400 to-yellow-500',
+    bgGradient: 'from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30',
+    borderColor: 'border-amber-200 dark:border-amber-800',
+    href: '/fortune/free',
+    badge: { text: '무료', variant: 'free' as const },
+    features: ['매일 갱신', '출석 체크인', '행운의 아이템'],
+  },
+  {
+    id: 'saju-analysis',
+    title: '사주분석',
+    description: '정통 사주명리학 기반 AI 종합 분석',
+    icon: Crown,
+    gradient: 'from-purple-500 via-violet-500 to-indigo-600',
+    bgGradient: 'from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30',
+    borderColor: 'border-purple-200 dark:border-purple-800',
+    href: '/fortune/integrated',
+    badge: { text: '프리미엄', variant: 'premium' as const },
+    features: ['사주팔자 분석', '대운/세운 해석', 'PDF 리포트'],
+  },
+  {
+    id: 'ai-consultation',
+    title: 'AI 사주 상담',
+    description: '사주분석 기반 1:1 AI 상담 서비스',
+    icon: MessageCircle,
+    gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
+    bgGradient: 'from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30',
+    borderColor: 'border-cyan-200 dark:border-cyan-800',
+    href: '/fortune/experts',
+    badge: { text: '사주분석 필요', variant: 'required' as const },
+    features: ['실시간 AI 상담', '맞춤형 조언', '무제한 질문'],
+    requiresPremium: true,
+  },
+  {
+    id: 'compatibility',
+    title: '궁합분석',
+    description: '두 사람의 사주로 보는 궁합 분석',
+    icon: Heart,
+    gradient: 'from-pink-400 via-rose-500 to-red-500',
+    bgGradient: 'from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30',
+    borderColor: 'border-pink-200 dark:border-pink-800',
+    href: '/fortune/compatibility',
+    badge: { text: '준비 중', variant: 'coming' as const },
+    features: ['연인 궁합', '사업 파트너', '가족 관계'],
+    comingSoon: true,
+  },
+  {
+    id: 'tarot',
+    title: '타로',
+    description: 'AI 타로 카드 리딩',
+    icon: Flower2,
+    gradient: 'from-fuchsia-400 via-purple-500 to-violet-600',
+    bgGradient: 'from-fuchsia-50 to-violet-50 dark:from-fuchsia-950/30 dark:to-violet-950/30',
+    borderColor: 'border-fuchsia-200 dark:border-fuchsia-800',
+    href: '/fortune/tarot',
+    badge: { text: '베타', variant: 'beta' as const },
+    features: ['원카드', '쓰리카드', '켈틱크로스'],
+  },
+  {
+    id: 'lotto',
+    title: '로또',
+    description: 'AI 로또 번호 분석 및 생성',
+    icon: Ticket,
+    gradient: 'from-emerald-400 via-green-500 to-teal-500',
+    bgGradient: 'from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30',
+    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    href: '/lotto',
+    badge: null,
+    features: ['통계 분석', '번호 생성', '당첨 확인'],
+  },
+  {
+    id: 'qr-generator',
+    title: 'QR 코드',
+    description: 'AI 기반 QR 코드 생성 서비스',
+    icon: QrCode,
+    gradient: 'from-slate-400 via-gray-500 to-zinc-600',
+    bgGradient: 'from-slate-50 to-zinc-50 dark:from-slate-950/30 dark:to-zinc-950/30',
+    borderColor: 'border-slate-200 dark:border-slate-800',
+    href: '/qr',
+    badge: { text: '준비 중', variant: 'coming' as const },
+    features: ['URL QR 생성', '디자인 커스텀', '다운로드'],
+    comingSoon: true,
+  },
+];
+
+// 배지 스타일
+const badgeStyles = {
+  free: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0',
+  premium: 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0',
+  required: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0',
+  coming: 'bg-gradient-to-r from-gray-400 to-slate-500 text-white border-0',
+  beta: 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0',
+};
 
 export default function SajuPage() {
-  const t = useTranslations('fortune.saju');
-  const { user, isAdmin } = useAuth();
-  const [step, setStep] = useState<'form' | 'analyzing' | 'result'>('form');
-  const [progress, setProgress] = useState(0);
-  const [userInput, setUserInput] = useState<UserInput | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [conversionData, setConversionData] = useState<ConversionData | null>(null);
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
-  const [productLevel, setProductLevel] = useState<ProductLevel>('free');  // 구매한 상품 레벨
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // 포인트 관련 상태
-  const [userPoints, setUserPoints] = useState(0);
-  const [isLoadingPoints, setIsLoadingPoints] = useState(true);
-
-  // Refs to track latest values (for closure issues)
-  const userInputRef = useRef<UserInput | null>(null);
-  const analysisIdRef = useRef<string | null>(null);
-
-  // Sync refs with state
-  useEffect(() => {
-    userInputRef.current = userInput;
-    console.log('userInputRef updated:', userInput?.name || 'null');
-  }, [userInput]);
+  const t = useTranslations('fortune');
+  const [fortune, setFortune] = useState<ReturnType<typeof generateDailyFortune> | null>(null);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    analysisIdRef.current = analysisId;
-    console.log('analysisIdRef updated:', analysisId || 'null');
-  }, [analysisId]);
-
-  // 포인트 조회
-  useEffect(() => {
-    const fetchPoints = async () => {
-      try {
-        const response = await fetch('/api/points');
-        const data = await response.json();
-        if (data.success) {
-          setUserPoints(data.data.points);
-        }
-      } catch (err) {
-        console.error('Failed to fetch points:', err);
-      } finally {
-        setIsLoadingPoints(false);
-      }
-    };
-
-    fetchPoints();
+    setFortune(generateDailyFortune(new Date()));
+    const lastCheckin = localStorage.getItem('lastCheckin');
+    const today = new Date().toDateString();
+    if (lastCheckin === today) {
+      setCheckedIn(true);
+      setStreak(parseInt(localStorage.getItem('streak') || '1', 10));
+    }
   }, []);
 
-  const handleSubmit = async (input: UserInput) => {
-    setUserInput(input);
-    setStep('analyzing');
-    setProgress(0);
-    setError(null);
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
-    // 진행률 애니메이션
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) {
-          return prev;
-        }
-        return prev + 10;
-      });
-    }, 200);
+  const handleCheckin = () => {
+    const today = new Date().toDateString();
+    const lastCheckin = localStorage.getItem('lastCheckin');
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
 
-    try {
-      const response = await fetch('/api/fortune/saju/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '분석 중 오류가 발생했습니다.');
-      }
-
-      clearInterval(progressInterval);
-      setProgress(100);
-
-      // 결과 저장
-      setAnalysisResult(data.data.result);
-      setConversionData(data.data.conversion);
-      if (data.meta?.analysisId) {
-        setAnalysisId(data.meta.analysisId);
-      }
-
-      // 약간의 딜레이 후 결과 화면으로
-      setTimeout(() => {
-        setStep('result');
-      }, 500);
-
-    } catch (err) {
-      clearInterval(progressInterval);
-      setError(err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.');
-      setStep('form');
-    }
-  };
-
-  const handleReset = () => {
-    setStep('form');
-    setProgress(0);
-    setUserInput(null);
-    setAnalysisResult(null);
-    setConversionData(null);
-    setAnalysisId(null);
-    setIsPremiumUnlocked(false);
-    setProductLevel('free');  // 상품 레벨 초기화
-    setIsPurchasing(false);
-    setError(null);
-  };
-
-  const handleUpgrade = () => {
-    setShowPaywall(true);
-  };
-
-  // 프리미엄 분석 데이터 로드
-  const loadPremiumAnalysis = useCallback(async (productId: string) => {
-    // Use refs to get the latest values (avoid stale closures)
-    const currentUserInput = userInputRef.current;
-    const currentAnalysisId = analysisIdRef.current;
-
-    console.log('loadPremiumAnalysis called:', {
-      productId,
-      hasUserInput: !!currentUserInput,
-      userInputName: currentUserInput?.name,
-      analysisId: currentAnalysisId || 'null (will create new)',
-      // Also log state values for debugging
-      stateUserInput: !!userInput,
-      stateAnalysisId: analysisId
-    });
-
-    // userInput만 필수, analysisId는 선택 (없으면 새로 생성됨)
-    if (!currentUserInput) {
-      console.error('Missing userInput - free analysis required first');
-      throw new Error('분석 데이터가 없습니다. 먼저 무료 분석을 진행해주세요.');
+    let newStreak = 1;
+    if (lastCheckin === yesterday) {
+      newStreak = parseInt(localStorage.getItem('streak') || '0', 10) + 1;
     }
 
-    try {
-      console.log('Calling premium API with input:', currentUserInput.name);
-      const response = await fetch('/api/fortune/saju/premium', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: currentUserInput,
-          productType: productId,
-          analysisId: currentAnalysisId || undefined  // null이면 undefined로 전달
-        })
-      });
-
-      const data = await response.json();
-      console.log('Premium API response:', { ok: response.ok, success: data.success });
-
-      if (!response.ok || !data.success) {
-        console.error('Premium API error:', data.error);
-        throw new Error(data.error || '프리미엄 분석 로드 중 오류가 발생했습니다.');
-      }
-
-      console.log('Updating analysis result with premium data...');
-      // 분석 결과에 프리미엄 데이터 및 블라인드 해제된 AI 분석 추가
-      setAnalysisResult(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          premium: data.data.premium,
-          // 블라인드 해제된 AI 분석으로 교체 (프리미엄 전용)
-          aiAnalysis: data.data.aiAnalysis || prev.aiAnalysis
-        };
-      });
-
-      // 새로 생성된 analysisId가 있으면 저장
-      if (data.meta?.analysisId && !currentAnalysisId) {
-        setAnalysisId(data.meta.analysisId);
-      }
-
-      setIsPremiumUnlocked(true);
-      setShowPaywall(false);
-
-    } catch (err) {
-      throw err;
-    }
-  }, [userInput, analysisId]);
-
-  // 포인트 차감 후 프리미엄 분석 구매 (관리자는 무료)
-  const handlePurchase = async (productId: string) => {
-    console.log('handlePurchase called with productId:', productId);
-    setIsPurchasing(true);
-    setError(null);
-
-    try {
-      // 관리자는 포인트 차감 없이 바로 프리미엄 분석
-      if (isAdmin) {
-        console.log('Admin user - skipping point deduction');
-        try {
-          await loadPremiumAnalysis(productId);
-          // 구매한 상품 레벨 설정
-          setProductLevel(productId as ProductLevel);
-          console.log('Premium analysis loaded successfully for admin');
-        } catch (adminErr) {
-          console.error('Admin premium analysis error:', adminErr);
-          throw adminErr;
-        }
-        return;
-      }
-
-      // PRODUCTS에서 포인트 비용 찾기
-      const { PRODUCTS } = await import('@/types/saju');
-      const product = PRODUCTS.find(p => p.id === productId);
-
-      if (!product) {
-        throw new Error('상품을 찾을 수 없습니다.');
-      }
-
-      const pointCost = product.pointCost;
-
-      // 포인트 부족 체크
-      if (userPoints < pointCost) {
-        throw new Error(`포인트가 부족합니다. (필요: ${pointCost}P, 보유: ${userPoints}P)`);
-      }
-
-      // 포인트 차감 API 호출
-      const pointResponse = await fetch('/api/points', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId,
-          pointCost,
-          analysisId
-        })
-      });
-
-      const pointData = await pointResponse.json();
-
-      if (!pointResponse.ok || !pointData.success) {
-        throw new Error(pointData.error || '포인트 차감에 실패했습니다.');
-      }
-
-      // 포인트 잔액 업데이트
-      setUserPoints(pointData.data.newBalance);
-
-      // 프리미엄 분석 로드
-      await loadPremiumAnalysis(productId);
-
-      // 구매한 상품 레벨 설정
-      setProductLevel(productId as ProductLevel);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '구매 중 오류가 발생했습니다.');
-      setShowPaywall(false);
-    } finally {
-      setIsPurchasing(false);
-    }
+    localStorage.setItem('lastCheckin', today);
+    localStorage.setItem('streak', newStreak.toString());
+    setCheckedIn(true);
+    setStreak(newStreak);
   };
 
-  // 분석 중 화면
-  if (step === 'analyzing') {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto text-center">
-          <div className="mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center animate-pulse">
-              <Sparkles className="h-12 w-12 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">
-              {userInput?.name}님의 사주를 분석 중입니다
-            </h2>
-            <p className="text-muted-foreground">
-              AI가 사주팔자를 정밀 분석하고 있습니다...
+  const scoreItems = [
+    { key: '총운', icon: Star, score: fortune?.overall || 0, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { key: '재물운', icon: Coins, score: fortune?.wealth || 0, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { key: '애정운', icon: Heart, score: fortune?.love || 0, color: 'text-pink-500', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+    { key: '직장운', icon: Briefcase, score: fortune?.career || 0, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  ];
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 text-white">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        </div>
+
+        <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <Badge className="mb-6 bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-0 px-4 py-1.5">
+              <Sparkles className="mr-2 h-4 w-4" />
+              AI 사주 · 운세 서비스
+            </Badge>
+
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-100 to-white">
+                당신의 운명을
+              </span>
+              <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200">
+                AI가 읽어드립니다
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+              정통 사주명리학과 최첨단 AI의 만남<br className="hidden md:block" />
+              <span className="text-amber-300 font-medium">매일 무료 운세</span>부터 <span className="text-purple-200 font-medium">프리미엄 사주분석</span>까지
             </p>
-          </div>
-          <div className="space-y-2">
-            <Progress value={progress} className="h-3" />
-            <p className="text-sm text-muted-foreground">{progress}% 완료</p>
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>잠시만 기다려주세요...</span>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/fortune/free">
+                <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 shadow-xl shadow-purple-900/30 px-8 py-6 text-lg font-semibold group">
+                  <Sun className="mr-2 h-5 w-5 text-amber-500" />
+                  오늘의 운세 보기
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link href="/fortune/integrated">
+                <Button size="lg" variant="outline" className="border-2 border-white/50 text-white hover:bg-white/10 backdrop-blur-sm px-8 py-6 text-lg font-semibold">
+                  <Crown className="mr-2 h-5 w-5 text-amber-300" />
+                  사주분석 시작
+                </Button>
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="mt-12 grid grid-cols-3 gap-8 max-w-lg mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-amber-300">50만+</div>
+                <div className="text-sm text-white/60 mt-1">누적 분석</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-amber-300">4.9</div>
+                <div className="text-sm text-white/60 mt-1">만족도</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-amber-300">99%</div>
+                <div className="text-sm text-white/60 mt-1">정확도</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      </section>
 
-  // 결과 화면
-  if (step === 'result' && analysisResult && userInput) {
-    return (
-      <>
-        <div className="container mx-auto px-4 py-8 md:py-16">
-          <div className="max-w-3xl mx-auto">
-            {/* 헤더 */}
-            <div className="text-center mb-8">
-              <Badge className="mb-4 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                분석 완료
-              </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                {userInput.name}님의 사주 분석 결과
-              </h1>
-              <p className="text-muted-foreground">
-                {userInput.birthDate} | {userInput.gender === 'male' ? '남성' : '여성'}
-              </p>
-
-              {/* 포인트 표시 */}
-              {!isLoadingPoints && (
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-full">
-                  <Coins className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                    보유 포인트: <strong>{userPoints.toLocaleString()}P</strong>
-                  </span>
+      {/* Today's Fortune Preview - Free */}
+      <section className="container mx-auto px-4 -mt-8 relative z-20">
+        <Card className="max-w-4xl mx-auto shadow-2xl border-0 overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 p-6 text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Sun className="h-8 w-8" />
                 </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold">오늘의 운세</h2>
+                    <Badge className="bg-white/20 text-white border-0 text-xs">무료</Badge>
+                  </div>
+                  <p className="text-white/80 text-sm flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+                  </p>
+                </div>
+              </div>
+
+              {checkedIn ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">{streak}일 연속 출석</span>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleCheckin}
+                  className="bg-white text-orange-600 hover:bg-white/90 font-semibold shadow-lg"
+                >
+                  <Gift className="mr-2 h-4 w-4" />
+                  출석 체크하기
+                </Button>
               )}
             </div>
 
-            {/* 에러 메시지 */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
-                {error}
-              </div>
-            )}
+            {/* Streak Bar */}
+            <div className="mt-4 flex gap-1">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`flex-1 h-2 rounded-full transition-all ${
+                    i < streak ? 'bg-white' : 'bg-white/30'
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-white/60 mt-2">7일 연속 출석 시 보너스 혜택!</p>
+          </div>
 
-            {/* 결과 카드 */}
-            <SajuResultCard
-              result={{ ...analysisResult, user: userInput } as AnalysisResult}
-              onUnlockPremium={handleUpgrade}
-              isPremiumUnlocked={isPremiumUnlocked}
-              productLevel={productLevel}
-            />
+          <CardContent className="p-6">
+            {fortune && (
+              <>
+                {/* Score Grid */}
+                <div className="grid grid-cols-4 gap-3 mb-6">
+                  {scoreItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.key} className={`text-center p-4 rounded-xl ${item.bg}`}>
+                        <Icon className={`h-5 w-5 mx-auto mb-2 ${item.color}`} />
+                        <div className="text-2xl font-bold">{item.score}</div>
+                        <div className="text-xs text-muted-foreground">{item.key}</div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* 프리미엄 해제 완료 메시지 */}
-            {isPremiumUnlocked && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-8 h-8" />
-                  <div>
-                    <h3 className="text-xl font-bold">프리미엄 분석이 해제되었습니다!</h3>
-                    <p className="text-sm text-white/80">
-                      위의 &apos;프리미엄&apos; 탭에서 모든 분석 결과를 확인하세요.
-                    </p>
+                {/* Today's Message */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-100 dark:border-purple-800">
+                  <p className="text-sm text-purple-800 dark:text-purple-200 flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{fortune.message}</span>
+                  </p>
+                </div>
+
+                {/* Lucky Items */}
+                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-sm">
+                    <Clock className="h-4 w-4 text-primary" />
+                    행운의 시간: <span className="font-semibold">{fortune.luckyTime}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-sm">
+                    <Star className="h-4 w-4 text-amber-500" />
+                    행운의 색: <span className="font-semibold">{fortune.luckyColor}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-sm">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    행운의 숫자: <span className="font-semibold">{fortune.luckyNumber}</span>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* 추가 분석 메뉴 - 프리미엄 사용자 또는 유료 구매자용 */}
-            {isPremiumUnlocked && (
-              <div className="mt-8 space-y-4">
-                <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-white">
-                  심화 분석 메뉴
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 정통 사주 심화 */}
-                  <button
-                    onClick={() => {
-                      // 분석 결과를 sessionStorage에 저장 후 이동
-                      if (analysisResult?.saju) {
-                        sessionStorage.setItem('sajuChart', JSON.stringify(analysisResult.saju));
-                        sessionStorage.setItem('sajuUserInput', JSON.stringify(userInput));
-                      }
-                      window.location.href = '/saju/advanced';
-                    }}
-                    className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg transition-all hover:-translate-y-1"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">정통 사주 심화</h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">십신/신살/12운성/합충</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* AI 사주 상담 */}
-                  <button
-                    onClick={() => {
-                      // 분석 결과를 sessionStorage에 저장 후 이동
-                      if (analysisResult) {
-                        sessionStorage.setItem('sajuAnalysisResult', JSON.stringify(analysisResult));
-                        sessionStorage.setItem('sajuUserInput', JSON.stringify(userInput));
-                      }
-                      window.location.href = '/saju/chat';
-                    }}
-                    className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg transition-all hover:-translate-y-1"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                        <MessageCircle className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">AI 사주 상담</h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">맞춤형 AI 상담사</p>
-                      </div>
-                    </div>
-                  </button>
+                <div className="mt-6 text-center">
+                  <Link href="/fortune/free">
+                    <Button variant="outline" className="group">
+                      상세 운세 보기
+                      <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
                 </div>
-              </div>
+              </>
             )}
+          </CardContent>
+        </Card>
+      </section>
 
-            {/* 다시 분석하기 버튼 */}
-            <div className="mt-8 text-center">
-              <button
-                onClick={handleReset}
-                className="text-muted-foreground hover:text-foreground transition"
-              >
-                다시 분석하기
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 페이월 모달 */}
-        {conversionData?.paywallTemplate && (
-          <PaywallModal
-            isOpen={showPaywall && !isPurchasing}
-            onClose={() => setShowPaywall(false)}
-            template={conversionData.paywallTemplate}
-            onPurchase={handlePurchase}
-            userPoints={userPoints}
-            isAdmin={isAdmin}
-          />
-        )}
-
-        {/* 구매 처리 중 오버레이 */}
-        {isPurchasing && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center max-w-sm">
-              <Loader2 className="w-12 h-12 mx-auto mb-4 text-purple-600 animate-spin" />
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                포인트 차감 및 분석 준비 중...
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                AI가 심층 분석을 생성하고 있습니다.
-              </p>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  // 입력 폼 화면
-  return (
-    <div className="container mx-auto px-4 py-8 md:py-16">
-      <div className="max-w-2xl mx-auto">
-        {/* 헤더 */}
-        <div className="text-center mb-8">
+      {/* Services Grid */}
+      <section className="container mx-auto px-4 py-16 md:py-24">
+        <div className="text-center mb-12">
           <Badge className="mb-4 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
             <Sparkles className="mr-1 h-3 w-3" />
-            AI 사주 분석
+            AI 운세 서비스
           </Badge>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('subtitle')}</p>
-
-          {/* 포인트 표시 */}
-          {!isLoadingPoints && userPoints > 0 && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-full">
-              <Coins className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                보유 포인트: <strong>{userPoints.toLocaleString()}P</strong>
-              </span>
-            </div>
-          )}
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">모든 운세 서비스</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            전통 동양 철학과 현대 AI 기술이 만나 당신의 운명을 해석합니다
+          </p>
         </div>
 
-        {/* 에러 메시지 */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          {services.map((service) => {
+            const Icon = service.icon;
+            const isDisabled = service.comingSoon;
 
-        {/* 입력 폼 */}
-        <SajuInputForm onSubmit={handleSubmit} isLoading={false} />
-      </div>
+            return (
+              <Link
+                key={service.id}
+                href={isDisabled ? '#' : service.href}
+                className={isDisabled ? 'pointer-events-none' : ''}
+              >
+                <Card className={`h-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden group ${service.bgGradient} ${service.borderColor} ${isDisabled ? 'opacity-70' : ''}`}>
+                  {/* Gradient Overlay on Hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+
+                  {/* Badge */}
+                  {service.badge && (
+                    <div className="absolute top-4 right-4">
+                      <Badge className={badgeStyles[service.badge.variant]}>
+                        {service.badge.variant === 'coming' && <Timer className="mr-1 h-3 w-3" />}
+                        {service.badge.variant === 'required' && <Lock className="mr-1 h-3 w-3" />}
+                        {service.badge.text}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <CardHeader className="pb-2">
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-4 shadow-lg`}>
+                      <Icon className="h-7 w-7 text-white" />
+                    </div>
+                    <CardTitle className="text-xl">{service.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {service.description}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {service.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-4 pt-4 border-t">
+                      <Button
+                        variant={isDisabled ? 'secondary' : 'outline'}
+                        className="w-full group/btn"
+                        disabled={isDisabled}
+                      >
+                        {isDisabled ? '준비 중' : '시작하기'}
+                        {!isDisabled && <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Premium CTA */}
+      <section className="container mx-auto px-4 pb-16 md:pb-24">
+        <Card className="max-w-5xl mx-auto overflow-hidden border-0 shadow-2xl">
+          <div className="grid md:grid-cols-2">
+            <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 p-8 md:p-12 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="relative z-10">
+                <Badge className="mb-4 bg-amber-400 text-amber-900 border-0">
+                  <Crown className="mr-1 h-3 w-3" />
+                  PREMIUM
+                </Badge>
+                <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                  프리미엄 사주분석으로<br />
+                  인생의 흐름을 읽으세요
+                </h3>
+                <p className="text-white/80 mb-6">
+                  정통 사주명리학 기반의 심층 분석으로<br />
+                  10년 대운, 월운, 일진까지 상세하게 확인하세요
+                </p>
+                <ul className="space-y-3 mb-8">
+                  {['사주팔자 원국 분석', '대운/세운 10년 해석', '월별 상세 운세', 'PDF 리포트 다운로드', 'AI 1:1 상담 가능'].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-amber-300" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/fortune/integrated">
+                  <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 shadow-xl">
+                    프리미엄 시작하기
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">프리미엄 분석</p>
+                <div className="mb-4">
+                  <span className="text-muted-foreground text-lg line-through">₩29,000</span>
+                  <div className="text-5xl font-bold text-purple-600 mt-1">₩14,900</div>
+                  <Badge className="mt-2 bg-red-500 text-white border-0">49% 할인</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  첫 분석 특별 가격 · 평생 소장
+                </p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 mb-4">
+                  <Ticket className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-300">쿠폰 할인 적용 가능</span>
+                </div>
+
+                <div className="space-y-3 text-left bg-white dark:bg-gray-900 p-6 rounded-xl shadow-inner">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">사주분석 리포트</span>
+                    <span className="font-medium">포함</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">대운 해석</span>
+                    <span className="font-medium">10년치</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">PDF 다운로드</span>
+                    <span className="font-medium">무제한</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">AI 상담</span>
+                    <span className="font-medium">이용 가능</span>
+                  </div>
+                </div>
+
+                <Link href="/pricing" className="block mt-6">
+                  <Button variant="outline" className="w-full">
+                    요금제 비교하기
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* Trust Badges */}
+      <section className="bg-muted/50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              <span className="text-sm">안전한 결제</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span className="text-sm">50만+ 이용자</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              <span className="text-sm">4.9점 만족도</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              <span className="text-sm">환불 보장</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
