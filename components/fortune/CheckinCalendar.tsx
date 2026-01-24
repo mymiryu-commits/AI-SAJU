@@ -60,12 +60,13 @@ export function CheckinCalendar({
   const todayStr = today.toISOString().split('T')[0];
 
   useEffect(() => {
-    // Check if already checked in today
+    // Check if already checked in today (todayStr은 컴포넌트 마운트 시 한 번만 계산됨)
     const lastCheckin = localStorage.getItem('lastCheckin');
     if (lastCheckin === todayStr) {
       setTodayCheckedIn(true);
     }
-  }, [todayStr]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시 한 번만 실행 - todayStr은 같은 날 동안 변하지 않음
 
   const handleCheckin = async () => {
     if (todayCheckedIn || isLoading) return;

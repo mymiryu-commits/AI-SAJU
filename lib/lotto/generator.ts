@@ -350,8 +350,12 @@ export function generateLottoNumbers(options: {
   }
 
   const games: number[][] = [];
+  const generatedSet = new Set<string>();
+  let attempts = 0;
+  const maxAttempts = count * 100; // 무한 루프 방지
 
-  for (let i = 0; i < count; i++) {
+  while (games.length < count && attempts < maxAttempts) {
+    attempts++;
     let numbers: number[] | null;
 
     if (premium) {
@@ -370,12 +374,10 @@ export function generateLottoNumbers(options: {
     if (numbers) {
       // 중복 방지
       const key = numbers.join(',');
-      const existingKeys = new Set(games.map((g) => g.join(',')));
 
-      if (!existingKeys.has(key)) {
+      if (!generatedSet.has(key)) {
+        generatedSet.add(key);
         games.push(numbers);
-      } else {
-        i--; // 중복이면 다시 시도
       }
     }
   }

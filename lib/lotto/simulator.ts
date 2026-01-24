@@ -237,9 +237,12 @@ export function runMonteCarloSimulation(
       drawDate: new Date().toISOString(),
     };
 
-    // 보너스 번호가 당첨 번호와 중복되지 않게
-    while (winningNumbers.includes(winningResult.bonus)) {
+    // 보너스 번호가 당첨 번호와 중복되지 않게 (무한 루프 방지)
+    let bonusAttempts = 0;
+    const maxBonusAttempts = 100;
+    while (winningNumbers.includes(winningResult.bonus) && bonusAttempts < maxBonusAttempts) {
       winningResult.bonus = Math.floor(Math.random() * 45) + 1;
+      bonusAttempts++;
     }
 
     // 필터 기반 번호 생성
