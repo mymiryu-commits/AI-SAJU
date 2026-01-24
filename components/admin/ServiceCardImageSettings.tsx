@@ -85,10 +85,10 @@ export default function ServiceCardImageSettings({ onSave }: ServiceCardImageSet
         throw new Error('지원하지 않는 파일 형식입니다. (JPEG, PNG, WebP, GIF만 가능)');
       }
 
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024;
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        throw new Error('파일 크기가 5MB를 초과합니다.');
+        throw new Error('파일 크기가 10MB를 초과합니다.');
       }
 
       // Generate unique filename
@@ -297,7 +297,7 @@ export default function ServiceCardImageSettings({ onSave }: ServiceCardImageSet
           <li>• 권장 비율: 16:9 또는 4:3 (가로형)</li>
           <li>• 권장 해상도: 800x450px 이상</li>
           <li>• 지원 형식: JPEG, PNG, WebP, GIF</li>
-          <li>• 파일 크기: 5MB 이하</li>
+          <li>• 파일 크기: 10MB 이하</li>
         </ul>
       </div>
     </div>
