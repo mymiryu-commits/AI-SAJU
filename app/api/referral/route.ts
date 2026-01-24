@@ -9,9 +9,9 @@ const REFERRAL_LEVELS = [
   { level: 4, minReferrals: 50, commission: 35, bonus: 500 },
 ];
 
-// Coins reward for successful referral
-const REFERRAL_REWARD_COINS = 100;
-const REFEREE_BONUS_COINS = 50;
+// Points reward for referral (마케팅 전략: 합계 500P = 사주분석 비용)
+const REFERRAL_REWARD_POINTS = 300;  // 추천인 보상
+const REFEREE_BONUS_POINTS = 200;    // 신규 가입자 보상
 
 export async function GET(request: NextRequest) {
   try {
@@ -176,13 +176,13 @@ export async function POST(request: NextRequest) {
     // Give bonus coins to new user
     await (supabase as any).rpc('increment_coins', {
       user_id: user.id,
-      amount: REFEREE_BONUS_COINS,
+      amount: REFEREE_BONUS_POINTS,
     });
 
     // Log coin transaction
     await (supabase as any).from('coin_transactions').insert({
       user_id: user.id,
-      amount: REFEREE_BONUS_COINS,
+      amount: REFEREE_BONUS_POINTS,
       type: 'referral_bonus',
       description: `Welcome bonus from referral`,
     });
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         message: 'Referral applied successfully',
-        bonusCoins: REFEREE_BONUS_COINS,
+        bonusCoins: REFEREE_BONUS_POINTS,
       },
     });
   } catch (error) {
@@ -261,14 +261,14 @@ export async function PUT(request: NextRequest) {
     // Give referrer reward coins
     await (supabase as any).rpc('increment_coins', {
       user_id: referrer.id,
-      amount: REFERRAL_REWARD_COINS + commission,
+      amount: REFERRAL_REWARD_POINTS + commission,
     });
 
     // Log transactions
     await (supabase as any).from('coin_transactions').insert([
       {
         user_id: referrer.id,
-        amount: REFERRAL_REWARD_COINS,
+        amount: REFERRAL_REWARD_POINTS,
         type: 'referral_reward',
         description: 'Referral completion bonus',
       },
@@ -286,7 +286,7 @@ export async function PUT(request: NextRequest) {
         referralId: referral.id,
         referrerId: referrer.id,
         commission,
-        totalReward: REFERRAL_REWARD_COINS + commission,
+        totalReward: REFERRAL_REWARD_POINTS + commission,
       },
     });
   } catch (error) {
