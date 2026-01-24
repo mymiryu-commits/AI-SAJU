@@ -179,7 +179,7 @@ export default function PricingPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold">사주 완전분석</h2>
-                <p className="text-muted-foreground">PDF 리포트 + 음성 해설 제공</p>
+                <p className="text-muted-foreground">PDF 리포트 + 실시간 음성 해설 (MP3 다운로드)</p>
               </div>
             </div>
 
@@ -247,7 +247,7 @@ export default function PricingPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Volume2 className="h-4 w-4 text-primary" />
-                      <span>8분 음성 해설</span>
+                      <span>8분 음성 해설 (MP3 다운로드)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-green-500" />
