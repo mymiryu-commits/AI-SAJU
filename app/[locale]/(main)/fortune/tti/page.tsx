@@ -358,15 +358,15 @@ export default function ChineseZodiacFortunePage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href="/fortune/saju">
-                    <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                    <button className="inline-flex items-center justify-center h-11 px-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all text-sm">
                       무료 사주 분석하기
                       <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    </button>
                   </Link>
                   <Link href="/fortune/newyear">
-                    <Button size="lg" variant="outline">
+                    <button className="inline-flex items-center justify-center h-11 px-6 bg-white dark:bg-gray-800 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium rounded-lg transition-all text-sm">
                       2026 신년운세 보기
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </CardContent>
@@ -407,7 +407,7 @@ export default function ChineseZodiacFortunePage() {
                     placeholder="예: 1990"
                     value={birthYear}
                     onChange={(e) => handleYearInput(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
                     min="1920"
                     max="2024"
                   />
