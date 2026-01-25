@@ -26,17 +26,7 @@ import {
   Calendar,
   Zap,
 } from 'lucide-react';
-
-// 서비스 카드 이미지 타입
-interface ServiceCardImages {
-  daily_fortune?: string;
-  saju_basic?: string;
-  saju_advanced?: string;
-  ai_chat?: string;
-  compatibility?: string;
-  tarot?: string;
-  lotto?: string;
-}
+import { ServiceCardImages } from '@/types/settings';
 
 // 서비스 정의 - 이미지 키 매핑 포함
 const services = [
