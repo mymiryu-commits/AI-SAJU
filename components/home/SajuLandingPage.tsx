@@ -17,6 +17,7 @@ import {
   Gift,
   Calendar,
   TrendingUp,
+  Brain,
 } from 'lucide-react';
 import Image from 'next/image';
 import PremiumShowcase from '@/components/home/PremiumShowcase';
@@ -41,6 +42,7 @@ interface ServiceCardImages {
   compatibility?: string;
   tarot?: string;
   lotto?: string;
+  mbti?: string;
 }
 
 // 서비스 카드 데이터
@@ -136,6 +138,19 @@ const serviceCards = [
     priceColor: 'text-green-600',
     gradient: 'from-emerald-400 to-teal-500',
     shadowColor: 'shadow-emerald-500/20',
+  },
+  {
+    id: 'mbti',
+    title: 'MBTI 분석',
+    subtitle: '성향 강도 분석',
+    description: '대/소문자로 보는 나의 성격 강도',
+    href: '/mbti',
+    icon: Brain,
+    buttonText: 'MBTI 분석하기',
+    price: '무료',
+    priceColor: 'text-green-600',
+    gradient: 'from-indigo-400 to-purple-500',
+    shadowColor: 'shadow-indigo-500/20',
   },
 ];
 
