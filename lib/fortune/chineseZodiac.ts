@@ -330,8 +330,8 @@ export function generateNewYearFortune(sign: ChineseZodiacSign, birthYear: numbe
   const currentYearZodiac = getChineseZodiac(currentYear); // 2026 = 말띠 해
 
   // 띠별 상성 계산
-  const isGoodMatch = zodiacData.bestMatch.includes(currentYearZodiac);
-  const isBadMatch = zodiacData.worstMatch.includes(currentYearZodiac);
+  const isGoodMatch = (zodiacData.bestMatch as readonly string[]).includes(currentYearZodiac);
+  const isBadMatch = (zodiacData.worstMatch as readonly string[]).includes(currentYearZodiac);
 
   // 기본 운세 점수 (띠 상성 반영)
   let baseScore = 70;
