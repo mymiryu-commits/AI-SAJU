@@ -247,17 +247,17 @@ export default function SajuLandingPage() {
               {/* 내 띠 확인 CTA */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/fortune/tti">
-                  <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 rounded-xl shadow-lg">
+                  <button className="inline-flex items-center justify-center h-12 px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg transition-all text-sm">
                     <span className="mr-2">🔍</span>
                     내 띠 운세 확인하기
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  </button>
                 </Link>
                 <Link href="/fortune/newyear">
-                  <Button size="lg" variant="outline" className="rounded-xl">
+                  <button className="inline-flex items-center justify-center h-12 px-6 bg-white dark:bg-gray-800 text-gray-800 dark:text-white border-2 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-gray-700 font-semibold rounded-xl transition-all text-sm">
                     <span className="mr-2">🧧</span>
                     2026 신년운세
-                  </Button>
+                  </button>
                 </Link>
               </div>
             </div>
@@ -275,16 +275,16 @@ export default function SajuLandingPage() {
             </div>
             <div className="flex gap-3">
               <Link href="/fortune/saju">
-                <Button size="lg" className="bg-white text-purple-600 hover:bg-white/90 rounded-xl font-semibold">
+                <button className="inline-flex items-center justify-center h-11 px-6 bg-white text-purple-700 hover:bg-gray-100 rounded-xl font-semibold text-sm transition-colors shadow-lg">
                   <Zap className="mr-2 h-4 w-4" />
                   무료 사주 분석
-                </Button>
+                </button>
               </Link>
               <Link href="/fortune/integrated">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 rounded-xl">
+                <button className="inline-flex items-center justify-center h-11 px-6 bg-purple-700 text-white hover:bg-purple-800 rounded-xl font-semibold text-sm transition-colors border-2 border-white/30">
                   <Crown className="mr-2 h-4 w-4" />
                   프리미엄
-                </Button>
+                </button>
               </Link>
             </div>
           </div>

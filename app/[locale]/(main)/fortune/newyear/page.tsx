@@ -365,7 +365,7 @@ export default function NewYearFortunePage() {
                     placeholder="예: 1990"
                     value={birthYear}
                     onChange={(e) => handleYearInput(e.target.value)}
-                    className="w-full px-4 py-3 border border-amber-200 rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-3 border border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
                     min="1920"
                     max="2010"
                   />
