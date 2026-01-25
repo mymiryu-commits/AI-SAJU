@@ -20,6 +20,17 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import PremiumShowcase from '@/components/home/PremiumShowcase';
+import {
+  CHINESE_ZODIAC,
+  ChineseZodiacSign,
+  getTodayZodiacRanking,
+} from '@/lib/fortune/chineseZodiac';
+
+// 띠 아이콘 매핑
+const zodiacEmojis: Record<ChineseZodiacSign, string> = {
+  rat: '🐀', ox: '🐂', tiger: '🐅', rabbit: '🐇', dragon: '🐉', snake: '🐍',
+  horse: '🐎', sheep: '🐑', monkey: '🐵', rooster: '🐓', dog: '🐕', pig: '🐷',
+};
 
 // 서비스 카드 이미지 타입
 interface ServiceCardImages {
@@ -130,6 +141,8 @@ const serviceCards = [
 
 export default function SajuLandingPage() {
   const [cardImages, setCardImages] = useState<ServiceCardImages>({});
+  const [zodiacRanking, setZodiacRanking] = useState<ReturnType<typeof getTodayZodiacRanking>>([]);
+  const [currentDate, setCurrentDate] = useState<string>('');
 
   useEffect(() => {
     // 서비스 카드 이미지 설정 가져오기
@@ -146,6 +159,11 @@ export default function SajuLandingPage() {
     };
 
     fetchCardImages();
+
+    // 오늘의 띠별 운세 순위 가져오기
+    const today = new Date();
+    setCurrentDate(today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }));
+    setZodiacRanking(getTodayZodiacRanking(today));
   }, []);
 
   return (
@@ -217,6 +235,43 @@ export default function SajuLandingPage() {
                 </Button>
               </Link>
             </div>
+
+            {/* 오늘의 띠별 운세 순위 - 호기심 유발 */}
+            {zodiacRanking.length > 0 && (
+              <Link href="/fortune/tti" className="block mt-10">
+                <div className="inline-block bg-white/80 dark:bg-card/80 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/50 rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">🏆</span>
+                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">{currentDate} 띠별 운세 순위</span>
+                    <ArrowRight className="h-4 w-4 text-amber-500 ml-1" />
+                  </div>
+                  <div className="flex items-center justify-center gap-4 md:gap-6">
+                    {zodiacRanking.slice(0, 5).map((item, index) => (
+                      <div key={item.sign} className="flex flex-col items-center">
+                        <div className={`text-2xl md:text-3xl ${index === 0 ? 'animate-bounce' : ''}`} style={{ animationDuration: '2s' }}>
+                          {zodiacEmojis[item.sign]}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className={`text-xs font-bold ${
+                            index === 0 ? 'text-amber-500' :
+                            index === 1 ? 'text-gray-400' :
+                            index === 2 ? 'text-amber-700' :
+                            'text-gray-500'
+                          }`}>
+                            {index + 1}위
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{item.signInfo.name}</span>
+                      </div>
+                    ))}
+                    <div className="hidden md:flex flex-col items-center text-muted-foreground">
+                      <span className="text-lg">···</span>
+                      <span className="text-xs">내 띠는?</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
 
