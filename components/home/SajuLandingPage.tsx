@@ -168,189 +168,125 @@ export default function SajuLandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ===== HERO SECTION ===== */}
-      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+      {/* ===== HERO SECTION - 띠별 운세 중심 ===== */}
+      <section className="relative py-12 md:py-16 overflow-hidden">
+        {/* 배경 */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* Gradient Background */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(135deg, #6366f120, #8b5cf615, #a855f710)'
-            }}
-          />
-          {/* Animated Orbs */}
-          <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-purple-300/30 to-indigo-400/20 dark:from-purple-600/15 dark:to-indigo-500/10 rounded-full blur-[100px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-gradient-to-br from-pink-300/25 to-rose-400/20 dark:from-pink-600/10 dark:to-rose-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-amber-50/80 via-orange-50/50 to-background dark:from-amber-950/30 dark:via-orange-950/20 dark:to-background" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-amber-200/30 to-orange-300/20 dark:from-amber-600/10 dark:to-orange-500/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-red-200/20 to-pink-300/15 dark:from-red-600/10 dark:to-pink-500/5 rounded-full blur-[100px]" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 border border-purple-200/50 dark:border-purple-700/50 rounded-full px-5 py-2 mb-6">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
-              </span>
-              <span className="text-purple-700 dark:text-purple-300 text-sm font-medium">
-                AI-SAJU 운명 분석
-              </span>
-            </div>
+          {/* 오늘의 띠별 운세 - 메인 */}
+          {zodiacRanking.length > 0 && (
+            <div className="max-w-4xl mx-auto">
+              {/* 날짜 헤더 */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full px-4 py-1.5 text-sm font-medium mb-3">
+                  <span>🔮</span>
+                  <span>{currentDate}</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold">오늘의 띠별 운세</h1>
+              </div>
 
-            {/* Main Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              <span className="text-foreground">당신의 운명을</span>
-              <br />
-              <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">
-                AI가 분석합니다
-              </span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              사주, 타로, 궁합 분석부터 AI 상담까지
-              <br className="hidden md:block" />
-              <span className="text-foreground font-medium">당신만의 운명 이야기</span>를 만나보세요
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/fortune/saju">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-6 text-base font-semibold rounded-xl shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 transition-all hover:-translate-y-0.5"
-                >
-                  <Zap className="mr-2 h-5 w-5" />
-                  무료 사주 분석
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/fortune/integrated">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="px-8 py-6 text-base font-semibold rounded-xl border-2 hover:bg-secondary/50 transition-all hover:-translate-y-0.5"
-                >
-                  <Crown className="mr-2 h-5 w-5" />
-                  프리미엄 통합 분석
-                </Button>
-              </Link>
-            </div>
-
-            {/* 오늘의 띠별 운세 순위 - 호기심 유발 */}
-            {zodiacRanking.length > 0 && (
-              <Link href="/fortune/tti" className="block mt-10">
-                <div className="inline-block bg-white/80 dark:bg-card/80 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/50 rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">🏆</span>
-                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">{currentDate} 띠별 운세 순위</span>
-                    <ArrowRight className="h-4 w-4 text-amber-500 ml-1" />
-                  </div>
-                  <div className="flex items-center justify-center gap-4 md:gap-6">
-                    {zodiacRanking.slice(0, 5).map((item, index) => (
-                      <div key={item.sign} className="flex flex-col items-center">
-                        <div className={`text-2xl md:text-3xl ${index === 0 ? 'animate-bounce' : ''}`} style={{ animationDuration: '2s' }}>
-                          {zodiacEmojis[item.sign]}
+              {/* 1위 강조 */}
+              <Link href="/fortune/tti" className="block mb-6">
+                <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-3xl p-1 shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all hover:-translate-y-1">
+                  <div className="bg-white dark:bg-card rounded-[22px] p-6 md:p-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 md:gap-6">
+                        <div className="relative">
+                          <div className="absolute -inset-2 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full blur-lg opacity-50 animate-pulse" />
+                          <div className="relative text-5xl md:text-7xl animate-bounce" style={{ animationDuration: '2s' }}>
+                            {zodiacEmojis[zodiacRanking[0].sign]}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className={`text-xs font-bold ${
-                            index === 0 ? 'text-amber-500' :
-                            index === 1 ? 'text-gray-400' :
-                            index === 2 ? 'text-amber-700' :
-                            'text-gray-500'
-                          }`}>
-                            {index + 1}위
-                          </span>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-amber-500 font-bold text-lg">👑 오늘의 1위</span>
+                          </div>
+                          <h2 className="text-2xl md:text-3xl font-bold">{zodiacRanking[0].signInfo.name}띠</h2>
+                          <p className="text-muted-foreground text-sm md:text-base mt-1">
+                            오늘 가장 좋은 운을 가진 띠입니다
+                          </p>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">{item.signInfo.name}</span>
                       </div>
-                    ))}
-                    <div className="hidden md:flex flex-col items-center text-muted-foreground">
-                      <span className="text-lg">···</span>
-                      <span className="text-xs">내 띠는?</span>
+                      <div className="text-right hidden md:block">
+                        <div className="text-4xl font-bold text-amber-500">{zodiacRanking[0].score}점</div>
+                        <div className="text-sm text-muted-foreground">종합 운세</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </Link>
-            )}
-          </div>
-        </div>
 
-        {/* Bottom Fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-      </section>
+              {/* 2-6위 순위 */}
+              <Link href="/fortune/tti" className="block">
+                <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6">
+                  {zodiacRanking.slice(1, 6).map((item, index) => (
+                    <div
+                      key={item.sign}
+                      className="bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl p-3 md:p-4 text-center hover:bg-white dark:hover:bg-card hover:shadow-lg transition-all cursor-pointer border border-border/50"
+                    >
+                      <div className="text-2xl md:text-4xl mb-1">{zodiacEmojis[item.sign]}</div>
+                      <div className={`text-xs font-bold mb-0.5 ${
+                        index === 0 ? 'text-gray-400' :
+                        index === 1 ? 'text-amber-700' :
+                        'text-gray-500'
+                      }`}>
+                        {index + 2}위
+                      </div>
+                      <div className="text-xs md:text-sm font-medium">{item.signInfo.name}</div>
+                      <div className="text-[10px] md:text-xs text-muted-foreground">{item.score}점</div>
+                    </div>
+                  ))}
+                </div>
+              </Link>
 
-      {/* ===== FREE DAILY FORTUNE SECTION ===== */}
-      <section className="py-10 bg-gradient-to-r from-amber-50/50 via-orange-50/50 to-red-50/50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-red-950/20">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold">매일 무료 운세</h2>
-                <p className="text-sm text-muted-foreground">오늘의 운세를 무료로 확인하세요</p>
+              {/* 내 띠 확인 CTA */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link href="/fortune/tti">
+                  <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 rounded-xl shadow-lg">
+                    <span className="mr-2">🔍</span>
+                    내 띠 운세 확인하기
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/fortune/newyear">
+                  <Button size="lg" variant="outline" className="rounded-xl">
+                    <span className="mr-2">🧧</span>
+                    2026 신년운세
+                  </Button>
+                </Link>
               </div>
             </div>
-          </div>
+          )}
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* 오늘의 운세 */}
-            <Link href="/fortune/free" className="group">
-              <div className="p-5 rounded-2xl bg-white dark:bg-card border border-border/50 hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-lg transition-all h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <Sun className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold mb-1">오늘의 운세</h3>
-                    <p className="text-sm text-muted-foreground truncate">종합운, 재물운, 애정운</p>
-                  </div>
-                  <div className="flex items-center text-purple-500">
-                    <span className="text-xs font-medium mr-1">무료</span>
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* 띠별 운세 */}
-            <Link href="/fortune/tti" className="group">
-              <div className="p-5 rounded-2xl bg-white dark:bg-card border border-border/50 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-lg transition-all h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <span className="text-2xl">🐲</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold mb-1">띠별 오늘의 운세</h3>
-                    <p className="text-sm text-muted-foreground truncate">12간지 띠별 운세</p>
-                  </div>
-                  <div className="flex items-center text-amber-500">
-                    <span className="text-xs font-medium mr-1">무료</span>
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* 신년운세 */}
-            <Link href="/fortune/newyear" className="group">
-              <div className="p-5 rounded-2xl bg-white dark:bg-card border border-border/50 hover:border-red-200 dark:hover:border-red-800 hover:shadow-lg transition-all h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-amber-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                    <span className="text-2xl">🧧</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold mb-1">2026 신년운세</h3>
-                    <p className="text-sm text-muted-foreground truncate">병오년 운세 미리보기</p>
-                  </div>
-                  <div className="flex items-center text-red-500">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
-            </Link>
+      {/* ===== 프리미엄 서비스 배너 ===== */}
+      <section className="py-8 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-white text-center md:text-left">
+              <h2 className="text-xl md:text-2xl font-bold mb-1">더 깊은 운명 분석이 필요하신가요?</h2>
+              <p className="text-white/80 text-sm md:text-base">사주팔자 기반 AI 심층 분석</p>
+            </div>
+            <div className="flex gap-3">
+              <Link href="/fortune/saju">
+                <Button size="lg" className="bg-white text-purple-600 hover:bg-white/90 rounded-xl font-semibold">
+                  <Zap className="mr-2 h-4 w-4" />
+                  무료 사주 분석
+                </Button>
+              </Link>
+              <Link href="/fortune/integrated">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 rounded-xl">
+                  <Crown className="mr-2 h-4 w-4" />
+                  프리미엄
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
