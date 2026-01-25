@@ -17,18 +17,14 @@ import {
   Heart,
   Sparkles,
   Dices,
+  Brain,
+  Calendar,
+  Gift,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { ServiceCardImages } from '@/types/settings';
 
-export interface ServiceCardImages {
-  daily_fortune?: string;
-  saju_basic?: string;
-  saju_advanced?: string;
-  ai_chat?: string;
-  compatibility?: string;
-  tarot?: string;
-  lotto?: string;
-}
+export type { ServiceCardImages };
 
 const serviceCards = [
   { id: 'daily_fortune', title: '오늘의 운세', icon: Sun, color: 'from-amber-400 to-orange-500' },
@@ -38,6 +34,9 @@ const serviceCards = [
   { id: 'compatibility', title: '궁합 분석', icon: Heart, color: 'from-pink-400 to-rose-500' },
   { id: 'tarot', title: '타로 점', icon: Sparkles, color: 'from-violet-400 to-purple-500' },
   { id: 'lotto', title: '로또 분석', icon: Dices, color: 'from-emerald-400 to-teal-500' },
+  { id: 'mbti', title: 'MBTI 분석', icon: Brain, color: 'from-indigo-400 to-purple-500' },
+  { id: 'tti', title: '띠별 운세', icon: Calendar, color: 'from-orange-400 to-red-500' },
+  { id: 'newyear', title: '신년운세', icon: Gift, color: 'from-red-400 to-rose-500' },
 ];
 
 interface ServiceCardImageSettingsProps {

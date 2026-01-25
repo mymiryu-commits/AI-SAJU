@@ -26,24 +26,13 @@ import {
   ChineseZodiacSign,
   getTodayZodiacRanking,
 } from '@/lib/fortune/chineseZodiac';
+import { ServiceCardImages } from '@/types/settings';
 
 // 띠 아이콘 매핑
 const zodiacEmojis: Record<ChineseZodiacSign, string> = {
   rat: '🐀', ox: '🐂', tiger: '🐅', rabbit: '🐇', dragon: '🐉', snake: '🐍',
   horse: '🐎', sheep: '🐑', monkey: '🐵', rooster: '🐓', dog: '🐕', pig: '🐷',
 };
-
-// 서비스 카드 이미지 타입
-interface ServiceCardImages {
-  daily_fortune?: string;
-  saju_basic?: string;
-  saju_advanced?: string;
-  ai_chat?: string;
-  compatibility?: string;
-  tarot?: string;
-  lotto?: string;
-  mbti?: string;
-}
 
 // 서비스 카드 데이터
 const serviceCards = [
