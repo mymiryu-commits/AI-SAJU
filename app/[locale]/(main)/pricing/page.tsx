@@ -196,7 +196,7 @@ export default function PricingPage() {
               >
                 {/* Popular Badge */}
                 {pkg.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <div className="absolute top-4 left-4 z-10">
                     <Badge className="bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 px-3 py-1">
                       인기
                     </Badge>
@@ -215,7 +215,7 @@ export default function PricingPage() {
                 {/* Glow Effect */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${pkg.bgGlow} to-transparent opacity-50`} />
 
-                <CardHeader className={`relative ${pkg.popular ? 'pt-8' : 'pt-6'}`}>
+                <CardHeader className={`relative ${pkg.popular ? 'pt-14' : 'pt-6'}`}>
                   <div className="mb-2">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {pkg.subtitle}
