@@ -88,7 +88,7 @@ export default function AdminSettingsPage() {
 
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('site-assets')
+        .from('hero-images')
         .upload(`qr-hero/${filename}`, file, {
           cacheControl: '3600',
           upsert: false,
@@ -98,7 +98,7 @@ export default function AdminSettingsPage() {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('site-assets')
+        .from('hero-images')
         .getPublicUrl(`qr-hero/${filename}`);
 
       const imageUrl = urlData.publicUrl;
