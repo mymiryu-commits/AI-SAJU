@@ -196,9 +196,11 @@ export default function PricingPage() {
               >
                 {/* Popular Badge */}
                 {pkg.popular && (
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-center py-1.5 text-sm font-medium">
-                    <Star className="inline h-4 w-4 mr-1" />
-                    가장 인기있는 선택
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <div className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-center py-1.5 px-4 text-sm font-medium rounded-full shadow-lg">
+                      <Star className="inline h-4 w-4 mr-1" />
+                      가장 인기있는 선택
+                    </div>
                   </div>
                 )}
 
@@ -214,7 +216,7 @@ export default function PricingPage() {
                 {/* Glow Effect */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${pkg.bgGlow} to-transparent opacity-50`} />
 
-                <CardHeader className={`relative pt-${pkg.popular ? '12' : '6'}`}>
+                <CardHeader className={`relative ${pkg.popular ? 'pt-8' : 'pt-6'}`}>
                   <div className="mb-2">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {pkg.subtitle}
