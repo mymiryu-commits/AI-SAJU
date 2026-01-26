@@ -10,7 +10,6 @@ import {
   Check,
   Sparkles,
   QrCode,
-  Dices,
   Gift,
   Building2,
   ArrowRight,
@@ -82,25 +81,14 @@ const sajuPackages = [
   },
 ];
 
-// QR코드/로또 패키지
+// QR코드 패키지
 const utilityPackages = [
   {
     type: 'qrcode',
     name: 'QR코드 생성',
     icon: QrCode,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    packages: [
-      { quantity: 30, price: 4900 },
-      { quantity: 100, price: 9900 },
-    ],
-  },
-  {
-    type: 'lotto',
-    name: '로또번호 AI추천',
-    icon: Dices,
-    color: 'text-green-500',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
+    color: 'text-violet-500',
+    bgColor: 'bg-violet-100 dark:bg-violet-900/30',
     packages: [
       { quantity: 30, price: 4900 },
       { quantity: 100, price: 9900 },
@@ -271,20 +259,23 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* QR코드 / 로또 */}
+          {/* QR코드 서비스 */}
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-center mb-8">추가 서비스</h2>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="max-w-md mx-auto">
               {utilityPackages.map((service) => {
                 const Icon = service.icon;
                 return (
-                  <Card key={service.type}>
+                  <Card key={service.type} className="border-violet-200 dark:border-violet-800/30">
                     <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${service.bgColor}`}>
-                          <Icon className={`h-5 w-5 ${service.color}`} />
+                      <div className="flex items-center justify-center gap-3">
+                        <div className={`p-3 rounded-xl ${service.bgColor}`}>
+                          <Icon className={`h-6 w-6 ${service.color}`} />
                         </div>
-                        <CardTitle>{service.name}</CardTitle>
+                        <div>
+                          <CardTitle>{service.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">다양한 QR코드를 쉽게 생성</p>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -292,10 +283,10 @@ export default function PricingPage() {
                         {service.packages.map((pkg) => (
                           <div
                             key={pkg.quantity}
-                            className="text-center p-4 rounded-lg bg-muted/50"
+                            className="text-center p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-100 dark:border-violet-800/30"
                           >
                             <p className="font-bold text-lg">{pkg.quantity}회권</p>
-                            <p className="text-2xl font-bold text-primary">
+                            <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
                               {formatPrice(pkg.price)}원
                             </p>
                             <p className="text-xs text-muted-foreground">
@@ -304,6 +295,12 @@ export default function PricingPage() {
                           </div>
                         ))}
                       </div>
+                      <Link href="/tools/qrcode" className="block mt-4">
+                        <Button variant="outline" className="w-full border-violet-200 text-violet-600 hover:bg-violet-50 dark:border-violet-800 dark:text-violet-400 dark:hover:bg-violet-900/20">
+                          QR코드 생성하기
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 );
