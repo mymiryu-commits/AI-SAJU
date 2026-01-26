@@ -63,6 +63,7 @@ export default function AdvancedSajuPage() {
   const [activeTab, setActiveTab] = useState<TabType>('sipsin');
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [heroBackground, setHeroBackground] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     birthDate: '',
@@ -71,8 +72,23 @@ export default function AdvancedSajuPage() {
     calendar: 'solar',
   });
 
-  // sessionStorage에서 데이터 확인하고 바로 분석
+  // 배경 이미지 설정 및 sessionStorage 데이터 확인
   useEffect(() => {
+    // 배경 이미지 설정 가져오기
+    const fetchHeroSettings = async () => {
+      try {
+        const response = await fetch('/api/site-settings?key=saju_advanced_hero');
+        const result = await response.json();
+        if (result.data?.value?.backgroundImage) {
+          setHeroBackground(result.data.value.backgroundImage);
+        }
+      } catch (error) {
+        console.error('Error fetching hero settings:', error);
+      }
+    };
+    fetchHeroSettings();
+
+    // sessionStorage에서 데이터 확인하고 바로 분석
     const storedChart = sessionStorage.getItem('sajuChart');
     if (storedChart) {
       fetchAnalysis(JSON.parse(storedChart));
@@ -161,8 +177,20 @@ export default function AdvancedSajuPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20">
         {/* 히어로 섹션 */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 text-white py-16">
+        <section className="relative overflow-hidden text-white py-16">
+          {/* 배경 이미지 또는 그라데이션 */}
           <div className="absolute inset-0">
+            {heroBackground ? (
+              <>
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${heroBackground})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-violet-900/70 to-indigo-900/80" />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700" />
+            )}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
           </div>

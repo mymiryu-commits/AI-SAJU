@@ -36,7 +36,7 @@ const zodiacEmojis: Record<ChineseZodiacSign, string> = {
   horse: '🐎', sheep: '🐑', monkey: '🐵', rooster: '🐓', dog: '🐕', pig: '🐷',
 };
 
-// 서비스 카드 데이터
+// 서비스 카드 데이터 (MBTI가 로또보다 앞에 위치)
 const serviceCards = [
   {
     id: 'daily_fortune',
@@ -144,19 +144,6 @@ const serviceCards = [
     shadowColor: 'shadow-violet-500/20',
   },
   {
-    id: 'lotto',
-    title: '로또 분석',
-    subtitle: 'AI 번호 추천',
-    description: '사주 기반 행운의 번호를 받아보세요',
-    href: '/lotto',
-    icon: Dices,
-    buttonText: '번호 추천받기',
-    price: '무료',
-    priceColor: 'text-green-600',
-    gradient: 'from-emerald-400 to-teal-500',
-    shadowColor: 'shadow-emerald-500/20',
-  },
-  {
     id: 'mbti',
     title: 'MBTI 분석',
     subtitle: '성향 강도 분석',
@@ -169,19 +156,27 @@ const serviceCards = [
     gradient: 'from-indigo-400 to-purple-500',
     shadowColor: 'shadow-indigo-500/20',
   },
+  {
+    id: 'lotto',
+    title: '로또 분석',
+    subtitle: 'AI 번호 추천',
+    description: '사주 기반 행운의 번호를 받아보세요',
+    href: '/lotto',
+    icon: Dices,
+    buttonText: '번호 추천받기',
+    price: '무료',
+    priceColor: 'text-green-600',
+    gradient: 'from-emerald-400 to-teal-500',
+    shadowColor: 'shadow-emerald-500/20',
+  },
 ];
 
 export default function SajuLandingPage() {
   const [cardImages, setCardImages] = useState<ServiceCardImages>({});
   const [isImagesLoading, setIsImagesLoading] = useState(true);
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [imagesReady, setImagesReady] = useState(false);
   const [zodiacRanking, setZodiacRanking] = useState<ReturnType<typeof getTodayZodiacRanking>>([]);
   const [currentDate, setCurrentDate] = useState<string>('');
-
-  // 이미지 로드 완료 핸들러
-  const handleImageLoad = useCallback((cardId: string) => {
-    setLoadedImages(prev => ({ ...prev, [cardId]: true }));
-  }, []);
 
   useEffect(() => {
     // 서비스 카드 이미지 설정 가져오기
@@ -190,17 +185,15 @@ export default function SajuLandingPage() {
         const response = await fetch('/api/site-settings?key=service_card_images');
         const result = await response.json();
         if (result.data?.value) {
-          setCardImages(result.data.value);
-          // 이미지 URL이 있는 카드들을 미리 로드
           const imageUrls = result.data.value as ServiceCardImages;
+          setCardImages(imageUrls);
+
+          // 이미지 URL이 있는 카드들을 미리 로드 (모든 이미지가 로드될 때까지 대기)
           const preloadPromises = Object.entries(imageUrls).map(([key, url]) => {
             if (url) {
               return new Promise<void>((resolve) => {
                 const img = document.createElement('img');
-                img.onload = () => {
-                  setLoadedImages(prev => ({ ...prev, [key]: true }));
-                  resolve();
-                };
+                img.onload = () => resolve();
                 img.onerror = () => resolve();
                 img.src = url;
               });
@@ -208,9 +201,13 @@ export default function SajuLandingPage() {
             return Promise.resolve();
           });
           await Promise.all(preloadPromises);
+          setImagesReady(true);
+        } else {
+          setImagesReady(true);
         }
       } catch (error) {
         console.error('Error fetching card images:', error);
+        setImagesReady(true);
       } finally {
         setIsImagesLoading(false);
       }
@@ -367,8 +364,7 @@ export default function SajuLandingPage() {
             {serviceCards.map((card, index) => {
               const Icon = card.icon;
               const imageUrl = cardImages[card.id as keyof ServiceCardImages];
-              const isImageLoaded = loadedImages[card.id];
-              const showImage = imageUrl && isImageLoaded;
+              const showImage = imageUrl && imagesReady;
 
               return (
                 <Link
@@ -383,41 +379,53 @@ export default function SajuLandingPage() {
                       ${card.shadowColor}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Card Image Area - 항상 그라데이션 배경 유지 */}
-                    <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${card.gradient}`}>
-                      {/* 이미지가 있고 로드된 경우에만 표시 */}
-                      {imageUrl && (
-                        <div className={`absolute inset-0 transition-opacity duration-500 ${showImage ? 'opacity-100' : 'opacity-0'}`}>
+                    {/* Card Image Area */}
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      {/* 로딩 중 스켈레톤 */}
+                      {isImagesLoading && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 animate-pulse">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 text-gray-400 dark:text-gray-500 animate-spin" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 이미지가 있고 준비된 경우 이미지 표시 */}
+                      {!isImagesLoading && showImage && (
+                        <div className="absolute inset-0">
                           <Image
                             src={imageUrl}
                             alt={card.title}
                             fill
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
-                            onLoad={() => handleImageLoad(card.id)}
+                            priority={index < 4}
                           />
                           {/* 이미지 오버레이 */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                       )}
-                      {/* 이미지가 로드되지 않았거나 없는 경우 기본 아이콘 표시 */}
-                      <div className={`absolute inset-0 transition-opacity duration-500 ${showImage ? 'opacity-0' : 'opacity-100'}`}>
-                        {/* 배경 패턴 */}
-                        <div className="absolute inset-0 opacity-30">
-                          <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
-                          <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/20 rounded-full blur-xl" />
-                        </div>
-                        {/* 아이콘 */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-white/30 rounded-full blur-xl scale-150 group-hover:scale-175 transition-transform duration-500" />
-                            <div className="relative w-18 h-18 md:w-22 md:h-22 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
-                              <Icon className="h-9 w-9 md:h-11 md:w-11 text-white drop-shadow-lg" />
+
+                      {/* 이미지가 없는 경우 기본 그라데이션 + 아이콘 표시 */}
+                      {!isImagesLoading && !showImage && (
+                        <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`}>
+                          {/* 배경 패턴 */}
+                          <div className="absolute inset-0 opacity-30">
+                            <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
+                            <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/20 rounded-full blur-xl" />
+                          </div>
+                          {/* 아이콘 */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-white/30 rounded-full blur-xl scale-150 group-hover:scale-175 transition-transform duration-500" />
+                              <div className="relative w-18 h-18 md:w-22 md:h-22 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
+                                <Icon className="h-9 w-9 md:h-11 md:w-11 text-white drop-shadow-lg" />
+                              </div>
                             </div>
                           </div>
+                          {/* 하단 그라데이션 */}
+                          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
                         </div>
-                        {/* 하단 그라데이션 */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
-                      </div>
+                      )}
                     </div>
 
                     {/* Card Button Area */}

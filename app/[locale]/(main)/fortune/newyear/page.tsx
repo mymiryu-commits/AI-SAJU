@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Star,
   Sparkles,
@@ -24,6 +33,10 @@ import {
   Zap,
   TrendingUp,
   AlertTriangle,
+  User,
+  Clock,
+  Save,
+  RotateCcw,
 } from 'lucide-react';
 import {
   CHINESE_ZODIAC,
@@ -31,6 +44,24 @@ import {
   getChineseZodiac,
   generateNewYearFortune,
 } from '@/lib/fortune/chineseZodiac';
+import { cn } from '@/lib/utils';
+
+// 시주 옵션
+const HOURS = [
+  { value: '', label: '모름' },
+  { value: '23:30', label: '자시 (23:30~01:30)', emoji: '🐀' },
+  { value: '01:30', label: '축시 (01:30~03:30)', emoji: '🐂' },
+  { value: '03:30', label: '인시 (03:30~05:30)', emoji: '🐅' },
+  { value: '05:30', label: '묘시 (05:30~07:30)', emoji: '🐇' },
+  { value: '07:30', label: '진시 (07:30~09:30)', emoji: '🐉' },
+  { value: '09:30', label: '사시 (09:30~11:30)', emoji: '🐍' },
+  { value: '11:30', label: '오시 (11:30~13:30)', emoji: '🐎' },
+  { value: '13:30', label: '미시 (13:30~15:30)', emoji: '🐑' },
+  { value: '15:30', label: '신시 (15:30~17:30)', emoji: '🐵' },
+  { value: '17:30', label: '유시 (17:30~19:30)', emoji: '🐓' },
+  { value: '19:30', label: '술시 (19:30~21:30)', emoji: '🐕' },
+  { value: '21:30', label: '해시 (21:30~23:30)', emoji: '🐷' },
+];
 
 const zodiacIcons: Record<ChineseZodiacSign, string> = {
   rat: '🐀',
@@ -53,34 +84,78 @@ const zodiacOrder: ChineseZodiacSign[] = [
 ];
 
 export default function NewYearFortunePage() {
-  const [birthYear, setBirthYear] = useState<string>('');
   const [selectedSign, setSelectedSign] = useState<ChineseZodiacSign | null>(null);
   const [fortune, setFortune] = useState<ReturnType<typeof generateNewYearFortune> | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    birthDate: '',
+    birthHour: '',
+  });
+  const [hasSavedInfo, setHasSavedInfo] = useState(false);
 
-  const handleYearInput = (year: string) => {
-    setBirthYear(year);
-    if (year.length === 4) {
-      const yearNum = parseInt(year, 10);
-      if (yearNum >= 1920 && yearNum <= 2010) {
-        const sign = getChineseZodiac(yearNum);
-        setSelectedSign(sign);
-        setFortune(generateNewYearFortune(sign, yearNum));
+  // 저장된 사용자 정보 불러오기
+  useEffect(() => {
+    const savedInfo = localStorage.getItem('userBirthInfo');
+    if (savedInfo) {
+      try {
+        const parsed = JSON.parse(savedInfo);
+        setFormData(prev => ({
+          ...prev,
+          name: parsed.name || '',
+          birthDate: parsed.birthDate || '',
+          birthHour: parsed.birthHour || '',
+        }));
+        setHasSavedInfo(true);
+      } catch (e) {
+        console.error('Failed to load saved info:', e);
       }
     }
+  }, []);
+
+  // 정보 저장
+  const handleSaveInfo = () => {
+    localStorage.setItem('userBirthInfo', JSON.stringify({
+      name: formData.name,
+      birthDate: formData.birthDate,
+      birthHour: formData.birthHour,
+      savedAt: new Date().toISOString(),
+    }));
+    setHasSavedInfo(true);
+  };
+
+  // 저장된 정보 삭제
+  const handleClearSavedInfo = () => {
+    localStorage.removeItem('userBirthInfo');
+    setHasSavedInfo(false);
+  };
+
+  // 생년월일에서 연도 추출
+  const getBirthYear = () => {
+    if (formData.birthDate) {
+      return parseInt(formData.birthDate.split('-')[0], 10);
+    }
+    return null;
+  };
+
+  const handleAnalyze = () => {
+    const year = getBirthYear();
+    if (!year || year < 1920 || year > 2025) return;
+
+    const sign = getChineseZodiac(year);
+    setSelectedSign(sign);
+    setFortune(generateNewYearFortune(sign, year));
   };
 
   const handleSignSelect = (sign: ChineseZodiacSign) => {
     // 대표 연도로 계산
     const representativeYear = CHINESE_ZODIAC[sign].years[CHINESE_ZODIAC[sign].years.length - 2] || 1990;
     setSelectedSign(sign);
-    setBirthYear(representativeYear.toString());
     setFortune(generateNewYearFortune(sign, representativeYear));
   };
 
   const handleBack = () => {
     setSelectedSign(null);
     setFortune(null);
-    setBirthYear('');
   };
 
   // 결과 화면
@@ -115,8 +190,17 @@ export default function NewYearFortunePage() {
                     2026년 병오년(丙午年)
                   </Badge>
                   <div className="text-7xl mb-4">{zodiacIcons[selectedSign]}</div>
-                  <h1 className="text-3xl font-bold mb-2">{signData.name}띠 신년운세</h1>
-                  <p className="text-white/80">{fortune.age}세 ({fortune.birthYear}년생)</p>
+                  <h1 className="text-3xl font-bold mb-2">
+                    {formData.name ? `${formData.name}님의 ` : ''}{signData.name}띠 신년운세
+                  </h1>
+                  <p className="text-white/80">
+                    {fortune.age}세 ({fortune.birthYear}년생)
+                    {formData.birthHour && formData.birthHour !== 'unknown' && (
+                      <span className="ml-2">
+                        · {HOURS.find(h => h.value === formData.birthHour)?.label.split(' ')[0]}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
 
@@ -354,29 +438,130 @@ export default function NewYearFortunePage() {
             </div>
           </div>
 
-          {/* 연도 입력 */}
+          {/* 상세 입력 폼 */}
           <Card className="mb-8 border-amber-200 dark:border-amber-800">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="flex-1 w-full">
-                  <label className="block text-sm font-medium mb-2">태어난 해를 입력하세요</label>
-                  <input
-                    type="number"
-                    placeholder="예: 1990"
-                    value={birthYear}
-                    onChange={(e) => handleYearInput(e.target.value)}
-                    className="w-full px-4 py-3 border border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    min="1920"
-                    max="2010"
-                  />
-                </div>
-                {birthYear.length === 4 && selectedSign && (
-                  <div className="text-center md:text-left">
-                    <div className="text-5xl mb-1">{zodiacIcons[selectedSign]}</div>
-                    <div className="font-bold text-lg">{CHINESE_ZODIAC[selectedSign].name}띠</div>
-                  </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-amber-500" />
+                생년월일 입력
+              </CardTitle>
+              <CardDescription>
+                정확한 분석을 위해 상세 정보를 입력하세요
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* 이름 */}
+              <div>
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  이름 (선택)
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="홍길동"
+                  className="mt-1"
+                />
+              </div>
+
+              {/* 생년월일 */}
+              <div>
+                <Label htmlFor="birthDate" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  생년월일 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                  required
+                  className="mt-1"
+                  max="2025-12-31"
+                  min="1920-01-01"
+                />
+              </div>
+
+              {/* 태어난 시간 */}
+              <div>
+                <Label htmlFor="birthHour" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  태어난 시간 (선택)
+                </Label>
+                <Select
+                  value={formData.birthHour}
+                  onValueChange={(value) => setFormData({ ...formData, birthHour: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="시간을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HOURS.map((hour) => (
+                      <SelectItem key={hour.value || 'unknown'} value={hour.value || 'unknown'}>
+                        {hour.emoji && <span className="mr-1">{hour.emoji}</span>}
+                        {hour.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  시간을 알면 더 정확한 분석이 가능합니다
+                </p>
+              </div>
+
+              {/* 정보 저장 버튼 */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveInfo}
+                  disabled={!formData.birthDate}
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  정보 저장
+                </Button>
+                {hasSavedInfo && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSavedInfo}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    저장 삭제
+                  </Button>
                 )}
               </div>
+
+              {/* 띠 미리보기 */}
+              {formData.birthDate && getBirthYear() && (
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30">
+                  <div className="text-5xl">
+                    {zodiacIcons[getChineseZodiac(getBirthYear()!)]}
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg">
+                      {CHINESE_ZODIAC[getChineseZodiac(getBirthYear()!)].name}띠
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.name && `${formData.name}님의 `}{getBirthYear()}년생
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 분석 버튼 */}
+              <Button
+                onClick={handleAnalyze}
+                disabled={!formData.birthDate || !getBirthYear() || getBirthYear()! < 1920}
+                className="w-full py-6 text-lg bg-gradient-to-r from-red-500 via-amber-500 to-orange-500 hover:from-red-600 hover:via-amber-600 hover:to-orange-600"
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
+                2026 신년운세 확인하기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </CardContent>
           </Card>
 

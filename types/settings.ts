@@ -57,3 +57,41 @@ export interface FortuneSlideSettings {
   autoPlay?: boolean;
   autoPlayInterval?: number;  // 밀리초 단위
 }
+
+/**
+ * 페이지 히어로 배경 이미지 설정
+ */
+export interface PageHeroSettings {
+  backgroundImage?: string;
+  overlayColor?: string;
+  overlayOpacity?: number;
+}
+
+/**
+ * 상품 가격 설정 타입
+ */
+export interface ServicePriceSettings {
+  daily_fortune?: number;      // 통합 운세 분석
+  saju_basic?: number;         // 사주 분석
+  saju_advanced?: number;      // 정통 사주
+  newyear?: number;            // 신년운세
+  animal_dna?: number;         // AI 동물 DNA
+  ai_chat?: number;            // AI 사주 상담
+  compatibility?: number;      // 궁합 분석
+  tarot?: number;              // 타로 점
+  lotto?: number;              // 로또 분석
+  mbti?: number;               // MBTI 분석
+  [key: string]: number | undefined;
+}
+
+/**
+ * 사용자 저장 정보 타입 (생년월일 등)
+ */
+export interface SavedUserInfo {
+  name?: string;
+  birthDate?: string;          // YYYY-MM-DD
+  birthHour?: string;          // HH:mm 또는 시주 값
+  gender?: 'male' | 'female';
+  calendar?: 'solar' | 'lunar';
+  savedAt?: string;            // ISO date string
+}
