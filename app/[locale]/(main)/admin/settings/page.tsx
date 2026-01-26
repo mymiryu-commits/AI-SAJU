@@ -342,6 +342,24 @@ export default function AdminSettingsPage() {
           </div>
         </Link>
 
+        {/* Fortune Slide Images Link */}
+        <Link href="/admin/fortune-slides">
+          <div className="mt-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                  <Layers className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-purple-800 dark:text-purple-300">운세 슬라이드 이미지 관리</h3>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">통합 분석 페이지 상단 슬라이드 이미지를 관리하세요</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-purple-500 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </Link>
+
         {/* AI Shortcuts Management */}
         <div className="mt-8 bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
