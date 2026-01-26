@@ -22,8 +22,9 @@ import { Badge } from '@/components/ui/badge';
 const navLinks = [
   { href: '/ranking', key: 'ranking', icon: '📊' },
   { href: '/saju', key: 'saju', icon: '🔮' },
-  // { href: '/lotto', key: 'lotto', icon: '🎱' }, // 토스페이 정책 이슈로 비활성화 - 관리자 전용 (/lotto?admin=비밀키)
   { href: '/tools/qrcode', key: 'qr', icon: '📱' },
+  { href: '/finance', key: 'finance', icon: '💰' },
+  { href: '/monetize', key: 'monetize', icon: '🚀' },
   { href: '/pricing', key: 'pricing', icon: '💎' },
 ] as const;
 
