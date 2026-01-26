@@ -4,42 +4,82 @@ import { cn } from '@/lib/utils';
 
 interface LottoBallProps {
   number: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   isBonus?: boolean;
+  animated?: boolean;
+  delay?: number;
   className?: string;
 }
 
-function getColorClass(num: number): string {
-  if (num <= 10) return 'bg-yellow-400 text-yellow-900';
-  if (num <= 20) return 'bg-blue-400 text-white';
-  if (num <= 30) return 'bg-red-400 text-white';
-  if (num <= 40) return 'bg-gray-500 text-white';
-  return 'bg-green-500 text-white';
+function getColorStyle(num: number): { bg: string; shadow: string } {
+  if (num <= 10) {
+    return {
+      bg: 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 text-yellow-900',
+      shadow: 'shadow-yellow-400/50',
+    };
+  }
+  if (num <= 20) {
+    return {
+      bg: 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white',
+      shadow: 'shadow-blue-500/50',
+    };
+  }
+  if (num <= 30) {
+    return {
+      bg: 'bg-gradient-to-br from-red-400 via-red-500 to-red-600 text-white',
+      shadow: 'shadow-red-500/50',
+    };
+  }
+  if (num <= 40) {
+    return {
+      bg: 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 text-white',
+      shadow: 'shadow-gray-500/50',
+    };
+  }
+  return {
+    bg: 'bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white',
+    shadow: 'shadow-green-500/50',
+  };
 }
 
 const sizeClasses = {
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-10 h-10 text-base',
-  lg: 'w-12 h-12 text-lg',
+  sm: 'w-8 h-8 text-xs',
+  md: 'w-10 h-10 text-sm',
+  lg: 'w-12 h-12 text-base',
+  xl: 'w-14 h-14 text-lg',
 };
 
 export function LottoBall({
   number,
   size = 'md',
   isBonus = false,
+  animated = false,
+  delay = 0,
   className,
 }: LottoBallProps) {
+  const colorStyle = getColorStyle(number);
+
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-bold shadow-md',
-        getColorClass(number),
+        'rounded-full flex items-center justify-center font-bold shadow-lg',
+        'relative overflow-hidden transition-all duration-300',
+        'hover:scale-110 hover:shadow-xl',
+        colorStyle.bg,
+        colorStyle.shadow,
         sizeClasses[size],
-        isBonus && 'ring-2 ring-purple-500 ring-offset-2',
+        isBonus && 'ring-2 ring-purple-500 ring-offset-2 ring-offset-background',
+        animated && 'animate-bounce-in',
         className
       )}
+      style={animated ? { animationDelay: `${delay}ms` } : undefined}
     >
-      {number}
+      {/* 하이라이트 효과 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent rounded-full" />
+      {/* 숫자 */}
+      <span className="relative z-10 font-extrabold drop-shadow-sm">
+        {number}
+      </span>
     </div>
   );
 }
@@ -47,8 +87,9 @@ export function LottoBall({
 interface LottoNumbersProps {
   numbers: number[];
   bonus?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showPlus?: boolean;
+  animated?: boolean;
   className?: string;
 }
 
@@ -57,17 +98,32 @@ export function LottoNumbers({
   bonus,
   size = 'md',
   showPlus = true,
+  animated = false,
   className,
 }: LottoNumbersProps) {
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-1.5 sm:gap-2', className)}>
       {numbers.map((num, index) => (
-        <LottoBall key={`${num}-${index}`} number={num} size={size} />
+        <LottoBall
+          key={`${num}-${index}`}
+          number={num}
+          size={size}
+          animated={animated}
+          delay={index * 100}
+        />
       ))}
       {bonus !== undefined && (
         <>
-          {showPlus && <span className="text-muted-foreground mx-1">+</span>}
-          <LottoBall number={bonus} size={size} isBonus />
+          {showPlus && (
+            <span className="text-muted-foreground mx-1 font-bold text-lg">+</span>
+          )}
+          <LottoBall
+            number={bonus}
+            size={size}
+            isBonus
+            animated={animated}
+            delay={numbers.length * 100}
+          />
         </>
       )}
     </div>
@@ -81,6 +137,7 @@ interface LottoResultDisplayProps {
   drawDate?: string;
   prize1st?: number;
   winners1st?: number;
+  highlight?: boolean;
 }
 
 export function LottoResultDisplay({
@@ -90,6 +147,7 @@ export function LottoResultDisplay({
   drawDate,
   prize1st,
   winners1st,
+  highlight = false,
 }: LottoResultDisplayProps) {
   const formatPrize = (amount: number) => {
     if (amount >= 100000000) {
@@ -99,31 +157,48 @@ export function LottoResultDisplay({
   };
 
   return (
-    <div className="bg-card rounded-lg p-4 border">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <span className="text-lg font-bold">{round}회</span>
+    <div
+      className={cn(
+        'rounded-xl p-4 border transition-all duration-300',
+        highlight
+          ? 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-200 dark:border-yellow-800 shadow-md'
+          : 'bg-card hover:shadow-md hover:border-primary/20'
+      )}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              'text-lg font-bold',
+              highlight && 'text-yellow-700 dark:text-yellow-400'
+            )}
+          >
+            {round}회
+          </span>
           {drawDate && (
-            <span className="text-sm text-muted-foreground ml-2">
+            <span className="text-sm text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
               {drawDate}
             </span>
           )}
         </div>
         {prize1st && (
           <div className="text-right">
-            <div className="text-sm text-muted-foreground">1등 당첨금</div>
-            <div className="font-bold text-green-600">
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+              1등 당첨금
+            </div>
+            <div className="font-bold text-lg text-green-600 dark:text-green-400">
               {formatPrize(prize1st)}원
             </div>
-            {winners1st && (
-              <div className="text-xs text-muted-foreground">
+            {winners1st !== undefined && (
+              <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
                 {winners1st}명 당첨
               </div>
             )}
           </div>
         )}
       </div>
-      <LottoNumbers numbers={numbers} bonus={bonus} />
+      <LottoNumbers numbers={numbers} bonus={bonus} animated={highlight} />
     </div>
   );
 }
