@@ -196,11 +196,10 @@ export default function PricingPage() {
               >
                 {/* Popular Badge */}
                 {pkg.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                    <div className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-center py-1.5 px-4 text-sm font-medium rounded-full shadow-lg">
-                      <Star className="inline h-4 w-4 mr-1" />
-                      가장 인기있는 선택
-                    </div>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                    <Badge className="bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 px-3 py-1">
+                      인기
+                    </Badge>
                   </div>
                 )}
 
