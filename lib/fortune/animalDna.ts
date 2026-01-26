@@ -679,3 +679,277 @@ export function getAllAnimals(): AnimalInfo[] {
 export function getAnimalsByElement(element: FiveElement): AnimalInfo[] {
   return ELEMENT_ANIMALS[element].map(type => ANIMAL_DATABASE[type]);
 }
+
+// ===== 겉과 속 동물 DNA 분석 =====
+
+/**
+ * 겉/속 일치도 유형
+ */
+export type MatchLevel = 'identical' | 'similar' | 'different' | 'opposite';
+
+/**
+ * 겉/속 동물 DNA 결과
+ */
+export interface DualAnimalResult {
+  outer: {
+    animal: AnimalInfo;
+    element: FiveElement;
+    description: string;
+  };
+  inner: {
+    animal: AnimalInfo;
+    element: FiveElement;
+    description: string;
+  };
+  matchScore: number;           // 0-100
+  matchLevel: MatchLevel;
+  matchDescription: string;     // 일치도 설명
+  combinedTitle: string;        // 예: "겉은 사자, 속은 여우"
+  personality: string;          // 종합 성격 설명
+  yinYang: {
+    outer: 'yang' | 'yin';
+    inner: 'yang' | 'yin';
+  };
+}
+
+/**
+ * 겉/속 일치도별 설명
+ */
+const MATCH_DESCRIPTIONS: Record<MatchLevel, string[]> = {
+  identical: [
+    '겉과 속이 일치하는 진정성 있는 사람입니다.',
+    '보이는 대로 느끼고, 느끼는 대로 표현합니다.',
+    '숨김없는 솔직함이 매력입니다.',
+  ],
+  similar: [
+    '겉과 속이 비슷하지만 미묘한 차이가 있습니다.',
+    '대체로 일관된 모습을 보이지만, 가끔 다른 면도 있습니다.',
+    '상황에 따라 유연하게 대처하는 타입입니다.',
+  ],
+  different: [
+    '겉과 속이 상당히 다른 반전 매력의 소유자입니다.',
+    '처음 만났을 때와 친해진 후의 모습이 다릅니다.',
+    '알면 알수록 새로운 모습을 발견하게 됩니다.',
+  ],
+  opposite: [
+    '겉과 속이 완전히 다른 이중적인 매력을 가졌습니다.',
+    '첫인상과 실제 성격이 정반대인 경우가 많습니다.',
+    '가까운 사람만 진짜 모습을 알 수 있습니다.',
+  ],
+};
+
+/**
+ * 겉/속 조합별 종합 성격 설명
+ */
+function generateCombinedPersonality(outerAnimal: AnimalInfo, innerAnimal: AnimalInfo): string {
+  // 특별한 조합들
+  const specialCombos: Record<string, string> = {
+    'lion_deer': '겉으로는 당당하고 카리스마 있지만, 내면은 섬세하고 상처받기 쉬운 감성파입니다.',
+    'lion_fox': '리더처럼 보이지만 속으로는 전략적으로 상황을 계산하는 타입입니다.',
+    'tiger_deer': '강해 보이지만 실제로는 부드럽고 여린 마음을 가진 사람입니다.',
+    'wolf_dolphin': '차갑고 날카로워 보이지만 알고 보면 유쾌하고 사교적입니다.',
+    'bear_eagle': '포근해 보이지만 내면은 날카로운 통찰력을 가지고 있습니다.',
+    'swan_wolf': '우아하고 순해 보이지만 속은 강인하고 충직합니다.',
+    'fox_bear': '영리해 보이지만 실제로는 순수하고 따뜻한 마음을 가졌습니다.',
+    'eagle_turtle': '날카롭고 빠르게 보이지만 내면은 신중하고 깊은 사색가입니다.',
+    'dragon_ox': '화려하고 야망 있어 보이지만 실제로는 묵묵히 노력하는 성실파입니다.',
+    'phoenix_turtle': '열정적이고 변화를 추구하는 것처럼 보이지만 내면은 안정을 원합니다.',
+  };
+
+  const comboKey = `${outerAnimal.id}_${innerAnimal.id}`;
+  if (specialCombos[comboKey]) {
+    return specialCombos[comboKey];
+  }
+
+  // 일반적인 설명 생성
+  return `겉으로는 ${outerAnimal.name}처럼 ${outerAnimal.strengths[0].replace('인', '지만').replace('한', '지만')}, 내면은 ${innerAnimal.name}처럼 ${innerAnimal.strengths[0]}을 가진 사람입니다.`;
+}
+
+/**
+ * 두 동물 간 일치도 점수 계산
+ */
+function calculateMatchScore(outer: AnimalType, inner: AnimalType): number {
+  // 같은 동물
+  if (outer === inner) return 100;
+
+  const outerInfo = ANIMAL_DATABASE[outer];
+  const innerInfo = ANIMAL_DATABASE[inner];
+
+  let score = 50;
+
+  // 같은 오행 계열
+  if (outerInfo.element === innerInfo.element) {
+    score += 25;
+  }
+
+  // 상생 관계
+  const generatingPairs: [FiveElement, FiveElement][] = [
+    ['木', '火'], ['火', '土'], ['土', '金'], ['金', '水'], ['水', '木'],
+  ];
+  for (const [a, b] of generatingPairs) {
+    if ((outerInfo.element === a && innerInfo.element === b) ||
+        (outerInfo.element === b && innerInfo.element === a)) {
+      score += 15;
+      break;
+    }
+  }
+
+  // 상극 관계
+  const overcomingPairs: [FiveElement, FiveElement][] = [
+    ['木', '土'], ['土', '水'], ['水', '火'], ['火', '金'], ['金', '木'],
+  ];
+  for (const [a, b] of overcomingPairs) {
+    if (outerInfo.element === a && innerInfo.element === b) {
+      score -= 20;
+      break;
+    }
+  }
+
+  // 궁합 동물 여부
+  if (outerInfo.bestMatch.includes(inner)) {
+    score += 10;
+  }
+  if (outerInfo.worstMatch.includes(inner)) {
+    score -= 15;
+  }
+
+  // 성향 유사도 (traits 비교)
+  const traitKeys = ['observation', 'adaptability', 'independence', 'leadership', 'creativity', 'stability'] as const;
+  let traitDiff = 0;
+  for (const key of traitKeys) {
+    traitDiff += Math.abs(outerInfo.traits[key] - innerInfo.traits[key]);
+  }
+  const avgTraitDiff = traitDiff / traitKeys.length;
+  score += Math.round((100 - avgTraitDiff) / 5); // 성향이 비슷할수록 점수 증가
+
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * 일치도 점수 → 레벨 변환
+ */
+function getMatchLevel(score: number): MatchLevel {
+  if (score >= 85) return 'identical';
+  if (score >= 60) return 'similar';
+  if (score >= 35) return 'different';
+  return 'opposite';
+}
+
+/**
+ * 연간 계산 (간이 버전)
+ */
+function calculateYearStem(year: number): string {
+  const stems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  return stems[(year - 4) % 10];
+}
+
+/**
+ * 시간 천간 계산 (간이 버전)
+ */
+function calculateHourStem(year: number, month: number, day: number, hour: number): string {
+  const stems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  const dayStem = calculateDayStem(year, month, day);
+  const dayStemIndex = stems.indexOf(dayStem);
+  const hourBranch = Math.floor((hour + 1) / 2) % 12;
+  const hourStemIndex = (dayStemIndex * 2 + hourBranch) % 10;
+  return stems[hourStemIndex];
+}
+
+/**
+ * 겉과 속 동물 DNA 분석 (메인 함수)
+ */
+export function analyzeDualAnimalDna(
+  birthYear: number,
+  birthMonth: number,
+  birthDay: number,
+  birthHour?: number
+): DualAnimalResult {
+  // 천간 계산
+  const dayStem = calculateDayStem(birthYear, birthMonth, birthDay);    // 일간 → 속 (내면)
+  const monthStem = calculateMonthStem(birthYear, birthMonth);           // 월간 → 겉 (외면)
+  const yearStem = calculateYearStem(birthYear);                         // 연간 (보조)
+
+  // 오행 변환
+  const innerElement = STEM_TO_ELEMENT[dayStem] || '木';
+  const outerElement = STEM_TO_ELEMENT[monthStem] || '火';
+  const yearElement = STEM_TO_ELEMENT[yearStem] || '木';
+
+  // 음양
+  const innerYinYang = STEM_TO_YINYANG[dayStem] || 'yang';
+  const outerYinYang = STEM_TO_YINYANG[monthStem] || 'yang';
+
+  // 동물 결정: 주 오행 + 부 오행 조합
+  // 겉: 월간(주) + 연간(부)
+  const outerCombinationKey = `${outerElement}_${yearElement}`;
+  const outerAnimalType = ELEMENT_COMBINATION_MAP[outerCombinationKey] || 'lion';
+  const outerAnimal = ANIMAL_DATABASE[outerAnimalType];
+
+  // 속: 일간(주) + 월간(부)
+  const innerCombinationKey = `${innerElement}_${outerElement}`;
+  const innerAnimalType = ELEMENT_COMBINATION_MAP[innerCombinationKey] || 'fox';
+  const innerAnimal = ANIMAL_DATABASE[innerAnimalType];
+
+  // 일치도 계산
+  const matchScore = calculateMatchScore(outerAnimalType, innerAnimalType);
+  const matchLevel = getMatchLevel(matchScore);
+
+  // 설명 생성
+  const matchDescriptions = MATCH_DESCRIPTIONS[matchLevel];
+  const matchDescription = matchDescriptions[Math.floor(Math.random() * matchDescriptions.length)];
+
+  const combinedTitle = outerAnimalType === innerAnimalType
+    ? `순수한 ${outerAnimal.name}형`
+    : `겉은 ${outerAnimal.name}, 속은 ${innerAnimal.name}`;
+
+  const personality = outerAnimalType === innerAnimalType
+    ? `${outerAnimal.description} 겉과 속이 같아 진정성 있는 모습을 보여줍니다.`
+    : generateCombinedPersonality(outerAnimal, innerAnimal);
+
+  return {
+    outer: {
+      animal: outerAnimal,
+      element: outerElement,
+      description: `타인에게 ${outerAnimal.name}처럼 보입니다. ${outerAnimal.strengths[0]}이(가) 돋보입니다.`,
+    },
+    inner: {
+      animal: innerAnimal,
+      element: innerElement,
+      description: `내면은 ${innerAnimal.name}입니다. ${innerAnimal.strengths[0]}을(를) 중요하게 생각합니다.`,
+    },
+    matchScore,
+    matchLevel,
+    matchDescription,
+    combinedTitle,
+    personality,
+    yinYang: {
+      outer: outerYinYang,
+      inner: innerYinYang,
+    },
+  };
+}
+
+/**
+ * 일치도 레벨 한글 변환
+ */
+export function getMatchLevelLabel(level: MatchLevel): string {
+  const labels: Record<MatchLevel, string> = {
+    identical: '완전 일치',
+    similar: '비슷함',
+    different: '다름',
+    opposite: '정반대',
+  };
+  return labels[level];
+}
+
+/**
+ * 일치도 레벨 이모지
+ */
+export function getMatchLevelEmoji(level: MatchLevel): string {
+  const emojis: Record<MatchLevel, string> = {
+    identical: '🎯',
+    similar: '🤝',
+    different: '🎭',
+    opposite: '🔄',
+  };
+  return emojis[level];
+}
