@@ -16,6 +16,7 @@ export interface ServiceCardImages {
   mbti?: string;              // MBTI 분석
   tti?: string;               // 띠별 운세
   newyear?: string;           // 신년운세
+  animal_dna?: string;        // AI 동물 DNA
 
   // 향후 추가될 컨텐츠를 위한 인덱스 시그니처
   [key: string]: string | undefined;
