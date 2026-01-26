@@ -14,7 +14,6 @@ import {
   MessageCircle,
   Heart,
   Flower2,
-  Ticket,
   Moon,
   ArrowRight,
   CheckCircle,
@@ -92,16 +91,6 @@ const services = [
     href: '/fortune/tarot',
     badge: { text: '베타', variant: 'beta' as const },
   },
-  {
-    id: 'lotto',
-    title: '로또 분석',
-    subtitle: 'AI 번호 추천',
-    description: '사주 기반 행운의 번호를 받아보세요',
-    icon: Ticket,
-    gradient: 'from-emerald-400 to-teal-500',
-    href: '/lotto',
-    badge: { text: '무료', variant: 'free' as const },
-  },
 ];
 
 // 배지 스타일
@@ -120,14 +109,39 @@ export default function SajuPage() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
-  // 서비스 카드 이미지 불러오기
+  // 서비스 카드 이미지 불러오기 (캐싱 적용)
   useEffect(() => {
+    const CACHE_KEY = 'service_card_images_cache';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시
+
     const fetchCardImages = async () => {
       try {
+        // 먼저 로컬 캐시 확인
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            setCardImages(data);
+            setImagesLoaded(true);
+            // 캐시된 이미지도 프리로딩
+            Object.entries(data).forEach(([key, url]) => {
+              if (url) {
+                setLoadedImages(prev => new Set(prev).add(key));
+              }
+            });
+            return;
+          }
+        }
+
         const response = await fetch('/api/site-settings?key=service_card_images');
         const result = await response.json();
         if (result.data?.value) {
           setCardImages(result.data.value);
+          // 로컬 캐시에 저장
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data: result.data.value,
+            timestamp: Date.now(),
+          }));
           // 이미지 프리로딩
           Object.entries(result.data.value).forEach(([key, url]) => {
             if (url) {
@@ -321,7 +335,7 @@ export default function SajuPage() {
                   첫 분석 특별 가격 · 평생 소장
                 </p>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 mb-4">
-                  <Ticket className="h-4 w-4 text-amber-600" />
+                  <Gift className="h-4 w-4 text-amber-600" />
                   <span className="text-sm font-medium text-amber-700 dark:text-amber-300">쿠폰 할인 적용 가능</span>
                 </div>
 
