@@ -118,6 +118,7 @@ export default function SajuPage() {
   const t = useTranslations('fortune');
   const [cardImages, setCardImages] = useState<ServiceCardImages>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   // 서비스 카드 이미지 불러오기
   useEffect(() => {
@@ -127,6 +128,16 @@ export default function SajuPage() {
         const result = await response.json();
         if (result.data?.value) {
           setCardImages(result.data.value);
+          // 이미지 프리로딩
+          Object.entries(result.data.value).forEach(([key, url]) => {
+            if (url) {
+              const img = new window.Image();
+              img.src = url as string;
+              img.onload = () => {
+                setLoadedImages(prev => new Set(prev).add(key));
+              };
+            }
+          });
         }
       } catch (error) {
         console.error('Error fetching card images:', error);
@@ -136,6 +147,11 @@ export default function SajuPage() {
     };
     fetchCardImages();
   }, []);
+
+  // 개별 이미지 로드 핸들러
+  const handleImageLoad = (serviceId: string) => {
+    setLoadedImages(prev => new Set(prev).add(serviceId));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -204,12 +220,25 @@ export default function SajuPage() {
                   {/* 이미지/그라디언트 영역 */}
                   <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${service.gradient}`}>
                     {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={service.title}
-                        fill
-                        className="object-cover"
-                      />
+                      <>
+                        {/* Skeleton loader - 이미지 로딩 전 표시 */}
+                        {!loadedImages.has(service.id) && (
+                          <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                            <Icon className="h-16 w-16 text-white/60" />
+                          </div>
+                        )}
+                        <Image
+                          src={imageUrl}
+                          alt={service.title}
+                          fill
+                          className={`object-cover transition-opacity duration-300 ${
+                            loadedImages.has(service.id) ? 'opacity-100' : 'opacity-0'
+                          }`}
+                          onLoad={() => handleImageLoad(service.id)}
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          loading="eager"
+                        />
+                      </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Icon className="h-16 w-16 text-white/80" />
