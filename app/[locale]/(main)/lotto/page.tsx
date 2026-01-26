@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,8 @@ import {
   Sparkles,
   ChevronRight,
   Target,
+  Play,
+  RefreshCw,
 } from 'lucide-react';
 import {
   LottoNumbers,
@@ -33,12 +35,30 @@ import {
 import type { LottoResult, PatternAnalysis, FilterConfig } from '@/types/lotto';
 import { DEFAULT_FILTER_CONFIG } from '@/types/lotto';
 
+// 예상 당첨금 계산 (실제로는 API에서 가져와야 함)
+function estimateJackpot(previousPrize?: number): number {
+  // 기본 예상 당첨금 (이월 없을 경우 약 20억)
+  const basePrize = 2000000000;
+  // 이전 당첨금 기반 추정
+  if (previousPrize) {
+    return Math.round(previousPrize * 1.1); // 10% 증가 추정
+  }
+  return basePrize + Math.floor(Math.random() * 500000000);
+}
+
+// 금액 포맷팅
+function formatPrizeAmount(amount: number): string {
+  return amount.toLocaleString('ko-KR');
+}
+
 export default function LottoPage() {
   const [results, setResults] = useState<LottoResult[]>([]);
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [filterConfig, setFilterConfig] = useState<FilterConfig>(DEFAULT_FILTER_CONFIG);
   const [savedGames, setSavedGames] = useState<number[][]>([]);
+  const [estimatedPrize, setEstimatedPrize] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 데이터 로드
   useEffect(() => {
@@ -47,6 +67,7 @@ export default function LottoPage() {
 
     if (data.length > 0) {
       setAnalysis(analyzePatterns(data, 10));
+      setEstimatedPrize(estimateJackpot(data[0]?.prize1st));
     }
   }, []);
 
@@ -71,122 +92,146 @@ export default function LottoPage() {
     setSavedGames((prev) => [...prev, ...games]);
   };
 
+  // 데이터 새로고침
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // API 호출로 최신 데이터 갱신
+      const res = await fetch('/api/lotto/fetch-winning');
+      if (res.ok) {
+        const data = loadLottoHistory();
+        setResults(data);
+        if (data.length > 0) {
+          setAnalysis(analyzePatterns(data, 10));
+          setEstimatedPrize(estimateJackpot(data[0]?.prize1st));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to refresh:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* 상단 배너 */}
       <LottoBanner locale="ko" />
 
-      {/* 헤더 */}
-      <div className="text-center mb-10">
-        <Badge className="mb-4 px-4 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg shadow-purple-500/25">
-          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-          AI 로또 분석기
-        </Badge>
-        <h1 className="text-3xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 dark:from-white dark:via-purple-200 dark:to-white bg-clip-text text-transparent">
-          AI 기반 로또 번호 분석
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg">
-          통계 분석과 필터링 알고리즘을 활용한{' '}
-          <span className="text-purple-600 dark:text-purple-400 font-semibold">스마트한</span> 번호 생성
-        </p>
-      </div>
-
-      {/* 상단 정보 카드들 */}
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
-        {/* 다음 추첨 카운트다운 */}
-        <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-orange-950/20 border-purple-200/50 dark:border-purple-800/50 shadow-lg shadow-purple-500/10 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="p-5 relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">다음 추첨까지</span>
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+      {/* 메인 정보 바 (이미지 스타일) */}
+      <div className="mb-8 rounded-xl overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 p-1">
+          <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-600/50">
+            {/* 왼쪽: 회차 및 카운트다운 */}
+            <div className="p-4 md:p-6 flex flex-col justify-center">
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-slate-400 text-sm">제</span>
+                <span className="text-yellow-400 font-bold text-2xl md:text-3xl">{nextRound}</span>
+                <span className="text-slate-400 text-sm">회</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-sm">남은시간</span>
+                <div className="flex items-center text-cyan-400 font-mono font-bold text-lg md:text-xl">
+                  <span>{countdown.days}</span>
+                  <span className="text-slate-500 mx-0.5">일</span>
+                  <span>{String(countdown.hours).padStart(2, '0')}</span>
+                  <span className="text-slate-500 animate-pulse">:</span>
+                  <span>{String(countdown.minutes).padStart(2, '0')}</span>
+                </div>
               </div>
             </div>
-            <div className="flex gap-1 text-2xl font-bold justify-center">
-              {[
-                { value: countdown.days, label: '일' },
-                { value: countdown.hours, label: '시' },
-                { value: countdown.minutes, label: '분' },
-                { value: countdown.seconds, label: '초' },
-              ].map((item, i) => (
-                <div key={item.label} className="flex items-center">
-                  {i > 0 && <span className="text-purple-400 mx-0.5">:</span>}
-                  <div className="text-center bg-white/60 dark:bg-gray-800/60 rounded-lg px-2 py-1 min-w-[44px]">
-                    <span className="text-purple-600 dark:text-purple-400 font-extrabold tabular-nums">
-                      {String(item.value).padStart(2, '0')}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground block -mt-0.5">{item.label}</span>
+
+            {/* 중앙: 예상 당첨금 */}
+            <div className="p-4 md:p-6 text-center bg-gradient-to-b from-slate-700/50 to-transparent">
+              <div className="text-slate-300 text-xs md:text-sm mb-1">
+                1등 예상 총 당첨금액
+              </div>
+              <div className="text-white font-bold text-2xl md:text-4xl tracking-tight">
+                <span className="text-yellow-400">{formatPrizeAmount(estimatedPrize)}</span>
+              </div>
+              <div className="text-slate-400 text-xs mt-1">
+                *예상 금액이며 실제와 다를 수 있습니다
+              </div>
+            </div>
+
+            {/* 오른쪽: 최신 당첨결과 */}
+            <div className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-400 font-bold text-lg md:text-xl">
+                    {latestResult?.round || '---'}
+                  </span>
+                  <span className="text-slate-400 text-sm">회 당첨 결과</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-xs h-7"
+                  onClick={() => window.open('https://www.dhlottery.co.kr', '_blank')}
+                >
+                  <Play className="h-3 w-3 mr-1" />
+                  추첨방송보기
+                </Button>
+              </div>
+              {latestResult ? (
+                <div className="flex items-center gap-1.5">
+                  {latestResult.numbers.map((num, i) => (
+                    <div
+                      key={i}
+                      className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-sm md:text-base shadow-lg ${
+                        num <= 10
+                          ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900'
+                          : num <= 20
+                          ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+                          : num <= 30
+                          ? 'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                          : num <= 40
+                          ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                          : 'bg-gradient-to-br from-green-400 to-green-600 text-white'
+                      }`}
+                    >
+                      {num}
+                    </div>
+                  ))}
+                  <span className="text-slate-400 mx-1 text-lg">+</span>
+                  <div
+                    className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-sm md:text-base shadow-lg ring-2 ring-purple-400 ${
+                      latestResult.bonus <= 10
+                        ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900'
+                        : latestResult.bonus <= 20
+                        ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+                        : latestResult.bonus <= 30
+                        ? 'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                        : latestResult.bonus <= 40
+                        ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                        : 'bg-gradient-to-br from-green-400 to-green-600 text-white'
+                    }`}
+                  >
+                    {latestResult.bonus}
                   </div>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-3 text-center font-medium">
-              {nextRound}회 추첨 예정
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 최신 당첨번호 */}
-        <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-200/50 dark:border-yellow-800/50 shadow-lg shadow-yellow-500/10 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="p-5 relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">최신 당첨번호</span>
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
-                <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              </div>
-            </div>
-            {latestResult ? (
-              <>
-                <div className="mb-3 flex justify-center">
-                  <LottoNumbers
-                    numbers={latestResult.numbers}
-                    bonus={latestResult.bonus}
-                    size="sm"
-                  />
+              ) : (
+                <div className="flex items-center justify-center h-10">
+                  <div className="animate-pulse text-slate-400 text-sm">로딩 중...</div>
                 </div>
-                <p className="text-xs text-yellow-600/80 dark:text-yellow-400/80 text-center font-medium">
-                  {latestResult.round}회 ({latestResult.drawDate})
-                </p>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-16">
-                <div className="animate-pulse text-sm text-muted-foreground">로딩 중...</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* 당첨 통계 */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200/50 dark:border-green-800/50 shadow-lg shadow-green-500/10 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <CardContent className="p-5 relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">AI 추천 당첨 현황</span>
-              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
-                <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-2">
-                <div className="text-2xl font-extrabold text-green-600 dark:text-green-400">0</div>
-                <div className="text-[10px] text-muted-foreground font-medium">3등+</div>
-              </div>
-              <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-2">
-                <div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">12</div>
-                <div className="text-[10px] text-muted-foreground font-medium">4등</div>
-              </div>
-              <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-2">
-                <div className="text-2xl font-extrabold text-gray-600 dark:text-gray-400">89</div>
-                <div className="text-[10px] text-muted-foreground font-medium">5등</div>
-              </div>
-            </div>
-            <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-3 text-center font-medium">
-              총 추천: 15,420건
-            </p>
-          </CardContent>
-        </Card>
+      {/* 새로고침 버튼 */}
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="text-xs"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? '갱신 중...' : '최신 데이터 갱신'}
+        </Button>
       </div>
 
       {/* 메인 콘텐츠 */}
