@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useLogo } from '@/lib/hooks/useLogo';
 import { useAIShortcuts, type AIShortcut } from '@/lib/hooks/useAIShortcuts';
+import { createClient } from '@/lib/supabase/client';
 import {
   Upload,
   Trash2,
@@ -21,6 +23,7 @@ import {
   RotateCcw,
   Users,
   Coins,
+  QrCode,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
@@ -31,8 +34,124 @@ export default function AdminSettingsPage() {
   const [editingShortcuts, setEditingShortcuts] = useState<AIShortcut[]>([]);
   const [newShortcut, setNewShortcut] = useState({ key: '', label: '', url: '', referralUrl: '' });
 
+  // QR Hero Image state
+  const [qrHeroImage, setQrHeroImage] = useState<string | null>(null);
+  const [qrHeroImageLoading, setQrHeroImageLoading] = useState(true);
+  const [qrHeroImageUploading, setQrHeroImageUploading] = useState(false);
+
   const siteLogoInputRef = useRef<HTMLInputElement>(null);
   const aiLogoInputRef = useRef<HTMLInputElement>(null);
+  const qrHeroImageInputRef = useRef<HTMLInputElement>(null);
+
+  const supabase = createClient();
+
+  // Fetch QR Hero Image on mount
+  useEffect(() => {
+    const fetchQrHeroImage = async () => {
+      try {
+        const response = await fetch('/api/site-settings?key=qr_hero_image');
+        const result = await response.json();
+        if (result.data?.value?.image_url) {
+          setQrHeroImage(result.data.value.image_url);
+        }
+      } catch (error) {
+        console.error('Error fetching QR hero image:', error);
+      } finally {
+        setQrHeroImageLoading(false);
+      }
+    };
+    fetchQrHeroImage();
+  }, []);
+
+  // QR Hero Image upload handler
+  const handleQrHeroImageUpload = async (file: File) => {
+    setQrHeroImageUploading(true);
+    setMessage(null);
+
+    try {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('지원하지 않는 파일 형식입니다. (JPEG, PNG, WebP, GIF만 가능)');
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error('파일 크기가 10MB를 초과합니다.');
+      }
+
+      // Generate unique filename
+      const ext = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const filename = `qr-hero-${timestamp}.${ext}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .upload(`qr-hero/${filename}`, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('site-assets')
+        .getPublicUrl(`qr-hero/${filename}`);
+
+      const imageUrl = urlData.publicUrl;
+
+      // Save to site_settings
+      const response = await fetch('/api/site-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'qr_hero_image',
+          value: { image_url: imageUrl },
+        }),
+      });
+
+      if (!response.ok) throw new Error('설정 저장 실패');
+
+      setQrHeroImage(imageUrl);
+      setMessage({ type: 'success', text: 'QR 히어로 이미지가 업로드되었습니다.' });
+    } catch (error) {
+      console.error('Error uploading QR hero image:', error);
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.' });
+    } finally {
+      setQrHeroImageUploading(false);
+    }
+  };
+
+  // QR Hero Image delete handler
+  const handleQrHeroImageDelete = async () => {
+    setQrHeroImageUploading(true);
+    setMessage(null);
+
+    try {
+      // Save empty value to site_settings
+      const response = await fetch('/api/site-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'qr_hero_image',
+          value: { image_url: null },
+        }),
+      });
+
+      if (!response.ok) throw new Error('설정 저장 실패');
+
+      setQrHeroImage(null);
+      setMessage({ type: 'success', text: 'QR 히어로 이미지가 삭제되었습니다.' });
+    } catch (error) {
+      console.error('Error deleting QR hero image:', error);
+      setMessage({ type: 'error', text: '삭제 중 오류가 발생했습니다.' });
+    } finally {
+      setQrHeroImageUploading(false);
+    }
+  };
 
   // Initialize editing shortcuts when loaded
   useState(() => {
@@ -359,6 +478,80 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </Link>
+
+        {/* QR Hero Image */}
+        <div className="mt-8 bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center">
+              <QrCode className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">QR 히어로 이미지</h2>
+              <p className="text-muted-foreground text-sm">QR 코드 생성기 페이지 상단 히어로 이미지</p>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="mb-6">
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">미리보기</label>
+            <div className="w-full h-48 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border-2 border-dashed border-violet-200 dark:border-violet-700 flex items-center justify-center overflow-hidden relative">
+              {qrHeroImageLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
+              ) : qrHeroImage ? (
+                <Image
+                  src={qrHeroImage}
+                  alt="QR Hero Image"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="text-center">
+                  <ImageIcon className="h-12 w-12 text-violet-300 dark:text-violet-600 mx-auto mb-2" />
+                  <span className="text-sm text-violet-400 dark:text-violet-500">이미지 없음</span>
+                  <p className="text-xs text-violet-300 dark:text-violet-600 mt-1">권장: 800x600px</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Upload Button */}
+          <input
+            ref={qrHeroImageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleQrHeroImageUpload(file);
+              e.target.value = '';
+            }}
+          />
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => qrHeroImageInputRef.current?.click()}
+              disabled={qrHeroImageUploading}
+              className="flex-1 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white"
+            >
+              {qrHeroImageUploading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              이미지 업로드
+            </Button>
+            {qrHeroImage && (
+              <Button
+                variant="outline"
+                onClick={handleQrHeroImageDelete}
+                disabled={qrHeroImageUploading}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* AI Shortcuts Management */}
         <div className="mt-8 bg-card border border-border rounded-2xl p-6">

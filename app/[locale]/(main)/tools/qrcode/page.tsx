@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ import {
   QrCode,
   Palette,
   Settings,
+  Sparkles,
+  ImageIcon,
 } from 'lucide-react';
 
 type QRType = 'url' | 'vcard' | 'wifi' | 'email' | 'phone' | 'sms' | 'location' | 'event';
@@ -59,6 +62,26 @@ export default function QRCodeGeneratorPage() {
   const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Hero image from settings
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+
+  // Fetch hero image from settings
+  useEffect(() => {
+    const fetchHeroImage = async () => {
+      try {
+        const response = await fetch('/api/site-settings?key=qr_hero_image');
+        const result = await response.json();
+        if (result.data?.value?.image_url) {
+          setHeroImageUrl(result.data.value.image_url);
+        }
+      } catch (error) {
+        console.error('Failed to fetch QR hero image:', error);
+      }
+    };
+    fetchHeroImage();
+  }, []);
 
   const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -375,15 +398,68 @@ export default function QRCodeGeneratorPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Header */}
+      {/* Hero Section */}
+      <div className="mb-10 bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/40 dark:via-purple-950/30 dark:to-fuchsia-950/20 border border-violet-200/50 dark:border-violet-800/30 rounded-3xl overflow-hidden relative">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-200/40 to-purple-200/30 dark:from-violet-600/10 dark:to-purple-600/10 rounded-full blur-[60px]" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-br from-fuchsia-200/40 to-pink-200/30 dark:from-fuchsia-600/10 dark:to-pink-600/10 rounded-full blur-[60px]" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-8 md:p-10">
+          {/* Text Content */}
+          <div className="flex-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-100 dark:bg-violet-900/50 rounded-full text-violet-600 dark:text-violet-300 text-sm mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              PLANX-QR
+            </div>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
+              다기능 QR코드 생성기
+            </h1>
+            <p className="text-muted-foreground text-base md:text-lg max-w-lg">
+              URL, 명함, WiFi, 이메일 등 다양한 QR코드를 쉽고 빠르게 생성하세요
+            </p>
+          </div>
+
+          {/* Image Area - Configurable from admin settings */}
+          <div className="w-full md:w-80 lg:w-96 aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center relative shadow-xl shadow-violet-500/10">
+            {heroImageUrl ? (
+              <>
+                {!heroImageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                    <QrCode className="h-16 w-16 text-violet-300 dark:text-violet-600" />
+                  </div>
+                )}
+                <Image
+                  src={heroImageUrl}
+                  alt="QR Code Generator"
+                  fill
+                  className={`object-cover transition-opacity duration-300 ${
+                    heroImageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  onLoad={() => setHeroImageLoaded(true)}
+                  sizes="(max-width: 768px) 100vw, 384px"
+                  priority
+                />
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-violet-400 dark:text-violet-500">
+                <ImageIcon className="h-16 w-16 mb-2 opacity-50" />
+                <span className="text-sm opacity-70">히어로 이미지</span>
+                <span className="text-xs opacity-50">관리자 설정에서 추가</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sub Header */}
       <div className="text-center mb-8">
         <Badge className="mb-4 bg-primary/10 text-primary">
           <QrCode className="mr-1 h-3 w-3" />
           QR Code Generator
         </Badge>
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">다기능 QR코드 생성기</h1>
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">QR코드 유형 선택</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          다양한 유형의 QR코드를 쉽고 빠르게 생성하세요
+          생성하고 싶은 QR코드 유형을 선택하세요
         </p>
       </div>
 
