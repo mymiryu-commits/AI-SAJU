@@ -177,6 +177,279 @@ export const MBTI_TYPES = {
 
 export type MBTIType = keyof typeof MBTI_TYPES;
 
+// MBTI 유형별 동물 매칭
+export const MBTI_ANIMALS: Record<MBTIType, {
+  animal: string;
+  emoji: string;
+  traits: string[];
+  description: string;
+}> = {
+  INTJ: {
+    animal: '독수리',
+    emoji: '🦅',
+    traits: ['전략적 시야', '독립적', '날카로운 통찰력', '고고한 자세'],
+    description: '높은 곳에서 전체를 조망하며 목표물을 정확히 포착하는 독수리처럼, 장기적 비전과 전략적 사고로 목표를 달성합니다.',
+  },
+  INTP: {
+    animal: '올빼미',
+    emoji: '🦉',
+    traits: ['지혜로움', '관찰력', '밤의 사색가', '호기심'],
+    description: '밤에 깨어 세상을 관찰하는 올빼미처럼, 깊은 사고와 지적 탐구를 즐기며 남들이 놓치는 것을 발견합니다.',
+  },
+  ENTJ: {
+    animal: '사자',
+    emoji: '🦁',
+    traits: ['리더십', '카리스마', '당당함', '목표지향'],
+    description: '백수의 왕 사자처럼, 타고난 리더십과 카리스마로 무리를 이끌고 목표를 향해 돌진합니다.',
+  },
+  ENTP: {
+    animal: '여우',
+    emoji: '🦊',
+    traits: ['재치', '영리함', '적응력', '장난기'],
+    description: '영리하고 재치있는 여우처럼, 어떤 상황에서도 창의적인 해결책을 찾고 논쟁을 즐깁니다.',
+  },
+  INFJ: {
+    animal: '늑대',
+    emoji: '🐺',
+    traits: ['직관력', '충성심', '깊은 유대', '신비로움'],
+    description: '무리에 헌신하면서도 신비로운 늑대처럼, 깊은 통찰력과 강한 유대감으로 소중한 이들을 보호합니다.',
+  },
+  INFP: {
+    animal: '사슴',
+    emoji: '🦌',
+    traits: ['순수함', '감수성', '온화함', '이상주의'],
+    description: '숲 속의 순수한 사슴처럼, 아름다움과 이상을 추구하며 자신만의 내면 세계에서 영감을 얻습니다.',
+  },
+  ENFJ: {
+    animal: '돌고래',
+    emoji: '🐬',
+    traits: ['사교성', '공감력', '지능', '협동심'],
+    description: '영리하고 사교적인 돌고래처럼, 주변 사람들과 깊은 유대를 형성하고 모두를 이끌어 성장시킵니다.',
+  },
+  ENFP: {
+    animal: '골든리트리버',
+    emoji: '🐕',
+    traits: ['열정', '친근함', '긍정', '충성심'],
+    description: '언제나 밝고 친근한 골든리트리버처럼, 넘치는 열정과 따뜻함으로 주변을 행복하게 만듭니다.',
+  },
+  ISTJ: {
+    animal: '코끼리',
+    emoji: '🐘',
+    traits: ['기억력', '충실함', '인내심', '가족애'],
+    description: '강한 기억력과 가족에 대한 헌신을 가진 코끼리처럼, 책임감 있게 전통과 약속을 지킵니다.',
+  },
+  ISFJ: {
+    animal: '곰',
+    emoji: '🐻',
+    traits: ['보호본능', '따뜻함', '헌신', '강인함'],
+    description: '가족을 보호하는 따뜻한 곰처럼, 소중한 사람들을 위해 묵묵히 헌신하고 보살핍니다.',
+  },
+  ESTJ: {
+    animal: '코뿔소',
+    emoji: '🦏',
+    traits: ['강인함', '직진형', '원칙주의', '결단력'],
+    description: '목표를 향해 직진하는 코뿔소처럼, 원칙과 규칙을 중시하며 강한 추진력으로 일을 완수합니다.',
+  },
+  ESFJ: {
+    animal: '꿀벌',
+    emoji: '🐝',
+    traits: ['협동심', '부지런함', '사회성', '헌신'],
+    description: '공동체를 위해 부지런히 일하는 꿀벌처럼, 주변 사람들의 조화와 행복을 위해 노력합니다.',
+  },
+  ISTP: {
+    animal: '치타',
+    emoji: '🐆',
+    traits: ['민첩함', '독립성', '실용적', '순발력'],
+    description: '빠르고 민첩한 치타처럼, 상황을 빠르게 파악하고 효율적으로 문제를 해결합니다.',
+  },
+  ISFP: {
+    animal: '나비',
+    emoji: '🦋',
+    traits: ['자유로움', '예술성', '아름다움', '변화'],
+    description: '자유롭게 날아다니는 나비처럼, 아름다움을 추구하며 자신만의 방식으로 세상을 탐험합니다.',
+  },
+  ESTP: {
+    animal: '호랑이',
+    emoji: '🐅',
+    traits: ['대담함', '모험심', '민첩함', '본능적'],
+    description: '대담하고 민첩한 호랑이처럼, 스릴과 도전을 즐기며 본능적으로 기회를 포착합니다.',
+  },
+  ESFP: {
+    animal: '앵무새',
+    emoji: '🦜',
+    traits: ['활발함', '화려함', '사교성', '엔터테이너'],
+    description: '화려하고 사교적인 앵무새처럼, 어디서든 분위기를 밝히고 사람들을 즐겁게 합니다.',
+  },
+};
+
+// MBTI 궁합 상세 정보 (이유 포함)
+export const MBTI_COMPATIBILITY_DETAILS: Record<MBTIType, {
+  bestMatch: { type: MBTIType; reason: string }[];
+  worstMatch: { type: MBTIType; reason: string }[];
+}> = {
+  INTJ: {
+    bestMatch: [
+      { type: 'ENFP', reason: '서로의 부족한 부분을 채워주며, ENFP의 열정이 INTJ의 계획을 현실로 만들어줍니다.' },
+      { type: 'ENTP', reason: '지적 대화를 즐기며, 서로의 아이디어에 자극을 받아 함께 성장합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ESFP', reason: '즉흥적인 ESFP와 계획적인 INTJ는 생활 방식의 차이로 갈등할 수 있습니다.' },
+      { type: 'ISFP', reason: '감정 표현 방식과 의사결정 기준이 달라 오해가 생기기 쉽습니다.' },
+    ],
+  },
+  INTP: {
+    bestMatch: [
+      { type: 'ENTJ', reason: 'ENTJ의 실행력이 INTP의 아이디어를 현실화하며, 서로 존경합니다.' },
+      { type: 'ESTJ', reason: '현실적인 ESTJ가 INTP의 이론을 실용적으로 적용하도록 도와줍니다.' },
+    ],
+    worstMatch: [
+      { type: 'ESFJ', reason: '사회적 기대를 중시하는 ESFJ와 자유로운 INTP는 가치관 충돌이 있습니다.' },
+      { type: 'ISFJ', reason: '전통을 중시하는 ISFJ와 혁신을 추구하는 INTP는 접근 방식이 다릅니다.' },
+    ],
+  },
+  ENTJ: {
+    bestMatch: [
+      { type: 'INTP', reason: 'INTP의 깊은 분석력이 ENTJ의 전략을 더욱 정교하게 만들어줍니다.' },
+      { type: 'ISTP', reason: '실용적인 ISTP가 ENTJ의 비전을 기술적으로 구현하는데 탁월합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ISFP', reason: '성과 중심의 ENTJ와 과정을 즐기는 ISFP는 목표 설정에서 충돌합니다.' },
+      { type: 'INFP', reason: '직접적인 ENTJ의 소통 방식이 섬세한 INFP에게 상처가 될 수 있습니다.' },
+    ],
+  },
+  ENTP: {
+    bestMatch: [
+      { type: 'INFJ', reason: 'INFJ의 깊은 통찰력이 ENTP의 아이디어에 의미와 방향을 더해줍니다.' },
+      { type: 'INTJ', reason: '서로의 지적 호기심을 자극하며 끊임없이 토론하고 성장합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ISFJ', reason: '변화를 즐기는 ENTP와 안정을 추구하는 ISFJ는 템포가 맞지 않습니다.' },
+      { type: 'ISTJ', reason: '규칙을 따르는 ISTJ와 규칙에 도전하는 ENTP는 자주 의견 충돌이 있습니다.' },
+    ],
+  },
+  INFJ: {
+    bestMatch: [
+      { type: 'ENFP', reason: 'ENFP의 밝은 에너지가 INFJ를 세상 밖으로 이끌어주며 서로 영감을 줍니다.' },
+      { type: 'ENTP', reason: '깊은 대화를 통해 서로의 관점을 넓히며 지적으로 교감합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ESTP', reason: '행동 중심의 ESTP와 의미를 찾는 INFJ는 대화의 깊이가 다릅니다.' },
+      { type: 'ESTJ', reason: '효율을 중시하는 ESTJ와 가치를 중시하는 INFJ는 우선순위가 다릅니다.' },
+    ],
+  },
+  INFP: {
+    bestMatch: [
+      { type: 'ENFJ', reason: 'ENFJ의 리더십이 INFP의 이상을 현실화하도록 격려하고 지지해줍니다.' },
+      { type: 'ENTJ', reason: 'ENTJ의 추진력이 INFP의 창의적 아이디어에 날개를 달아줍니다.' },
+    ],
+    worstMatch: [
+      { type: 'ESTJ', reason: '원칙적인 ESTJ의 직설적 표현이 섬세한 INFP에게 상처가 될 수 있습니다.' },
+      { type: 'ESTP', reason: '행동 지향적 ESTP와 내면 지향적 INFP는 에너지 방향이 다릅니다.' },
+    ],
+  },
+  ENFJ: {
+    bestMatch: [
+      { type: 'INFP', reason: 'INFP의 깊은 감성이 ENFJ의 공감 능력과 완벽하게 어우러집니다.' },
+      { type: 'ISFP', reason: 'ISFP의 예술적 감성이 ENFJ의 열정에 영감을 더해줍니다.' },
+    ],
+    worstMatch: [
+      { type: 'ISTP', reason: '감정 표현이 적은 ISTP와 소통을 중시하는 ENFJ는 교감하기 어렵습니다.' },
+      { type: 'INTP', reason: '논리 중심의 INTP와 관계 중심의 ENFJ는 우선순위가 다릅니다.' },
+    ],
+  },
+  ENFP: {
+    bestMatch: [
+      { type: 'INTJ', reason: 'INTJ의 깊이 있는 사고가 ENFP의 다양한 아이디어에 방향을 잡아줍니다.' },
+      { type: 'INFJ', reason: '서로의 직관을 이해하며 깊은 정서적 유대를 형성합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ISTJ', reason: '자유로운 ENFP와 규칙적인 ISTJ는 생활 방식에서 마찰이 생깁니다.' },
+      { type: 'ESTJ', reason: '창의성을 중시하는 ENFP와 효율성을 중시하는 ESTJ는 접근법이 다릅니다.' },
+    ],
+  },
+  ISTJ: {
+    bestMatch: [
+      { type: 'ESFP', reason: 'ESFP의 활력이 ISTJ의 삶에 즐거움을 더하고, ISTJ는 안정감을 제공합니다.' },
+      { type: 'ESTP', reason: '실용적인 두 유형이 현실적인 목표를 함께 달성해나갑니다.' },
+    ],
+    worstMatch: [
+      { type: 'ENFP', reason: '즉흥적인 ENFP의 변화가 계획적인 ISTJ에게 스트레스가 됩니다.' },
+      { type: 'ENTP', reason: '토론을 즐기는 ENTP와 결론을 선호하는 ISTJ는 소통 방식이 다릅니다.' },
+    ],
+  },
+  ISFJ: {
+    bestMatch: [
+      { type: 'ESFP', reason: 'ESFP의 밝은 에너지가 ISFJ를 즐겁게 하고, ISFJ는 따뜻한 지지를 보냅니다.' },
+      { type: 'ESTP', reason: '활동적인 ESTP가 ISFJ의 세계를 넓혀주며 새로운 경험을 선사합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ENTP', reason: '변화를 추구하는 ENTP와 안정을 원하는 ISFJ는 삶의 방향이 다릅니다.' },
+      { type: 'ENTJ', reason: '성과 중심의 ENTJ와 관계 중심의 ISFJ는 가치관 차이가 있습니다.' },
+    ],
+  },
+  ESTJ: {
+    bestMatch: [
+      { type: 'ISFP', reason: 'ISFP의 유연함이 ESTJ의 경직됨을 부드럽게 해주며 균형을 맞춥니다.' },
+      { type: 'ISTP', reason: '실용적인 두 유형이 효율적으로 협력하며 목표를 달성합니다.' },
+    ],
+    worstMatch: [
+      { type: 'INFP', reason: '직설적인 ESTJ와 섬세한 INFP는 의사소통에서 오해가 생기기 쉽습니다.' },
+      { type: 'ENFP', reason: '규칙을 따르는 ESTJ와 자유를 추구하는 ENFP는 갈등이 잦습니다.' },
+    ],
+  },
+  ESFJ: {
+    bestMatch: [
+      { type: 'ISFP', reason: '두 유형 모두 조화를 중시하며 서로를 배려하는 따뜻한 관계를 만듭니다.' },
+      { type: 'ISTP', reason: 'ISTP의 문제 해결 능력이 ESFJ의 사회적 상황에서 큰 도움이 됩니다.' },
+    ],
+    worstMatch: [
+      { type: 'INTP', reason: '감정적 교류를 원하는 ESFJ와 논리적 대화를 선호하는 INTP는 충족되지 않습니다.' },
+      { type: 'INTJ', reason: '사회적 기대를 중시하는 ESFJ와 독립적인 INTJ는 기대치가 다릅니다.' },
+    ],
+  },
+  ISTP: {
+    bestMatch: [
+      { type: 'ESFJ', reason: 'ESFJ의 따뜻함이 ISTP를 사회적으로 이끌어주며 안정감을 제공합니다.' },
+      { type: 'ESTJ', reason: '실용적인 두 유형이 효율적으로 문제를 해결하며 협력합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ENFJ', reason: '깊은 감정 교류를 원하는 ENFJ와 독립적인 ISTP는 니즈가 다릅니다.' },
+      { type: 'INFJ', reason: '의미를 찾는 INFJ와 실용을 추구하는 ISTP는 관점이 다릅니다.' },
+    ],
+  },
+  ISFP: {
+    bestMatch: [
+      { type: 'ESFJ', reason: '두 유형 모두 조화와 아름다움을 추구하며 서로를 깊이 이해합니다.' },
+      { type: 'ESTJ', reason: 'ESTJ의 체계성이 ISFP의 창의성에 구조를 제공해줍니다.' },
+      { type: 'ENFJ', reason: 'ENFJ의 격려가 ISFP의 예술적 재능을 꽃피우게 합니다.' },
+    ],
+    worstMatch: [
+      { type: 'ENTJ', reason: '결과 중심의 ENTJ와 과정을 즐기는 ISFP는 접근 방식이 충돌합니다.' },
+      { type: 'INTJ', reason: '효율을 추구하는 INTJ와 자유를 원하는 ISFP는 기대가 다릅니다.' },
+    ],
+  },
+  ESTP: {
+    bestMatch: [
+      { type: 'ISFJ', reason: 'ISFJ의 안정감이 ESTP의 모험적 삶에 따뜻한 귀환처가 됩니다.' },
+      { type: 'ISTJ', reason: '두 유형 모두 현실적이며, ISTJ가 ESTP에게 신뢰할 수 있는 파트너가 됩니다.' },
+    ],
+    worstMatch: [
+      { type: 'INFJ', reason: '깊은 의미를 찾는 INFJ와 순간을 즐기는 ESTP는 초점이 다릅니다.' },
+      { type: 'INFP', reason: '이상을 추구하는 INFP와 현실적인 ESTP는 대화 주제가 맞지 않습니다.' },
+    ],
+  },
+  ESFP: {
+    bestMatch: [
+      { type: 'ISFJ', reason: 'ISFJ의 헌신이 ESFP에게 안정감을 주고, ESFP는 즐거움을 선사합니다.' },
+      { type: 'ISTJ', reason: 'ISTJ의 신뢰성이 ESFP의 자유로운 삶에 든든한 기반이 됩니다.' },
+    ],
+    worstMatch: [
+      { type: 'INTJ', reason: '계획적인 INTJ와 즉흥적인 ESFP는 생활 리듬이 맞지 않습니다.' },
+      { type: 'INTP', reason: '이론적인 INTP와 경험적인 ESFP는 관심사가 다릅니다.' },
+    ],
+  },
+};
+
 // MBTI 성향 강도 (0-100, 50이 중간)
 export interface MBTITendency {
   EI: number; // 0=완전 E, 100=완전 I

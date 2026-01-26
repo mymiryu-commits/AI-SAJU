@@ -20,6 +20,8 @@ import {
   MBTI_QUESTIONS,
   MBTI_TYPES,
   MBTI_DIMENSIONS,
+  MBTI_ANIMALS,
+  MBTI_COMPATIBILITY_DETAILS,
   MBTIAnswer,
   MBTIType,
   calculateMBTI,
@@ -207,6 +209,8 @@ export default function MBTIAnalysisPage() {
   // 결과 화면
   if (step === 'result' && result) {
     const { type, tendency, displayType, typeInfo } = result;
+    const animalInfo = MBTI_ANIMALS[type];
+    const compatibilityDetails = MBTI_COMPATIBILITY_DETAILS[type];
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
@@ -291,6 +295,33 @@ export default function MBTIAnalysisPage() {
               </CardContent>
             </Card>
 
+            {/* 나를 닮은 동물 */}
+            <Card className="mb-6 overflow-hidden border-2 border-amber-200 dark:border-amber-800/50">
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="text-6xl md:text-8xl animate-bounce" style={{ animationDuration: '2s' }}>
+                    {animalInfo.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <Badge className="mb-2 bg-amber-500 text-white">나를 닮은 동물</Badge>
+                    <h3 className="text-2xl md:text-3xl font-bold text-amber-800 dark:text-amber-300 mb-2">
+                      {animalInfo.animal}
+                    </h3>
+                    <p className="text-amber-700 dark:text-amber-400 text-sm md:text-base">
+                      {animalInfo.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {animalInfo.traits.map((trait, i) => (
+                    <Badge key={i} variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                      {trait}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
             {/* 강점/약점 */}
             <div className="grid md:grid-cols-2 gap-4 mb-6">
               <Card>
@@ -351,14 +382,73 @@ export default function MBTIAnalysisPage() {
               </CardContent>
             </Card>
 
-            {/* 궁합 분석 */}
+            {/* 잘 맞는 궁합 */}
+            <Card className="mb-6 border-emerald-200 dark:border-emerald-800/50">
+              <CardHeader className="bg-emerald-50 dark:bg-emerald-950/30">
+                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <Heart className="h-5 w-5" />
+                  💚 나와 잘 맞는 유형
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  {compatibilityDetails.bestMatch.map((match, i) => {
+                    const matchAnimal = MBTI_ANIMALS[match.type];
+                    return (
+                      <div key={i} className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-3xl">{matchAnimal.emoji}</span>
+                          <div>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400 text-lg">{match.type}</span>
+                            <span className="text-muted-foreground ml-2">({matchAnimal.animal})</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{match.reason}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 잘 안 맞는 궁합 */}
+            <Card className="mb-6 border-rose-200 dark:border-rose-800/50">
+              <CardHeader className="bg-rose-50 dark:bg-rose-950/30">
+                <CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <Heart className="h-5 w-5" />
+                  💔 주의가 필요한 유형
+                </CardTitle>
+                <CardDescription>서로 노력하면 극복할 수 있습니다</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  {compatibilityDetails.worstMatch.map((match, i) => {
+                    const matchAnimal = MBTI_ANIMALS[match.type];
+                    return (
+                      <div key={i} className="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-3xl">{matchAnimal.emoji}</span>
+                          <div>
+                            <span className="font-bold text-rose-700 dark:text-rose-400 text-lg">{match.type}</span>
+                            <span className="text-muted-foreground ml-2">({matchAnimal.animal})</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{match.reason}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 궁합 테스트 */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-rose-500" />
-                  MBTI 궁합
+                  궁합 테스트
                 </CardTitle>
-                <CardDescription>다른 유형과의 궁합을 확인해보세요</CardDescription>
+                <CardDescription>다른 유형과의 궁합 점수를 확인해보세요</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
@@ -381,16 +471,18 @@ export default function MBTIAnalysisPage() {
                 </div>
 
                 {compareType && (
-                  <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border border-rose-200 dark:border-rose-800">
                     <div className="flex items-center justify-center gap-4 mb-3">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{type}</div>
-                        <div className="text-sm text-muted-foreground">나</div>
+                        <div className="text-4xl mb-1">{animalInfo.emoji}</div>
+                        <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{type}</div>
+                        <div className="text-xs text-muted-foreground">나</div>
                       </div>
-                      <Heart className="h-6 w-6 text-rose-500" />
+                      <Heart className="h-8 w-8 text-rose-500 animate-pulse" />
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{compareType}</div>
-                        <div className="text-sm text-muted-foreground">상대</div>
+                        <div className="text-4xl mb-1">{MBTI_ANIMALS[compareType].emoji}</div>
+                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{compareType}</div>
+                        <div className="text-xs text-muted-foreground">상대</div>
                       </div>
                     </div>
                     {(() => {
@@ -398,7 +490,7 @@ export default function MBTIAnalysisPage() {
                       return (
                         <>
                           <div className="text-center mb-2">
-                            <span className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+                            <span className="text-4xl font-bold text-rose-600 dark:text-rose-400">
                               {compat.score}점
                             </span>
                           </div>
