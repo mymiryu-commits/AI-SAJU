@@ -36,8 +36,9 @@ export async function getSetting<T>(key: SettingKey, defaultValue: T): Promise<T
     }
 
     // 캐시 저장
-    settingsCache.set(key, { data: data.value, timestamp: Date.now() });
-    return data.value as T;
+    const value = (data as { value: unknown }).value;
+    settingsCache.set(key, { data: value, timestamp: Date.now() });
+    return value as T;
   } catch {
     return defaultValue;
   }
@@ -50,15 +51,39 @@ export async function setSetting<T extends Record<string, unknown>>(
 ): Promise<boolean> {
   try {
     const supabase = createClient();
-    const { error } = await supabase
+
+    // 기존 설정이 있는지 확인
+    const { data: existing } = await supabase
       .from('site_settings')
-      .upsert({
-        key,
-        value,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'key',
-      });
+      .select('id')
+      .eq('key', key)
+      .single();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+
+    let error;
+    if (existing) {
+      // 업데이트
+      const result = await db
+        .from('site_settings')
+        .update({
+          value,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('key', key);
+      error = result.error;
+    } else {
+      // 삽입
+      const result = await db
+        .from('site_settings')
+        .insert({
+          key,
+          value,
+          updated_at: new Date().toISOString(),
+        });
+      error = result.error;
+    }
 
     if (error) {
       console.error('Failed to save setting:', error);

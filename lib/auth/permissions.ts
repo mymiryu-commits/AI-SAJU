@@ -45,8 +45,9 @@ export async function getUserPermissions(): Promise<UserPermissions> {
       .eq('status', 'active')
       .single();
 
-    const isPremium = isAdmin || // 관리자는 자동 프리미엄
-      subscription?.status === 'active' ||
+    // 관리자는 자동 프리미엄, 또는 활성 구독이 있거나, 메타데이터에 프리미엄 설정된 경우
+    const isPremium = isAdmin ||
+      !!subscription ||
       user.app_metadata?.premium === true;
 
     const role: UserRole = isAdmin
