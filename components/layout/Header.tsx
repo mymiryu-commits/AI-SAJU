@@ -22,8 +22,9 @@ import { Badge } from '@/components/ui/badge';
 const navLinks = [
   { href: '/ranking', key: 'ranking', icon: '📊' },
   { href: '/saju', key: 'saju', icon: '🔮' },
-  // { href: '/lotto', key: 'lotto', icon: '🎱' }, // 토스페이 정책 이슈로 비활성화 - 관리자 전용 (/lotto?admin=비밀키)
   { href: '/tools/qrcode', key: 'qr', icon: '📱' },
+  { href: '/finance', key: 'finance', icon: '💰' },
+  { href: '/monetize', key: 'monetize', icon: '🚀' },
   { href: '/pricing', key: 'pricing', icon: '💎' },
 ] as const;
 
@@ -285,8 +286,8 @@ export function Header() {
                 className={cn(
                   'flex items-center gap-2 py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300',
                   pathname === link.href || pathname.startsWith(link.href + '/')
-                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300'
-                    : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 dark:from-gray-800/50 dark:to-gray-700/50 text-muted-foreground'
+                    ? 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-700 dark:text-amber-300'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
