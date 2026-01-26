@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ function formatPrizeAmount(amount: number): string {
   return amount.toLocaleString('ko-KR');
 }
 
-export default function LottoPage() {
+function LottoPageContent() {
   const searchParams = useSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -465,5 +465,18 @@ export default function LottoPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Suspense boundary로 감싸서 useSearchParams 사용 가능하게 함
+export default function LottoPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+      </div>
+    }>
+      <LottoPageContent />
+    </Suspense>
   );
 }
