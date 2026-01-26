@@ -20,6 +20,7 @@ import {
   Brain,
   Calendar,
   Gift,
+  Dna,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ServiceCardImages } from '@/types/settings';
@@ -37,6 +38,7 @@ const serviceCards = [
   { id: 'mbti', title: 'MBTI 분석', icon: Brain, color: 'from-indigo-400 to-purple-500' },
   { id: 'tti', title: '띠별 운세', icon: Calendar, color: 'from-orange-400 to-red-500' },
   { id: 'newyear', title: '신년운세', icon: Gift, color: 'from-red-400 to-rose-500' },
+  { id: 'animal_dna', title: 'AI 동물 DNA', icon: Dna, color: 'from-purple-400 to-pink-500' },
 ];
 
 interface ServiceCardImageSettingsProps {
