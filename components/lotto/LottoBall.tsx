@@ -266,6 +266,7 @@ interface LottoResultDisplayProps {
   drawDate?: string;
   prize1st?: number;
   winners1st?: number;
+  highlight?: boolean;
 }
 
 export function LottoResultDisplay({

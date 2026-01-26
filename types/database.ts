@@ -466,6 +466,7 @@ export interface Database {
           id: string
           key: string
           value: Json
+          created_at: string
           updated_at: string
           updated_by: string | null
         }
@@ -473,6 +474,7 @@ export interface Database {
           id?: string
           key: string
           value: Json
+          created_at?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -480,6 +482,7 @@ export interface Database {
           id?: string
           key?: string
           value?: Json
+          created_at?: string
           updated_at?: string
           updated_by?: string | null
         }

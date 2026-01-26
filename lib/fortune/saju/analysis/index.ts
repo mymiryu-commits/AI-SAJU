@@ -36,6 +36,20 @@ export {
   generateInterestStrategies
 } from './actionGenerator';
 
+// 동물 DNA 분석
+export {
+  calculateSajuAnimal,
+  calculateMbtiAnimal,
+  compareAnimalDna,
+  analyzeAnimalCompatibility,
+  ANIMAL_PROFILES,
+  ANIMAL_COMPATIBILITY,
+  ANIMAL_TYPES,
+  type AnimalType,
+  type AnimalProfile,
+  type AnimalDnaComparison
+} from './animalDna';
+
 // 별자리 분석
 export {
   getZodiacSign,
