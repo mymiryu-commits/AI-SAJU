@@ -38,3 +38,22 @@ export interface ServiceCardInfo {
   shadowColor?: string;
   isPremium?: boolean;
 }
+
+/**
+ * 슬라이드 이미지 설정 타입
+ * 통합 분석 페이지 상단 슬라이드용
+ */
+export interface SlideImage {
+  id: string;
+  url: string;
+  title?: string;
+  description?: string;
+  link?: string;
+  order: number;
+}
+
+export interface FortuneSlideSettings {
+  slides: SlideImage[];
+  autoPlay?: boolean;
+  autoPlayInterval?: number;  // 밀리초 단위
+}
