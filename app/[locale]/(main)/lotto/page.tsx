@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import {
   Sparkles,
   ChevronRight,
   Target,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   LottoNumbers,
@@ -32,7 +34,25 @@ import {
 import type { LottoResult, PatternAnalysis, FilterConfig } from '@/types/lotto';
 import { DEFAULT_FILTER_CONFIG } from '@/types/lotto';
 
+// 관리자 접근 키 (환경변수로 관리 권장)
+const ADMIN_KEY = process.env.NEXT_PUBLIC_LOTTO_ADMIN_KEY || 'mymiryu2026';
+
 export default function LottoPage() {
+  const searchParams = useSearchParams();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 관리자 접근 체크
+  useEffect(() => {
+    const adminParam = searchParams.get('admin');
+    const storedAdmin = localStorage.getItem('lotto_admin_access');
+
+    if (adminParam === ADMIN_KEY) {
+      localStorage.setItem('lotto_admin_access', 'true');
+      setIsAdmin(true);
+    } else if (storedAdmin === 'true') {
+      setIsAdmin(true);
+    }
+  }, [searchParams]);
   const [results, setResults] = useState<LottoResult[]>([]);
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -69,6 +89,28 @@ export default function LottoPage() {
   const handleSaveGames = (games: number[][]) => {
     setSavedGames((prev) => [...prev, ...games]);
   };
+
+  // 관리자가 아닌 경우 접근 제한
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-md mx-auto text-center">
+          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+            <CardContent className="p-8">
+              <ShieldAlert className="h-16 w-16 mx-auto text-orange-500 mb-4" />
+              <h1 className="text-2xl font-bold mb-2">접근 제한</h1>
+              <p className="text-muted-foreground mb-4">
+                이 페이지는 현재 관리자 전용입니다.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                서비스 준비 중입니다. 곧 만나요!
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

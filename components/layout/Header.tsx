@@ -11,7 +11,7 @@ const navLinks = [
   { href: '/ranking', key: 'ranking' },
   { href: '/guide', key: 'guide' },
   { href: '/fortune', key: 'fortune' },
-  { href: '/lotto', key: 'lotto' },
+  // { href: '/lotto', key: 'lotto' }, // 토스페이 정책 이슈로 비활성화 - 관리자 전용 (/lotto?admin=비밀키)
   { href: '/prompts', key: 'prompts' },
   { href: '/pricing', key: 'pricing' },
 ] as const;
