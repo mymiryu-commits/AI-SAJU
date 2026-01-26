@@ -27,6 +27,7 @@
   "nav": {
     "home": "ホーム",
     "ranking": "AIランキング",
+    "saju": "AI占い",
     "guide": "AIガイド",
     "prompts": "プロンプトマーケット",
     "fortune": "AI占い",
@@ -175,6 +176,100 @@
       "cta": "プレミアム分析を受ける"
     }
   },
+  "saju": {
+    "hero": {
+      "badge": "AI搭載精密占い",
+      "title": "あなたの運命を読み解く",
+      "subtitle": "四柱推命、人相占い、相性診断まで。AIが分析する精密な占いサービスで人生の方向性を見つけましょう。",
+      "freeCta": "無料で占う",
+      "demoCta": "サービスを見る",
+      "stats": {
+        "totalAnalyses": "総分析件数",
+        "avgRating": "平均満足度",
+        "satisfaction": "リピート率"
+      }
+    },
+    "services": {
+      "title": "占いサービス",
+      "subtitle": "AIが分析する様々な占いサービスをご覧ください",
+      "filters": {
+        "all": "すべて",
+        "free": "無料",
+        "premium": "プレミアム",
+        "recommended": "おすすめ"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "無料四柱体験",
+          "description": "生年月日と時間であなたの四柱八字を分析。無料で基本運勢を確認できます。"
+        },
+        "saju-analysis": {
+          "title": "四柱分析",
+          "description": "血液型/MBTI統合、五行バランス、月別運勢、10年大運分析とPDFダウンロード。"
+        },
+        "deep-saju": {
+          "title": "伝統四柱深層",
+          "description": "十神、神殺、12運星、合沖分析。伝統命理学の深い解釈を提供します。"
+        },
+        "premium-saju": {
+          "title": "プレミアム分析",
+          "description": "四柱分析 + 伝統深層 + PDF + 音声解説 + リアルタイムAI相談までオールインワン。"
+        },
+        "compatibility": {
+          "title": "相性診断",
+          "description": "恋人、夫婦、ビジネスパートナーとの相性を分析。関係の強みと注意点を確認できます。"
+        },
+        "yearly-fortune": {
+          "title": "2025年運勢",
+          "description": "今年の全体的な運勢の流れと月別の注意点を確認できます。"
+        }
+      }
+    },
+    "premium": {
+      "title": "プレミアム特典",
+      "subtitle": "ポイントでより深く正確な分析を受けましょう",
+      "cta": "ポイントをチャージ",
+      "features": {
+        "detailedReport": {
+          "title": "詳細レポート",
+          "description": "PDFレポートと音声解説でいつでも確認できます。"
+        },
+        "expertAdvice": {
+          "title": "専門家アドバイス",
+          "description": "AI分析結果に基づいた実践的な行動ガイドを提供します。"
+        },
+        "unlimitedAccess": {
+          "title": "ポイントシステム",
+          "description": "ポイントをチャージして、必要な時にプレミアムサービスをご利用ください。"
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "3分で完了",
+      "title": "今すぐ始めましょう",
+      "description": "簡単な情報入力だけでAIがあなたの四柱を分析します。",
+      "cta": "無料分析を開始",
+      "steps": {
+        "step1": "生年月日と時間を入力",
+        "step2": "AIが四柱八字を計算",
+        "step3": "詳細な運勢分析結果を確認"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "高い精度",
+          "description": "伝統的な命理学とAIを組み合わせた精密分析"
+        },
+        "speed": {
+          "title": "素早い結果",
+          "description": "3分以内に詳細な分析結果を提供"
+        },
+        "privacy": {
+          "title": "プライバシー保護",
+          "description": "入力された情報は分析後すぐに削除されます"
+        }
+      }
+    }
+  },
   "auth": {
     "login": {
       "title": "ログイン",
@@ -214,6 +309,7 @@
       "dashboard": "ダッシュボード",
       "history": "分析履歴",
       "family": "家族管理",
+      "vouchers": "利用券",
       "subscription": "サブスクリプション",
       "settings": "設定"
     },

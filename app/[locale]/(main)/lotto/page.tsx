@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Target,
   ShieldAlert,
+  Play,
+  RefreshCw,
 } from 'lucide-react';
 import {
   LottoNumbers,
@@ -24,18 +26,34 @@ import {
   StatisticsChart,
   FilterPanel,
   WinningDashboard,
+  LottoBanner,
 } from '@/components/lotto';
 import {
-  loadLottoHistory,
   analyzePatterns,
   getTimeUntilNextDraw,
-  getCurrentRound,
+  getLatestCompletedRound,
 } from '@/lib/lotto';
 import type { LottoResult, PatternAnalysis, FilterConfig } from '@/types/lotto';
 import { DEFAULT_FILTER_CONFIG } from '@/types/lotto';
 
 // 관리자 접근 키 (환경변수로 관리 권장)
 const ADMIN_KEY = process.env.NEXT_PUBLIC_LOTTO_ADMIN_KEY || 'mymiryu2026';
+
+// 예상 당첨금 계산 (실제로는 API에서 가져와야 함)
+function estimateJackpot(previousPrize?: number): number {
+  // 기본 예상 당첨금 (이월 없을 경우 약 20억)
+  const basePrize = 2000000000;
+  // 이전 당첨금 기반 추정
+  if (previousPrize) {
+    return Math.round(previousPrize * 1.1); // 10% 증가 추정
+  }
+  return basePrize + Math.floor(Math.random() * 500000000);
+}
+
+// 금액 포맷팅
+function formatPrizeAmount(amount: number): string {
+  return amount.toLocaleString('ko-KR');
+}
 
 export default function LottoPage() {
   const searchParams = useSearchParams();
@@ -53,20 +71,36 @@ export default function LottoPage() {
       setIsAdmin(true);
     }
   }, [searchParams]);
+
   const [results, setResults] = useState<LottoResult[]>([]);
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [filterConfig, setFilterConfig] = useState<FilterConfig>(DEFAULT_FILTER_CONFIG);
   const [savedGames, setSavedGames] = useState<number[][]>([]);
+  const [estimatedPrize, setEstimatedPrize] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // 데이터 로드
+  // 데이터 로드 (API에서 Supabase 데이터 가져오기)
   useEffect(() => {
-    const data = loadLottoHistory();
-    setResults(data);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/lotto/history?limit=50');
+        const data = await response.json();
 
-    if (data.length > 0) {
-      setAnalysis(analyzePatterns(data, 10));
-    }
+        if (data.success && data.results) {
+          setResults(data.results);
+          // 결과가 있으면 클라이언트에서 분석 수행
+          if (data.results.length > 0) {
+            setAnalysis(analyzePatterns(data.results, 10));
+            setEstimatedPrize(estimateJackpot(data.results[0]?.prize1st));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch lotto history:', error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // 카운트다운 업데이트
@@ -83,11 +117,34 @@ export default function LottoPage() {
 
   // 최신 당첨번호
   const latestResult = results[0];
-  const nextRound = getCurrentRound() + 1;
+  const nextRound = getLatestCompletedRound() + 1;
 
   // 게임 저장 핸들러
   const handleSaveGames = (games: number[][]) => {
     setSavedGames((prev) => [...prev, ...games]);
+  };
+
+  // 데이터 새로고침
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // API 호출로 최신 데이터 갱신
+      await fetch('/api/lotto/fetch-winning');
+      // 새로운 데이터 가져오기
+      const response = await fetch('/api/lotto/history?limit=50');
+      const data = await response.json();
+      if (data.success && data.results) {
+        setResults(data.results);
+        if (data.results.length > 0) {
+          setAnalysis(analyzePatterns(data.results, 10));
+          setEstimatedPrize(estimateJackpot(data.results[0]?.prize1st));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to refresh:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // 관리자가 아닌 경우 접근 제한
@@ -114,132 +171,162 @@ export default function LottoPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* 헤더 */}
-      <div className="text-center mb-8">
-        <Badge className="mb-4" variant="secondary">
-          <Ticket className="mr-1 h-3 w-3" />
-          AI 로또 분석기
-        </Badge>
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">
-          AI 기반 로또 번호 분석
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          통계 분석과 필터링 알고리즘을 활용한 스마트한 번호 생성
-        </p>
+      {/* 상단 배너 */}
+      <LottoBanner locale="ko" />
+
+      {/* 메인 정보 바 (이미지 스타일) */}
+      <div className="mb-8 rounded-xl overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 p-1">
+          <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-600/50">
+            {/* 왼쪽: 회차 및 카운트다운 */}
+            <div className="p-4 md:p-6 flex flex-col justify-center">
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-slate-400 text-sm">제</span>
+                <span className="text-yellow-400 font-bold text-2xl md:text-3xl">{nextRound}</span>
+                <span className="text-slate-400 text-sm">회</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-sm">남은시간</span>
+                <div className="flex items-center text-cyan-400 font-mono font-bold text-lg md:text-xl">
+                  <span>{countdown.days}</span>
+                  <span className="text-slate-500 mx-0.5">일</span>
+                  <span>{String(countdown.hours).padStart(2, '0')}</span>
+                  <span className="text-slate-500 animate-pulse">:</span>
+                  <span>{String(countdown.minutes).padStart(2, '0')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 중앙: 예상 당첨금 */}
+            <div className="p-4 md:p-6 text-center bg-gradient-to-b from-slate-700/50 to-transparent">
+              <div className="text-slate-300 text-xs md:text-sm mb-1">
+                1등 예상 총 당첨금액
+              </div>
+              <div className="text-white font-bold text-2xl md:text-4xl tracking-tight">
+                <span className="text-yellow-400">{formatPrizeAmount(estimatedPrize)}</span>
+              </div>
+              <div className="text-slate-400 text-xs mt-1">
+                *예상 금액이며 실제와 다를 수 있습니다
+              </div>
+            </div>
+
+            {/* 오른쪽: 최신 당첨결과 */}
+            <div className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-400 font-bold text-lg md:text-xl">
+                    {latestResult?.round || '---'}
+                  </span>
+                  <span className="text-slate-400 text-sm">회 당첨 결과</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-xs h-7"
+                  onClick={() => window.open('https://www.dhlottery.co.kr', '_blank')}
+                >
+                  <Play className="h-3 w-3 mr-1" />
+                  추첨방송보기
+                </Button>
+              </div>
+              {latestResult ? (
+                <div className="flex items-center gap-1.5">
+                  {latestResult.numbers.map((num, i) => (
+                    <div
+                      key={i}
+                      className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-sm md:text-base shadow-lg ${
+                        num <= 10
+                          ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900'
+                          : num <= 20
+                          ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+                          : num <= 30
+                          ? 'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                          : num <= 40
+                          ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                          : 'bg-gradient-to-br from-green-400 to-green-600 text-white'
+                      }`}
+                    >
+                      {num}
+                    </div>
+                  ))}
+                  <span className="text-slate-400 mx-1 text-lg">+</span>
+                  <div
+                    className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-sm md:text-base shadow-lg ring-2 ring-purple-400 ${
+                      latestResult.bonus <= 10
+                        ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900'
+                        : latestResult.bonus <= 20
+                        ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+                        : latestResult.bonus <= 30
+                        ? 'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                        : latestResult.bonus <= 40
+                        ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                        : 'bg-gradient-to-br from-green-400 to-green-600 text-white'
+                    }`}
+                  >
+                    {latestResult.bonus}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-10">
+                  <div className="animate-pulse text-slate-400 text-sm">로딩 중...</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 상단 정보 카드들 */}
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
-        {/* 다음 추첨 카운트다운 */}
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">다음 추첨까지</span>
-              <Clock className="h-4 w-4 text-purple-500" />
-            </div>
-            <div className="flex gap-2 text-2xl font-bold">
-              <div className="text-center">
-                <span className="text-purple-600">{countdown.days}</span>
-                <span className="text-xs text-muted-foreground block">일</span>
-              </div>
-              <span>:</span>
-              <div className="text-center">
-                <span className="text-purple-600">{countdown.hours}</span>
-                <span className="text-xs text-muted-foreground block">시</span>
-              </div>
-              <span>:</span>
-              <div className="text-center">
-                <span className="text-purple-600">{countdown.minutes}</span>
-                <span className="text-xs text-muted-foreground block">분</span>
-              </div>
-              <span>:</span>
-              <div className="text-center">
-                <span className="text-purple-600">{countdown.seconds}</span>
-                <span className="text-xs text-muted-foreground block">초</span>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {nextRound}회 추첨 예정
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 최신 당첨번호 */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">최신 당첨번호</span>
-              <Trophy className="h-4 w-4 text-yellow-500" />
-            </div>
-            {latestResult ? (
-              <>
-                <div className="mb-2">
-                  <LottoNumbers
-                    numbers={latestResult.numbers}
-                    bonus={latestResult.bonus}
-                    size="sm"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {latestResult.round}회 ({latestResult.drawDate})
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">로딩 중...</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 당첨 통계 */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">AI 추천 당첨 현황</span>
-              <Target className="h-4 w-4 text-green-500" />
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-600">0</div>
-                <div className="text-xs text-muted-foreground">3등+</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">12</div>
-                <div className="text-xs text-muted-foreground">4등</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-600">89</div>
-                <div className="text-xs text-muted-foreground">5등</div>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              총 추천: 15,420건
-            </p>
-          </CardContent>
-        </Card>
+      {/* 새로고침 버튼 */}
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="text-xs"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? '갱신 중...' : '최신 데이터 갱신'}
+        </Button>
       </div>
 
       {/* 메인 콘텐츠 */}
       <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="generate" className="flex items-center gap-1">
+        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50 rounded-xl">
+          <TabsTrigger
+            value="generate"
+            className="flex items-center gap-1.5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <Sparkles className="h-4 w-4" />
-            번호 생성
+            <span className="hidden sm:inline">번호 생성</span>
           </TabsTrigger>
-          <TabsTrigger value="winning" className="flex items-center gap-1">
+          <TabsTrigger
+            value="winning"
+            className="flex items-center gap-1.5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <Trophy className="h-4 w-4" />
-            당첨 현황
+            <span className="hidden sm:inline">당첨 현황</span>
           </TabsTrigger>
-          <TabsTrigger value="statistics" className="flex items-center gap-1">
+          <TabsTrigger
+            value="statistics"
+            className="flex items-center gap-1.5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <TrendingUp className="h-4 w-4" />
-            통계 분석
+            <span className="hidden sm:inline">통계 분석</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-1">
+          <TabsTrigger
+            value="history"
+            className="flex items-center gap-1.5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <History className="h-4 w-4" />
-            당첨 이력
+            <span className="hidden sm:inline">당첨 이력</span>
           </TabsTrigger>
-          <TabsTrigger value="saved" className="flex items-center gap-1">
+          <TabsTrigger
+            value="saved"
+            className="flex items-center gap-1.5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-md rounded-lg transition-all"
+          >
             <Ticket className="h-4 w-4" />
-            내 번호
+            <span className="hidden sm:inline">내 번호</span>
           </TabsTrigger>
         </TabsList>
 
@@ -351,18 +438,28 @@ export default function LottoPage() {
       </Tabs>
 
       {/* 하단 CTA */}
-      <Card className="mt-8 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-200">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold mb-1">프리미엄 분석</h3>
-              <p className="text-sm text-muted-foreground">
-                백테스트, 시뮬레이션, 자동 당첨 대조 기능을 이용해보세요
+      <Card className="mt-10 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 border-0 shadow-xl shadow-purple-500/25 overflow-hidden relative">
+        <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-10" />
+        <CardContent className="p-8 relative">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-white/90 text-sm mb-3">
+                <Sparkles className="h-3.5 w-3.5" />
+                PREMIUM
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
+                프리미엄 분석으로 당첨 확률 UP!
+              </h3>
+              <p className="text-white/80 text-sm md:text-base">
+                백테스트, AI 시뮬레이션, 자동 당첨 대조 기능을 이용해보세요
               </p>
             </div>
-            <Button>
+            <Button
+              size="lg"
+              className="bg-white text-purple-600 hover:bg-white/90 font-bold px-8 shadow-lg"
+            >
               프리미엄 시작하기
-              <ChevronRight className="ml-2 h-4 w-4" />
+              <ChevronRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </CardContent>
