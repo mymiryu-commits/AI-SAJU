@@ -39,12 +39,52 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  Save,
+  Users,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { SlideImage, FortuneSlideSettings } from '@/types/settings';
 import SajuResultCard from '@/components/fortune/saju/SajuResultCard';
 import PremiumUpgradeModal from '@/components/fortune/saju/PremiumUpgradeModal';
 import type { AnalysisResult, UserInput } from '@/types/saju';
+
+// 저장된 프로필 타입
+interface SavedProfile {
+  id: string;
+  name: string;
+  birth_date: string;
+  birth_time?: string;
+  gender: string;
+  calendar?: string;
+  blood_type?: string;
+  mbti?: string;
+  nickname?: string;
+  is_favorite?: boolean;
+  created_at: string;
+}
+
+// 별자리 계산 함수
+function calculateZodiacSign(birthDate: string): string {
+  if (!birthDate) return '';
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return '양자리';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return '황소자리';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) return '쌍둥이자리';
+  if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) return '게자리';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return '사자자리';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return '처녀자리';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return '천칭자리';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return '전갈자리';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return '사수자리';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return '염소자리';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return '물병자리';
+  if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) return '물고기자리';
+  return '';
+}
 
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
   value: i.toString().padStart(2, '0'),
@@ -70,45 +110,50 @@ const packages = [
   {
     id: 'basic',
     name: '베이직',
-    price: 14900,
-    discountedPrice: 10430,
+    price: 9800,
+    discountedPrice: 4900,
+    tickets: 1,
     features: [
       '사주팔자 기본 분석',
+      '오행 분석',
       '2026년 총운',
       '성격 분석',
-      '행운의 요소',
     ],
-    color: 'border-muted',
+    color: 'border-slate-300 dark:border-slate-600',
+    gradient: 'from-slate-500 to-slate-600',
   },
   {
     id: 'standard',
     name: '스탠다드',
-    price: 24900,
-    discountedPrice: 17430,
+    price: 19600,
+    discountedPrice: 9800,
+    tickets: 2,
     features: [
       '베이직 패키지 전체',
-      '관상 분석 (사진 필요)',
-      '별자리 운세 통합',
-      '월별 상세 운세',
+      '궁합 분석',
+      '월별 상세 운세 12개월',
       'PDF 리포트 다운로드',
     ],
     popular: true,
-    color: 'border-primary',
+    color: 'border-violet-500',
+    gradient: 'from-violet-500 to-purple-600',
   },
   {
     id: 'premium',
     name: '프리미엄',
-    price: 39900,
-    discountedPrice: 27930,
+    price: 39200,
+    discountedPrice: 19600,
+    tickets: 4,
     features: [
       '스탠다드 패키지 전체',
-      'MBTI 성격 통합 분석',
-      '혈액형 성향 분석',
       '10년 대운 분석',
-      '음성 리포트 제공',
-      '전문가 1:1 상담 10분',
+      'MBTI/혈액형 통합 분석',
+      '음성 리포트 (MP3)',
+      'AI 1:1 상담',
     ],
-    color: 'border-yellow-500',
+    color: 'border-amber-500',
+    gradient: 'from-amber-500 to-orange-600',
+    badge: 'BEST',
   },
 ];
 
@@ -149,7 +194,8 @@ function IntegratedAnalysisPageContent() {
   // 관리자 테스트 모드 체크
   const isAdminTest = searchParams.get('admin_test') === 'true';
   const isAdmin = user?.email ? isAdminEmail(user.email) : false;
-  const adminBypass = isAdminTest && isAdmin;
+  // 관리자는 자동 우회 (admin_test 파라미터 없이도 가능)
+  const adminBypass = isAdmin;
 
   const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result' | 'error'>('intro');
   const [progress, setProgress] = useState(0);
@@ -178,6 +224,131 @@ function IntegratedAnalysisPageContent() {
     concerns: [] as string[],
     question: '',
   });
+
+  // 프로필 관련 상태
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 프로필 목록 불러오기
+  const loadProfiles = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingProfiles(true);
+    try {
+      const response = await fetch('/api/saju-profiles', {
+        headers: { 'x-user-id': user.id }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedProfiles(data.profiles || []);
+      }
+    } catch (error) {
+      console.error('프로필 로드 오류:', error);
+    } finally {
+      setLoadingProfiles(false);
+    }
+  }, [user?.id]);
+
+  // 로그인 시 프로필 목록 불러오기
+  useEffect(() => {
+    if (user?.id) {
+      loadProfiles();
+    }
+  }, [user?.id, loadProfiles]);
+
+  // 생년월일 변경 시 별자리 자동 계산
+  useEffect(() => {
+    if (formData.birthDate) {
+      const zodiac = calculateZodiacSign(formData.birthDate);
+      if (zodiac && zodiac !== formData.zodiac) {
+        setFormData(prev => ({ ...prev, zodiac }));
+      }
+    }
+  }, [formData.birthDate, formData.zodiac]);
+
+  // 프로필 저장
+  const handleSaveProfile = async () => {
+    if (!user?.id) {
+      setProfileMessage({ type: 'error', text: '로그인이 필요합니다.' });
+      return;
+    }
+    if (!formData.name || !formData.birthDate || !formData.gender) {
+      setProfileMessage({ type: 'error', text: '이름, 생년월일, 성별을 입력해주세요.' });
+      setTimeout(() => setProfileMessage(null), 3000);
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      const response = await fetch('/api/saju-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({
+          profile: {
+            name: formData.name,
+            birth_date: formData.birthDate,
+            birth_time: formData.birthHour ? `${formData.birthHour}:00` : null,
+            gender: formData.gender,
+            calendar: formData.calendar,
+            blood_type: formData.bloodType || null,
+            mbti: formData.mbti || null,
+          }
+        })
+      });
+
+      if (response.ok) {
+        setProfileMessage({ type: 'success', text: '프로필이 저장되었습니다.' });
+        loadProfiles();
+      } else {
+        const data = await response.json();
+        setProfileMessage({ type: 'error', text: data.error || '저장에 실패했습니다.' });
+      }
+    } catch (error) {
+      setProfileMessage({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
+    } finally {
+      setSavingProfile(false);
+      setTimeout(() => setProfileMessage(null), 3000);
+    }
+  };
+
+  // 프로필 불러오기
+  const handleLoadProfile = (profile: SavedProfile) => {
+    setFormData({
+      name: profile.name,
+      birthDate: profile.birth_date,
+      birthHour: profile.birth_time ? profile.birth_time.split(':')[0] : '',
+      gender: profile.gender,
+      calendar: profile.calendar || 'solar',
+      mbti: profile.mbti || '',
+      bloodType: profile.blood_type || '',
+      zodiac: calculateZodiacSign(profile.birth_date),
+      concerns: [],
+      question: '',
+    });
+    setShowProfileSelector(false);
+    setProfileMessage({ type: 'success', text: `"${profile.nickname || profile.name}" 정보를 불러왔습니다.` });
+    setTimeout(() => setProfileMessage(null), 3000);
+  };
+
+  // 프로필 삭제
+  const handleDeleteProfile = async (profileId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user?.id || !confirm('이 프로필을 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`/api/saju-profiles?profileId=${profileId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': user.id }
+      });
+      if (response.ok) {
+        setSavedProfiles(prev => prev.filter(p => p.id !== profileId));
+      }
+    } catch (error) {
+      console.error('프로필 삭제 오류:', error);
+    }
+  };
 
   // 슬라이드 설정 가져오기
   useEffect(() => {
@@ -278,11 +449,23 @@ function IntegratedAnalysisPageContent() {
 
       // 결과 저장
       const result = data.data?.fullResult || data.data?.result;
+      const apiIsAdmin = data.meta?.isAdmin || isAdmin;
+
+      // 디버그 로그 (개발용)
+      console.log('[분석 결과]', {
+        hasResult: !!result,
+        analysisId: data.meta?.analysisId,
+        isBlinded: data.data?.isBlinded,
+        apiIsAdmin,
+        frontendIsAdmin: isAdmin,
+        userId: data.meta?.userId,
+      });
+
       if (result) {
         setAnalysisResult(result);
         setAnalysisId(data.meta?.analysisId || null);
-        setIsPremiumUnlocked(!data.data?.isBlinded || isAdmin);
-        setProductLevel(data.data?.isBlinded ? 'free' : 'basic');
+        setIsPremiumUnlocked(!data.data?.isBlinded || apiIsAdmin);
+        setProductLevel(apiIsAdmin ? 'vip' : (data.data?.isBlinded ? 'free' : 'basic'));
 
         // 잠시 후 결과 화면으로 전환
         setTimeout(() => {
@@ -321,9 +504,9 @@ function IntegratedAnalysisPageContent() {
         premium: '프리미엄',
       };
       const pkgPrices: Record<string, number> = {
-        basic: 4850,
-        standard: 9900,
-        premium: 19800,
+        basic: 4900,
+        standard: 9800,
+        premium: 19600,
       };
 
       const response = await fetch('/api/payment/create', {
@@ -493,47 +676,76 @@ function IntegratedAnalysisPageContent() {
             </div>
 
             {/* 패키지 선택 */}
-            <div className="mb-8">
-              <h2 className="text-lg font-bold mb-4 text-center">패키지 선택</h2>
-              <div className="grid md:grid-cols-3 gap-4">
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-2 text-center">결제권 선택</h2>
+              <p className="text-sm text-muted-foreground text-center mb-6">필요에 맞는 패키지를 선택하세요</p>
+              <div className="grid md:grid-cols-3 gap-5">
                 {packages.map((pkg) => (
                   <Card
                     key={pkg.id}
-                    className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                      selectedPackage === pkg.id ? pkg.color + ' border-2 shadow-lg' : 'border'
-                    }`}
+                    className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                      selectedPackage === pkg.id
+                        ? `${pkg.color} border-2 shadow-xl ring-2 ring-offset-2 ${pkg.id === 'standard' ? 'ring-violet-500' : pkg.id === 'premium' ? 'ring-amber-500' : 'ring-slate-400'}`
+                        : 'border hover:border-muted-foreground/30'
+                    } ${pkg.popular ? 'md:scale-105 md:z-10' : ''}`}
                     onClick={() => setSelectedPackage(pkg.id)}
                   >
+                    {/* 인기 배지 */}
                     {pkg.popular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-xs">
-                        인기
-                      </Badge>
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 px-3 py-1 shadow-lg">
+                          <Star className="mr-1 h-3 w-3" />
+                          인기
+                        </Badge>
+                      </div>
                     )}
-                    <CardHeader className="text-center pb-2">
-                      <CardTitle className="text-base">{pkg.name}</CardTitle>
-                      <div className="mt-1">
-                        <span className="text-2xl font-bold text-primary">
+                    {/* BEST 배지 */}
+                    {pkg.badge && (
+                      <div className="absolute -top-3 right-4 z-10">
+                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-2 py-0.5 text-xs shadow-lg">
+                          {pkg.badge}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* 선택 체크 표시 */}
+                    {selectedPackage === pkg.id && (
+                      <div className="absolute top-3 right-3">
+                        <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${pkg.gradient} flex items-center justify-center`}>
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                    )}
+
+                    <CardHeader className={`text-center ${pkg.popular ? 'pt-8' : 'pt-5'} pb-3`}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                        결제권 {pkg.tickets}장
+                      </p>
+                      <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                      <div className="mt-2">
+                        <span className={`text-3xl font-bold bg-gradient-to-r ${pkg.gradient} bg-clip-text text-transparent`}>
                           ₩{pkg.discountedPrice.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground line-through text-sm ml-2">
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-1">
+                        <span className="text-muted-foreground line-through text-sm">
                           ₩{pkg.price.toLocaleString()}
                         </span>
+                        <Badge variant="secondary" className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs">
+                          50% 할인
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="mt-1 text-xs">30% 할인</Badge>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <ul className="space-y-1.5">
-                        {pkg.features.slice(0, 4).map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
-                            <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CardContent className="pt-0 pb-5">
+                      <ul className="space-y-2">
+                        {pkg.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <div className={`w-5 h-5 rounded-full bg-gradient-to-r ${pkg.gradient} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                              <CheckCircle className="h-3 w-3 text-white" />
+                            </div>
                             <span>{feature}</span>
                           </li>
                         ))}
-                        {pkg.features.length > 4 && (
-                          <li className="text-xs text-muted-foreground">
-                            +{pkg.features.length - 4}개 더...
-                          </li>
-                        )}
                       </ul>
                     </CardContent>
                   </Card>
@@ -543,18 +755,34 @@ function IntegratedAnalysisPageContent() {
 
             {/* CTA 버튼 */}
             <div className="text-center">
-              <Button
-                size="lg"
-                onClick={() => setStep('form')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-10 py-6 text-lg shadow-lg"
-              >
-                <Sparkles className="mr-2 h-5 w-5" />
-                분석 시작하기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <p className="text-sm text-muted-foreground mt-3">
-                무료 분석 후 상세 결과 확인 시 포인트가 필요합니다
-              </p>
+              <div className="inline-flex flex-col items-center p-6 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-100 dark:border-purple-800/50">
+                <p className="text-sm text-muted-foreground mb-3">
+                  선택한 패키지: <span className="font-semibold text-foreground">{packages.find(p => p.id === selectedPackage)?.name}</span>
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => setStep('form')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-12 py-7 text-lg shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
+                >
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  분석 시작하기
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    안전한 결제
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    7일 이내 환불
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    1년 유효기간
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -691,12 +919,85 @@ function IntegratedAnalysisPageContent() {
           </p>
         </div>
 
-        {/* 에러 메시지 */}
+        {/* 에러/성공 메시지 */}
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+        {profileMessage && (
+          <Alert className={`mb-6 ${profileMessage.type === 'success' ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'}`}>
+            <CheckCircle className={`h-4 w-4 ${profileMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`} />
+            <AlertDescription className={profileMessage.type === 'success' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
+              {profileMessage.text}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* 저장된 프로필 섹션 */}
+        {user && (
+          <Card className="mb-6 border-dashed">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>저장된 프로필</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProfileSelector(!showProfileSelector)}
+                >
+                  {showProfileSelector ? '닫기' : `불러오기 (${savedProfiles.length})`}
+                </Button>
+              </div>
+
+              {showProfileSelector && (
+                <div className="mt-4 space-y-2">
+                  {loadingProfiles ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                    </div>
+                  ) : savedProfiles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      저장된 프로필이 없습니다.
+                    </p>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {savedProfiles.map(profile => (
+                        <div
+                          key={profile.id}
+                          onClick={() => handleLoadProfile(profile)}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {profile.nickname || profile.name}
+                              {profile.nickname && <span className="ml-2 text-xs text-muted-foreground">({profile.name})</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile.birth_date} · {profile.gender === 'male' ? '남' : '여'}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDeleteProfile(profile.id, e)}
+                            className="text-muted-foreground hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Form */}
@@ -724,8 +1025,12 @@ function IntegratedAnalysisPageContent() {
                     type="date"
                     value={formData.birthDate}
                     onChange={(e) => handleChange('birthDate', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1920-01-01"
                     required
+                    className="appearance-none"
                   />
+                  <p className="text-xs text-muted-foreground">달력을 클릭해 선택하세요</p>
                 </div>
                 <div className="space-y-2">
                   <Label>양력/음력</Label>
@@ -821,22 +1126,12 @@ function IntegratedAnalysisPageContent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>별자리</Label>
-                  <Select
-                    value={formData.zodiac}
-                    onValueChange={(value) => handleChange('zodiac', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {zodiacSigns.map((sign) => (
-                        <SelectItem key={sign} value={sign}>
-                          {sign}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>별자리 {formData.zodiac && <span className="text-xs text-green-500">(자동계산)</span>}</Label>
+                  <Input
+                    value={formData.zodiac || '생년월일 입력 시 자동 계산'}
+                    disabled
+                    className="bg-muted/50"
+                  />
                 </div>
               </div>
 
@@ -871,6 +1166,26 @@ function IntegratedAnalysisPageContent() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
+
+          {/* 프로필 저장 버튼 */}
+          {user && formData.name && formData.birthDate && formData.gender && (
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="w-full"
+              >
+                {savingProfile ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                이 정보를 프로필로 저장
+              </Button>
+            </div>
+          )}
         </form>
       </div>
     </div>
