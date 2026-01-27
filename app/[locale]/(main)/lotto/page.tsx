@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -12,7 +11,6 @@ import {
   Trophy,
   History,
   Sparkles,
-  ChevronRight,
   Target,
 } from 'lucide-react';
 import {
@@ -308,23 +306,6 @@ export default function LottoPage() {
         </TabsContent>
       </Tabs>
 
-      {/* 하단 CTA */}
-      <Card className="mt-8 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-yellow-200">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold mb-1">프리미엄 분석</h3>
-              <p className="text-sm text-muted-foreground">
-                백테스트, 시뮬레이션, 자동 당첨 대조 기능을 이용해보세요
-              </p>
-            </div>
-            <Button>
-              프리미엄 시작하기
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
