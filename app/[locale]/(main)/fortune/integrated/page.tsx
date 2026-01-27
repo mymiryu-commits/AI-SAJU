@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { isAdminEmail } from '@/lib/auth/permissions';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -37,9 +38,13 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { SlideImage, FortuneSlideSettings } from '@/types/settings';
+import SajuResultCard from '@/components/fortune/saju/SajuResultCard';
+import PremiumUpgradeModal from '@/components/fortune/saju/PremiumUpgradeModal';
+import type { AnalysisResult, UserInput } from '@/types/saju';
 
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
   value: i.toString().padStart(2, '0'),
@@ -69,7 +74,7 @@ const packages = [
     discountedPrice: 10430,
     features: [
       '사주팔자 기본 분석',
-      '2025년 총운',
+      '2026년 총운',
       '성격 분석',
       '행운의 요소',
     ],
@@ -112,42 +117,55 @@ const defaultSlides: SlideImage[] = [
   {
     id: 'default-1',
     url: '',
-    title: '🔮 AI 통합 운세 분석',
+    title: 'AI 통합 운세 분석',
     description: '사주, 관상, 별자리, MBTI를 한 번에 분석',
     order: 1,
   },
   {
     id: 'default-2',
     url: '',
-    title: '📊 정확한 AI 분석',
+    title: '정확한 AI 분석',
     description: '동양과 서양의 운세 데이터를 결합한 분석',
     order: 2,
   },
   {
     id: 'default-3',
     url: '',
-    title: '📄 상세 리포트 제공',
+    title: '상세 리포트 제공',
     description: 'PDF, 음성 리포트로 언제든지 확인',
     order: 3,
   },
 ];
 
+// 상품 레벨 타입
+type ProductLevel = 'free' | 'basic' | 'deep' | 'premium' | 'vip';
+
 function IntegratedAnalysisPageContent() {
   const t = useTranslations('fortune');
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
 
   // 관리자 테스트 모드 체크
   const isAdminTest = searchParams.get('admin_test') === 'true';
   const isAdmin = user?.email ? isAdminEmail(user.email) : false;
   const adminBypass = isAdminTest && isAdmin;
 
-  const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result'>('intro');
+  const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result' | 'error'>('intro');
   const [progress, setProgress] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState<string>('standard');
   const [slides, setSlides] = useState<SlideImage[]>(defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  // 분석 결과 상태
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+  const [productLevel, setProductLevel] = useState<ProductLevel>('free');
+  const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     birthDate: '',
@@ -197,25 +215,173 @@ function IntegratedAnalysisPageContent() {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
+  // 실제 API 호출하여 분석 수행
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('analyzing');
 
+    if (!formData.name || !formData.birthDate || !formData.gender) {
+      setError('이름, 생년월일, 성별은 필수 입력 항목입니다.');
+      return;
+    }
+
+    setStep('analyzing');
+    setError(null);
+    setProgress(0);
+
+    // 진행률 시뮬레이션
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          setStep('result');
-          return 100;
+        if (prev >= 90) {
+          return prev;
         }
-        return prev + 5;
+        return prev + 10;
       });
-    }, 400);
+    }, 500);
+
+    try {
+      // UserInput 형식으로 변환
+      const userInput: UserInput = {
+        name: formData.name,
+        birthDate: formData.birthDate,
+        birthTime: formData.birthHour && formData.birthHour !== 'unknown'
+          ? `${formData.birthHour}:00`
+          : undefined,
+        gender: formData.gender as 'male' | 'female',
+        calendar: formData.calendar as 'solar' | 'lunar',
+        mbti: formData.mbti || undefined,
+        bloodType: formData.bloodType ? (formData.bloodType as 'A' | 'B' | 'O' | 'AB') : undefined,
+        currentConcern: formData.question ? (formData.question as any) : undefined,
+      };
+
+      // 분석 API 호출
+      const response = await fetch('/api/fortune/saju/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userInput),
+      });
+
+      const data = await response.json();
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        // 포인트 부족 에러 처리
+        if (data.errorCode === 'INSUFFICIENT_POINTS') {
+          setError(data.error || '포인트가 부족합니다. 충전 후 다시 시도해주세요.');
+          setStep('error');
+          return;
+        }
+        throw new Error(data.error || '분석 중 오류가 발생했습니다.');
+      }
+
+      setProgress(100);
+
+      // 결과 저장
+      const result = data.data?.fullResult || data.data?.result;
+      if (result) {
+        setAnalysisResult(result);
+        setAnalysisId(data.meta?.analysisId || null);
+        setIsPremiumUnlocked(!data.data?.isBlinded || isAdmin);
+        setProductLevel(data.data?.isBlinded ? 'free' : 'basic');
+
+        // 잠시 후 결과 화면으로 전환
+        setTimeout(() => {
+          setStep('result');
+        }, 500);
+      } else {
+        throw new Error('분석 결과를 받지 못했습니다.');
+      }
+    } catch (err) {
+      clearInterval(progressInterval);
+      console.error('Analysis error:', err);
+      setError(err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.');
+      setStep('error');
+    }
+  };
+
+  // 프리미엄 업그레이드 모달 열기
+  const handleUnlockPremium = () => {
+    if (!user) {
+      router.push('/login?redirect=/fortune/integrated');
+      return;
+    }
+    setShowUpgradeModal(true);
+  };
+
+  // 패키지 선택 후 결제 처리
+  const handleSelectPackage = async (pkgId: string) => {
+    setShowUpgradeModal(false);
+    setSelectedPackage(pkgId);
+
+    // 결제 페이지로 이동 (결제 후 콜백에서 프리미엄 해금)
+    try {
+      const pkgNames: Record<string, string> = {
+        basic: '베이직',
+        standard: '스탠다드',
+        premium: '프리미엄',
+      };
+      const pkgPrices: Record<string, number> = {
+        basic: 4850,
+        standard: 9900,
+        premium: 19800,
+      };
+
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: `saju_${pkgId}`,
+          productName: `사주 분석 ${pkgNames[pkgId]} 패키지`,
+          amount: pkgPrices[pkgId],
+          metadata: {
+            analysisId,
+            returnUrl: `/fortune/integrated?upgrade=${pkgId}`,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data?.paymentUrl) {
+        window.location.href = data.data.paymentUrl;
+      } else {
+        alert(data.error || '결제 준비 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('결제 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const handleChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  // 에러 화면
+  if (step === 'error') {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <AlertCircle className="h-10 w-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold mb-4">분석 중 문제가 발생했습니다</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => { setStep('form'); setError(null); }}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              다시 시도
+            </Button>
+            <Link href="/points">
+              <Button variant="outline">
+                포인트 충전하기
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'intro') {
     return (
@@ -304,17 +470,17 @@ function IntegratedAnalysisPageContent() {
                 동양 + 서양 통합 운세 분석
               </h1>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                사주, 관상, 별자리, MBTI, 혈액형까지 가장 완벽한 나를 분석합니다
+                사주오행, 별자리, MBTI, 혈액형, 12개월 운세, 대운 분석까지
               </p>
             </div>
 
             {/* 분석 항목 미리보기 */}
             <div className="grid grid-cols-4 gap-3 mb-10">
               {[
-                { icon: Sun, label: '사주 분석', color: 'text-amber-500' },
-                { icon: Moon, label: '별자리 운세', color: 'text-indigo-500' },
-                { icon: Star, label: '관상 분석', color: 'text-purple-500' },
-                { icon: Zap, label: 'MBTI 통합', color: 'text-pink-500' },
+                { icon: Sun, label: '사주오행', color: 'text-amber-500' },
+                { icon: Moon, label: '별자리', color: 'text-indigo-500' },
+                { icon: Star, label: '12개월 운세', color: 'text-purple-500' },
+                { icon: Zap, label: '대운 분석', color: 'text-pink-500' },
               ].map((feature, i) => {
                 const Icon = feature.icon;
                 return (
@@ -387,7 +553,7 @@ function IntegratedAnalysisPageContent() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <p className="text-sm text-muted-foreground mt-3">
-                정보 입력 후 결제가 진행됩니다
+                무료 분석 후 상세 결과 확인 시 포인트가 필요합니다
               </p>
             </div>
           </div>
@@ -417,10 +583,11 @@ function IntegratedAnalysisPageContent() {
           </div>
 
           <div className="mt-8 space-y-2 text-sm text-muted-foreground">
-            {progress > 20 && <p>✓ 사주팔자 계산 완료</p>}
-            {progress > 40 && <p>✓ 별자리 운세 통합 중</p>}
-            {progress > 60 && <p>✓ 성격 분석 진행 중</p>}
-            {progress > 80 && <p>✓ 최종 리포트 생성 중</p>}
+            {progress > 10 && <p>✓ 사주팔자 계산 중</p>}
+            {progress > 30 && <p>✓ 오행 분석 완료</p>}
+            {progress > 50 && <p>✓ 별자리 운세 통합 중</p>}
+            {progress > 70 && <p>✓ AI 분석 진행 중</p>}
+            {progress > 90 && <p>✓ 최종 리포트 생성 중</p>}
           </div>
 
           <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -432,163 +599,84 @@ function IntegratedAnalysisPageContent() {
     );
   }
 
-  if (step === 'result') {
+  // 결과 화면 - SajuResultCard 사용
+  if (step === 'result' && analysisResult) {
     return (
-      <div className="container mx-auto px-4 py-8 md:py-16">
+      <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-              분석 완료
-            </Badge>
-            <h1 className="text-3xl font-bold mb-2">{formData.name}님의 통합 분석 결과</h1>
-            <p className="text-muted-foreground">
-              {packages.find(p => p.id === selectedPackage)?.name} 패키지
-            </p>
-          </div>
+          {/* 관리자 테스트 모드 배지 */}
+          {adminBypass && (
+            <Alert className="mb-4 bg-green-50 dark:bg-green-950/30 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700 dark:text-green-400">
+                관리자 테스트 모드로 모든 기능이 해금되었습니다.
+              </AlertDescription>
+            </Alert>
+          )}
 
-          {/* Profile Card */}
-          <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-            <CardContent className="py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-2xl text-white font-bold">
-                    {formData.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{formData.name}</h3>
-                    <p className="text-muted-foreground">{formData.birthDate}</p>
-                    <div className="flex gap-2 mt-1">
-                      {formData.mbti && <Badge variant="outline">{formData.mbti}</Badge>}
-                      {formData.bloodType && <Badge variant="outline">{formData.bloodType}형</Badge>}
-                      {formData.zodiac && <Badge variant="outline">{formData.zodiac}</Badge>}
+          {/* 프리미엄 업그레이드 유도 배너 (미해금 시) */}
+          {!isPremiumUnlocked && !adminBypass && (
+            <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200 dark:border-purple-800">
+              <CardContent className="py-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                      <Crown className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">전체 분석 결과 보기</p>
+                      <p className="text-sm text-muted-foreground">
+                        월별 운세, 대운 분석, PDF/음성 리포트까지
+                      </p>
                     </div>
                   </div>
+                  <Button
+                    onClick={handleUnlockPremium}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    프리미엄 해금
+                  </Button>
                 </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-primary">87</div>
-                  <div className="text-sm text-muted-foreground">종합 점수</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Key Insights */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                핵심 키워드
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {['창의적 리더십', '안정적 재물운', '새로운 인연', '성장의 해', '도전 정신'].map((keyword, i) => (
-                  <Badge key={i} variant="secondary" className="px-4 py-2 text-base">
-                    {keyword}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* SajuResultCard 컴포넌트 사용 */}
+          <SajuResultCard
+            result={analysisResult}
+            onUnlockPremium={handleUnlockPremium}
+            isPremiumUnlocked={isPremiumUnlocked || adminBypass}
+            productLevel={adminBypass ? 'vip' : productLevel}
+            analysisId={analysisId || undefined}
+          />
 
-          {/* Premium Content Preview */}
-          <div className="relative mb-6">
-            {/* 관리자 테스트 모드 배지 */}
-            {adminBypass && (
-              <Badge className="absolute -top-3 right-4 z-20 bg-green-500 text-white">
-                관리자 테스트 모드
-              </Badge>
-            )}
-
-            {/* 결제 오버레이 - 관리자는 우회 */}
-            {!adminBypass && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-xl">
-                <Lock className="h-12 w-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">결제 후 전체 분석 확인</h3>
-                <p className="text-muted-foreground text-center mb-4 px-4">
-                  상세 분석, 월별 운세, PDF/음성 리포트까지
-                </p>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl font-bold text-primary">
-                    ₩{packages.find(p => p.id === selectedPackage)?.discountedPrice.toLocaleString()}
-                  </span>
-                  <span className="text-muted-foreground line-through">
-                    ₩{packages.find(p => p.id === selectedPackage)?.price.toLocaleString()}
-                  </span>
-                </div>
-                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500">
-                  지금 결제하기
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            )}
-
-            <div className={`space-y-4 ${!adminBypass ? 'blur-sm pointer-events-none' : ''}`}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>2025년 상세 운세</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>동양의 사주팔자와 서양의 별자리 분석을 통합한 결과, 2025년은 당신에게 큰 변화와 성장의 기회가 찾아오는 해입니다. 특히 상반기에는 새로운 인연과 기회가 많이 생기며, 하반기에는 그 결실을 맺게 됩니다.</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>월별 운세 그래프</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-40 bg-muted rounded flex items-center justify-center text-muted-foreground">
-                    {adminBypass ? '월별 운세 차트 영역' : ''}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Download Options Preview */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>결제 후 받으실 수 있는 것들</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <FileText className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-                  <p className="font-medium">PDF 리포트</p>
-                  <p className="text-sm text-muted-foreground">20페이지 분량</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <Headphones className="h-8 w-8 mx-auto mb-2 text-purple-500" />
-                  <p className="font-medium">음성 리포트</p>
-                  <p className="text-sm text-muted-foreground">15분 분량</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <Download className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                  <p className="font-medium">공유 이미지</p>
-                  <p className="text-sm text-muted-foreground">SNS 공유용</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" onClick={() => { setStep('form'); setProgress(0); }}>
-              정보 수정하기
+          {/* 하단 액션 버튼 */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="outline" onClick={() => { setStep('form'); setProgress(0); setAnalysisResult(null); }}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              새로운 분석
             </Button>
-            <Link href="/fortune">
+            <Link href="/my/history">
               <Button variant="ghost">
-                다른 운세 보기
+                히스토리 보기
               </Button>
             </Link>
           </div>
+
+          {/* 프리미엄 업그레이드 모달 */}
+          <PremiumUpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+            onSelectPackage={handleSelectPackage}
+            currentAnalysisId={analysisId || undefined}
+          />
         </div>
       </div>
     );
   }
 
+  // 입력 폼
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="max-w-2xl mx-auto">
@@ -602,6 +690,14 @@ function IntegratedAnalysisPageContent() {
             정확한 분석을 위해 정보를 입력해주세요
           </p>
         </div>
+
+        {/* 에러 메시지 */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
@@ -743,13 +839,38 @@ function IntegratedAnalysisPageContent() {
                   </Select>
                 </div>
               </div>
+
+              {/* 현재 고민 입력 */}
+              <div className="space-y-2">
+                <Label>현재 고민 (선택)</Label>
+                <Input
+                  placeholder="예: 이직, 연애, 건강 등"
+                  value={formData.question}
+                  onChange={(e) => handleChange('question', e.target.value)}
+                />
+              </div>
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full">
-            분석 시작하기
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep('intro')}
+              className="flex-1"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              이전
+            </Button>
+            <Button
+              type="submit"
+              size="lg"
+              className="flex-[2] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              분석 시작하기
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </form>
       </div>
     </div>
