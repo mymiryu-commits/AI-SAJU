@@ -154,7 +154,8 @@ function IntegratedAnalysisPageContent() {
   // 관리자 테스트 모드 체크
   const isAdminTest = searchParams.get('admin_test') === 'true';
   const isAdmin = user?.email ? isAdminEmail(user.email) : false;
-  const adminBypass = isAdminTest && isAdmin;
+  // 관리자는 자동 우회 (admin_test 파라미터 없이도 가능)
+  const adminBypass = isAdmin;
 
   const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result' | 'error'>('intro');
   const [progress, setProgress] = useState(0);
@@ -283,11 +284,23 @@ function IntegratedAnalysisPageContent() {
 
       // 결과 저장
       const result = data.data?.fullResult || data.data?.result;
+      const apiIsAdmin = data.meta?.isAdmin || isAdmin;
+
+      // 디버그 로그 (개발용)
+      console.log('[분석 결과]', {
+        hasResult: !!result,
+        analysisId: data.meta?.analysisId,
+        isBlinded: data.data?.isBlinded,
+        apiIsAdmin,
+        frontendIsAdmin: isAdmin,
+        userId: data.meta?.userId,
+      });
+
       if (result) {
         setAnalysisResult(result);
         setAnalysisId(data.meta?.analysisId || null);
-        setIsPremiumUnlocked(!data.data?.isBlinded || isAdmin);
-        setProductLevel(data.data?.isBlinded ? 'free' : 'basic');
+        setIsPremiumUnlocked(!data.data?.isBlinded || apiIsAdmin);
+        setProductLevel(apiIsAdmin ? 'vip' : (data.data?.isBlinded ? 'free' : 'basic'));
 
         // 잠시 후 결과 화면으로 전환
         setTimeout(() => {
