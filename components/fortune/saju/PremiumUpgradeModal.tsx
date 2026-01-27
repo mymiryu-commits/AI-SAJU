@@ -41,8 +41,8 @@ const packages: Package[] = [
   {
     id: 'basic',
     name: '베이직',
-    price: 4850,
-    originalPrice: 9900,
+    price: 4900,
+    originalPrice: 9800,
     features: [
       '사주팔자 완전 분석',
       '오행 분석',
@@ -53,8 +53,8 @@ const packages: Package[] = [
   {
     id: 'standard',
     name: '스탠다드',
-    price: 9900,
-    originalPrice: 19800,
+    price: 9800,
+    originalPrice: 19600,
     features: [
       '베이직 모든 기능',
       '궁합 분석',
@@ -67,8 +67,8 @@ const packages: Package[] = [
   {
     id: 'premium',
     name: '프리미엄',
-    price: 19800,
-    originalPrice: 39600,
+    price: 19600,
+    originalPrice: 39200,
     features: [
       '스탠다드 모든 기능',
       '10년 대운 분석',

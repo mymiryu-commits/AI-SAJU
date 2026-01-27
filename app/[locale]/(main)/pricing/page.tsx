@@ -34,10 +34,10 @@ const packages = [
     id: 'basic',
     name: '베이직',
     subtitle: '기본 분석',
-    price: 4850,
-    originalPrice: 9900,
+    price: 4900,
+    originalPrice: 9800,
     tickets: 1,
-    discount: 51,
+    discount: 50,
     features: [
       '사주팔자 기본 분석',
       '오행 분석',
@@ -60,8 +60,8 @@ const packages = [
     id: 'standard',
     name: '스탠다드',
     subtitle: '인기 패키지',
-    price: 9900,
-    originalPrice: 19800,
+    price: 9800,
+    originalPrice: 19600,
     tickets: 2,
     discount: 50,
     features: [
@@ -84,8 +84,8 @@ const packages = [
     id: 'premium',
     name: '프리미엄',
     subtitle: '최고의 가치',
-    price: 19800,
-    originalPrice: 39600,
+    price: 19600,
+    originalPrice: 39200,
     tickets: 4,
     discount: 50,
     features: [
@@ -353,9 +353,9 @@ export default function PricingPage() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-4 font-medium">기능</th>
-                      <th className="text-center p-4 font-medium">베이직<br/><span className="text-sm font-normal text-muted-foreground">₩4,850</span></th>
-                      <th className="text-center p-4 font-medium bg-violet-50 dark:bg-violet-950/30">스탠다드<br/><span className="text-sm font-normal text-muted-foreground">₩9,900</span></th>
-                      <th className="text-center p-4 font-medium">프리미엄<br/><span className="text-sm font-normal text-muted-foreground">₩19,800</span></th>
+                      <th className="text-center p-4 font-medium">베이직<br/><span className="text-sm font-normal text-muted-foreground">₩4,900</span></th>
+                      <th className="text-center p-4 font-medium bg-violet-50 dark:bg-violet-950/30">스탠다드<br/><span className="text-sm font-normal text-muted-foreground">₩9,800</span></th>
+                      <th className="text-center p-4 font-medium">프리미엄<br/><span className="text-sm font-normal text-muted-foreground">₩19,600</span></th>
                     </tr>
                   </thead>
                   <tbody>
