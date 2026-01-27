@@ -9,12 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Ticket,
   TrendingUp,
-  Clock,
   Trophy,
   History,
   Sparkles,
-  ChevronRight,
-  Target,
   ShieldAlert,
   Play,
   RefreshCw,
@@ -437,33 +434,6 @@ function LottoPageContent() {
         </TabsContent>
       </Tabs>
 
-      {/* 하단 CTA */}
-      <Card className="mt-10 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 border-0 shadow-xl shadow-purple-500/25 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-10" />
-        <CardContent className="p-8 relative">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-white/90 text-sm mb-3">
-                <Sparkles className="h-3.5 w-3.5" />
-                PREMIUM
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
-                프리미엄 분석으로 당첨 확률 UP!
-              </h3>
-              <p className="text-white/80 text-sm md:text-base">
-                백테스트, AI 시뮬레이션, 자동 당첨 대조 기능을 이용해보세요
-              </p>
-            </div>
-            <Button
-              size="lg"
-              className="bg-white text-purple-600 hover:bg-white/90 font-bold px-8 shadow-lg"
-            >
-              프리미엄 시작하기
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
