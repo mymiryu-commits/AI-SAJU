@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { createClient } from '@/lib/supabase/client';
 
 // 새로 구현한 컴포넌트들
 import {
@@ -40,6 +41,34 @@ export default function SajuPage() {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 관리자 여부 확인
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: profile } = await (supabase as any)
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.role === 'admin') {
+            setIsAdmin(true);
+          }
+        }
+      } catch (err) {
+        console.error('Admin check error:', err);
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
 
   const handleSubmit = async (input: UserInput) => {
     setUserInput(input);
@@ -160,8 +189,8 @@ export default function SajuPage() {
               onUnlockPremium={handleUpgrade}
             />
 
-            {/* 전환 유도 영역 */}
-            {conversionData && (
+            {/* 전환 유도 영역 - 관리자는 숨김 */}
+            {conversionData && !isAdmin && (
               <div className="mt-8 p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl">
                 <h3 className="text-xl font-bold mb-2">
                   {conversionData.paywallTemplate.headline}
@@ -186,6 +215,24 @@ export default function SajuPage() {
               </div>
             )}
 
+            {/* 관리자용 프리미엄 분석 버튼 */}
+            {isAdmin && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl">
+                <h3 className="text-xl font-bold mb-2">
+                  관리자 계정
+                </h3>
+                <p className="text-sm text-white/80 mb-4">
+                  관리자 계정은 모든 프리미엄 기능을 무료로 사용할 수 있습니다.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  className="w-full py-3 bg-white text-green-600 font-bold rounded-lg hover:bg-white/90 transition"
+                >
+                  프리미엄 분석 보기 (무료)
+                </button>
+              </div>
+            )}
+
             {/* 다시 분석하기 버튼 */}
             <div className="mt-8 text-center">
               <button
@@ -198,14 +245,43 @@ export default function SajuPage() {
           </div>
         </div>
 
-        {/* 페이월 모달 */}
+        {/* 페이월 모달 - 관리자는 바로 프리미엄 분석 */}
         {conversionData?.paywallTemplate && (
           <PaywallModal
             isOpen={showPaywall}
             onClose={() => setShowPaywall(false)}
             template={conversionData.paywallTemplate}
-            onPurchase={(productId) => {
-              console.log('Purchase:', productId, analysisId);
+            isAdmin={isAdmin}
+            onPurchase={async (productId) => {
+              if (isAdmin) {
+                // 관리자는 결제 없이 바로 프리미엄 분석
+                try {
+                  const response = await fetch('/api/fortune/saju/premium', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      input: userInput,
+                      productType: productId === 'premium' ? 'premium' : productId === 'basic' ? 'basic' : 'vip',
+                      analysisId
+                    })
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                    // 프리미엄 결과로 업데이트
+                    console.log('프리미엄 분석 완료:', data);
+                    alert('프리미엄 분석이 완료되었습니다! (관리자 무료)');
+                  } else {
+                    alert('프리미엄 분석 실패: ' + data.error);
+                  }
+                } catch (err) {
+                  console.error('Premium analysis error:', err);
+                  alert('프리미엄 분석 중 오류가 발생했습니다.');
+                }
+              } else {
+                // 일반 사용자는 결제 진행
+                console.log('Purchase:', productId, analysisId);
+                // TODO: 실제 결제 로직 구현
+              }
               setShowPaywall(false);
             }}
           />

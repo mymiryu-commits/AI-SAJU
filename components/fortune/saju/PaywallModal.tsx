@@ -12,6 +12,7 @@ interface Props {
   template: ConversionTemplate;
   onPurchase: (productId: string) => void;
   socialProof?: string[];
+  isAdmin?: boolean;
 }
 
 export default function PaywallModal({
@@ -19,7 +20,8 @@ export default function PaywallModal({
   onClose,
   template,
   onPurchase,
-  socialProof = []
+  socialProof = [],
+  isAdmin = false
 }: Props) {
   const [timeLeft, setTimeLeft] = useState(template.discount?.expiresIn || 24);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -75,8 +77,13 @@ export default function PaywallModal({
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
+            {isAdmin && (
+              <div className="mb-2 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium rounded-full inline-block">
+                관리자 무료 이용
+              </div>
+            )}
             <h2 className="text-xl font-bold text-gray-800 dark:text-white whitespace-pre-line pr-8">
-              {template.headline}
+              {isAdmin ? '프리미엄 분석을 무료로 이용하세요' : template.headline}
             </h2>
           </div>
 
@@ -110,8 +117,8 @@ export default function PaywallModal({
               </motion.div>
             )}
 
-            {/* Discount Timer */}
-            {template.discount && (
+            {/* Discount Timer - 관리자는 숨김 */}
+            {template.discount && !isAdmin && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -140,7 +147,9 @@ export default function PaywallModal({
                     onClick={() => setSelectedProduct(product.id)}
                     className={`w-full p-4 rounded-xl border-2 text-left transition-all
                       ${selectedProduct === product.id
-                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
+                        ? isAdmin
+                          ? 'border-green-600 bg-green-50 dark:bg-green-900/30'
+                          : 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
                         : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'}`}
                   >
                     <div className="flex justify-between items-start">
@@ -150,23 +159,33 @@ export default function PaywallModal({
                             {product.name}
                           </span>
                           {product.recommended && (
-                            <span className="px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">
+                            <span className={`px-2 py-0.5 text-white text-xs rounded-full ${isAdmin ? 'bg-green-600' : 'bg-purple-600'}`}>
                               추천
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-lg font-bold text-purple-600">
-                            {(product.price - (template.discount?.amount || 0)).toLocaleString()}원
-                          </span>
-                          <span className="text-sm text-gray-400 line-through">
-                            {product.originalPrice.toLocaleString()}원
-                          </span>
+                          {isAdmin ? (
+                            <span className="text-lg font-bold text-green-600">
+                              무료
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-lg font-bold text-purple-600">
+                                {(product.price - (template.discount?.amount || 0)).toLocaleString()}원
+                              </span>
+                              <span className="text-sm text-gray-400 line-through">
+                                {product.originalPrice.toLocaleString()}원
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
                         ${selectedProduct === product.id
-                          ? 'border-purple-600 bg-purple-600'
+                          ? isAdmin
+                            ? 'border-green-600 bg-green-600'
+                            : 'border-purple-600 bg-purple-600'
                           : 'border-gray-300'}`}
                       >
                         {selectedProduct === product.id && (
@@ -191,9 +210,13 @@ export default function PaywallModal({
           <div className="p-6 border-t dark:border-gray-800 space-y-3">
             <Button
               onClick={handlePurchase}
-              className="w-full py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              className={`w-full py-6 text-lg font-bold ${
+                isAdmin
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+              }`}
             >
-              {template.cta}
+              {isAdmin ? '무료로 프리미엄 분석 보기' : template.cta}
             </Button>
 
             <button

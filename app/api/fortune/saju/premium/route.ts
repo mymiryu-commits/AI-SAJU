@@ -36,8 +36,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 결제 확인 (실제로는 결제 상태 체크)
-    // TODO: 결제 시스템 연동 시 구현
+    // 관리자 여부 확인
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = profile?.role === 'admin';
+
+    // 결제 확인 (관리자는 우회)
+    if (!isAdmin) {
+      // TODO: 결제 시스템 연동 시 일반 사용자 결제 검증 구현
+      // 현재는 결제 검증이 구현되지 않아 일반 사용자도 접근 가능
+      // 실제 배포 시에는 여기서 결제 상태를 확인해야 함
+    }
 
     // 사주 계산
     const saju = calculateSaju(
