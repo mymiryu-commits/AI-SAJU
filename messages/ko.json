@@ -27,11 +27,14 @@
   "nav": {
     "home": "홈",
     "ranking": "AI 순위",
+    "saju": "정통 사주",
     "guide": "AI 가이드",
     "prompts": "프롬프트 마켓",
     "fortune": "AI 운세",
     "lotto": "로또 분석",
-    "qr": "QR 명함",
+    "qr": "QR 코드",
+    "finance": "재테크",
+    "monetize": "AI 수익화",
     "community": "커뮤니티",
     "pricing": "요금제",
     "login": "로그인",
@@ -175,6 +178,100 @@
       "cta": "프리미엄 분석 받기"
     }
   },
+  "saju": {
+    "hero": {
+      "badge": "AI 기반 정밀 사주 분석",
+      "title": "당신의 운명을 읽다",
+      "subtitle": "사주팔자, 관상, 궁합까지. AI가 분석하는 정밀 운세 서비스로 인생의 방향을 찾아보세요.",
+      "freeCta": "무료로 사주 보기",
+      "demoCta": "서비스 둘러보기",
+      "stats": {
+        "totalAnalyses": "총 분석 건수",
+        "avgRating": "평균 만족도",
+        "satisfaction": "재이용률"
+      }
+    },
+    "services": {
+      "title": "사주 서비스",
+      "subtitle": "AI가 분석하는 다양한 운세 서비스를 만나보세요",
+      "filters": {
+        "all": "전체",
+        "free": "무료",
+        "premium": "프리미엄",
+        "recommended": "추천"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "무료 사주 체험",
+          "description": "생년월일과 시간으로 알아보는 당신의 사주팔자. 무료로 기본 운세를 확인하세요."
+        },
+        "saju-analysis": {
+          "title": "사주 분석",
+          "description": "혈액형/MBTI 통합 분석, 오행 균형, 월별 사주, 10년 대운 분석과 PDF 다운로드."
+        },
+        "deep-saju": {
+          "title": "전통 사주 심화",
+          "description": "십신, 신살, 12운성, 합충 분석. 전통 명리학의 깊이 있는 해석을 제공합니다."
+        },
+        "premium-saju": {
+          "title": "프리미엄 분석",
+          "description": "사주 분석 + 전통 심화 + PDF + 음성 해설 + 실시간 AI 사주 상담까지 올인원."
+        },
+        "compatibility": {
+          "title": "궁합 분석",
+          "description": "연인, 부부, 비즈니스 파트너와의 궁합을 분석합니다. 관계의 강점과 주의점을 알아보세요."
+        },
+        "yearly-fortune": {
+          "title": "2025년 운세",
+          "description": "올해의 전체적인 운세 흐름과 월별 주의점을 확인하세요."
+        }
+      }
+    },
+    "premium": {
+      "title": "프리미엄 혜택",
+      "subtitle": "포인트로 더 깊고 정확한 분석을 받아보세요",
+      "cta": "포인트 충전하기",
+      "features": {
+        "detailedReport": {
+          "title": "상세 리포트",
+          "description": "PDF 리포트와 음성 해설로 언제든 다시 확인할 수 있습니다."
+        },
+        "expertAdvice": {
+          "title": "전문가 조언",
+          "description": "AI 분석 결과를 바탕으로 실질적인 행동 가이드를 제공합니다."
+        },
+        "unlimitedAccess": {
+          "title": "포인트 충전",
+          "description": "포인트를 충전하고 원하는 프리미엄 서비스를 이용하세요."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "3분 만에 완료",
+      "title": "지금 바로 시작하세요",
+      "description": "간단한 정보 입력만으로 AI가 당신의 사주를 분석합니다.",
+      "cta": "무료 분석 시작",
+      "steps": {
+        "step1": "생년월일과 시간을 입력하세요",
+        "step2": "AI가 사주팔자를 계산합니다",
+        "step3": "상세한 운세 분석 결과를 확인하세요"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "높은 정확도",
+          "description": "전통 명리학과 AI를 결합한 정밀 분석"
+        },
+        "speed": {
+          "title": "빠른 결과",
+          "description": "3분 이내 상세한 분석 결과 제공"
+        },
+        "privacy": {
+          "title": "개인정보 보호",
+          "description": "입력된 정보는 분석 후 즉시 삭제됩니다"
+        }
+      }
+    }
+  },
   "auth": {
     "login": {
       "title": "로그인",
@@ -214,6 +311,7 @@
       "dashboard": "대시보드",
       "history": "분석 기록",
       "family": "가족 관리",
+      "vouchers": "이용권",
       "subscription": "구독 관리",
       "settings": "설정"
     },
