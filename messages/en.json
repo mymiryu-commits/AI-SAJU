@@ -27,11 +27,14 @@
   "nav": {
     "home": "Home",
     "ranking": "AI Ranking",
+    "saju": "Fortune",
     "guide": "AI Guide",
     "prompts": "Prompt Market",
     "fortune": "AI Fortune",
     "lotto": "Lotto Analyzer",
-    "qr": "QR Card",
+    "qr": "QR Code",
+    "finance": "Finance",
+    "monetize": "Monetize",
     "community": "Community",
     "pricing": "Pricing",
     "login": "Login",
@@ -175,6 +178,100 @@
       "cta": "Get Premium Analysis"
     }
   },
+  "saju": {
+    "hero": {
+      "badge": "AI-Powered Fortune Analysis",
+      "title": "Discover Your Destiny",
+      "subtitle": "Four Pillars, Face Reading, Compatibility and more. Find your life direction with AI-powered fortune services.",
+      "freeCta": "Free Fortune Reading",
+      "demoCta": "Explore Services",
+      "stats": {
+        "totalAnalyses": "Total Analyses",
+        "avgRating": "Avg Rating",
+        "satisfaction": "Return Rate"
+      }
+    },
+    "services": {
+      "title": "Fortune Services",
+      "subtitle": "Explore various AI-powered fortune telling services",
+      "filters": {
+        "all": "All",
+        "free": "Free",
+        "premium": "Premium",
+        "recommended": "Recommended"
+      },
+      "items": {
+        "basic-saju": {
+          "title": "Free Fortune Trial",
+          "description": "Discover your Four Pillars of Destiny with your birth date and time. Check your basic fortune for free."
+        },
+        "saju-analysis": {
+          "title": "Fortune Analysis",
+          "description": "Blood type/MBTI integration, Five Elements balance, monthly fortune, 10-year cycle analysis with PDF download."
+        },
+        "deep-saju": {
+          "title": "Traditional Deep Dive",
+          "description": "Ten Gods, Divine Generals, 12 Life Stages, Combinations analysis. In-depth traditional interpretation."
+        },
+        "premium-saju": {
+          "title": "Premium Analysis",
+          "description": "Fortune + Traditional analysis + PDF + Voice narration + Real-time AI consultation. All-in-one package."
+        },
+        "compatibility": {
+          "title": "Compatibility",
+          "description": "Analyze compatibility with lovers, spouses, or business partners. Learn the strengths and cautions in relationships."
+        },
+        "yearly-fortune": {
+          "title": "2025 Fortune",
+          "description": "Check this year's overall fortune flow and monthly points of attention."
+        }
+      }
+    },
+    "premium": {
+      "title": "Premium Benefits",
+      "subtitle": "Get deeper and more accurate analysis with points",
+      "cta": "Charge Points",
+      "features": {
+        "detailedReport": {
+          "title": "Detailed Reports",
+          "description": "PDF reports and voice narration you can review anytime."
+        },
+        "expertAdvice": {
+          "title": "Expert Advice",
+          "description": "Practical action guides based on AI analysis results."
+        },
+        "unlimitedAccess": {
+          "title": "Points System",
+          "description": "Charge points and use premium services as you need."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "Done in 3 Minutes",
+      "title": "Get Started Now",
+      "description": "AI analyzes your fortune with just simple information input.",
+      "cta": "Start Free Analysis",
+      "steps": {
+        "step1": "Enter your birth date and time",
+        "step2": "AI calculates your Four Pillars",
+        "step3": "Review your detailed fortune analysis"
+      },
+      "benefits": {
+        "accuracy": {
+          "title": "High Accuracy",
+          "description": "Precise analysis combining traditional methods with AI"
+        },
+        "speed": {
+          "title": "Fast Results",
+          "description": "Detailed analysis results within 3 minutes"
+        },
+        "privacy": {
+          "title": "Privacy Protected",
+          "description": "Your information is deleted immediately after analysis"
+        }
+      }
+    }
+  },
   "auth": {
     "login": {
       "title": "Login",
@@ -214,6 +311,7 @@
       "dashboard": "Dashboard",
       "history": "Analysis History",
       "family": "Family Management",
+      "vouchers": "Vouchers",
       "subscription": "Subscription",
       "settings": "Settings"
     },

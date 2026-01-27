@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { isAdminEmail } from '@/lib/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   Star,
   Sun,
@@ -31,7 +35,11 @@ import {
   FileText,
   Headphones,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import Image from 'next/image';
+import { SlideImage, FortuneSlideSettings } from '@/types/settings';
 
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
   value: i.toString().padStart(2, '0'),
@@ -99,11 +107,47 @@ const packages = [
   },
 ];
 
-export default function IntegratedAnalysisPage() {
+// 기본 슬라이드 데이터 (설정이 없을 때 사용)
+const defaultSlides: SlideImage[] = [
+  {
+    id: 'default-1',
+    url: '',
+    title: '🔮 AI 통합 운세 분석',
+    description: '사주, 관상, 별자리, MBTI를 한 번에 분석',
+    order: 1,
+  },
+  {
+    id: 'default-2',
+    url: '',
+    title: '📊 정확한 AI 분석',
+    description: '동양과 서양의 운세 데이터를 결합한 분석',
+    order: 2,
+  },
+  {
+    id: 'default-3',
+    url: '',
+    title: '📄 상세 리포트 제공',
+    description: 'PDF, 음성 리포트로 언제든지 확인',
+    order: 3,
+  },
+];
+
+function IntegratedAnalysisPageContent() {
   const t = useTranslations('fortune');
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+
+  // 관리자 테스트 모드 체크
+  const isAdminTest = searchParams.get('admin_test') === 'true';
+  const isAdmin = user?.email ? isAdminEmail(user.email) : false;
+  const adminBypass = isAdminTest && isAdmin;
+
   const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result'>('intro');
   const [progress, setProgress] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState<string>('standard');
+  const [slides, setSlides] = useState<SlideImage[]>(defaultSlides);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     birthDate: '',
@@ -116,6 +160,42 @@ export default function IntegratedAnalysisPage() {
     concerns: [] as string[],
     question: '',
   });
+
+  // 슬라이드 설정 가져오기
+  useEffect(() => {
+    const fetchSlideSettings = async () => {
+      try {
+        const response = await fetch('/api/site-settings?key=fortune_slides');
+        const result = await response.json();
+        if (result.data?.value?.slides && result.data.value.slides.length > 0) {
+          setSlides(result.data.value.slides);
+          setIsAutoPlaying(result.data.value.autoPlay !== false);
+        }
+      } catch (error) {
+        console.error('Error fetching slide settings:', error);
+      }
+    };
+    fetchSlideSettings();
+  }, []);
+
+  // 자동 슬라이드
+  useEffect(() => {
+    if (!isAutoPlaying || slides.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, slides.length]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,89 +219,177 @@ export default function IntegratedAnalysisPage() {
 
   if (step === 'intro') {
     return (
-      <div className="container mx-auto px-4 py-8 md:py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-              <Crown className="mr-1 h-3 w-3" />
-              프리미엄 통합 분석
-            </Badge>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              동양 + 서양 통합 운세 분석
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              사주, 관상, 별자리, MBTI, 혈액형까지<br/>
-              가장 완벽한 나를 분석합니다
-            </p>
-          </div>
-
-          {/* Package Selection */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {packages.map((pkg) => (
-              <Card
-                key={pkg.id}
-                className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                  selectedPackage === pkg.id ? pkg.color + ' border-2' : 'border'
-                }`}
-                onClick={() => setSelectedPackage(pkg.id)}
-              >
-                {pkg.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
-                    가장 인기
-                  </Badge>
+      <div className="min-h-screen">
+        {/* 이미지 슬라이드 섹션 */}
+        <section className="relative w-full h-[300px] md:h-[400px] overflow-hidden bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {slide.url ? (
+                <Image
+                  src={slide.url}
+                  alt={slide.title || '슬라이드 이미지'}
+                  fill
+                  className="object-cover"
+                  priority={index === 0}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400" />
+              )}
+              {/* 오버레이 */}
+              <div className="absolute inset-0 bg-black/30" />
+              {/* 슬라이드 텍스트 */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
+                {slide.title && (
+                  <h2 className="text-2xl md:text-4xl font-bold mb-3 drop-shadow-lg">
+                    {slide.title}
+                  </h2>
                 )}
-                <CardHeader className="text-center">
-                  <CardTitle>{pkg.name}</CardTitle>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold text-primary">
-                      ₩{pkg.discountedPrice.toLocaleString()}
-                    </span>
-                    <span className="text-muted-foreground line-through ml-2">
-                      ₩{pkg.price.toLocaleString()}
-                    </span>
+                {slide.description && (
+                  <p className="text-lg md:text-xl text-white/90 max-w-xl drop-shadow-md">
+                    {slide.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* 슬라이드 네비게이션 */}
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              {/* 인디케이터 */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === currentSlide
+                        ? 'w-6 bg-white'
+                        : 'bg-white/50 hover:bg-white/70'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* 메인 컨텐츠 */}
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="max-w-4xl mx-auto">
+            {/* 헤더 */}
+            <div className="text-center mb-10">
+              <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <Crown className="mr-1 h-3 w-3" />
+                프리미엄 통합 분석
+              </Badge>
+              <h1 className="text-2xl md:text-3xl font-bold mb-3">
+                동양 + 서양 통합 운세 분석
+              </h1>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                사주, 관상, 별자리, MBTI, 혈액형까지 가장 완벽한 나를 분석합니다
+              </p>
+            </div>
+
+            {/* 분석 항목 미리보기 */}
+            <div className="grid grid-cols-4 gap-3 mb-10">
+              {[
+                { icon: Sun, label: '사주 분석', color: 'text-amber-500' },
+                { icon: Moon, label: '별자리 운세', color: 'text-indigo-500' },
+                { icon: Star, label: '관상 분석', color: 'text-purple-500' },
+                { icon: Zap, label: 'MBTI 통합', color: 'text-pink-500' },
+              ].map((feature, i) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={i} className="text-center p-3 rounded-xl bg-muted/50">
+                    <Icon className={`h-6 w-6 mx-auto mb-1 ${feature.color}`} />
+                    <p className="text-xs font-medium">{feature.label}</p>
                   </div>
-                  <Badge variant="secondary" className="mt-2">30% 할인</Badge>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {pkg.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* Features */}
-          <div className="grid md:grid-cols-4 gap-4 mb-12">
-            {[
-              { icon: Sun, label: '사주 분석', desc: '사주팔자 기반' },
-              { icon: Moon, label: '별자리 운세', desc: '서양 점성술' },
-              { icon: Star, label: '관상 분석', desc: 'AI 얼굴 분석' },
-              { icon: Zap, label: 'MBTI 통합', desc: '성격 유형 분석' },
-            ].map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={i} className="text-center p-4">
-                  <Icon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <h3 className="font-semibold">{feature.label}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                </Card>
-              );
-            })}
-          </div>
+            {/* 패키지 선택 */}
+            <div className="mb-8">
+              <h2 className="text-lg font-bold mb-4 text-center">패키지 선택</h2>
+              <div className="grid md:grid-cols-3 gap-4">
+                {packages.map((pkg) => (
+                  <Card
+                    key={pkg.id}
+                    className={`relative cursor-pointer transition-all hover:shadow-lg ${
+                      selectedPackage === pkg.id ? pkg.color + ' border-2 shadow-lg' : 'border'
+                    }`}
+                    onClick={() => setSelectedPackage(pkg.id)}
+                  >
+                    {pkg.popular && (
+                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-xs">
+                        인기
+                      </Badge>
+                    )}
+                    <CardHeader className="text-center pb-2">
+                      <CardTitle className="text-base">{pkg.name}</CardTitle>
+                      <div className="mt-1">
+                        <span className="text-2xl font-bold text-primary">
+                          ₩{pkg.discountedPrice.toLocaleString()}
+                        </span>
+                        <span className="text-muted-foreground line-through text-sm ml-2">
+                          ₩{pkg.price.toLocaleString()}
+                        </span>
+                      </div>
+                      <Badge variant="secondary" className="mt-1 text-xs">30% 할인</Badge>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ul className="space-y-1.5">
+                        {pkg.features.slice(0, 4).map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs">
+                            <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                        {pkg.features.length > 4 && (
+                          <li className="text-xs text-muted-foreground">
+                            +{pkg.features.length - 4}개 더...
+                          </li>
+                        )}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
 
-          {/* CTA */}
-          <div className="text-center">
-            <Button size="lg" onClick={() => setStep('form')}>
-              분석 시작하기
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            {/* CTA 버튼 */}
+            <div className="text-center">
+              <Button
+                size="lg"
+                onClick={() => setStep('form')}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-10 py-6 text-lg shadow-lg"
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
+                분석 시작하기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <p className="text-sm text-muted-foreground mt-3">
+                정보 입력 후 결제가 진행됩니다
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -326,33 +494,43 @@ export default function IntegratedAnalysisPage() {
 
           {/* Premium Content Preview */}
           <div className="relative mb-6">
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-xl">
-              <Lock className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-bold mb-2">결제 후 전체 분석 확인</h3>
-              <p className="text-muted-foreground text-center mb-4 px-4">
-                상세 분석, 월별 운세, PDF/음성 리포트까지
-              </p>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl font-bold text-primary">
-                  ₩{packages.find(p => p.id === selectedPackage)?.discountedPrice.toLocaleString()}
-                </span>
-                <span className="text-muted-foreground line-through">
-                  ₩{packages.find(p => p.id === selectedPackage)?.price.toLocaleString()}
-                </span>
-              </div>
-              <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500">
-                지금 결제하기
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            {/* 관리자 테스트 모드 배지 */}
+            {adminBypass && (
+              <Badge className="absolute -top-3 right-4 z-20 bg-green-500 text-white">
+                관리자 테스트 모드
+              </Badge>
+            )}
 
-            <div className="blur-sm pointer-events-none space-y-4">
+            {/* 결제 오버레이 - 관리자는 우회 */}
+            {!adminBypass && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-xl">
+                <Lock className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-2">결제 후 전체 분석 확인</h3>
+                <p className="text-muted-foreground text-center mb-4 px-4">
+                  상세 분석, 월별 운세, PDF/음성 리포트까지
+                </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl font-bold text-primary">
+                    ₩{packages.find(p => p.id === selectedPackage)?.discountedPrice.toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground line-through">
+                    ₩{packages.find(p => p.id === selectedPackage)?.price.toLocaleString()}
+                  </span>
+                </div>
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500">
+                  지금 결제하기
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className={`space-y-4 ${!adminBypass ? 'blur-sm pointer-events-none' : ''}`}>
               <Card>
                 <CardHeader>
                   <CardTitle>2025년 상세 운세</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>동양의 사주팔자와 서양의 별자리 분석을 통합한 결과, 2025년은 당신에게...</p>
+                  <p>동양의 사주팔자와 서양의 별자리 분석을 통합한 결과, 2025년은 당신에게 큰 변화와 성장의 기회가 찾아오는 해입니다. 특히 상반기에는 새로운 인연과 기회가 많이 생기며, 하반기에는 그 결실을 맺게 됩니다.</p>
                 </CardContent>
               </Card>
 
@@ -361,7 +539,9 @@ export default function IntegratedAnalysisPage() {
                   <CardTitle>월별 운세 그래프</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-40 bg-muted rounded" />
+                  <div className="h-40 bg-muted rounded flex items-center justify-center text-muted-foreground">
+                    {adminBypass ? '월별 운세 차트 영역' : ''}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -573,5 +753,18 @@ export default function IntegratedAnalysisPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Suspense boundary로 감싸서 useSearchParams 사용 가능하게 함
+export default function IntegratedAnalysisPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+      </div>
+    }>
+      <IntegratedAnalysisPageContent />
+    </Suspense>
   );
 }

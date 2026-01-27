@@ -6,6 +6,9 @@
  * GET /api/fortune/saju/download?type=pdf&analysisId=xxx
  * GET /api/fortune/saju/download?type=audio&analysisId=xxx
  * POST /api/fortune/saju/download (실시간 생성)
+ *
+ * 무료 사용자: 블라인드 처리된 PDF 다운로드 가능
+ * 프리미엄 사용자: 전체 PDF 및 음성 다운로드 가능
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,7 +23,16 @@ import {
 } from '@/lib/fortune/saju/export';
 import { calculateSaju } from '@/lib/fortune/saju/calculator';
 import { analyzeOheng } from '@/lib/fortune/saju/oheng';
+import {
+  deductPoints,
+  getPointBalance,
+  PRODUCT_COSTS
+} from '@/lib/services/pointService';
+import { blindPremiumContent } from '@/lib/services/analysisService';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
+
+// 관리자 이메일 목록
+const ADMIN_EMAILS = ['mymiryu@gmail.com'];
 
 // 저장된 분석 결과에서 다운로드 (GET)
 export async function GET(request: NextRequest) {
@@ -88,7 +100,25 @@ export async function GET(request: NextRequest) {
     const premium: PremiumContent | undefined = resultData?.premium as PremiumContent | undefined;
     const targetYear = (resultData?.targetYear as number) || new Date().getFullYear();
 
+    // 포인트 잔액 및 프리미엄 상태 확인
+    const pointBalance = await getPointBalance(user.id);
+    const isPremiumUser = pointBalance?.isPremium || false;
+    const isAnalysisPremium = analysis.is_premium === true;
+
     if (type === 'pdf') {
+      // PDF는 무료 사용자도 다운로드 가능하지만, 무료 버전은 블라인드 처리
+      let pdfPremium = premium;
+      let isBlindedPDF = false;
+
+      // 프리미엄 사용자이거나, 이 분석이 프리미엄인 경우 전체 PDF 제공
+      if (!isPremiumUser && !isAnalysisPremium) {
+        // 무료 사용자: 블라인드 처리된 PDF 생성
+        if (premium) {
+          pdfPremium = blindPremiumContent(premium);
+        }
+        isBlindedPDF = true;
+      }
+
       // PDF 생성
       const pdfBuffer = await generateSajuPDF({
         user: userInput,
@@ -96,29 +126,71 @@ export async function GET(request: NextRequest) {
         oheng,
         yongsin,
         gisin,
-        premium,
+        premium: pdfPremium,
         targetYear
       });
 
-      const filename = generatePDFFilename(userInput, targetYear);
+      const filename = isBlindedPDF
+        ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
+        : generatePDFFilename(userInput, targetYear);
 
       return new NextResponse(new Uint8Array(pdfBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': pdfBuffer.length.toString()
+          'Content-Length': pdfBuffer.length.toString(),
+          'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full'
         }
       });
     } else {
-      // 음성 생성
-      const openaiKey = process.env.OPENAI_API_KEY;
-      if (!openaiKey) {
+      // 음성 생성 - 관리자/프리미엄구독/프리미엄분석은 무료, 그 외는 포인트 차감
+      const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+      const currentPoints = pointBalance?.points || 0;
+      const audioCost = PRODUCT_COSTS.voice; // 300 포인트
+
+      // 무료 대상: 관리자, 프리미엄 구독자, 프리미엄 분석
+      const isFreeAudio = isAdmin || isPremiumUser || isAnalysisPremium;
+
+      // 무료 대상이 아니고 포인트도 부족한 경우
+      if (!isFreeAudio && currentPoints < audioCost) {
         return NextResponse.json(
-          { error: '음성 생성 서비스가 설정되지 않았습니다.' },
-          { status: 503 }
+          {
+            error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
+            errorCode: 'INSUFFICIENT_POINTS',
+            requiredPoints: audioCost,
+            currentPoints: currentPoints,
+            upgradeRequired: true
+          },
+          { status: 402 }
         );
       }
+
+      // 무료 대상이 아닌 경우에만 포인트 차감
+      if (!isFreeAudio) {
+        const deductResult = await deductPoints(user.id, 'voice');
+        if (!deductResult.success) {
+          return NextResponse.json(
+            { error: '포인트 차감에 실패했습니다.' },
+            { status: 500 }
+          );
+        }
+      }
+
+      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
+      const openaiKey = process.env.OPENAI_API_KEY;
+      const ttsProvider = openaiKey ? 'openai' : (process.env.TTS_PROVIDER || 'edge');
+
+      const config = openaiKey
+        ? {
+            provider: 'openai' as const,
+            apiKey: openaiKey,
+            voiceId: 'nova'
+          }
+        : {
+            provider: 'edge' as const,
+            voiceId: 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
+          };
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -128,11 +200,7 @@ export async function GET(request: NextRequest) {
         gisin,
         premium,
         targetYear,
-        config: {
-          provider: 'openai',
-          apiKey: openaiKey,
-          voiceId: 'nova'
-        }
+        config
       });
 
       const filename = generateAudioFilename(userInput, targetYear);
@@ -193,6 +261,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 음성 생성은 관리자/프리미엄 구독자 무료, 일반 사용자는 포인트 차감
+    if (type === 'audio') {
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: '음성 생성은 로그인이 필요합니다.' },
+          { status: 401 }
+        );
+      }
+
+      const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+      const pointBalance = await getPointBalance(user.id);
+      const isPremiumUser = pointBalance?.isPremium || false;
+      const currentPoints = pointBalance?.points || 0;
+      const audioCost = PRODUCT_COSTS.voice; // 300 포인트
+
+      // 무료 대상: 관리자, 프리미엄 구독자
+      const isFreeAudio = isAdmin || isPremiumUser;
+
+      // 무료 대상이 아니고 포인트도 부족한 경우
+      if (!isFreeAudio && currentPoints < audioCost) {
+        return NextResponse.json(
+          {
+            error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
+            errorCode: 'INSUFFICIENT_POINTS',
+            requiredPoints: audioCost,
+            currentPoints: currentPoints,
+            upgradeRequired: true
+          },
+          { status: 402 }
+        );
+      }
+
+      // 무료 대상이 아닌 경우에만 포인트 차감
+      if (!isFreeAudio) {
+        const deductResult = await deductPoints(user.id, 'voice');
+        if (!deductResult.success) {
+          return NextResponse.json(
+            { error: '포인트 차감에 실패했습니다.' },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
     // script 타입은 나레이션 텍스트만 반환 (미리보기용)
     if (type === 'script') {
       const script = generateNarrationScript({
@@ -239,13 +354,20 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // audio
+      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
       const openaiKey = process.env.OPENAI_API_KEY;
-      if (!openaiKey) {
-        return NextResponse.json(
-          { error: '음성 생성 서비스가 설정되지 않았습니다. 관리자에게 문의하세요.' },
-          { status: 503 }
-        );
-      }
+      const requestedVoice = (body as Record<string, unknown>).voiceId as string;
+
+      const config = openaiKey
+        ? {
+            provider: 'openai' as const,
+            apiKey: openaiKey,
+            voiceId: requestedVoice || 'nova'
+          }
+        : {
+            provider: 'edge' as const,
+            voiceId: requestedVoice || 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
+          };
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -255,11 +377,7 @@ export async function POST(request: NextRequest) {
         gisin,
         premium,
         targetYear,
-        config: {
-          provider: 'openai',
-          apiKey: openaiKey,
-          voiceId: (body as Record<string, unknown>).voiceId as string || 'nova'
-        }
+        config
       });
 
       const filename = generateAudioFilename(userInput, targetYear);
