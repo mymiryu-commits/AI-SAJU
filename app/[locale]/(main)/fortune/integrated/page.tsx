@@ -70,45 +70,50 @@ const packages = [
   {
     id: 'basic',
     name: '베이직',
-    price: 14900,
-    discountedPrice: 10430,
+    price: 9800,
+    discountedPrice: 4900,
+    tickets: 1,
     features: [
       '사주팔자 기본 분석',
+      '오행 분석',
       '2026년 총운',
       '성격 분석',
-      '행운의 요소',
     ],
-    color: 'border-muted',
+    color: 'border-slate-300 dark:border-slate-600',
+    gradient: 'from-slate-500 to-slate-600',
   },
   {
     id: 'standard',
     name: '스탠다드',
-    price: 24900,
-    discountedPrice: 17430,
+    price: 19600,
+    discountedPrice: 9800,
+    tickets: 2,
     features: [
       '베이직 패키지 전체',
-      '관상 분석 (사진 필요)',
-      '별자리 운세 통합',
-      '월별 상세 운세',
+      '궁합 분석',
+      '월별 상세 운세 12개월',
       'PDF 리포트 다운로드',
     ],
     popular: true,
-    color: 'border-primary',
+    color: 'border-violet-500',
+    gradient: 'from-violet-500 to-purple-600',
   },
   {
     id: 'premium',
     name: '프리미엄',
-    price: 39900,
-    discountedPrice: 27930,
+    price: 39200,
+    discountedPrice: 19600,
+    tickets: 4,
     features: [
       '스탠다드 패키지 전체',
-      'MBTI 성격 통합 분석',
-      '혈액형 성향 분석',
       '10년 대운 분석',
-      '음성 리포트 제공',
-      '전문가 1:1 상담 10분',
+      'MBTI/혈액형 통합 분석',
+      '음성 리포트 (MP3)',
+      'AI 1:1 상담',
     ],
-    color: 'border-yellow-500',
+    color: 'border-amber-500',
+    gradient: 'from-amber-500 to-orange-600',
+    badge: 'BEST',
   },
 ];
 
@@ -321,9 +326,9 @@ function IntegratedAnalysisPageContent() {
         premium: '프리미엄',
       };
       const pkgPrices: Record<string, number> = {
-        basic: 4850,
-        standard: 9900,
-        premium: 19800,
+        basic: 4900,
+        standard: 9800,
+        premium: 19600,
       };
 
       const response = await fetch('/api/payment/create', {
@@ -493,47 +498,76 @@ function IntegratedAnalysisPageContent() {
             </div>
 
             {/* 패키지 선택 */}
-            <div className="mb-8">
-              <h2 className="text-lg font-bold mb-4 text-center">패키지 선택</h2>
-              <div className="grid md:grid-cols-3 gap-4">
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-2 text-center">결제권 선택</h2>
+              <p className="text-sm text-muted-foreground text-center mb-6">필요에 맞는 패키지를 선택하세요</p>
+              <div className="grid md:grid-cols-3 gap-5">
                 {packages.map((pkg) => (
                   <Card
                     key={pkg.id}
-                    className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                      selectedPackage === pkg.id ? pkg.color + ' border-2 shadow-lg' : 'border'
-                    }`}
+                    className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                      selectedPackage === pkg.id
+                        ? `${pkg.color} border-2 shadow-xl ring-2 ring-offset-2 ${pkg.id === 'standard' ? 'ring-violet-500' : pkg.id === 'premium' ? 'ring-amber-500' : 'ring-slate-400'}`
+                        : 'border hover:border-muted-foreground/30'
+                    } ${pkg.popular ? 'md:scale-105 md:z-10' : ''}`}
                     onClick={() => setSelectedPackage(pkg.id)}
                   >
+                    {/* 인기 배지 */}
                     {pkg.popular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-xs">
-                        인기
-                      </Badge>
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 px-3 py-1 shadow-lg">
+                          <Star className="mr-1 h-3 w-3" />
+                          인기
+                        </Badge>
+                      </div>
                     )}
-                    <CardHeader className="text-center pb-2">
-                      <CardTitle className="text-base">{pkg.name}</CardTitle>
-                      <div className="mt-1">
-                        <span className="text-2xl font-bold text-primary">
+                    {/* BEST 배지 */}
+                    {pkg.badge && (
+                      <div className="absolute -top-3 right-4 z-10">
+                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-2 py-0.5 text-xs shadow-lg">
+                          {pkg.badge}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* 선택 체크 표시 */}
+                    {selectedPackage === pkg.id && (
+                      <div className="absolute top-3 right-3">
+                        <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${pkg.gradient} flex items-center justify-center`}>
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                    )}
+
+                    <CardHeader className={`text-center ${pkg.popular ? 'pt-8' : 'pt-5'} pb-3`}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                        결제권 {pkg.tickets}장
+                      </p>
+                      <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                      <div className="mt-2">
+                        <span className={`text-3xl font-bold bg-gradient-to-r ${pkg.gradient} bg-clip-text text-transparent`}>
                           ₩{pkg.discountedPrice.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground line-through text-sm ml-2">
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-1">
+                        <span className="text-muted-foreground line-through text-sm">
                           ₩{pkg.price.toLocaleString()}
                         </span>
+                        <Badge variant="secondary" className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs">
+                          50% 할인
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="mt-1 text-xs">30% 할인</Badge>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <ul className="space-y-1.5">
-                        {pkg.features.slice(0, 4).map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
-                            <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CardContent className="pt-0 pb-5">
+                      <ul className="space-y-2">
+                        {pkg.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <div className={`w-5 h-5 rounded-full bg-gradient-to-r ${pkg.gradient} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                              <CheckCircle className="h-3 w-3 text-white" />
+                            </div>
                             <span>{feature}</span>
                           </li>
                         ))}
-                        {pkg.features.length > 4 && (
-                          <li className="text-xs text-muted-foreground">
-                            +{pkg.features.length - 4}개 더...
-                          </li>
-                        )}
                       </ul>
                     </CardContent>
                   </Card>
@@ -543,18 +577,34 @@ function IntegratedAnalysisPageContent() {
 
             {/* CTA 버튼 */}
             <div className="text-center">
-              <Button
-                size="lg"
-                onClick={() => setStep('form')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-10 py-6 text-lg shadow-lg"
-              >
-                <Sparkles className="mr-2 h-5 w-5" />
-                분석 시작하기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <p className="text-sm text-muted-foreground mt-3">
-                무료 분석 후 상세 결과 확인 시 포인트가 필요합니다
-              </p>
+              <div className="inline-flex flex-col items-center p-6 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-100 dark:border-purple-800/50">
+                <p className="text-sm text-muted-foreground mb-3">
+                  선택한 패키지: <span className="font-semibold text-foreground">{packages.find(p => p.id === selectedPackage)?.name}</span>
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => setStep('form')}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-12 py-7 text-lg shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
+                >
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  분석 시작하기
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    안전한 결제
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    7일 이내 환불
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    1년 유효기간
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
