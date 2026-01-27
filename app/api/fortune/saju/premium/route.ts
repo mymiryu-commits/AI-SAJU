@@ -44,6 +44,7 @@ import {
   integrateZodiacAnalysis,
 } from '@/lib/services/analysisService';
 import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
+import { isAdminEmail } from '@/lib/auth/permissions';
 import type { UserInput, PremiumContent, AIAnalysis } from '@/types/saju';
 import type { StorytellingAnalysis } from '@/types/cards';
 import type { ZodiacAnalysis } from '@/lib/fortune/zodiac/types';
@@ -77,8 +78,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 포인트 차감 (이미 결제된 경우 제외)
-    if (!skipPayment && productType !== 'basic') {
+    // 관리자 체크 - 관리자는 결제 없이 프리미엄 기능 사용 가능
+    const userIsAdmin = isAdminEmail(user.email || '');
+
+    // 포인트 차감 (관리자 또는 이미 결제된 경우 제외)
+    if (!userIsAdmin && !skipPayment && productType !== 'basic') {
       const pointProductType = PRODUCT_TO_POINT_TYPE[productType] || 'premium';
       const deductResult = await deductPoints(
         user.id,
