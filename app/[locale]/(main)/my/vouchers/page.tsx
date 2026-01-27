@@ -27,12 +27,10 @@ import {
   CheckCircle,
   Sparkles,
   QrCode,
-  Dices,
   Calendar,
   ChevronRight,
   History,
   XCircle,
-  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useSearchParams } from 'next/navigation';
@@ -86,11 +84,6 @@ const serviceTypeConfig: Record<string, { icon: typeof Sparkles; label: string; 
     icon: QrCode,
     label: 'QR코드 생성',
     color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
-  },
-  lotto: {
-    icon: Dices,
-    label: '로또번호 AI추천',
-    color: 'text-green-500 bg-green-100 dark:bg-green-900/30',
   },
 };
 
@@ -425,7 +418,7 @@ function VouchersPageContent() {
         {/* 구매하기 탭 */}
         <TabsContent value="packages" className="space-y-6">
           {/* 서비스 타입별 패키지 그룹 */}
-          {['saju', 'qrcode', 'lotto'].map((serviceType) => {
+          {['saju', 'qrcode'].map((serviceType) => {
             const typePackages = packages.filter((p) => p.service_type === serviceType);
             if (typePackages.length === 0) return null;
 
