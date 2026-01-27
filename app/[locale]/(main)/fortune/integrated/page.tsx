@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { isAdminEmail } from '@/lib/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,8 +132,16 @@ const defaultSlides: SlideImage[] = [
   },
 ];
 
-export default function IntegratedAnalysisPage() {
+function IntegratedAnalysisPageContent() {
   const t = useTranslations('fortune');
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+
+  // 관리자 테스트 모드 체크
+  const isAdminTest = searchParams.get('admin_test') === 'true';
+  const isAdmin = user?.email ? isAdminEmail(user.email) : false;
+  const adminBypass = isAdminTest && isAdmin;
+
   const [step, setStep] = useState<'intro' | 'form' | 'analyzing' | 'result'>('intro');
   const [progress, setProgress] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState<string>('standard');
@@ -483,33 +494,43 @@ export default function IntegratedAnalysisPage() {
 
           {/* Premium Content Preview */}
           <div className="relative mb-6">
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-xl">
-              <Lock className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-bold mb-2">결제 후 전체 분석 확인</h3>
-              <p className="text-muted-foreground text-center mb-4 px-4">
-                상세 분석, 월별 운세, PDF/음성 리포트까지
-              </p>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl font-bold text-primary">
-                  ₩{packages.find(p => p.id === selectedPackage)?.discountedPrice.toLocaleString()}
-                </span>
-                <span className="text-muted-foreground line-through">
-                  ₩{packages.find(p => p.id === selectedPackage)?.price.toLocaleString()}
-                </span>
-              </div>
-              <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500">
-                지금 결제하기
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            {/* 관리자 테스트 모드 배지 */}
+            {adminBypass && (
+              <Badge className="absolute -top-3 right-4 z-20 bg-green-500 text-white">
+                관리자 테스트 모드
+              </Badge>
+            )}
 
-            <div className="blur-sm pointer-events-none space-y-4">
+            {/* 결제 오버레이 - 관리자는 우회 */}
+            {!adminBypass && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-xl">
+                <Lock className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-2">결제 후 전체 분석 확인</h3>
+                <p className="text-muted-foreground text-center mb-4 px-4">
+                  상세 분석, 월별 운세, PDF/음성 리포트까지
+                </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl font-bold text-primary">
+                    ₩{packages.find(p => p.id === selectedPackage)?.discountedPrice.toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground line-through">
+                    ₩{packages.find(p => p.id === selectedPackage)?.price.toLocaleString()}
+                  </span>
+                </div>
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500">
+                  지금 결제하기
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className={`space-y-4 ${!adminBypass ? 'blur-sm pointer-events-none' : ''}`}>
               <Card>
                 <CardHeader>
                   <CardTitle>2025년 상세 운세</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>동양의 사주팔자와 서양의 별자리 분석을 통합한 결과, 2025년은 당신에게...</p>
+                  <p>동양의 사주팔자와 서양의 별자리 분석을 통합한 결과, 2025년은 당신에게 큰 변화와 성장의 기회가 찾아오는 해입니다. 특히 상반기에는 새로운 인연과 기회가 많이 생기며, 하반기에는 그 결실을 맺게 됩니다.</p>
                 </CardContent>
               </Card>
 
@@ -518,7 +539,9 @@ export default function IntegratedAnalysisPage() {
                   <CardTitle>월별 운세 그래프</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-40 bg-muted rounded" />
+                  <div className="h-40 bg-muted rounded flex items-center justify-center text-muted-foreground">
+                    {adminBypass ? '월별 운세 차트 영역' : ''}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -730,5 +753,18 @@ export default function IntegratedAnalysisPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Suspense boundary로 감싸서 useSearchParams 사용 가능하게 함
+export default function IntegratedAnalysisPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+      </div>
+    }>
+      <IntegratedAnalysisPageContent />
+    </Suspense>
   );
 }

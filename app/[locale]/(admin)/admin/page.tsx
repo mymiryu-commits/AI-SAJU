@@ -11,10 +11,19 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 
 const quickLinks = [
+  {
+    title: '사주 분석 테스트',
+    description: '프리미엄 분석 테스트',
+    href: '/fortune/integrated?admin_test=true',
+    icon: Sparkles,
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-100 dark:bg-pink-900/30',
+  },
   {
     title: '가격 설정',
     description: '서비스 가격 관리',
