@@ -43,6 +43,7 @@ import {
 import Image from 'next/image';
 import { SlideImage, FortuneSlideSettings } from '@/types/settings';
 import SajuResultCard from '@/components/fortune/saju/SajuResultCard';
+import PremiumUpgradeModal from '@/components/fortune/saju/PremiumUpgradeModal';
 import type { AnalysisResult, UserInput } from '@/types/saju';
 
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
@@ -163,6 +164,7 @@ function IntegratedAnalysisPageContent() {
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
   const [productLevel, setProductLevel] = useState<ProductLevel>('free');
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -297,63 +299,57 @@ function IntegratedAnalysisPageContent() {
     }
   };
 
-  // 프리미엄 업그레이드
-  const handleUnlockPremium = async () => {
-    if (!analysisResult || !user) {
-      router.push('/login');
+  // 프리미엄 업그레이드 모달 열기
+  const handleUnlockPremium = () => {
+    if (!user) {
+      router.push('/login?redirect=/fortune/integrated');
       return;
     }
+    setShowUpgradeModal(true);
+  };
 
+  // 패키지 선택 후 결제 처리
+  const handleSelectPackage = async (pkgId: string) => {
+    setShowUpgradeModal(false);
+    setSelectedPackage(pkgId);
+
+    // 결제 페이지로 이동 (결제 후 콜백에서 프리미엄 해금)
     try {
-      const userInput: UserInput = {
-        name: formData.name,
-        birthDate: formData.birthDate,
-        birthTime: formData.birthHour && formData.birthHour !== 'unknown'
-          ? `${formData.birthHour}:00`
-          : undefined,
-        gender: formData.gender as 'male' | 'female',
-        calendar: formData.calendar as 'solar' | 'lunar',
-        mbti: formData.mbti || undefined,
-        bloodType: formData.bloodType ? (formData.bloodType as 'A' | 'B' | 'O' | 'AB') : undefined,
-        currentConcern: formData.question ? (formData.question as any) : undefined,
+      const pkgNames: Record<string, string> = {
+        basic: '베이직',
+        standard: '스탠다드',
+        premium: '프리미엄',
+      };
+      const pkgPrices: Record<string, number> = {
+        basic: 4850,
+        standard: 9900,
+        premium: 19800,
       };
 
-      const response = await fetch('/api/fortune/saju/premium', {
+      const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: userInput,
-          productType: selectedPackage === 'premium' ? 'vip' : selectedPackage === 'standard' ? 'deep' : 'basic',
-          analysisId,
+          productId: `saju_${pkgId}`,
+          productName: `사주 분석 ${pkgNames[pkgId]} 패키지`,
+          amount: pkgPrices[pkgId],
+          metadata: {
+            analysisId,
+            returnUrl: `/fortune/integrated?upgrade=${pkgId}`,
+          },
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 402) {
-          // 포인트 부족
-          alert(`포인트가 부족합니다. 현재: ${data.data?.currentPoints || 0}P, 필요: ${data.data?.requiredPoints || 0}P`);
-          router.push('/points');
-          return;
-        }
-        throw new Error(data.error || '프리미엄 업그레이드 실패');
+      if (data.success && data.data?.paymentUrl) {
+        window.location.href = data.data.paymentUrl;
+      } else {
+        alert(data.error || '결제 준비 중 오류가 발생했습니다.');
       }
-
-      // 프리미엄 결과로 업데이트
-      if (data.data) {
-        setAnalysisResult((prev) => prev ? {
-          ...prev,
-          premium: data.data.premium,
-          aiAnalysis: data.data.aiAnalysis,
-        } : null);
-        setIsPremiumUnlocked(true);
-        setProductLevel(selectedPackage === 'premium' ? 'vip' : selectedPackage === 'standard' ? 'deep' : 'basic');
-        setAnalysisId(data.meta?.analysisId || analysisId);
-      }
-    } catch (err) {
-      console.error('Premium upgrade error:', err);
-      alert(err instanceof Error ? err.message : '프리미엄 업그레이드 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('결제 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -618,6 +614,34 @@ function IntegratedAnalysisPageContent() {
             </Alert>
           )}
 
+          {/* 프리미엄 업그레이드 유도 배너 (미해금 시) */}
+          {!isPremiumUnlocked && !adminBypass && (
+            <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200 dark:border-purple-800">
+              <CardContent className="py-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                      <Crown className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">전체 분석 결과 보기</p>
+                      <p className="text-sm text-muted-foreground">
+                        월별 운세, 대운 분석, PDF/음성 리포트까지
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleUnlockPremium}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    프리미엄 해금
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* SajuResultCard 컴포넌트 사용 */}
           <SajuResultCard
             result={analysisResult}
@@ -639,6 +663,14 @@ function IntegratedAnalysisPageContent() {
               </Button>
             </Link>
           </div>
+
+          {/* 프리미엄 업그레이드 모달 */}
+          <PremiumUpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+            onSelectPackage={handleSelectPackage}
+            currentAnalysisId={analysisId || undefined}
+          />
         </div>
       </div>
     );
