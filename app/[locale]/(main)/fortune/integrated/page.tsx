@@ -39,12 +39,52 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  Save,
+  Users,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { SlideImage, FortuneSlideSettings } from '@/types/settings';
 import SajuResultCard from '@/components/fortune/saju/SajuResultCard';
 import PremiumUpgradeModal from '@/components/fortune/saju/PremiumUpgradeModal';
 import type { AnalysisResult, UserInput } from '@/types/saju';
+
+// 저장된 프로필 타입
+interface SavedProfile {
+  id: string;
+  name: string;
+  birth_date: string;
+  birth_time?: string;
+  gender: string;
+  calendar?: string;
+  blood_type?: string;
+  mbti?: string;
+  nickname?: string;
+  is_favorite?: boolean;
+  created_at: string;
+}
+
+// 별자리 계산 함수
+function calculateZodiacSign(birthDate: string): string {
+  if (!birthDate) return '';
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return '양자리';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return '황소자리';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) return '쌍둥이자리';
+  if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) return '게자리';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return '사자자리';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return '처녀자리';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return '천칭자리';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return '전갈자리';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return '사수자리';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return '염소자리';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return '물병자리';
+  if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) return '물고기자리';
+  return '';
+}
 
 const birthHours = Array.from({ length: 24 }, (_, i) => ({
   value: i.toString().padStart(2, '0'),
@@ -184,6 +224,131 @@ function IntegratedAnalysisPageContent() {
     concerns: [] as string[],
     question: '',
   });
+
+  // 프로필 관련 상태
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 프로필 목록 불러오기
+  const loadProfiles = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingProfiles(true);
+    try {
+      const response = await fetch('/api/saju-profiles', {
+        headers: { 'x-user-id': user.id }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedProfiles(data.profiles || []);
+      }
+    } catch (error) {
+      console.error('프로필 로드 오류:', error);
+    } finally {
+      setLoadingProfiles(false);
+    }
+  }, [user?.id]);
+
+  // 로그인 시 프로필 목록 불러오기
+  useEffect(() => {
+    if (user?.id) {
+      loadProfiles();
+    }
+  }, [user?.id, loadProfiles]);
+
+  // 생년월일 변경 시 별자리 자동 계산
+  useEffect(() => {
+    if (formData.birthDate) {
+      const zodiac = calculateZodiacSign(formData.birthDate);
+      if (zodiac && zodiac !== formData.zodiac) {
+        setFormData(prev => ({ ...prev, zodiac }));
+      }
+    }
+  }, [formData.birthDate, formData.zodiac]);
+
+  // 프로필 저장
+  const handleSaveProfile = async () => {
+    if (!user?.id) {
+      setProfileMessage({ type: 'error', text: '로그인이 필요합니다.' });
+      return;
+    }
+    if (!formData.name || !formData.birthDate || !formData.gender) {
+      setProfileMessage({ type: 'error', text: '이름, 생년월일, 성별을 입력해주세요.' });
+      setTimeout(() => setProfileMessage(null), 3000);
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      const response = await fetch('/api/saju-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({
+          profile: {
+            name: formData.name,
+            birth_date: formData.birthDate,
+            birth_time: formData.birthHour ? `${formData.birthHour}:00` : null,
+            gender: formData.gender,
+            calendar: formData.calendar,
+            blood_type: formData.bloodType || null,
+            mbti: formData.mbti || null,
+          }
+        })
+      });
+
+      if (response.ok) {
+        setProfileMessage({ type: 'success', text: '프로필이 저장되었습니다.' });
+        loadProfiles();
+      } else {
+        const data = await response.json();
+        setProfileMessage({ type: 'error', text: data.error || '저장에 실패했습니다.' });
+      }
+    } catch (error) {
+      setProfileMessage({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
+    } finally {
+      setSavingProfile(false);
+      setTimeout(() => setProfileMessage(null), 3000);
+    }
+  };
+
+  // 프로필 불러오기
+  const handleLoadProfile = (profile: SavedProfile) => {
+    setFormData({
+      name: profile.name,
+      birthDate: profile.birth_date,
+      birthHour: profile.birth_time ? profile.birth_time.split(':')[0] : '',
+      gender: profile.gender,
+      calendar: profile.calendar || 'solar',
+      mbti: profile.mbti || '',
+      bloodType: profile.blood_type || '',
+      zodiac: calculateZodiacSign(profile.birth_date),
+      concerns: [],
+      question: '',
+    });
+    setShowProfileSelector(false);
+    setProfileMessage({ type: 'success', text: `"${profile.nickname || profile.name}" 정보를 불러왔습니다.` });
+    setTimeout(() => setProfileMessage(null), 3000);
+  };
+
+  // 프로필 삭제
+  const handleDeleteProfile = async (profileId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user?.id || !confirm('이 프로필을 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`/api/saju-profiles?profileId=${profileId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': user.id }
+      });
+      if (response.ok) {
+        setSavedProfiles(prev => prev.filter(p => p.id !== profileId));
+      }
+    } catch (error) {
+      console.error('프로필 삭제 오류:', error);
+    }
+  };
 
   // 슬라이드 설정 가져오기
   useEffect(() => {
@@ -754,12 +919,85 @@ function IntegratedAnalysisPageContent() {
           </p>
         </div>
 
-        {/* 에러 메시지 */}
+        {/* 에러/성공 메시지 */}
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+        {profileMessage && (
+          <Alert className={`mb-6 ${profileMessage.type === 'success' ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'}`}>
+            <CheckCircle className={`h-4 w-4 ${profileMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`} />
+            <AlertDescription className={profileMessage.type === 'success' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
+              {profileMessage.text}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* 저장된 프로필 섹션 */}
+        {user && (
+          <Card className="mb-6 border-dashed">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>저장된 프로필</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProfileSelector(!showProfileSelector)}
+                >
+                  {showProfileSelector ? '닫기' : `불러오기 (${savedProfiles.length})`}
+                </Button>
+              </div>
+
+              {showProfileSelector && (
+                <div className="mt-4 space-y-2">
+                  {loadingProfiles ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                    </div>
+                  ) : savedProfiles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      저장된 프로필이 없습니다.
+                    </p>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {savedProfiles.map(profile => (
+                        <div
+                          key={profile.id}
+                          onClick={() => handleLoadProfile(profile)}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {profile.nickname || profile.name}
+                              {profile.nickname && <span className="ml-2 text-xs text-muted-foreground">({profile.name})</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile.birth_date} · {profile.gender === 'male' ? '남' : '여'}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDeleteProfile(profile.id, e)}
+                            className="text-muted-foreground hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Form */}
@@ -787,8 +1025,12 @@ function IntegratedAnalysisPageContent() {
                     type="date"
                     value={formData.birthDate}
                     onChange={(e) => handleChange('birthDate', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1920-01-01"
                     required
+                    className="appearance-none"
                   />
+                  <p className="text-xs text-muted-foreground">달력을 클릭해 선택하세요</p>
                 </div>
                 <div className="space-y-2">
                   <Label>양력/음력</Label>
@@ -884,22 +1126,12 @@ function IntegratedAnalysisPageContent() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>별자리</Label>
-                  <Select
-                    value={formData.zodiac}
-                    onValueChange={(value) => handleChange('zodiac', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {zodiacSigns.map((sign) => (
-                        <SelectItem key={sign} value={sign}>
-                          {sign}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>별자리 {formData.zodiac && <span className="text-xs text-green-500">(자동계산)</span>}</Label>
+                  <Input
+                    value={formData.zodiac || '생년월일 입력 시 자동 계산'}
+                    disabled
+                    className="bg-muted/50"
+                  />
                 </div>
               </div>
 
@@ -934,6 +1166,26 @@ function IntegratedAnalysisPageContent() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
+
+          {/* 프로필 저장 버튼 */}
+          {user && formData.name && formData.birthDate && formData.gender && (
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="w-full"
+              >
+                {savingProfile ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                이 정보를 프로필로 저장
+              </Button>
+            </div>
+          )}
         </form>
       </div>
     </div>
