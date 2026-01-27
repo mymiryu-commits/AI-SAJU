@@ -215,11 +215,16 @@ export function generateDailyZodiacFortune(sign: ChineseZodiacSign, date: Date =
     return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
   };
 
-  const overallScore = random(55, 95, 1);
+  // 개별 점수 먼저 계산
   const wealthScore = random(50, 98, 2);
   const loveScore = random(45, 95, 3);
   const careerScore = random(55, 95, 4);
   const healthScore = random(50, 92, 5);
+
+  // 종합 점수 = 개별 점수의 가중 평균 (약간의 변동 포함)
+  const avgScore = Math.round((wealthScore + loveScore + careerScore + healthScore) / 4);
+  const variance = random(-3, 3, 1); // 약간의 변동
+  const overallScore = Math.min(95, Math.max(55, avgScore + variance));
 
   const dailyAdvices = [
     '오늘은 새로운 기회가 찾아올 수 있는 날입니다. 열린 마음으로 주변을 살펴보세요.',
