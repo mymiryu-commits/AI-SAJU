@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,32 @@ export default function PricingPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [dbPackages, setDbPackages] = useState<Record<string, string>>({});
+
+  // DB에서 번들 패키지 ID 가져오기
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await fetch('/api/voucher/packages?service_type=bundle');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.packages) {
+            const pkgMap: Record<string, string> = {};
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data.packages.forEach((pkg: any) => {
+              if (pkg.plan_type) {
+                pkgMap[pkg.plan_type] = pkg.id;
+              }
+            });
+            setDbPackages(pkgMap);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch packages:', error);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -139,22 +165,46 @@ export default function PricingPage() {
     setPurchasingId(packageId);
 
     try {
-      // 결제 API 호출
-      const response = await fetch('/api/payment/create', {
+      const pkg = packages.find(p => p.id === packageId);
+      const dbPackageId = dbPackages[packageId];
+
+      if (!dbPackageId) {
+        alert('패키지 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        setPurchasingId(null);
+        return;
+      }
+
+      // 결제권 구매 API 호출
+      const response = await fetch('/api/voucher/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId: `saju_${packageId}`,
-          productName: `사주 분석 ${packages.find(p => p.id === packageId)?.name} 패키지`,
-          amount: packages.find(p => p.id === packageId)?.price,
+          package_id: dbPackageId,
         }),
       });
 
       const data = await response.json();
 
-      if (data.success && data.data?.paymentUrl) {
-        // 토스 페이먼츠 결제 페이지로 이동
-        window.location.href = data.data.paymentUrl;
+      if (data.success && data.toss) {
+        // 토스페이먼츠 결제 페이지로 이동
+        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+        if (tossClientKey && typeof window !== 'undefined') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const tossPayments = (window as any).TossPayments?.(tossClientKey);
+          if (tossPayments) {
+            await tossPayments.requestPayment('카드', {
+              amount: data.toss.amount,
+              orderId: data.toss.orderId,
+              orderName: data.toss.orderName,
+              customerName: data.toss.customerName,
+              successUrl: data.toss.successUrl,
+              failUrl: data.toss.failUrl,
+            });
+          } else {
+            // SDK 없으면 체크아웃 페이지로 리다이렉트
+            window.location.href = `/payment/checkout?orderId=${data.orderId}&amount=${data.toss.amount}&orderName=${encodeURIComponent(data.toss.orderName)}`;
+          }
+        }
       } else {
         alert(data.error || '결제 준비 중 오류가 발생했습니다.');
       }
