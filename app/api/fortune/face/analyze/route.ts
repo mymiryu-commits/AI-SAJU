@@ -3,14 +3,15 @@
  * POST /api/fortune/face/analyze
  *
  * - 결제권 확인 및 차감
- * - 관상 분석 실행
+ * - Vision API를 통한 실제 얼굴 분석
+ * - 분석 실패 시 결제권 자동 복구
  * - TTS 음성 파일 생성 (옵션)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/auth/permissions';
-import { analyzeFace } from '@/lib/fortune/face/faceAnalysis';
+import { analyzeFace, analyzeFaceWithVision } from '@/lib/fortune/face/faceAnalysis';
 import { generateTTSScript } from '@/lib/fortune/face/faceStorytelling';
 
 export const maxDuration = 60;
@@ -34,6 +35,10 @@ export async function POST(request: NextRequest) {
     // 요청 데이터
     const body = await request.json();
     const { imageData, generateVoice = false } = body;
+
+    // 결제권 사용 여부 추적 (롤백용)
+    let voucherUsed = false;
+    let usedVoucherId: string | null = null;
 
     // 관리자가 아닌 경우 결제권 확인 및 사용
     if (!isAdmin) {
@@ -68,6 +73,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 결제권 사용 전에 ID 저장 (롤백용)
+      usedVoucherId = vouchers[0].id;
+
       // 결제권 사용
       const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
         p_user_id: user.id,
@@ -84,10 +92,37 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      voucherUsed = true;
     }
 
-    // 관상 분석 실행
-    const analysisResult = analyzeFace(imageData);
+    // 관상 분석 실행 (Vision API 사용)
+    let analysisResult;
+    try {
+      // imageData가 있으면 Vision API 사용, 없으면 폴백
+      if (imageData && imageData.startsWith('data:image')) {
+        analysisResult = await analyzeFaceWithVision(imageData);
+      } else {
+        analysisResult = analyzeFace(imageData);
+      }
+    } catch (analysisError) {
+      console.error('Face analysis error:', analysisError);
+
+      // 분석 실패 시 결제권 복구
+      if (voucherUsed && usedVoucherId) {
+        try {
+          await rollbackVoucher(supabase, user.id, usedVoucherId, 'face');
+          console.log('Voucher rolled back successfully due to analysis failure');
+        } catch (rollbackError) {
+          console.error('Voucher rollback failed:', rollbackError);
+        }
+      }
+
+      return NextResponse.json(
+        { success: false, error: '얼굴 분석 중 오류가 발생했습니다. 결제권이 복구되었습니다.', errorCode: 'ANALYSIS_FAILED' },
+        { status: 500 }
+      );
+    }
 
     // TTS 스크립트 생성
     const ttsScript = generateTTSScript(
@@ -241,5 +276,65 @@ export async function GET(request: NextRequest) {
       { success: false, error: '조회 중 오류가 발생했습니다.' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * 결제권 롤백 함수
+ * 분석 실패 시 차감된 결제권을 복구
+ */
+async function rollbackVoucher(
+  supabase: any,
+  userId: string,
+  voucherId: string,
+  serviceType: string
+): Promise<boolean> {
+  try {
+    // 해당 결제권의 remaining_quantity를 1 증가
+    const { error: rollbackError } = await supabase
+      .from('user_vouchers')
+      .update({
+        remaining_quantity: supabase.raw('remaining_quantity + 1'),
+      })
+      .eq('id', voucherId)
+      .eq('user_id', userId);
+
+    if (rollbackError) {
+      // raw SQL이 안 되면 직접 조회 후 업데이트
+      const { data: voucher } = await supabase
+        .from('user_vouchers')
+        .select('remaining_quantity')
+        .eq('id', voucherId)
+        .single();
+
+      if (voucher) {
+        await supabase
+          .from('user_vouchers')
+          .update({ remaining_quantity: voucher.remaining_quantity + 1 })
+          .eq('id', voucherId);
+      }
+    }
+
+    // 사용 기록 삭제 또는 취소 표시 (최근 기록)
+    const { data: usageLog } = await supabase
+      .from('voucher_usage_logs')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('service_type', serviceType)
+      .order('used_at', { ascending: false })
+      .limit(1);
+
+    if (usageLog && usageLog.length > 0) {
+      await supabase
+        .from('voucher_usage_logs')
+        .delete()
+        .eq('id', usageLog[0].id);
+    }
+
+    console.log(`Voucher ${voucherId} rolled back for user ${userId}`);
+    return true;
+  } catch (error) {
+    console.error('Voucher rollback error:', error);
+    return false;
   }
 }

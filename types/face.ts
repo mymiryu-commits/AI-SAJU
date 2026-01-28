@@ -96,6 +96,7 @@ export interface FacePartAnalysis {
   isImprovement: boolean;           // 보완점 여부 (70점 미만)
   storytelling: string;             // 스토리텔링 설명
   examples?: string[];              // 예시 (유명인 등)
+  confidence?: number;              // Vision API 신뢰도 (0-1)
 }
 
 // ===== 운세 예측 =====
@@ -189,6 +190,12 @@ export interface FaceAnalysisResult {
     url: string;
     duration: number;
     generatedAt: string;
+  };
+
+  // 분석 메타데이터
+  metadata?: {
+    useAI: boolean;                 // Vision API 사용 여부
+    overallDescription?: string;    // Vision API 전체 인상 설명
   };
 }
 
