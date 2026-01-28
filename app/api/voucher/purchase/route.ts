@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (paymentError) {
-      console.error('Payment record creation error:', paymentError);
+      console.error('Payment record creation error:', paymentError.message, paymentError.details, paymentError.hint, paymentError.code);
       return NextResponse.json(
-        { error: '결제 생성에 실패했습니다.' },
+        { error: '결제 생성에 실패했습니다.', detail: paymentError.message },
         { status: 500 }
       );
     }
