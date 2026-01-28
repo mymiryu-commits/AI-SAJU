@@ -1079,6 +1079,90 @@ export default function SajuResultCard({
                     />
                   </div>
                 </div>
+              ) : isPremiumUnlocked && result.aiAnalysis ? (
+                <div className="space-y-6">
+                  {/* 결제 완료 - AI 분석 결과 표시 (premium 데이터가 없는 경우) */}
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-500/30">
+                      <Crown className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                      프리미엄 분석 완료
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      AI가 분석한 심층 결과를 확인하세요
+                    </p>
+                  </div>
+
+                  {result.aiAnalysis.dayMasterAnalysis && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-500" />
+                        일간 심층 분석
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.aiAnalysis.dayMasterAnalysis}</p>
+                    </div>
+                  )}
+
+                  {result.aiAnalysis.careerGuidance && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-blue-500" />
+                        직업/진로 가이드
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.aiAnalysis.careerGuidance}</p>
+                    </div>
+                  )}
+
+                  {result.aiAnalysis.wealthStrategy && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500" />
+                        재물/투자 전략
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.aiAnalysis.wealthStrategy}</p>
+                    </div>
+                  )}
+
+                  {result.aiAnalysis.relationshipAnalysis && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-pink-500" />
+                        대인관계 분석
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.aiAnalysis.relationshipAnalysis}</p>
+                    </div>
+                  )}
+
+                  {result.aiAnalysis.actionPlan && (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        실행 계획
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.aiAnalysis.actionPlan}</p>
+                    </div>
+                  )}
+
+                  {/* 다운로드 버튼 */}
+                  <div className="border-t pt-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                        분석 결과 다운로드
+                      </h4>
+                    </div>
+                    <DownloadButtons
+                      user={result.user}
+                      saju={saju}
+                      oheng={oheng}
+                      result={result}
+                      analysisId={analysisId}
+                      isPremium={true}
+                      onUpgradeClick={onUnlockPremium}
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-6">
                   {/* 기회 기반 헤드라인 */}

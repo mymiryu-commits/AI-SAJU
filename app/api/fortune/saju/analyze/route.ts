@@ -33,7 +33,9 @@ import type { UserInput, AnalysisResult, PersonalityAnalysis, AIAnalysis } from 
 
 export async function POST(request: NextRequest) {
   try {
-    const input: UserInput = await request.json();
+    const body = await request.json();
+    const { useVoucher, ...inputFields } = body;
+    const input: UserInput = inputFields;
 
     // 필수 필드 검증
     if (!input.name || !input.birthDate || !input.gender) {
@@ -227,6 +229,58 @@ export async function POST(request: NextRequest) {
           // 관리자: 무제한 무료
           freeAnalysisStatus = { canUse: true, remaining: 999, limit: 999 };
           isBlinded = false;
+        } else if (useVoucher) {
+          // useVoucher 플래그: 결제권 우선 사용 (통합 페이지 등에서 사용)
+          // 무료 분석을 건너뛰고 바로 결제권 사용
+          freeAnalysisStatus = await canUseFreeAnalysis(userId);
+
+          if (voucherInfo.hasVoucher) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+                p_user_id: user.id,
+                p_service_type: 'saju',
+                p_quantity: 1,
+                p_related_id: null,
+                p_related_type: 'saju_analysis',
+              });
+
+              console.log('use_voucher result (forced):', { useResult, useError });
+
+              if (useError) {
+                console.error('use_voucher RPC error:', useError);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              if (useResult === false || (useResult && useResult.success === false)) {
+                console.warn('use_voucher returned failure:', useResult);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              usedVoucher = true;
+              isBlinded = false;
+              voucherInfo.remaining = useResult?.remaining ?? (voucherInfo.remaining - 1);
+            } catch (voucherError) {
+              console.error('Voucher use error:', voucherError);
+              isBlinded = true;
+            }
+          } else {
+            // useVoucher 요청했지만 결제권 없음
+            return NextResponse.json({
+              success: false,
+              error: '결제권이 없습니다. 패키지를 구매해주세요.',
+              errorCode: 'NO_VOUCHER',
+              data: { freeAnalysisStatus, voucherInfo }
+            }, { status: 402 });
+          }
         } else {
           // 일반 사용자: 무료 분석 횟수 확인
           freeAnalysisStatus = await canUseFreeAnalysis(userId);
@@ -249,7 +303,6 @@ export async function POST(request: NextRequest) {
 
               console.log('use_voucher result:', { useResult, useError });
 
-              // RPC 오류 또는 실패 응답 처리
               if (useError) {
                 console.error('use_voucher RPC error:', useError);
                 return NextResponse.json({
@@ -259,7 +312,6 @@ export async function POST(request: NextRequest) {
                 }, { status: 500 });
               }
 
-              // useResult가 false이거나 success가 false인 경우
               if (useResult === false || (useResult && useResult.success === false)) {
                 console.warn('use_voucher returned failure:', useResult);
                 return NextResponse.json({
@@ -270,11 +322,10 @@ export async function POST(request: NextRequest) {
               }
 
               usedVoucher = true;
-              isBlinded = false; // 결제권 사용 시 블라인드 해제
+              isBlinded = false;
               voucherInfo.remaining = useResult?.remaining ?? (voucherInfo.remaining - 1);
             } catch (voucherError) {
               console.error('Voucher use error:', voucherError);
-              // 결제권 사용 실패해도 무료 분석으로 진행
               isBlinded = true;
             }
           } else {
@@ -283,10 +334,7 @@ export async function POST(request: NextRequest) {
               success: false,
               error: '무료 분석 횟수를 모두 사용했습니다. 결제권을 구매해주세요.',
               errorCode: 'NO_VOUCHER',
-              data: {
-                freeAnalysisStatus,
-                voucherInfo,
-              }
+              data: { freeAnalysisStatus, voucherInfo }
             }, { status: 402 });
           }
         }
