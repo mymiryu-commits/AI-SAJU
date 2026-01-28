@@ -34,11 +34,15 @@ export async function GET() {
       .eq('id', authUser.id)
       .single();
 
-    // 최근 분석 결과 조회 (최대 5개)
+    // 최근 분석 결과 조회 (최대 5개, 30일 이내)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const { data: recentAnalyses, error: analysesError } = await (supabase as any)
       .from('fortune_analyses')
-      .select('id, type, subtype, created_at, scores, result_summary')
+      .select('id, type, subtype, created_at, scores, result_summary, input_data, is_premium, is_blinded, expires_at')
       .eq('user_id', authUser.id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -122,13 +126,25 @@ export async function GET() {
     } : null;
 
     // 최근 분석 결과 변환
-    const analyses = (recentAnalyses || []).map((analysis: any) => ({
-      id: analysis.id,
-      type: analysis.type,
-      subtype: analysis.subtype,
-      date: analysis.created_at,
-      score: analysis.scores?.overall || analysis.result_summary?.score || 0,
-    }));
+    const now = new Date();
+    const analyses = (recentAnalyses || []).map((analysis: any) => {
+      const createdAt = new Date(analysis.created_at);
+      const expiresAt = analysis.expires_at ? new Date(analysis.expires_at) : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const daysRemaining = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+      return {
+        id: analysis.id,
+        type: analysis.type,
+        subtype: analysis.subtype,
+        date: analysis.created_at,
+        score: analysis.scores?.overall || analysis.result_summary?.scores?.overall || 0,
+        name: analysis.input_data?.name || '분석 결과',
+        isPremium: analysis.is_premium || false,
+        isBlinded: analysis.is_blinded || false,
+        daysRemaining,
+        expiresAt: expiresAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({
       success: true,

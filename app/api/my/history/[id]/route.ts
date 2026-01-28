@@ -49,10 +49,10 @@ export async function GET(
       );
     }
 
-    // 45일 만료 체크
-    const createdAt = new Date(analysis.created_at);
-    const expiresAt = new Date(createdAt);
-    expiresAt.setDate(expiresAt.getDate() + 45);
+    // 30일 보관 기간 체크
+    const expiresAt = analysis.expires_at
+      ? new Date(analysis.expires_at)
+      : new Date(new Date(analysis.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
     const isExpired = new Date() > expiresAt;
     const daysRemaining = Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 

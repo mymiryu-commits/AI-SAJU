@@ -209,9 +209,9 @@ export async function saveAnalysisResult(
       zodiacData: options.zodiacData,
     };
 
-    // 45일 만료일 계산
+    // 30일 보관 (대시보드 표시 기간)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 45);
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     // DB 스키마에 맞는 insert 데이터
     const insertData: Record<string, unknown> = {
