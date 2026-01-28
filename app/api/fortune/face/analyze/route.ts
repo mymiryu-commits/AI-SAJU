@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 관상 분석 실행
-    const analysisResult = await analyzeFace(imageData);
+    const analysisResult = analyzeFace(imageData);
 
     // TTS 스크립트 생성
     const ttsScript = generateTTSScript(
@@ -97,24 +97,28 @@ export async function POST(request: NextRequest) {
       analysisResult.highlights.strengths
     );
 
-    // 분석 결과 저장
-    const { error: saveError } = await (supabase as any)
-      .from('face_analyses')
-      .insert({
-        user_id: user.id,
-        analysis_id: analysisResult.analysisId,
-        overall_score: analysisResult.scores.overallScore,
-        part_scores: analysisResult.scores.partScores,
-        fortune_scores: analysisResult.scores.fortuneScores,
-        personality: analysisResult.personality,
-        advice: analysisResult.advice,
-        tts_script: ttsScript,
-        created_at: new Date().toISOString(),
-      });
+    // 분석 결과 저장 (테이블이 없을 수 있으므로 try-catch)
+    try {
+      const { error: saveError } = await (supabase as any)
+        .from('face_analyses')
+        .insert({
+          user_id: user.id,
+          analysis_id: analysisResult.analysisId,
+          overall_score: analysisResult.scores.overallScore,
+          part_scores: analysisResult.scores.partScores,
+          fortune_scores: analysisResult.scores.fortuneScores,
+          personality: analysisResult.personality,
+          advice: analysisResult.advice,
+          tts_script: ttsScript,
+          created_at: new Date().toISOString(),
+        });
 
-    if (saveError) {
-      // 저장 실패해도 분석 결과는 반환
-      console.warn('Face analysis save warning:', saveError);
+      if (saveError) {
+        console.warn('Face analysis save warning:', saveError);
+      }
+    } catch (dbError) {
+      // DB 저장 실패해도 분석 결과는 반환
+      console.warn('Face analysis DB save skipped:', dbError);
     }
 
     // 음성 파일 생성 (옵션)
