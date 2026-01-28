@@ -211,6 +211,7 @@ function IntegratedAnalysisPageContent() {
   const [productLevel, setProductLevel] = useState<ProductLevel>('free');
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -510,12 +511,34 @@ function IntegratedAnalysisPageContent() {
     await startPaymentFlow(pkgId);
   };
 
+  // TossPayments SDK 동적 로드
+  const loadTossPaymentsSDK = (): Promise<(clientKey: string) => { requestPayment: (method: string, params: Record<string, unknown>) => Promise<void> }> => {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).TossPayments) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        resolve((window as any).TossPayments);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://js.tosspayments.com/v1/payment';
+      script.onload = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        resolve((window as any).TossPayments);
+      };
+      script.onerror = () => reject(new Error('결제 모듈 로드 실패'));
+      document.head.appendChild(script);
+    });
+  };
+
   // 분석 시작 전 결제 확인
   const handleStartAnalysis = async () => {
     if (!user) {
       router.push('/login?redirect=/fortune/integrated');
       return;
     }
+
+    setPaymentLoading(true);
 
     // 결제권 확인
     try {
@@ -524,7 +547,6 @@ function IntegratedAnalysisPageContent() {
 
       if (data.hasVoucher) {
         // 결제권 있음 → 바로 폼으로 이동
-        // 선택한 패키지 레벨 저장
         const pkgLevels: Record<string, ProductLevel> = {
           basic: 'basic',
           standard: 'deep',
@@ -532,13 +554,14 @@ function IntegratedAnalysisPageContent() {
         };
         setProductLevel(pkgLevels[selectedPackage] || 'basic');
         setIsPremiumUnlocked(true);
+        setPaymentLoading(false);
         setStep('form');
       } else {
         // 결제권 없음 → 결제 진행
         await startPaymentFlow(selectedPackage);
       }
-    } catch (error) {
-      console.error('Voucher check error:', error);
+    } catch (err) {
+      console.error('Voucher check error:', err);
       // 확인 실패 시 결제 화면으로
       await startPaymentFlow(selectedPackage);
     }
@@ -547,6 +570,7 @@ function IntegratedAnalysisPageContent() {
   // 결제 플로우 시작
   const startPaymentFlow = async (pkgId: string) => {
     setSelectedPackage(pkgId);
+    setPaymentLoading(true);
 
     try {
       // 번들 패키지 ID 가져오기
@@ -557,6 +581,7 @@ function IntegratedAnalysisPageContent() {
 
       if (!dbPackage) {
         alert('패키지 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+        setPaymentLoading(false);
         return;
       }
 
@@ -572,32 +597,38 @@ function IntegratedAnalysisPageContent() {
       const data = await response.json();
 
       if (data.success && data.toss) {
-        // 토스페이먼츠 결제
+        // 토스페이먼츠 SDK 로드 및 결제
         const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
-        if (tossClientKey && typeof window !== 'undefined') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tossPayments = (window as any).TossPayments?.(tossClientKey);
-          if (tossPayments) {
-            await tossPayments.requestPayment('카드', {
-              amount: data.toss.amount,
-              orderId: data.toss.orderId,
-              orderName: data.toss.orderName,
-              customerName: data.toss.customerName,
-              // 결제 성공 시 다시 이 페이지로 돌아오도록 설정
-              successUrl: `${window.location.origin}/api/voucher/callback/success?redirect=/fortune/integrated`,
-              failUrl: `${window.location.origin}/api/voucher/callback/fail?redirect=/fortune/integrated`,
-            });
-          } else {
-            // SDK 없으면 체크아웃 페이지로 이동
-            window.location.href = `/payment/checkout?orderId=${data.orderId}&amount=${data.toss.amount}&orderName=${encodeURIComponent(data.toss.orderName)}&redirect=/fortune/integrated`;
-          }
+        if (!tossClientKey) {
+          alert('결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.');
+          setPaymentLoading(false);
+          return;
+        }
+
+        try {
+          const TossPayments = await loadTossPaymentsSDK();
+          const tossPayments = TossPayments(tossClientKey);
+          await tossPayments.requestPayment('카드', {
+            amount: data.toss.amount,
+            orderId: data.toss.orderId,
+            orderName: data.toss.orderName,
+            customerName: data.toss.customerName,
+            successUrl: `${window.location.origin}/api/voucher/callback/success?redirect=/fortune/integrated`,
+            failUrl: `${window.location.origin}/api/voucher/callback/fail?redirect=/fortune/integrated`,
+          });
+        } catch (sdkError) {
+          console.error('TossPayments SDK error:', sdkError);
+          alert('결제 모듈 로드에 실패했습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+          setPaymentLoading(false);
         }
       } else {
         alert(data.error || '결제 준비 중 오류가 발생했습니다.');
+        setPaymentLoading(false);
       }
-    } catch (error) {
-      console.error('Payment error:', error);
+    } catch (err) {
+      console.error('Payment error:', err);
       alert('결제 처리 중 오류가 발생했습니다.');
+      setPaymentLoading(false);
     }
   };
 
@@ -820,11 +851,21 @@ function IntegratedAnalysisPageContent() {
                 <Button
                   size="lg"
                   onClick={handleStartAnalysis}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-12 py-7 text-lg shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
+                  disabled={paymentLoading}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-12 py-7 text-lg shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 disabled:opacity-70"
                 >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  분석 시작하기
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  {paymentLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      결제 준비 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-5 w-5" />
+                      분석 시작하기
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
                 <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
