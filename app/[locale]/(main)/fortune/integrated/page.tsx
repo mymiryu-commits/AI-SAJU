@@ -424,11 +424,14 @@ function IntegratedAnalysisPageContent() {
         currentConcern: formData.question ? (formData.question as any) : undefined,
       };
 
-      // 분석 API 호출
+      // 분석 API 호출 (결제권 사용 강제 - 통합 페이지는 무료분석 없음)
       const response = await fetch('/api/fortune/saju/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userInput),
+        body: JSON.stringify({
+          ...userInput,
+          useVoucher: true,
+        }),
       });
 
       const data = await response.json();
@@ -464,8 +467,18 @@ function IntegratedAnalysisPageContent() {
       if (result) {
         setAnalysisResult(result);
         setAnalysisId(data.meta?.analysisId || null);
-        setIsPremiumUnlocked(!data.data?.isBlinded || apiIsAdmin);
-        setProductLevel(apiIsAdmin ? 'vip' : (data.data?.isBlinded ? 'free' : 'basic'));
+
+        // 통합 페이지는 결제 후 분석이므로, 선택한 패키지에 맞는 레벨 설정
+        const pkgLevels: Record<string, ProductLevel> = {
+          basic: 'basic',
+          standard: 'deep',
+          premium: 'premium',
+        };
+        const resolvedLevel = apiIsAdmin ? 'vip' : (pkgLevels[selectedPackage] || 'basic');
+        const resolvedUnlocked = !data.data?.isBlinded || apiIsAdmin || data.meta?.usedVoucher;
+
+        setIsPremiumUnlocked(resolvedUnlocked);
+        setProductLevel(resolvedLevel);
 
         // 잠시 후 결과 화면으로 전환
         setTimeout(() => {
@@ -491,42 +504,94 @@ function IntegratedAnalysisPageContent() {
     setShowUpgradeModal(true);
   };
 
-  // 패키지 선택 후 결제 처리
+  // 패키지 선택 후 결제 처리 (업그레이드 모달에서 호출)
   const handleSelectPackage = async (pkgId: string) => {
     setShowUpgradeModal(false);
+    await startPaymentFlow(pkgId);
+  };
+
+  // 분석 시작 전 결제 확인
+  const handleStartAnalysis = async () => {
+    if (!user) {
+      router.push('/login?redirect=/fortune/integrated');
+      return;
+    }
+
+    // 결제권 확인
+    try {
+      const response = await fetch('/api/voucher/check?service_type=saju');
+      const data = await response.json();
+
+      if (data.hasVoucher) {
+        // 결제권 있음 → 바로 폼으로 이동
+        // 선택한 패키지 레벨 저장
+        const pkgLevels: Record<string, ProductLevel> = {
+          basic: 'basic',
+          standard: 'deep',
+          premium: 'premium',
+        };
+        setProductLevel(pkgLevels[selectedPackage] || 'basic');
+        setIsPremiumUnlocked(true);
+        setStep('form');
+      } else {
+        // 결제권 없음 → 결제 진행
+        await startPaymentFlow(selectedPackage);
+      }
+    } catch (error) {
+      console.error('Voucher check error:', error);
+      // 확인 실패 시 결제 화면으로
+      await startPaymentFlow(selectedPackage);
+    }
+  };
+
+  // 결제 플로우 시작
+  const startPaymentFlow = async (pkgId: string) => {
     setSelectedPackage(pkgId);
 
-    // 결제 페이지로 이동 (결제 후 콜백에서 프리미엄 해금)
     try {
-      const pkgNames: Record<string, string> = {
-        basic: '베이직',
-        standard: '스탠다드',
-        premium: '프리미엄',
-      };
-      const pkgPrices: Record<string, number> = {
-        basic: 4900,
-        standard: 9800,
-        premium: 19600,
-      };
+      // 번들 패키지 ID 가져오기
+      const pkgResponse = await fetch('/api/voucher/packages?service_type=bundle');
+      const pkgData = await pkgResponse.json();
 
-      const response = await fetch('/api/payment/create', {
+      const dbPackage = pkgData.packages?.find((p: { plan_type: string }) => p.plan_type === pkgId);
+
+      if (!dbPackage) {
+        alert('패키지 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      // 결제권 구매 API 호출
+      const response = await fetch('/api/voucher/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId: `saju_${pkgId}`,
-          productName: `사주 분석 ${pkgNames[pkgId]} 패키지`,
-          amount: pkgPrices[pkgId],
-          metadata: {
-            analysisId,
-            returnUrl: `/fortune/integrated?upgrade=${pkgId}`,
-          },
+          package_id: dbPackage.id,
         }),
       });
 
       const data = await response.json();
 
-      if (data.success && data.data?.paymentUrl) {
-        window.location.href = data.data.paymentUrl;
+      if (data.success && data.toss) {
+        // 토스페이먼츠 결제
+        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+        if (tossClientKey && typeof window !== 'undefined') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const tossPayments = (window as any).TossPayments?.(tossClientKey);
+          if (tossPayments) {
+            await tossPayments.requestPayment('카드', {
+              amount: data.toss.amount,
+              orderId: data.toss.orderId,
+              orderName: data.toss.orderName,
+              customerName: data.toss.customerName,
+              // 결제 성공 시 다시 이 페이지로 돌아오도록 설정
+              successUrl: `${window.location.origin}/api/voucher/callback/success?redirect=/fortune/integrated`,
+              failUrl: `${window.location.origin}/api/voucher/callback/fail?redirect=/fortune/integrated`,
+            });
+          } else {
+            // SDK 없으면 체크아웃 페이지로 이동
+            window.location.href = `/payment/checkout?orderId=${data.orderId}&amount=${data.toss.amount}&orderName=${encodeURIComponent(data.toss.orderName)}&redirect=/fortune/integrated`;
+          }
+        }
       } else {
         alert(data.error || '결제 준비 중 오류가 발생했습니다.');
       }
@@ -754,7 +819,7 @@ function IntegratedAnalysisPageContent() {
                 </p>
                 <Button
                   size="lg"
-                  onClick={() => setStep('form')}
+                  onClick={handleStartAnalysis}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-12 py-7 text-lg shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
