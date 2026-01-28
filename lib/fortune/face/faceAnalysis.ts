@@ -23,6 +23,7 @@ import {
   CELEBRITY_EXAMPLES,
   getGradeFromScore,
 } from '@/types/face';
+import { generateStorytelling } from './faceStorytelling';
 
 // UUID 생성 함수
 function generateUUID(): string {
@@ -378,7 +379,7 @@ function generateAdvice(
 }
 
 // ===== 메인 분석 함수 =====
-export async function analyzeFace(imageData?: string): Promise<FaceAnalysisResult> {
+export function analyzeFace(imageData?: string): FaceAnalysisResult {
   // 부위별 형태 선택 (실제 구현에서는 AI 이미지 분석 사용)
   const selectedShapes: Record<FacePartType, FaceFeatureShape> = {
     forehead: selectShape('forehead'),
@@ -436,8 +437,7 @@ export async function analyzeFace(imageData?: string): Promise<FaceAnalysisResul
   // 조언 생성
   const advice = generateAdvice(features, fortuneScores);
 
-  // 스토리텔링 (다음 파일에서 상세 구현)
-  const { generateStorytelling } = await import('./faceStorytelling');
+  // 스토리텔링 생성
   const storytelling = generateStorytelling(features, overallScore, personality, strengths, improvements);
 
   return {
