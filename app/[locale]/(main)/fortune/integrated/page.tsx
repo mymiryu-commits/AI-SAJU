@@ -470,11 +470,6 @@ function IntegratedAnalysisPageContent() {
         setAnalysisId(data.meta?.analysisId || null);
 
         // 통합 페이지는 결제 후 분석이므로, 선택한 패키지에 맞는 레벨 설정
-        const pkgLevels: Record<string, ProductLevel> = {
-          basic: 'basic',
-          standard: 'deep',
-          premium: 'premium',
-        };
         const resolvedLevel = apiIsAdmin ? 'vip' : (pkgLevels[selectedPackage] || 'basic');
         const resolvedUnlocked = !data.data?.isBlinded || apiIsAdmin || data.meta?.usedVoucher;
 
@@ -531,6 +526,13 @@ function IntegratedAnalysisPageContent() {
     });
   };
 
+  // 패키지 레벨 매핑 (공통)
+  const pkgLevels: Record<string, ProductLevel> = {
+    basic: 'basic',
+    standard: 'deep',
+    premium: 'premium',
+  };
+
   // 분석 시작 전 결제 확인
   const handleStartAnalysis = async () => {
     if (!user) {
@@ -540,30 +542,47 @@ function IntegratedAnalysisPageContent() {
 
     setPaymentLoading(true);
 
-    // 결제권 확인
     try {
+      // 1. 결제권 확인
       const response = await fetch('/api/voucher/check?service_type=saju');
       const data = await response.json();
 
       if (data.hasVoucher) {
         // 결제권 있음 → 바로 폼으로 이동
-        const pkgLevels: Record<string, ProductLevel> = {
-          basic: 'basic',
-          standard: 'deep',
-          premium: 'premium',
-        };
         setProductLevel(pkgLevels[selectedPackage] || 'basic');
         setIsPremiumUnlocked(true);
         setPaymentLoading(false);
         setStep('form');
+        return;
+      }
+
+      // 2. 결제권 없음
+      if (adminBypass) {
+        // 관리자: 무료 결제권 자동 발급 (테스트용)
+        const issueRes = await fetch('/api/admin/issue-vouchers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan_type: selectedPackage }),
+        });
+        const issueData = await issueRes.json();
+
+        if (issueData.success) {
+          setProductLevel(pkgLevels[selectedPackage] || 'basic');
+          setIsPremiumUnlocked(true);
+          setPaymentLoading(false);
+          setStep('form');
+        } else {
+          alert(issueData.error || '결제권 발급에 실패했습니다.');
+          setPaymentLoading(false);
+        }
       } else {
-        // 결제권 없음 → 결제 진행
+        // 일반 사용자: 토스 결제 진행
         await startPaymentFlow(selectedPackage);
       }
     } catch (err) {
-      console.error('Voucher check error:', err);
-      // 확인 실패 시 결제 화면으로
-      await startPaymentFlow(selectedPackage);
+      console.error('Start analysis error:', err);
+      alert('처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setPaymentLoading(false);
     }
   };
 
