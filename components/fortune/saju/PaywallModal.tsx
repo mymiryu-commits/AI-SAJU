@@ -212,23 +212,17 @@ export default function PaywallModal({
             })}
           </div>
 
-          {/* ===== 구매/충전 버튼 ===== */}
+          {/* ===== 구매 버튼 ===== */}
           <div className="p-5 pt-0 space-y-3">
-            {hasEnoughPoints ? (
-              <Button
-                onClick={handlePurchase}
-                className="w-full py-5 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                {requiredPoints.toLocaleString()}P로 분석받기
-              </Button>
-            ) : (
-              <Link href="/my/points" className="block">
-                <Button className="w-full py-5 text-base font-bold bg-gradient-to-r from-amber-500 to-orange-500">
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  포인트 충전하기
-                </Button>
-              </Link>
-            )}
+            <Button
+              onClick={handlePurchase}
+              disabled={!hasEnoughPoints}
+              className="w-full py-5 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+            >
+              {hasEnoughPoints
+                ? `${requiredPoints.toLocaleString()}P로 분석받기`
+                : `포인트 부족 (${neededPoints.toLocaleString()}P 필요)`}
+            </Button>
 
             <button
               onClick={onClose}
@@ -344,12 +338,7 @@ export function InsufficientPointsPopup({
             </div>
           </div>
 
-          <Link href="/my/points" className="block mb-3">
-            <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500">
-              포인트 충전하기
-            </Button>
-          </Link>
-          <button onClick={onClose} className="w-full py-2 text-gray-400 text-sm">
+          <button onClick={onClose} className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm font-medium">
             닫기
           </button>
         </motion.div>
