@@ -1,8 +1,7 @@
 -- =====================================================
--- 012: 결제권 테이블 FK 참조 수정
+-- 012: FK 참조 수정 및 분석 결과 30일 보관
 -- users(id) → auth.users(id)로 변경
--- 기존 users 테이블 대신 auth.users를 참조하여
--- 인증된 사용자가 바로 결제할 수 있도록 수정
+-- fortune_analyses 테이블 포함
 -- =====================================================
 
 -- 1. user_vouchers 테이블 FK 수정
@@ -32,3 +31,8 @@ ALTER TABLE voucher_gifts ADD CONSTRAINT voucher_gifts_recipient_id_fkey
 ALTER TABLE voucher_payments DROP CONSTRAINT IF EXISTS voucher_payments_user_id_fkey;
 ALTER TABLE voucher_payments ADD CONSTRAINT voucher_payments_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- 5. fortune_analyses 테이블 FK 수정
+ALTER TABLE fortune_analyses DROP CONSTRAINT IF EXISTS fortune_analyses_user_id_fkey;
+ALTER TABLE fortune_analyses ADD CONSTRAINT fortune_analyses_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;

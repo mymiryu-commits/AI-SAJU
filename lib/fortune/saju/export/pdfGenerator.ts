@@ -799,6 +799,67 @@ const ELEMENT_LIFE_IMPACT: Record<Element, {
   }
 };
 
+// 용신 구체적 추천 (색상, 방향, 음식, 사람, 감각)
+const YONGSIN_SPECIFICS: Record<Element, {
+  colors: string; direction: string; foods: string;
+  personTypes: string; mbtiTypes: string; sense: string; senseAdvice: string;
+}> = {
+  wood: {
+    colors: '청록색, 초록색, 연두색 계열',
+    direction: '동쪽 방향 (동향 창문, 동쪽 카페/공원)',
+    foods: '푸른 잎채소, 신맛 과일(레몬, 귤, 매실), 식초 드레싱 샐러드',
+    personTypes: '도전적이고 추진력 있는 사람, 창의적 성향, 성장 지향적인 사람',
+    mbtiTypes: 'ENFP, ENTP, ENTJ',
+    sense: '시각',
+    senseAdvice: '자연의 푸른 풍경을 자주 보면 마음이 안정됩니다. 복잡한 시각 환경은 피로를 유발하니 정리된 공간을 유지하세요.'
+  },
+  fire: {
+    colors: '빨간색, 자주색, 오렌지색 계열',
+    direction: '남쪽 방향 (남향 공간, 남쪽 모임 장소)',
+    foods: '쓴맛 식품(커피, 다크초콜릿, 녹차), 붉은 과일(석류, 토마토)',
+    personTypes: '에너지 넘치고 밝은 성격, 열정적 리더형, 유머 감각 있는 사람',
+    mbtiTypes: 'ESFP, ENFJ, ESTP',
+    sense: '미각',
+    senseAdvice: '다양한 맛의 음식으로 에너지를 충전하되, 자극적인 음식은 감정 기복을 키울 수 있으니 균형 잡힌 식사를 권합니다.'
+  },
+  earth: {
+    colors: '노란색, 베이지색, 갈색 계열',
+    direction: '거주지 중심부 (집 가까운 곳, 익숙한 공간)',
+    foods: '단맛 식품(고구마, 호박, 꿀, 대추차), 곡물류(현미, 잡곡밥), 뿌리채소(당근, 감자)',
+    personTypes: '신뢰감 있고 안정적인 사람, 책임감 강한 사람, 포용력 있는 사람',
+    mbtiTypes: 'ISFJ, ISTJ, ESFJ',
+    sense: '촉각',
+    senseAdvice: '부드러운 소재의 옷이나 침구가 안정감을 줍니다. 맨발로 흙이나 잔디를 밟는 접지(어싱)가 기운 보충에 도움됩니다.'
+  },
+  metal: {
+    colors: '흰색, 금색, 은색 계열',
+    direction: '서쪽 방향 (서향 공간, 서쪽 지역 여행)',
+    foods: '매운맛 식품(생강차, 마늘, 양파), 흰색 식품(무, 배, 도라지), 견과류',
+    personTypes: '원칙적이고 체계적인 사람, 논리적인 사람, 정직하고 결단력 있는 사람',
+    mbtiTypes: 'INTJ, ESTJ, ISTJ',
+    sense: '후각',
+    senseAdvice: '은은한 아로마(라벤더, 유칼립투스)가 집중력을 높입니다. 강한 향이나 환기 안 되는 공간은 피하세요.'
+  },
+  water: {
+    colors: '검정색, 남색, 짙은 파란색 계열',
+    direction: '북쪽 방향 (북향 서재, 수변 공간)',
+    foods: '해산물(생선, 새우, 미역), 콩류(두부, 된장, 검은콩), 수분 풍부한 과일(수박, 배)',
+    personTypes: '차분하고 사려 깊은 사람, 감성 풍부한 사람, 깊이 있는 대화를 나눌 수 있는 사람',
+    mbtiTypes: 'INFJ, INTP, INFP',
+    sense: '청각',
+    senseAdvice: '자연의 물소리나 잔잔한 음악이 평화를 줍니다. 소음 환경은 에너지를 빠르게 소모시키니 조용한 시간을 확보하세요.'
+  }
+};
+
+// 기신 구체적 주의사항
+const GISIN_CAUTION: Record<Element, string> = {
+  wood: '목(木) 과잉 시: 푸른색 계열을 줄이고, 동쪽 방향의 큰 결정을 미루세요. 신맛 음식을 줄이고, 무계획적 도전만 추구하는 사람과 거리를 두세요.',
+  fire: '화(火) 과잉 시: 빨간색 계열을 줄이고, 뜨거운 환경을 피하세요. 자극적인 음식을 줄이고, 흥분을 부추기는 사람과의 접촉을 자제하세요.',
+  earth: '토(土) 과잉 시: 갈색·베이지 톤을 줄이고, 익숙한 곳만 고집하지 마세요. 단맛 음식을 줄이고, 변화를 두려워하는 사람에게서 벗어나세요.',
+  metal: '금(金) 과잉 시: 흰색·금속 톤을 줄이고, 서쪽 방향의 중요 계약을 재고하세요. 매운 음식을 줄이고, 융통성 없는 사람과의 갈등을 조심하세요.',
+  water: '수(水) 과잉 시: 검정·남색 의류를 줄이고, 북쪽 방향 이동을 자제하세요. 짠 음식을 줄이고, 비관적이고 소극적인 사람과의 장시간 교류를 피하세요.'
+};
+
 // 연간 운세 요약 생성
 function generateYearSummary(
   oheng: OhengBalance,
@@ -1593,6 +1654,8 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   if (yongsin?.length || gisin?.length) {
     addSubSection('용신/기신 분석 - 나에게 필요한 기운과 주의할 기운');
+    addText('용신은 사주에서 부족한 기운을 채워 균형을 잡아주는 행운의 에너지이고,');
+    addText('기신은 이미 과한 기운이 더해질 때 불균형을 일으키는 에너지입니다.');
     if (yongsin?.length) {
       addText('');
       addText('★ 용신(用神) - 나에게 힘이 되는 기운');
@@ -1605,10 +1668,22 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
         if (impact) {
           addText(`    ▸ 활용법: ${impact.wealth.advice}`);
         }
+        // 구체적 추천
+        const specifics = YONGSIN_SPECIFICS[e];
+        if (specifics) {
+          addText(`    ▸ 행운 색상: ${specifics.colors}`);
+          addText(`    ▸ 유리한 방향: ${specifics.direction}`);
+          addText(`    ▸ 추천 음식: ${specifics.foods}`);
+          addText(`    ▸ 함께하면 좋은 사람: ${specifics.personTypes} (${specifics.mbtiTypes})`);
+        }
       });
-      addText('');
-      addText('  ※ 용신은 당신의 사주에서 부족하거나 필요한 기운입니다.');
-      addText('    이 오행과 관련된 색상, 방향, 활동을 활용하면 운이 상승합니다.');
+      // 감각 민감도
+      const firstYongsin = yongsin[0];
+      const senseInfo = YONGSIN_SPECIFICS[firstYongsin];
+      if (senseInfo) {
+        addText('');
+        addText(`  ※ 민감한 감각 (${senseInfo.sense}): ${senseInfo.senseAdvice}`);
+      }
     }
     if (gisin?.length) {
       addText('');
@@ -1616,9 +1691,11 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
       gisin.forEach(e => {
         const richDesc = getElementRichDescription(e, 'gisin');
         addText(`  • ${richDesc}`);
+        const caution = GISIN_CAUTION[e];
+        if (caution) {
+          addText(`    ${caution}`);
+        }
       });
-      addText('');
-      addText('  ※ 기신은 사주에 이미 과한 기운으로, 관련 활동을 줄이면 균형을 유지할 수 있습니다.');
     }
   }
 

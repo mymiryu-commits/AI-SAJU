@@ -65,6 +65,72 @@ const ELEMENT_DESCRIPTION: Record<Element, string> = {
   water: '겨울의 지혜처럼 깊은 사고와 적응력을 상징합니다. 직관력이 뛰어나고 유연하며, 학문과 예술에 재능이 있습니다.'
 };
 
+// 오행별 구체적 추천 정보
+const ELEMENT_SPECIFICS: Record<Element, {
+  colors: string;
+  direction: string;
+  foods: string;
+  personTypes: string;
+  mbtiTypes: string;
+  sense: string;
+  senseAdvice: string;
+}> = {
+  wood: {
+    colors: '청록색, 초록색, 연두색 계열의 의류나 소품',
+    direction: '동쪽 방향 (창문이 동향인 방, 동쪽에 있는 카페나 공원)',
+    foods: '푸른 잎채소, 신맛 과일(레몬, 귤, 매실), 식초 드레싱 샐러드',
+    personTypes: '도전적이고 추진력 있는 사람, 새로운 아이디어를 잘 내는 창의적 성향, 성장 지향적이고 긍정 에너지를 가진 사람',
+    mbtiTypes: 'ENFP, ENTP, ENTJ 성향',
+    sense: '시각',
+    senseAdvice: '시각적 자극에 민감할 수 있습니다. 자연의 푸른 풍경을 자주 보면 마음이 안정되며, 복잡한 시각 환경은 피로를 유발할 수 있으니 정리된 공간을 유지하세요.'
+  },
+  fire: {
+    colors: '빨간색, 자주색, 오렌지색 계열의 포인트 아이템',
+    direction: '남쪽 방향 (햇볕이 잘 드는 남향 공간, 남쪽의 모임 장소)',
+    foods: '쓴맛 식품(커피, 다크초콜릿, 녹차), 붉은 과일(석류, 토마토), 고추류',
+    personTypes: '에너지 넘치고 밝은 성격의 사람, 열정적으로 목표를 추구하는 리더형, 유머 감각이 있고 분위기를 띄우는 사람',
+    mbtiTypes: 'ESFP, ENFJ, ESTP 성향',
+    sense: '미각',
+    senseAdvice: '미각이 예민한 편입니다. 다양한 맛의 음식으로 에너지를 충전할 수 있으며, 너무 자극적인 음식은 감정 기복을 키울 수 있으니 균형 잡힌 식사를 권합니다.'
+  },
+  earth: {
+    colors: '노란색, 베이지색, 갈색 계열의 안정감 있는 톤',
+    direction: '거주지 중심부 (집 가까운 곳에서의 활동, 익숙한 공간)',
+    foods: '단맛 식품(고구마, 호박, 꿀, 대추차), 곡물류(현미, 잡곡밥), 뿌리채소(당근, 감자)',
+    personTypes: '신뢰감 있고 안정적인 사람, 약속을 잘 지키며 책임감이 강한 사람, 경청을 잘 하고 포용력 있는 사람',
+    mbtiTypes: 'ISFJ, ISTJ, ESFJ 성향',
+    sense: '촉각',
+    senseAdvice: '촉각에 예민한 편입니다. 부드러운 소재의 옷이나 침구가 안정감을 주며, 맨발로 흙이나 잔디를 밟는 접지(어싱)가 기운 보충에 도움이 됩니다.'
+  },
+  metal: {
+    colors: '흰색, 금색, 은색 계열의 깔끔한 톤',
+    direction: '서쪽 방향 (저녁 노을이 보이는 서향 공간, 서쪽 지역 여행)',
+    foods: '매운맛 식품(생강차, 마늘, 양파), 흰색 식품(무, 배, 도라지), 견과류',
+    personTypes: '원칙을 중시하고 체계적인 사람, 분석력이 뛰어나고 논리적인 사람, 결단력 있고 정직한 사람',
+    mbtiTypes: 'INTJ, ESTJ, ISTJ 성향',
+    sense: '후각',
+    senseAdvice: '후각이 민감한 편입니다. 은은한 아로마(라벤더, 유칼립투스)가 집중력을 높이며, 강한 향이나 환기 안 되는 공간은 컨디션 저하를 유발할 수 있으니 주의하세요.'
+  },
+  water: {
+    colors: '검정색, 남색, 짙은 파란색 계열의 차분한 톤',
+    direction: '북쪽 방향 (조용하고 차분한 북향 서재, 북쪽 방면의 수변 공간)',
+    foods: '해산물(생선, 새우, 미역), 콩류(두부, 된장, 검은콩), 수분이 풍부한 과일(수박, 배)',
+    personTypes: '차분하고 사려 깊은 사람, 직관력이 뛰어나고 감성이 풍부한 사람, 조용하지만 깊이 있는 대화를 나눌 수 있는 사람',
+    mbtiTypes: 'INFJ, INTP, INFP 성향',
+    sense: '청각',
+    senseAdvice: '청각이 예민한 편입니다. 자연의 물소리나 잔잔한 음악이 마음의 평화를 가져다주며, 소음이 많은 환경에서는 에너지가 빠르게 소모되니 조용한 시간을 확보하세요.'
+  }
+};
+
+// 오행별 기신 주의사항
+const ELEMENT_CAUTION: Record<Element, string> = {
+  wood: '목(木) 기운이 과할 때는 충동적인 새 시작이나 무리한 사업 확장을 자제하세요. 푸른색 계열 의류를 줄이고, 동쪽 방향의 큰 결정을 미루는 것이 좋습니다. 과도한 신맛 음식을 피하고, 무계획적으로 도전만 추구하는 사람과는 거리를 두세요.',
+  fire: '화(火) 기운이 과할 때는 감정적 대응이나 성급한 판단을 주의하세요. 빨간색 계열 의류를 줄이고, 남쪽 방향 이동이나 뜨거운 환경을 피하는 것이 좋습니다. 맵고 자극적인 음식을 줄이고, 흥분을 부추기는 사람과의 접촉을 자제하세요.',
+  earth: '토(土) 기운이 과할 때는 지나친 안전 추구로 기회를 놓칠 수 있습니다. 갈색·베이지 톤을 줄이고, 익숙한 곳만 고집하지 마세요. 단맛 음식 과잉 섭취를 주의하고, 변화를 두려워하며 현상 유지만 바라는 사람에게서 벗어나세요.',
+  metal: '금(金) 기운이 과할 때는 과도한 비판이나 완벽주의가 인간관계를 해칠 수 있습니다. 흰색·금속 톤을 줄이고, 서쪽 방향의 중요 계약을 재고하세요. 매운 음식을 줄이고, 지나치게 원칙적이고 융통성 없는 사람과의 갈등을 조심하세요.',
+  water: '수(水) 기운이 과할 때는 우유부단함이나 지나친 걱정으로 행동력이 떨어질 수 있습니다. 검정·남색 의류를 줄이고, 북쪽 방향의 이동을 자제하세요. 짠 음식 과잉 섭취를 주의하고, 비관적이고 소극적인 사람과의 장시간 교류를 피하세요.'
+};
+
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
   ({ user, saju, oheng, result, premium, targetYear = 2026 }, ref) => {
     // QR 코드 생성
@@ -373,70 +439,103 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 용신/기신 분석 */}
           {(yongsin?.length > 0 || gisin?.length > 0) && (
             <SubSection title="용신(用神) & 기신(忌神) - 운을 좌우하는 핵심 에너지">
-              <p style={{ color: '#6b7280', marginBottom: '10px', fontSize: '12pt' }}>
-                용신은 당신에게 도움이 되는 기운이고, 기신은 주의해야 할 기운입니다.
+              <p style={{ color: '#6b7280', marginBottom: '14px', fontSize: '12pt', lineHeight: 1.7 }}>
+                용신은 당신의 사주에서 부족한 기운을 채워 균형을 잡아주는 <strong>행운의 에너지</strong>이고,
+                기신은 이미 과한 기운이 더해질 때 <strong>불균형을 일으키는 에너지</strong>입니다.
+                아래 가이드를 일상에 적용하면 운의 흐름을 더 유리하게 만들 수 있습니다.
               </p>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                {yongsin?.length > 0 && (
-                  <InfoBox type="success" style={{ flex: 1, minWidth: '200px' }}>
-                    <h4 style={{
-                      color: '#059669',
-                      fontWeight: 700,
-                      marginBottom: '12px',
-                      fontSize: '12pt'
-                    }}>
-                      용신 - 행운을 가져다 주는 기운
-                    </h4>
-                    {yongsin.map(el => (
-                      <div key={el} style={{ marginBottom: '8px' }}>
-                        <p style={{ fontWeight: 600, color: ELEMENT_COLORS[el] }}>
-                          {ELEMENT_NATURE[el]}
-                        </p>
-                      </div>
-                    ))}
-                    <p style={{
-                      fontSize: '13pt',
-                      color: '#059669',
-                      marginTop: '12px',
-                      padding: '8px',
-                      backgroundColor: '#ecfdf5',
-                      borderRadius: '6px'
-                    }}>
-                      이 오행과 관련된 색상, 방향, 음식, 사람을 가까이하면 운이 좋아집니다.
-                    </p>
-                  </InfoBox>
-                )}
 
-                {gisin?.length > 0 && (
-                  <InfoBox type="warning" style={{ flex: 1, minWidth: '200px' }}>
-                    <h4 style={{
-                      color: '#dc2626',
-                      fontWeight: 700,
-                      marginBottom: '12px',
-                      fontSize: '12pt'
+              {/* 용신 상세 */}
+              {yongsin?.length > 0 && (
+                <InfoBox type="success" style={{ marginBottom: '14px' }}>
+                  <h4 style={{
+                    color: '#059669',
+                    fontWeight: 700,
+                    marginBottom: '14px',
+                    fontSize: '14pt'
+                  }}>
+                    용신 - 행운을 가져다 주는 기운
+                  </h4>
+                  {yongsin.map(el => (
+                    <div key={el} style={{
+                      marginBottom: '16px',
+                      paddingBottom: '16px',
+                      borderBottom: '1px dashed #86efac'
                     }}>
-                      기신 - 주의해야 할 기운
-                    </h4>
-                    {gisin.map(el => (
-                      <div key={el} style={{ marginBottom: '8px' }}>
-                        <p style={{ fontWeight: 600, color: ELEMENT_COLORS[el] }}>
-                          {ELEMENT_NATURE[el]}
+                      <p style={{
+                        fontWeight: 700,
+                        color: ELEMENT_COLORS[el],
+                        fontSize: '13pt',
+                        marginBottom: '10px'
+                      }}>
+                        {ELEMENT_NATURE[el]}
+                      </p>
+                      <div style={{ fontSize: '12pt', color: '#374151', lineHeight: 1.8 }}>
+                        <p style={{ marginBottom: '4px' }}>
+                          <strong style={{ color: '#059669' }}>행운 색상:</strong> {ELEMENT_SPECIFICS[el].colors}
+                        </p>
+                        <p style={{ marginBottom: '4px' }}>
+                          <strong style={{ color: '#059669' }}>유리한 방향:</strong> {ELEMENT_SPECIFICS[el].direction}
+                        </p>
+                        <p style={{ marginBottom: '4px' }}>
+                          <strong style={{ color: '#059669' }}>추천 음식:</strong> {ELEMENT_SPECIFICS[el].foods}
+                        </p>
+                        <p style={{ marginBottom: '4px' }}>
+                          <strong style={{ color: '#059669' }}>함께하면 좋은 사람:</strong> {ELEMENT_SPECIFICS[el].personTypes}
+                          {' '}({ELEMENT_SPECIFICS[el].mbtiTypes})
                         </p>
                       </div>
-                    ))}
-                    <p style={{
-                      fontSize: '13pt',
-                      color: '#dc2626',
-                      marginTop: '12px',
-                      padding: '8px',
-                      backgroundColor: '#fef2f2',
-                      borderRadius: '6px'
+                    </div>
+                  ))}
+                  {/* 감각 민감도 */}
+                  {yongsin.length > 0 && (
+                    <div style={{
+                      padding: '10px 12px',
+                      backgroundColor: '#ecfdf5',
+                      borderRadius: '8px',
+                      fontSize: '12pt',
+                      color: '#065f46',
+                      lineHeight: 1.7
                     }}>
-                      이 기운이 과도할 때는 중요한 결정을 피하고, 균형을 유지하세요.
-                    </p>
-                  </InfoBox>
-                )}
-              </div>
+                      <strong>민감한 감각 ({ELEMENT_SPECIFICS[yongsin[0]].sense}):</strong>{' '}
+                      {ELEMENT_SPECIFICS[yongsin[0]].senseAdvice}
+                    </div>
+                  )}
+                </InfoBox>
+              )}
+
+              {/* 기신 상세 */}
+              {gisin?.length > 0 && (
+                <InfoBox type="warning">
+                  <h4 style={{
+                    color: '#dc2626',
+                    fontWeight: 700,
+                    marginBottom: '14px',
+                    fontSize: '14pt'
+                  }}>
+                    기신 - 주의해야 할 기운
+                  </h4>
+                  {gisin.map(el => (
+                    <div key={el} style={{
+                      marginBottom: '16px',
+                      paddingBottom: '16px',
+                      borderBottom: '1px dashed #fecaca'
+                    }}>
+                      <p style={{
+                        fontWeight: 700,
+                        color: ELEMENT_COLORS[el],
+                        fontSize: '13pt',
+                        marginBottom: '10px'
+                      }}>
+                        {ELEMENT_NATURE[el]}
+                      </p>
+                      <p style={{ fontSize: '12pt', color: '#374151', lineHeight: 1.8 }}>
+                        {ELEMENT_CAUTION[el]}
+                      </p>
+                    </div>
+                  ))}
+                </InfoBox>
+              )}
             </SubSection>
           )}
         </Section>
@@ -625,30 +724,31 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 </InfoBox>
               )}
 
-              {/* 건강운 */}
-              {aiAnalysis.fortuneAdvice?.health && (
-                <SubSection title="건강운 - 건강과 체력">
-                  <InfoBox type="default">
-                    <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
-                      {aiAnalysis.fortuneAdvice.health}
-                    </p>
-                  </InfoBox>
-                </SubSection>
-              )}
-
-              {/* 건강 조언 */}
-              {aiAnalysis.healthAdvice && (
-                <InfoBox type="warning" style={{ marginTop: '8px' }}>
-                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#dc2626' }}>건강 관리 조언</h4>
-                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.healthAdvice}</p>
-                </InfoBox>
-              )}
             </>
           )}
         </Section>
 
-        {/* 페이지 나누기 */}
-        <div style={{ pageBreakAfter: 'always' }} />
+        {/* ============ 건강운 (새 페이지 시작) ============ */}
+        {aiAnalysis && (aiAnalysis.fortuneAdvice?.health || aiAnalysis.healthAdvice) && (
+          <div style={{ pageBreakBefore: 'always', paddingTop: '30px' }}>
+            <Section title="건강운 - 건강과 체력">
+              {aiAnalysis.fortuneAdvice?.health && (
+                <InfoBox type="default" style={{ marginBottom: '14px' }}>
+                  <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
+                    {aiAnalysis.fortuneAdvice.health}
+                  </p>
+                </InfoBox>
+              )}
+
+              {aiAnalysis.healthAdvice && (
+                <InfoBox type="warning">
+                  <h4 style={{ fontWeight: 700, marginBottom: '6px', color: '#dc2626' }}>건강 관리 조언</h4>
+                  <p style={{ lineHeight: 1.7 }}>{aiAnalysis.healthAdvice}</p>
+                </InfoBox>
+              )}
+            </Section>
+          </div>
+        )}
 
         {/* ============ 6. 이성관 심층 분석 ============ */}
         {aiAnalysis?.loveAndPartnerAnalysis && (
@@ -759,10 +859,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           </Section>
         )}
 
-        {/* 페이지 나누기 */}
-        <div style={{ pageBreakAfter: 'always' }} />
-
-        {/* ============ 7. 대운과 인생 흐름 ============ */}
+        {/* ============ 7. 대운과 인생 흐름 (6번 이성관 분석 바로 아래) ============ */}
         <Section title="7. 대운(大運)과 인생 흐름">
           {aiAnalysis?.tenYearFortune && (
             <SubSection title="현재 대운 분석 - 인생의 큰 흐름">
@@ -1085,11 +1182,15 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 추천 혜택 안내 */}
           <InfoBox type="highlight" style={{ maxWidth: '420px', margin: '0 auto', textAlign: 'center' }}>
             <p style={{ fontSize: '12pt', fontWeight: 700, color: '#6366f1', marginBottom: '12px' }}>
-              🎁 친구 추천 혜택
+              친구 추천 할인 혜택
             </p>
             <p style={{ fontSize: '12pt', color: '#4b5563', lineHeight: 1.8, marginBottom: '16px' }}>
-              친구가 가입하면 나에게 <strong style={{ color: '#6366f1' }}>300P</strong> 적립!<br />
-              친구도 <strong style={{ color: '#6366f1' }}>200P</strong>를 받아요.
+              추천 링크로 친구가 가입하면<br />
+              나에게 <strong style={{ color: '#6366f1' }}>3,000원 할인 쿠폰</strong> 지급!<br />
+              친구에게도 <strong style={{ color: '#6366f1' }}>2,000원 할인 쿠폰</strong>을 드려요.
+            </p>
+            <p style={{ fontSize: '11pt', color: '#6b7280', marginBottom: '16px' }}>
+              * 쿠폰은 모든 유료 분석 패키지 결제 시 사용 가능합니다.
             </p>
             <div style={{
               backgroundColor: '#f0f0ff',
@@ -1108,8 +1209,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
           {/* 하단 안내 */}
           <div style={{ marginTop: '50px', color: '#9ca3af', fontSize: '13pt', lineHeight: 1.6 }}>
-            <p>AI-PLANX는 동양 철학과 인공지능의 만남입니다.</p>
-            <p>당신의 운명, 당신의 선택.</p>
+            <p>AI-PLANX — 수천 년 동양 철학의 지혜를 현대 기술로 재해석합니다.</p>
+            <p style={{ marginTop: '4px' }}>당신만을 위한 깊이 있는 분석, 다른 어디에서도 경험할 수 없는 정밀함.</p>
+            <p style={{ marginTop: '4px' }}>당신의 운명, 당신의 선택.</p>
           </div>
         </div>
       </div>

@@ -28,13 +28,17 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // 운세 분석 히스토리 조회
+    // 운세 분석 히스토리 조회 (30일 이내)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     let analyses: any[] = [];
     try {
       let query = (supabase as any)
         .from('fortune_analyses')
         .select('*')
         .eq('user_id', user.id)
+        .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -63,10 +67,11 @@ export async function GET(request: NextRequest) {
       const inputData = analysis.input_data || {};
       const scores = analysis.scores || {};
 
-      // 45일 다운로드 제한 체크
+      // 30일 보관 기간 체크
       const createdAt = new Date(analysis.created_at);
-      const downloadExpiresAt = new Date(createdAt);
-      downloadExpiresAt.setDate(downloadExpiresAt.getDate() + 45);
+      const downloadExpiresAt = analysis.expires_at
+        ? new Date(analysis.expires_at)
+        : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
       const canDownload = new Date() <= downloadExpiresAt;
       const daysUntilExpire = Math.max(0, Math.ceil((downloadExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
