@@ -155,7 +155,7 @@ export function integrateZodiacAnalysis(birthDate: string): ZodiacAnalysis | nul
 }
 
 /**
- * 분석 결과 저장 (45일 유지)
+ * 분석 결과 저장 (30일 유지)
  */
 export async function saveAnalysisResult(
   userId: string,
@@ -296,10 +296,11 @@ export async function getAnalysisById(
   const isBlinded = resultSummary.isBlinded || false;
   const unblindPrice = resultSummary.unblindPrice || 500;
 
-  // 45일 만료 체크
+  // 30일 만료 체크 (expires_at 컬럼 우선 사용)
   const createdAt = new Date(data.created_at);
-  const expiresAt = new Date(createdAt);
-  expiresAt.setDate(expiresAt.getDate() + 45);
+  const expiresAt = data.expires_at
+    ? new Date(data.expires_at)
+    : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   if (new Date() > expiresAt) {
     // 만료됨 - PDF/음성 URL 제거
