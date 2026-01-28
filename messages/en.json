@@ -147,7 +147,13 @@
       "title": "Daily Fortune",
       "checkin": "Check In",
       "streakDays": "{count} day streak",
+      "streakStart": "Start today!",
+      "checkedIn": "Checked In",
+      "checkInBtn": "Check In",
+      "streakBonus": "7-day streak unlocks special bonus!",
       "todayFortune": "Check today's fortune",
+      "todayMessage": "Today's Message",
+      "caution": "Caution",
       "scores": {
         "overall": "Overall",
         "wealth": "Wealth",
@@ -159,6 +165,36 @@
         "time": "Lucky Time",
         "color": "Lucky Color",
         "number": "Lucky Number"
+      },
+      "colors": {
+        "Purple": "Purple",
+        "Blue": "Blue",
+        "Green": "Green",
+        "Red": "Red",
+        "Yellow": "Yellow",
+        "Orange": "Orange"
+      },
+      "advices": {
+        "0": "Today new opportunities may come your way. Keep an open mind and look around.",
+        "1": "Starting the day with a calm mind will bring good results.",
+        "2": "Warm conversations will bring luck in relationships.",
+        "3": "Today is a good day to make important decisions. Trust your intuition.",
+        "4": "Collaboration with others will be the key to success.",
+        "5": "Believe in yourself and move forward. Your efforts will shine."
+      },
+      "cautions": {
+        "0": "Avoid hasty decisions and think carefully.",
+        "1": "Pay special attention to your health.",
+        "2": "Rational judgment is needed rather than emotional response.",
+        "3": "Be careful of excessive spending.",
+        "4": "Don't be swayed too much by others' words.",
+        "5": "Avoid overloaded schedules and get enough rest."
+      },
+      "deeperAnalysis": {
+        "title": "Want a deeper analysis?",
+        "description": "Discover your destiny with Four Pillars based deep analysis",
+        "freeSaju": "Free Saju Analysis",
+        "viewPlans": "View Premium Plans"
       }
     },
     "free": {
