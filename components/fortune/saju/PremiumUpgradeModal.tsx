@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -35,14 +35,17 @@ interface Package {
   features: string[];
   highlight?: string;
   popular?: boolean;
+  planType: string; // bundle plan type
 }
 
+// 패키지 정의 - DB의 bundle 패키지와 매핑
 const packages: Package[] = [
   {
     id: 'basic',
     name: '베이직',
     price: 4900,
     originalPrice: 9800,
+    planType: 'basic',
     features: [
       '사주팔자 완전 분석',
       '오행 분석',
@@ -55,9 +58,10 @@ const packages: Package[] = [
     name: '스탠다드',
     price: 9800,
     originalPrice: 19600,
+    planType: 'standard',
     features: [
       '베이직 모든 기능',
-      '궁합 분석',
+      '궁합 분석 1회',
       '월별 운세 12개월',
       'PDF 다운로드',
     ],
@@ -69,8 +73,10 @@ const packages: Package[] = [
     name: '프리미엄',
     price: 19600,
     originalPrice: 39200,
+    planType: 'premium',
     features: [
       '스탠다드 모든 기능',
+      '관상 분석 1회',
       '10년 대운 분석',
       'MBTI 통합 분석',
       '음성 리포트',
@@ -95,6 +101,34 @@ export default function PremiumUpgradeModal({
   const router = useRouter();
   const [selectedPackage, setSelectedPackage] = useState<string>('standard');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [dbPackages, setDbPackages] = useState<Record<string, string>>({});
+
+  // DB에서 번들 패키지 ID 가져오기
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await fetch('/api/voucher/packages?service_type=bundle');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.packages) {
+            const pkgMap: Record<string, string> = {};
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data.packages.forEach((pkg: any) => {
+              if (pkg.plan_type) {
+                pkgMap[pkg.plan_type] = pkg.id;
+              }
+            });
+            setDbPackages(pkgMap);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch packages:', error);
+      }
+    };
+    if (isOpen) {
+      fetchPackages();
+    }
+  }, [isOpen]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -110,14 +144,20 @@ export default function PremiumUpgradeModal({
 
     try {
       const pkg = packages.find(p => p.id === selectedPackage);
+      const dbPackageId = dbPackages[pkg?.planType || ''];
 
-      const response = await fetch('/api/payment/create', {
+      if (!dbPackageId) {
+        alert('패키지 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 결제권 구매 API 호출
+      const response = await fetch('/api/voucher/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId: `saju_${selectedPackage}`,
-          productName: `사주 분석 ${pkg?.name} 패키지`,
-          amount: pkg?.price,
+          package_id: dbPackageId,
           metadata: {
             analysisId: currentAnalysisId,
           },
@@ -126,8 +166,26 @@ export default function PremiumUpgradeModal({
 
       const data = await response.json();
 
-      if (data.success && data.data?.paymentUrl) {
-        window.location.href = data.data.paymentUrl;
+      if (data.success && data.toss) {
+        // 토스페이먼츠 결제 페이지로 이동
+        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+        if (tossClientKey && typeof window !== 'undefined') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const tossPayments = (window as any).TossPayments?.(tossClientKey);
+          if (tossPayments) {
+            await tossPayments.requestPayment('카드', {
+              amount: data.toss.amount,
+              orderId: data.toss.orderId,
+              orderName: data.toss.orderName,
+              customerName: data.toss.customerName,
+              successUrl: data.toss.successUrl,
+              failUrl: data.toss.failUrl,
+            });
+          } else {
+            // SDK 없으면 redirect 방식
+            window.location.href = `/payment/checkout?orderId=${data.orderId}&amount=${data.toss.amount}&orderName=${encodeURIComponent(data.toss.orderName)}`;
+          }
+        }
       } else {
         alert(data.error || '결제 준비 중 오류가 발생했습니다.');
       }

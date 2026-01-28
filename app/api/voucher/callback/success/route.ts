@@ -87,44 +87,81 @@ export async function GET(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + (pkg?.validity_days || 365));
 
-    // 이용권 생성
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: voucher, error: voucherError } = await (supabase as any)
-      .from('user_vouchers')
-      .insert({
-        user_id: payment.user_id,
-        package_id: pkg?.id,
-        service_type: pkg?.service_type,
-        total_quantity: pkg?.quantity,
-        used_quantity: 0,
-        remaining_quantity: pkg?.quantity,
-        purchase_price: payment.amount,
-        unit_price: pkg?.unit_price,
-        payment_id: paymentKey,
-        order_id: orderId,
-        status: 'active',
-        source: 'purchase',
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
+    let voucherResult;
 
-    if (voucherError) {
-      console.error('Voucher creation error:', voucherError);
-      // 결제는 성공했지만 이용권 생성 실패 - 수동 처리 필요
+    // 번들 패키지인 경우 issue_bundle_vouchers 함수 사용
+    if (pkg?.service_type === 'bundle') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('voucher_payments')
-        .update({
-          status: 'completed',
-          payment_key: paymentKey,
-          response_data: confirmData,
-          approved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', payment.id);
+      const { data: bundleResult, error: bundleError } = await (supabase as any).rpc(
+        'issue_bundle_vouchers',
+        {
+          p_user_id: payment.user_id,
+          p_package_id: pkg.id,
+          p_payment_id: paymentKey,
+          p_order_id: orderId,
+          p_expires_at: expiresAt.toISOString(),
+        }
+      );
 
-      return NextResponse.redirect(`${redirectBase}/my/vouchers?error=voucher_creation_failed&contact=true`);
+      if (bundleError || !bundleResult?.success) {
+        console.error('Bundle voucher creation error:', bundleError || bundleResult);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('voucher_payments')
+          .update({
+            status: 'completed',
+            payment_key: paymentKey,
+            response_data: confirmData,
+            approved_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', payment.id);
+
+        return NextResponse.redirect(`${redirectBase}/my/vouchers?error=voucher_creation_failed&contact=true`);
+      }
+
+      voucherResult = bundleResult;
+    } else {
+      // 단일 서비스 이용권 생성
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: voucher, error: voucherError } = await (supabase as any)
+        .from('user_vouchers')
+        .insert({
+          user_id: payment.user_id,
+          package_id: pkg?.id,
+          service_type: pkg?.service_type,
+          total_quantity: pkg?.quantity,
+          used_quantity: 0,
+          remaining_quantity: pkg?.quantity,
+          purchase_price: payment.amount,
+          unit_price: pkg?.unit_price,
+          payment_id: paymentKey,
+          order_id: orderId,
+          status: 'active',
+          source: 'purchase',
+          expires_at: expiresAt.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (voucherError) {
+        console.error('Voucher creation error:', voucherError);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('voucher_payments')
+          .update({
+            status: 'completed',
+            payment_key: paymentKey,
+            response_data: confirmData,
+            approved_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', payment.id);
+
+        return NextResponse.redirect(`${redirectBase}/my/vouchers?error=voucher_creation_failed&contact=true`);
+      }
+
+      voucherResult = { voucher_id: voucher.id };
     }
 
     // 결제 레코드 업데이트
@@ -134,8 +171,8 @@ export async function GET(request: NextRequest) {
       .update({
         status: 'completed',
         payment_key: paymentKey,
-        voucher_id: voucher.id,
-        response_data: confirmData,
+        voucher_id: voucherResult?.voucher_id || voucherResult?.voucher_ids?.[0] || null,
+        response_data: { ...confirmData, bundle_result: voucherResult },
         method: confirmData.method,
         approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -155,9 +192,10 @@ export async function GET(request: NextRequest) {
     }
 
     // 성공 페이지로 리다이렉트
-    return NextResponse.redirect(
-      `${redirectBase}/my/vouchers?success=true&quantity=${pkg?.quantity}&service=${pkg?.service_type}`
-    );
+    const successParams = pkg?.service_type === 'bundle'
+      ? `success=true&bundle=${pkg?.plan_type || 'bundle'}`
+      : `success=true&quantity=${pkg?.quantity}&service=${pkg?.service_type}`;
+    return NextResponse.redirect(`${redirectBase}/my/vouchers?${successParams}`);
   } catch (error) {
     console.error('Voucher callback success error:', error);
     return NextResponse.redirect(`${redirectBase}/my/vouchers?error=server_error`);
