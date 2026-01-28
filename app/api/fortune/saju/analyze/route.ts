@@ -44,14 +44,33 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 사주 계산
-    const saju = calculateSaju(
-      input.birthDate,
-      input.birthTime,
-      input.calendar === 'lunar'
-    );
+    let saju;
+    try {
+      saju = calculateSaju(
+        input.birthDate,
+        input.birthTime,
+        input.calendar === 'lunar'
+      );
+    } catch (calcError) {
+      console.error('사주 계산 오류:', calcError);
+      return NextResponse.json(
+        { success: false, error: '사주 계산 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
 
     // 2. 오행 분석
-    const ohengResult = analyzeOheng(saju);
+    let ohengResult;
+    try {
+      ohengResult = analyzeOheng(saju);
+    } catch (ohengError) {
+      console.error('오행 분석 오류:', ohengError);
+      return NextResponse.json(
+        { success: false, error: '오행 분석 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     const ohengActions = generateOhengActions(ohengResult.yongsin, ohengResult.gisin);
 
     // 3. 운세 점수 계산
@@ -218,26 +237,46 @@ export async function POST(request: NextRequest) {
             isBlinded = true;
           } else if (voucherInfo.hasVoucher) {
             // 무료 분석 소진 → 결제권 사용
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
-              p_user_id: user.id,
-              p_service_type: 'saju',
-              p_quantity: 1,
-              p_related_id: null,
-              p_related_type: 'saju_analysis',
-            });
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+                p_user_id: user.id,
+                p_service_type: 'saju',
+                p_quantity: 1,
+                p_related_id: null,
+                p_related_type: 'saju_analysis',
+              });
 
-            if (useError || !useResult?.success) {
-              return NextResponse.json({
-                success: false,
-                error: '결제권 사용에 실패했습니다.',
-                errorCode: 'VOUCHER_USE_FAILED',
-              }, { status: 500 });
+              console.log('use_voucher result:', { useResult, useError });
+
+              // RPC 오류 또는 실패 응답 처리
+              if (useError) {
+                console.error('use_voucher RPC error:', useError);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              // useResult가 false이거나 success가 false인 경우
+              if (useResult === false || (useResult && useResult.success === false)) {
+                console.warn('use_voucher returned failure:', useResult);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              usedVoucher = true;
+              isBlinded = false; // 결제권 사용 시 블라인드 해제
+              voucherInfo.remaining = useResult?.remaining ?? (voucherInfo.remaining - 1);
+            } catch (voucherError) {
+              console.error('Voucher use error:', voucherError);
+              // 결제권 사용 실패해도 무료 분석으로 진행
+              isBlinded = true;
             }
-
-            usedVoucher = true;
-            isBlinded = false; // 결제권 사용 시 블라인드 해제
-            voucherInfo.remaining = useResult.remaining;
           } else {
             // 결제권 없음
             return NextResponse.json({
@@ -252,35 +291,43 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 분석 결과 저장
-        const saveResult = await saveAnalysisResult(userId, result, {
-          isPremium: !isBlinded,
-          isBlinded: isBlinded,
-          productType: usedVoucher ? 'voucher' : 'free',
-          pointsPaid: 0,
-          zodiacData: zodiacAnalysis,
-        });
+        // 분석 결과 저장 (실패해도 분석 결과 반환)
+        try {
+          const saveResult = await saveAnalysisResult(userId, result, {
+            isPremium: !isBlinded,
+            isBlinded: isBlinded,
+            productType: usedVoucher ? 'voucher' : 'free',
+            pointsPaid: 0,
+            zodiacData: zodiacAnalysis,
+          });
 
-        if (saveResult.id) {
-          analysisId = saveResult.id;
-          console.log('분석 결과 저장 완료:', analysisId);
-        } else {
-          console.error('분석 결과 저장 실패:', saveResult.error);
+          if (saveResult.id) {
+            analysisId = saveResult.id;
+            console.log('분석 결과 저장 완료:', analysisId);
+          } else {
+            console.warn('분석 결과 저장 실패:', saveResult.error);
+          }
+        } catch (saveError) {
+          console.warn('분석 결과 저장 중 오류 (무시됨):', saveError);
         }
 
-        // 결제권 잔여 업데이트
-        if (!isAdmin) {
-          freeAnalysisStatus = await canUseFreeAnalysis(userId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: updatedVouchers } = await (supabase as any)
-            .from('user_vouchers')
-            .select('remaining_quantity')
-            .eq('user_id', user.id)
-            .eq('service_type', 'saju')
-            .eq('status', 'active')
-            .gt('remaining_quantity', 0)
-            .gt('expires_at', new Date().toISOString());
-          voucherInfo.remaining = updatedVouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
+        // 결제권 잔여 업데이트 (실패해도 무시)
+        try {
+          if (!isAdmin) {
+            freeAnalysisStatus = await canUseFreeAnalysis(userId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: updatedVouchers } = await (supabase as any)
+              .from('user_vouchers')
+              .select('remaining_quantity')
+              .eq('user_id', user.id)
+              .eq('service_type', 'saju')
+              .eq('status', 'active')
+              .gt('remaining_quantity', 0)
+              .gt('expires_at', new Date().toISOString());
+            voucherInfo.remaining = updatedVouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
+          }
+        } catch (voucherUpdateError) {
+          console.warn('결제권 잔여 업데이트 실패 (무시됨):', voucherUpdateError);
         }
       }
     } catch (dbError) {
