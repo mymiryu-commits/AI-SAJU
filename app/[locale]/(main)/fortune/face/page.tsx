@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { isAdminEmail } from '@/lib/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Camera,
   Upload,
@@ -23,6 +27,7 @@ import {
   Coins,
   Shield,
   AlertCircle,
+  Ticket,
 } from 'lucide-react';
 
 // Mock 관상 분석 결과
@@ -72,10 +77,31 @@ const mockFaceResult = {
 
 export default function FaceReadingPage() {
   const t = useTranslations('fortune');
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<string | null>(null);
-  const [step, setStep] = useState<'upload' | 'analyzing' | 'result'>('upload');
+  const [step, setStep] = useState<'upload' | 'analyzing' | 'result' | 'no_voucher'>('upload');
   const [progress, setProgress] = useState(0);
+  const [voucherCount, setVoucherCount] = useState<number>(0);
+  const [checkingVoucher, setCheckingVoucher] = useState(false);
+
+  const isAdmin = user?.email ? isAdminEmail(user.email) : false;
+
+  // 결제권 확인
+  useEffect(() => {
+    const checkVoucher = async () => {
+      if (!user || isAdmin) return;
+      try {
+        const res = await fetch('/api/voucher/check?service_type=face');
+        const data = await res.json();
+        setVoucherCount(data.summary?.face?.total || 0);
+      } catch (error) {
+        console.error('Voucher check error:', error);
+      }
+    };
+    if (user) checkVoucher();
+  }, [user, isAdmin]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +126,45 @@ export default function FaceReadingPage() {
     }
   }, []);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    // 로그인 체크
+    if (!user) {
+      router.push('/login?redirect=/fortune/face');
+      return;
+    }
+
+    // 관리자는 바로 분석
+    if (isAdmin) {
+      runAnalysis();
+      return;
+    }
+
+    // 결제권 확인 및 사용
+    setCheckingVoucher(true);
+    try {
+      const res = await fetch('/api/voucher/use', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service_type: 'face', quantity: 1 }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setStep('no_voucher');
+        return;
+      }
+
+      setVoucherCount(data.remaining || 0);
+      runAnalysis();
+    } catch (error) {
+      console.error('Voucher use error:', error);
+      setStep('no_voucher');
+    } finally {
+      setCheckingVoucher(false);
+    }
+  };
+
+  const runAnalysis = () => {
     setStep('analyzing');
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -119,6 +183,33 @@ export default function FaceReadingPage() {
     setStep('upload');
     setProgress(0);
   };
+
+  // 결제권 부족 화면
+  if (step === 'no_voucher') {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <Ticket className="h-10 w-10 text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-bold mb-4">결제권이 필요합니다</h2>
+          <p className="text-muted-foreground mb-6">
+            관상 분석은 결제권이 필요한 유료 서비스입니다.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href="/my/vouchers">
+              <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500">
+                결제권 구매하기
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={() => setStep('upload')}>
+              돌아가기
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'analyzing') {
     return (
@@ -224,10 +315,19 @@ export default function FaceReadingPage() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <Button onClick={handleAnalyze} className="w-full" size="lg">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  분석 시작
+                <Button onClick={handleAnalyze} className="w-full" size="lg" disabled={checkingVoucher}>
+                  {checkingVoucher ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  {checkingVoucher ? '확인 중...' : '분석 시작'}
                 </Button>
+                {!isAdmin && user && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    보유 결제권: {voucherCount}장
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
