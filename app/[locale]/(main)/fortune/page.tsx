@@ -1,282 +1,382 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   Sparkles,
   Star,
   Heart,
   Users,
+  Moon,
   Zap,
   ArrowRight,
   CheckCircle,
-  Eye,
   Crown,
+  TrendingUp,
+  Calendar,
+  Eye,
 } from 'lucide-react';
-import { PRICING, formatPrice } from '@/lib/constants/pricing';
 
-// 실제 존재하는 서비스만 포함
 const fortuneServices = [
   {
     key: 'saju',
-    label: 'AI 사주 분석',
-    description: '사주팔자로 운명을 분석합니다',
     icon: Zap,
-    color: 'bg-purple-500',
+    gradient: 'from-amber-500 to-orange-600',
+    shadowColor: 'shadow-amber-500/25',
     href: '/fortune/saju',
-    free: true,
+  },
+  {
+    key: 'zodiac',
+    icon: Star,
+    gradient: 'from-indigo-500 to-purple-600',
+    shadowColor: 'shadow-indigo-500/25',
+    href: '/fortune/zodiac',
   },
   {
     key: 'face',
-    label: 'AI 관상 분석',
-    description: 'AI로 얼굴을 분석하여 운세를 봅니다',
     icon: Eye,
-    color: 'bg-blue-500',
+    gradient: 'from-purple-500 to-indigo-600',
+    shadowColor: 'shadow-purple-500/25',
     href: '/fortune/face',
-    free: false,
+  },
+  {
+    key: 'daily',
+    icon: Calendar,
+    gradient: 'from-emerald-500 to-teal-600',
+    shadowColor: 'shadow-emerald-500/25',
+    href: '/fortune/free',
+  },
+  {
+    key: 'tarot',
+    icon: Moon,
+    gradient: 'from-violet-500 to-purple-600',
+    shadowColor: 'shadow-violet-500/25',
+    href: '/fortune/tarot',
   },
   {
     key: 'compatibility',
-    label: '궁합 분석',
-    description: '두 사람의 사주 궁합을 분석합니다',
     icon: Heart,
-    color: 'bg-pink-500',
+    gradient: 'from-rose-500 to-pink-600',
+    shadowColor: 'shadow-rose-500/25',
     href: '/fortune/compatibility',
-    free: true,
-  },
-  {
-    key: 'integrated',
-    label: '통합 분석',
-    description: '사주, 관상, 별자리, MBTI 통합 분석',
-    icon: Crown,
-    color: 'bg-yellow-500',
-    href: '/fortune/integrated',
-    free: false,
-  },
-  {
-    key: 'experts',
-    label: '전문가 상담',
-    description: '검증된 전문가와 1:1 상담',
-    icon: Users,
-    color: 'bg-green-500',
-    href: '/fortune/experts',
-    free: false,
-  },
-  {
-    key: 'free',
-    label: '오늘의 운세',
-    description: '매일 무료로 확인하는 오늘의 운세',
-    icon: Star,
-    color: 'bg-orange-500',
-    href: '/fortune/free',
-    free: true,
   },
 ];
 
 const premiumFeatures = [
-  '상세 분석 리포트',
-  'PDF 다운로드',
-  '음성 리포트',
-  '월별 예측',
-  '전문가 상담',
+  { text: '상세 분석 리포트', icon: TrendingUp },
+  { text: 'PDF 다운로드', icon: ArrowRight },
+  { text: '음성 나레이션', icon: Sparkles },
+  { text: '월별 운세 예측', icon: Calendar },
+  { text: '전문가 1:1 상담', icon: Users },
 ];
 
-export default async function FortunePage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+export default function FortunePage() {
   return (
-    <div className="flex flex-col">
-      {/* 히어로 섹션 */}
-      <section className="fortune-gradient text-white py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <FortuneHero />
-        </div>
-      </section>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 fortune-gradient" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
 
-      {/* 서비스 그리드 */}
-      <section className="container mx-auto px-4 py-16">
-        <FortuneServices />
-      </section>
+        {/* Decorative Elements */}
+        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse delay-700" />
+        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-yellow-300/20 rounded-full blur-xl animate-zodiac" />
 
-      {/* 프리미엄 CTA */}
-      <section className="bg-muted/50 py-16">
-        <div className="container mx-auto px-4">
-          <PremiumSection />
-        </div>
-      </section>
+        <div className="relative container mx-auto px-4 py-20 md:py-28">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Badge */}
+            <Badge className="mb-6 px-4 py-2 bg-white/20 backdrop-blur-sm text-white border-white/30 text-sm">
+              <Sparkles className="mr-2 h-4 w-4" />
+              AI 운세 분석 서비스
+            </Badge>
 
-      {/* 오늘의 운세 미리보기 */}
-      <section className="container mx-auto px-4 py-16">
-        <DailyFortunePreview />
-      </section>
-    </div>
-  );
-}
+            {/* Title */}
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              당신의 운명을
+              <br />
+              <span className="text-yellow-200">AI가 분석합니다</span>
+            </h1>
 
-function FortuneHero() {
-  const t = useTranslations('fortune');
-  return (
-    <div className="max-w-3xl mx-auto text-center">
-      <Badge className="mb-4 bg-white/20 text-white">
-        <Sparkles className="mr-1 h-3 w-3" />
-        AI 운세 서비스
-      </Badge>
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('title')}</h1>
-      <p className="text-xl text-white/80 mb-8">{t('subtitle')}</p>
-      <div className="flex flex-wrap justify-center gap-4">
-        <Link href="/fortune/free">
-          <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90">
-            무료 운세 보기
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-        <Link href="/fortune/saju">
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-white/50 text-white hover:bg-white/10"
-          >
-            AI 사주 분석
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function FortuneServices() {
-  return (
-    <>
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-4">운세 서비스</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          AI 기반의 다양한 운세 서비스를 이용해보세요
-        </p>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {fortuneServices.map((service) => {
-          const Icon = service.icon;
-          return (
-            <Link key={service.key} href={service.href}>
-              <Card className="card-hover h-full cursor-pointer relative overflow-hidden">
-                {service.free && (
-                  <Badge className="absolute top-4 right-4 bg-green-500">
-                    무료
-                  </Badge>
-                )}
-                <CardHeader>
-                  <div className={`w-12 h-12 rounded-lg ${service.color} flex items-center justify-center mb-4`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle>{service.label}</CardTitle>
-                  <CardDescription>
-                    {service.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full group">
-                    시작하기
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-function PremiumSection() {
-  const t = useTranslations('fortune.premium');
-  return (
-    <Card className="overflow-hidden">
-      <div className="grid md:grid-cols-2">
-        <div className="fortune-gradient p-8 md:p-12 text-white">
-          <Badge className="mb-4 bg-white/20 text-white">프리미엄</Badge>
-          <h2 className="text-3xl font-bold mb-4">{t('title')}</h2>
-          <p className="text-white/80 mb-6">
-            가장 포괄적인 운세 분석을 프리미엄 서비스로 경험하세요
-          </p>
-          <ul className="space-y-3 mb-8">
-            {premiumFeatures.map((feature, index) => (
-              <li key={index} className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-white/80" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-          <Link href="/pricing">
-            <Button className="bg-white text-purple-700 hover:bg-white/90">
-              요금제 보기
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-        <CardContent className="p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-          <div className="text-center">
-            <div className="text-5xl font-bold mb-2">
-              <span className="text-muted-foreground text-xl">월</span>{' '}
-              <span className="text-primary">₩{formatPrice(PRICING.subscription.monthly.basic.price)}</span>
-              <span className="text-muted-foreground text-xl">부터</span>
-            </div>
-            <p className="text-muted-foreground mb-6">
-              베이직 플랜 기준
+            {/* Subtitle */}
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto">
+              사주, 관상, 타로까지 - 첨단 AI 기술로
+              <br className="hidden md:block" />
+              정확한 운세 분석을 경험하세요
             </p>
-            <Link href="/pricing">
-              <Button size="lg" className="w-full">
-                {t('cta')}
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </div>
-    </Card>
-  );
-}
 
-function DailyFortunePreview() {
-  const t = useTranslations('fortune.daily');
-  return (
-    <div className="text-center">
-      <h2 className="text-3xl font-bold mb-4">{t('title')}</h2>
-      <p className="text-muted-foreground mb-8">매일 무료로 운세를 확인하세요</p>
-      <Card className="max-w-md mx-auto">
-        <CardContent className="p-8">
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <div className="text-3xl font-bold text-primary">85</div>
-              <div className="text-sm text-muted-foreground">종합운</div>
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/fortune/saju">
+                <Button
+                  size="lg"
+                  className="h-14 px-8 text-lg bg-white text-amber-700 hover:bg-white/95 shadow-xl shadow-black/20"
+                >
+                  <Zap className="mr-2 h-5 w-5" />
+                  무료 사주 보기
+                </Button>
+              </Link>
+              <Link href="/fortune/free">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-14 px-8 text-lg border-2 border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm"
+                >
+                  오늘의 운세
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <div className="text-3xl font-bold text-green-500">92</div>
-              <div className="text-sm text-muted-foreground">재물운</div>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <div className="text-3xl font-bold text-pink-500">78</div>
-              <div className="text-sm text-muted-foreground">애정운</div>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <div className="text-3xl font-bold text-blue-500">88</div>
-              <div className="text-sm text-muted-foreground">직업운</div>
+
+            {/* Stats */}
+            <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto">
+              {[
+                { value: '150만+', label: '분석 완료' },
+                { value: '98%', label: '만족도' },
+                { value: '24시간', label: '언제든지' },
+              ].map((stat, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-white">{stat.value}</div>
+                  <div className="text-sm text-white/70">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
-          <Link href="/fortune/free">
-            <Button className="w-full">
-              오늘의 운세 보기
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
+
+      {/* Services Grid */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <Badge className="mb-4" variant="outline">
+            <Star className="mr-1 h-3 w-3 text-amber-500" />
+            운세 서비스
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            다양한 AI 운세 서비스
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            사주팔자부터 타로까지, AI가 분석하는 정확한 운세를 만나보세요
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {fortuneServices.map((service) => {
+            const Icon = service.icon;
+            return (
+              <Link key={service.key} href={service.href}>
+                <Card
+                  className={cn(
+                    'relative h-full cursor-pointer overflow-hidden group',
+                    'fortune-service-card border-0 shadow-lg',
+                    'bg-gradient-to-br from-card via-card to-muted/30'
+                  )}
+                >
+                  {/* 이미지 배경 영역 - 이미지 업로드 시 이 영역에 이미지가 표시됨 */}
+                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+                    {/* 기본 아이콘 (이미지 없을 때) */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div
+                        className={cn(
+                          'w-20 h-20 rounded-full flex items-center justify-center',
+                          'bg-gradient-to-br shadow-lg',
+                          'group-hover:scale-110 transition-transform',
+                          service.gradient,
+                          service.shadowColor
+                        )}
+                      >
+                        <Icon className="h-10 w-10 text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <CardContent className="p-4">
+                    {/* Button */}
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between group hover:bg-primary/5"
+                    >
+                      <span>시작하기</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+
+                  {/* Background Decoration */}
+                  <div
+                    className={cn(
+                      'absolute -bottom-10 -right-10 w-32 h-32 rounded-full opacity-10',
+                      'bg-gradient-to-br',
+                      service.gradient
+                    )}
+                  />
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Premium Section */}
+      <section className="bg-muted/30 py-20">
+        <div className="container mx-auto px-4">
+          <Card className="relative overflow-hidden border-0 shadow-2xl">
+            <div className="grid lg:grid-cols-2">
+              {/* Left - Info */}
+              <div className="relative p-8 md:p-12 fortune-gradient">
+                <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-black/30" />
+                <div className="relative z-10">
+                  <Badge className="mb-6 bg-white/20 text-white border-white/30">
+                    <Crown className="mr-1 h-3 w-3" />
+                    프리미엄
+                  </Badge>
+
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    더 깊은 통찰이
+                    <br />
+                    필요하신가요?
+                  </h2>
+
+                  <p className="text-white/80 text-lg mb-8">
+                    프리미엄 멤버십으로 전문적인 운세 분석과
+                    <br />
+                    1:1 전문가 상담을 받아보세요
+                  </p>
+
+                  <ul className="space-y-4 mb-8">
+                    {premiumFeatures.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-3 text-white">
+                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                          <feature.icon className="h-4 w-4" />
+                        </div>
+                        <span>{feature.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link href="/pricing">
+                    <Button
+                      size="lg"
+                      className="bg-white text-amber-700 hover:bg-white/95 shadow-lg"
+                    >
+                      프리미엄 시작하기
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right - Pricing */}
+              <CardContent className="p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
+                <div className="text-center">
+                  <p className="text-muted-foreground mb-2">시작 가격</p>
+                  <div className="mb-6">
+                    <span className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                      ₩4,900
+                    </span>
+                    <span className="text-muted-foreground text-lg"> / 월</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-8 text-left max-w-xs mx-auto">
+                    {['무제한 운세 분석', '상세 리포트 제공', 'PDF 다운로드', '광고 없음'].map(
+                      (item, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-emerald-500" />
+                          <span>{item}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+
+                  <Link href="/pricing">
+                    <Button
+                      size="lg"
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
+                    >
+                      요금제 보기
+                    </Button>
+                  </Link>
+
+                  <p className="text-xs text-muted-foreground mt-4">
+                    언제든지 취소 가능 • 7일 무료 체험
+                  </p>
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Daily Fortune Preview */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-12">
+          <Badge className="mb-4" variant="outline">
+            <Calendar className="mr-1 h-3 w-3 text-amber-500" />
+            오늘의 운세
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            지금 바로 확인하세요
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            매일 업데이트되는 맞춤 운세를 무료로 확인해보세요
+          </p>
+        </div>
+
+        <Card className="max-w-xl mx-auto border-0 shadow-xl overflow-hidden">
+          <CardContent className="p-0">
+            {/* Header */}
+            <div className="fortune-gradient p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">오늘의 종합 운세</h3>
+              <p className="text-white/80 text-sm">
+                {new Date().toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            {/* Scores */}
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {[
+                  { label: '종합운', score: 85, color: 'text-amber-500' },
+                  { label: '금전운', score: 92, color: 'text-emerald-500' },
+                  { label: '애정운', score: 78, color: 'text-rose-500' },
+                  { label: '건강운', score: 88, color: 'text-blue-500' },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="text-center p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className={cn('text-3xl font-bold mb-1', item.color)}>
+                      {item.score}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/fortune/free">
+                <Button
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
+                >
+                  상세 운세 확인하기
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

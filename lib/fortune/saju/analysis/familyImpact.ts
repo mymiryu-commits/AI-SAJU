@@ -446,3 +446,382 @@ export function analyzeSpouseCompatibility(
     advice: '주 1회 이상 단둘이 대화하는 시간을 만들고, 중요 결정은 함께 내리세요.'
   };
 }
+
+// ========== 부모 영향도 분석 (신규 추가) ==========
+
+/**
+ * 부모 영향도 분석 결과
+ */
+export interface ParentInfluenceAnalysis {
+  fatherInfluence: {
+    score: number;  // 0-100
+    percentage: number;  // 전체 대비 비율
+    elements: {
+      personality: number;  // 성격 영향도
+      career: number;  // 진로/직업 영향도
+      values: number;  // 가치관 영향도
+      health: number;  // 건강/체질 영향도
+    };
+    sharedTraits: string[];  // 공통점
+    differences: string[];  // 차이점
+    advice: string;
+  };
+  motherInfluence: {
+    score: number;
+    percentage: number;
+    elements: {
+      personality: number;
+      career: number;
+      values: number;
+      health: number;
+    };
+    sharedTraits: string[];
+    differences: string[];
+    advice: string;
+  };
+  dominantParent: 'father' | 'mother' | 'balanced';
+  summary: string;
+  detailedAnalysis: string[];
+}
+
+/**
+ * 오행 상생/상극 관계 매핑
+ */
+const ELEMENT_RELATIONS: Record<Element, { generates: Element; controls: Element; generatedBy: Element; controlledBy: Element }> = {
+  wood: { generates: 'fire', controls: 'earth', generatedBy: 'water', controlledBy: 'metal' },
+  fire: { generates: 'earth', controls: 'metal', generatedBy: 'wood', controlledBy: 'water' },
+  earth: { generates: 'metal', controls: 'water', generatedBy: 'fire', controlledBy: 'wood' },
+  metal: { generates: 'water', controls: 'wood', generatedBy: 'earth', controlledBy: 'fire' },
+  water: { generates: 'wood', controls: 'fire', generatedBy: 'metal', controlledBy: 'earth' }
+};
+
+/**
+ * 오행 한글 매핑
+ */
+const ELEMENT_KOREAN_MAP: Record<Element, string> = {
+  wood: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)'
+};
+
+/**
+ * 부모 영향도 분석 메인 함수
+ * 부모의 생년월일을 입력받아 사용자가 어느 부모의 영향을 더 많이 받았는지 분석
+ */
+export function analyzeParentInfluence(
+  userSaju: SajuChart,
+  fatherBirthDate: string,
+  motherBirthDate: string,
+  fatherBirthTime?: string,
+  motherBirthTime?: string
+): ParentInfluenceAnalysis {
+  // 부모 사주 계산 (외부에서 계산해서 전달받거나 여기서 계산)
+  // 여기서는 간단히 연/월/일 기반으로 추정
+  const fatherYear = parseInt(fatherBirthDate.split('-')[0]);
+  const motherYear = parseInt(motherBirthDate.split('-')[0]);
+
+  // 지지 추정 (연도 기반)
+  const fatherBranch = getYearBranch(fatherYear);
+  const motherBranch = getYearBranch(motherYear);
+  const userBranch = userSaju.year.earthlyBranch;
+
+  // 천간/지지 오행 비교
+  const userDayElement = userSaju.day.element;
+  const userYearElement = userSaju.year.element;
+
+  // 부모 연도 오행 추정
+  const fatherYearElement = getYearElement(fatherYear);
+  const motherYearElement = getYearElement(motherYear);
+
+  // 영향도 계산
+  const fatherScore = calculateParentScore(userSaju, fatherYearElement, fatherBranch);
+  const motherScore = calculateParentScore(userSaju, motherYearElement, motherBranch);
+
+  const totalScore = fatherScore.total + motherScore.total;
+  const fatherPercentage = Math.round((fatherScore.total / totalScore) * 100);
+  const motherPercentage = 100 - fatherPercentage;
+
+  // 공통점/차이점 분석
+  const fatherShared = analyzeSharedTraits(userDayElement, fatherYearElement, '아버지');
+  const motherShared = analyzeSharedTraits(userDayElement, motherYearElement, '어머니');
+
+  // 우세 부모 판단
+  let dominantParent: 'father' | 'mother' | 'balanced';
+  if (Math.abs(fatherPercentage - motherPercentage) <= 10) {
+    dominantParent = 'balanced';
+  } else if (fatherPercentage > motherPercentage) {
+    dominantParent = 'father';
+  } else {
+    dominantParent = 'mother';
+  }
+
+  // 종합 분석
+  const summary = generateParentInfluenceSummary(dominantParent, fatherPercentage, motherPercentage, userDayElement);
+  const detailedAnalysis = generateDetailedParentAnalysis(
+    userSaju, fatherYearElement, motherYearElement, fatherScore, motherScore
+  );
+
+  return {
+    fatherInfluence: {
+      score: fatherScore.total,
+      percentage: fatherPercentage,
+      elements: {
+        personality: fatherScore.personality,
+        career: fatherScore.career,
+        values: fatherScore.values,
+        health: fatherScore.health
+      },
+      sharedTraits: fatherShared.shared,
+      differences: fatherShared.differences,
+      advice: generateParentAdvice('father', fatherYearElement, userDayElement)
+    },
+    motherInfluence: {
+      score: motherScore.total,
+      percentage: motherPercentage,
+      elements: {
+        personality: motherScore.personality,
+        career: motherScore.career,
+        values: motherScore.values,
+        health: motherScore.health
+      },
+      sharedTraits: motherShared.shared,
+      differences: motherShared.differences,
+      advice: generateParentAdvice('mother', motherYearElement, userDayElement)
+    },
+    dominantParent,
+    summary,
+    detailedAnalysis
+  };
+}
+
+/**
+ * 연도 지지 계산
+ */
+function getYearBranch(year: number): string {
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const index = (year - 4) % 12;
+  return branches[index >= 0 ? index : index + 12];
+}
+
+/**
+ * 연도 오행 추정
+ */
+function getYearElement(year: number): Element {
+  const cycle = (year - 4) % 10;
+  // 천간 순서: 갑(목), 을(목), 병(화), 정(화), 무(토), 기(토), 경(금), 신(금), 임(수), 계(수)
+  const elements: Element[] = ['wood', 'wood', 'fire', 'fire', 'earth', 'earth', 'metal', 'metal', 'water', 'water'];
+  return elements[cycle >= 0 ? cycle : cycle + 10];
+}
+
+/**
+ * 부모 영향 점수 계산
+ */
+function calculateParentScore(
+  userSaju: SajuChart,
+  parentElement: Element,
+  parentBranch: string
+): { total: number; personality: number; career: number; values: number; health: number } {
+  const userElement = userSaju.day.element;
+  const userBranch = userSaju.day.earthlyBranch;
+
+  let personality = 50;
+  let career = 50;
+  let values = 50;
+  let health = 50;
+
+  // 오행 관계 분석
+  const relation = ELEMENT_RELATIONS[userElement];
+
+  // 상생 관계 (부모가 나를 생함) = 높은 영향
+  if (relation.generatedBy === parentElement) {
+    personality += 25;
+    values += 20;
+    career += 15;
+  }
+
+  // 동일 오행 = 성격/가치관 유사
+  if (userElement === parentElement) {
+    personality += 30;
+    values += 25;
+    health += 20;
+  }
+
+  // 상극 관계 = 갈등 가능성 but 성장 자극
+  if (relation.controlledBy === parentElement) {
+    personality += 10;
+    career += 20;  // 엄격한 양육 → 성취욕
+    values -= 5;
+  }
+
+  // 지지 관계 (육합, 삼합, 충 등)
+  const branchRelation = checkBranchInfluence(userBranch, parentBranch);
+  if (branchRelation === 'harmony') {
+    personality += 15;
+    health += 15;
+  } else if (branchRelation === 'conflict') {
+    career += 10;  // 갈등 → 독립심
+    personality -= 5;
+  }
+
+  return {
+    total: Math.round((personality + career + values + health) / 4),
+    personality: Math.min(100, Math.max(0, personality)),
+    career: Math.min(100, Math.max(0, career)),
+    values: Math.min(100, Math.max(0, values)),
+    health: Math.min(100, Math.max(0, health))
+  };
+}
+
+/**
+ * 지지 관계 확인
+ */
+function checkBranchInfluence(userBranch: string, parentBranch: string): 'harmony' | 'conflict' | 'neutral' {
+  // 육합 관계
+  const yukap: Record<string, string> = {
+    '子': '丑', '丑': '子', '寅': '亥', '卯': '戌', '辰': '酉', '巳': '申',
+    '午': '未', '未': '午', '申': '巳', '酉': '辰', '戌': '卯', '亥': '寅'
+  };
+
+  // 충 관계
+  const chung: Record<string, string> = {
+    '子': '午', '丑': '未', '寅': '申', '卯': '酉', '辰': '戌', '巳': '亥',
+    '午': '子', '未': '丑', '申': '寅', '酉': '卯', '戌': '辰', '亥': '巳'
+  };
+
+  if (yukap[userBranch] === parentBranch) return 'harmony';
+  if (chung[userBranch] === parentBranch) return 'conflict';
+  return 'neutral';
+}
+
+/**
+ * 공통점/차이점 분석
+ */
+function analyzeSharedTraits(
+  userElement: Element,
+  parentElement: Element,
+  parentLabel: string
+): { shared: string[]; differences: string[] } {
+  const shared: string[] = [];
+  const differences: string[] = [];
+
+  const traits: Record<Element, { positive: string[]; negative: string[] }> = {
+    wood: {
+      positive: ['성장 지향적', '리더십', '창의성', '인내심'],
+      negative: ['고집', '융통성 부족', '과도한 경쟁심']
+    },
+    fire: {
+      positive: ['열정적', '사교적', '표현력', '낙관적'],
+      negative: ['충동적', '감정 기복', '인내심 부족']
+    },
+    earth: {
+      positive: ['안정적', '신뢰감', '책임감', '포용력'],
+      negative: ['보수적', '변화 거부', '고지식함']
+    },
+    metal: {
+      positive: ['결단력', '정의감', '분석력', '원칙주의'],
+      negative: ['융통성 부족', '완벽주의', '냉정함']
+    },
+    water: {
+      positive: ['지혜로움', '유연함', '통찰력', '적응력'],
+      negative: ['우유부단', '비밀주의', '감정적']
+    }
+  };
+
+  if (userElement === parentElement) {
+    shared.push(`${parentLabel}와 같은 ${ELEMENT_KOREAN_MAP[userElement]} 기질 - 기본 성향이 유사합니다.`);
+    shared.push(...traits[userElement].positive.slice(0, 2).map(t => `공통 강점: ${t}`));
+  } else {
+    const relation = ELEMENT_RELATIONS[userElement];
+    if (relation.generatedBy === parentElement) {
+      shared.push(`${parentLabel}(${ELEMENT_KOREAN_MAP[parentElement]})가 나(${ELEMENT_KOREAN_MAP[userElement]})를 생하는 관계`);
+      shared.push('자연스러운 지원과 양육의 관계입니다.');
+    } else if (relation.controlledBy === parentElement) {
+      differences.push(`${parentLabel}(${ELEMENT_KOREAN_MAP[parentElement]})가 나(${ELEMENT_KOREAN_MAP[userElement]})를 극하는 관계`);
+      differences.push('엄격한 훈육을 통해 성장한 측면이 있습니다.');
+    } else {
+      differences.push(`${parentLabel}와 다른 오행 기질을 가졌습니다.`);
+    }
+  }
+
+  return { shared, differences };
+}
+
+/**
+ * 부모별 조언 생성
+ */
+function generateParentAdvice(parent: 'father' | 'mother', parentElement: Element, userElement: Element): string {
+  const parentLabel = parent === 'father' ? '아버지' : '어머니';
+  const relation = ELEMENT_RELATIONS[userElement];
+
+  if (relation.generatedBy === parentElement) {
+    return `${parentLabel}로부터 자연스럽게 기운을 받았습니다. ${parentLabel}의 장점을 적극 활용하세요.`;
+  } else if (relation.controlledBy === parentElement) {
+    return `${parentLabel}의 엄격함이 오히려 성장의 자극이 되었습니다. 갈등 경험이 있다면 화해의 시간을 가져보세요.`;
+  } else if (userElement === parentElement) {
+    return `${parentLabel}와 기질이 같아 이해가 쉽지만, 같은 단점도 공유할 수 있으니 주의하세요.`;
+  } else {
+    return `${parentLabel}와 다른 기질을 가졌습니다. 서로의 차이를 인정하고 배우는 자세가 도움됩니다.`;
+  }
+}
+
+/**
+ * 종합 요약 생성
+ */
+function generateParentInfluenceSummary(
+  dominant: 'father' | 'mother' | 'balanced',
+  fatherPct: number,
+  motherPct: number,
+  userElement: Element
+): string {
+  if (dominant === 'balanced') {
+    return `부모님 양쪽에서 균형 있게 영향을 받았습니다. 아버지 ${fatherPct}%, 어머니 ${motherPct}%로 고른 영향을 받아 다양한 관점을 가지게 되었습니다.`;
+  } else if (dominant === 'father') {
+    return `아버지의 영향을 더 많이 받았습니다(${fatherPct}%). 아버지의 가치관, 행동 패턴, 직업관이 당신에게 많이 전해졌습니다.`;
+  } else {
+    return `어머니의 영향을 더 많이 받았습니다(${motherPct}%). 어머니의 성격, 감성, 대인관계 방식이 당신에게 많이 전해졌습니다.`;
+  }
+}
+
+/**
+ * 상세 분석 생성
+ */
+function generateDetailedParentAnalysis(
+  userSaju: SajuChart,
+  fatherElement: Element,
+  motherElement: Element,
+  fatherScore: { total: number; personality: number; career: number; values: number; health: number },
+  motherScore: { total: number; personality: number; career: number; values: number; health: number }
+): string[] {
+  const analysis: string[] = [];
+  const userElement = userSaju.day.element;
+
+  // 성격 영향
+  if (fatherScore.personality > motherScore.personality) {
+    analysis.push(`성격/기질: 아버지 영향이 더 큼 (${fatherScore.personality}점 vs ${motherScore.personality}점)`);
+  } else if (motherScore.personality > fatherScore.personality) {
+    analysis.push(`성격/기질: 어머니 영향이 더 큼 (${motherScore.personality}점 vs ${fatherScore.personality}점)`);
+  } else {
+    analysis.push(`성격/기질: 양쪽 부모님에게서 균등하게 영향 받음`);
+  }
+
+  // 직업/진로 영향
+  if (fatherScore.career > motherScore.career) {
+    analysis.push(`진로/직업관: 아버지의 영향이 더 큼 - 아버지의 직업관이나 성취욕이 전해졌습니다.`);
+  } else if (motherScore.career > fatherScore.career) {
+    analysis.push(`진로/직업관: 어머니의 영향이 더 큼 - 어머니의 현실감각이나 안정 지향이 전해졌습니다.`);
+  }
+
+  // 가치관 영향
+  if (fatherScore.values > motherScore.values) {
+    analysis.push(`가치관: 아버지의 가치관과 더 유사합니다.`);
+  } else if (motherScore.values > fatherScore.values) {
+    analysis.push(`가치관: 어머니의 가치관과 더 유사합니다.`);
+  }
+
+  // 건강/체질 영향
+  if (fatherScore.health > motherScore.health) {
+    analysis.push(`건강/체질: 아버지쪽 체질을 더 많이 물려받았을 가능성이 높습니다.`);
+  } else if (motherScore.health > fatherScore.health) {
+    analysis.push(`건강/체질: 어머니쪽 체질을 더 많이 물려받았을 가능성이 높습니다.`);
+  }
+
+  return analysis;
+}

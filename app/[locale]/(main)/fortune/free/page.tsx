@@ -23,33 +23,13 @@ import {
   Gift,
 } from 'lucide-react';
 
-// 날짜 기반 운세 생성
+// Generate daily fortune based on date
 function generateDailyFortune(date: Date) {
   const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
   const random = (min: number, max: number) => {
     const x = Math.sin(seed * 9999) * 10000;
     return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
   };
-
-  const advices = [
-    '오늘은 새로운 시작을 하기에 좋은 날입니다. 직감을 믿으세요.',
-    '인간관계에 집중하세요. 좋은 소통이 기회를 가져옵니다.',
-    '오늘의 금전적 결정은 오래 영향을 미칠 수 있습니다.',
-    '자기 관리에 시간을 투자하세요. 건강이 곧 재산입니다.',
-    '창의적인 활동이 예상치 못한 보상을 가져올 것입니다.',
-    '타인에게 인내심을 가지세요. 친절은 배로 돌아옵니다.',
-  ];
-
-  const cautions = [
-    '오후에 충동 구매를 피하세요.',
-    '오후 3시 경 말을 조심하세요.',
-    '중요한 서류는 서명 전에 꼭 다시 확인하세요.',
-    '번아웃을 피하기 위해 휴식을 취하세요.',
-    '식단에 주의하세요, 특히 단 음식을.',
-    '중요한 결정을 서두르지 마세요.',
-  ];
-
-  const colors = ['보라', '파랑', '초록', '빨강', '노랑', '주황'];
 
   return {
     overall: random(60, 95),
@@ -58,16 +38,17 @@ function generateDailyFortune(date: Date) {
     career: random(60, 95),
     health: random(55, 90),
     luckyTime: `${random(6, 18)}:00`,
-    luckyColor: colors[random(0, 5)],
+    luckyColorKey: ['Purple', 'Blue', 'Green', 'Red', 'Yellow', 'Orange'][random(0, 5)] as string,
     luckyNumber: random(1, 99),
-    advice: advices[random(0, 5)],
-    caution: cautions[random(0, 5)],
+    adviceIndex: random(0, 5),
+    cautionIndex: random(0, 5),
   };
 }
 
 export default function FreeFortunePage() {
   const t = useTranslations('fortune');
   const tDaily = useTranslations('fortune.daily');
+  const tCommon = useTranslations('common');
   const [fortune, setFortune] = useState<ReturnType<typeof generateDailyFortune> | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -75,6 +56,7 @@ export default function FreeFortunePage() {
 
   useEffect(() => {
     setFortune(generateDailyFortune(new Date()));
+    // Check if user has checked in today (would use localStorage or DB in production)
     const lastCheckin = localStorage.getItem('lastCheckin');
     const today = new Date().toDateString();
     if (lastCheckin === today) {
@@ -108,31 +90,35 @@ export default function FreeFortunePage() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <Sparkles className="h-12 w-12 animate-spin mx-auto text-primary" />
-        <p className="mt-4 text-muted-foreground">운세를 불러오는 중...</p>
+        <p className="mt-4 text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
 
   const scoreItems = [
-    { key: 'overall', label: '종합운', icon: Star, score: fortune.overall, color: 'text-purple-500' },
-    { key: 'wealth', label: '재물운', icon: Coins, score: fortune.wealth, color: 'text-yellow-500' },
-    { key: 'love', label: '애정운', icon: Heart, score: fortune.love, color: 'text-pink-500' },
-    { key: 'career', label: '직업운', icon: Briefcase, score: fortune.career, color: 'text-blue-500' },
-    { key: 'health', label: '건강운', icon: Activity, score: fortune.health, color: 'text-green-500' },
+    { key: 'overall', icon: Star, score: fortune.overall, color: 'text-purple-500' },
+    { key: 'wealth', icon: Coins, score: fortune.wealth, color: 'text-yellow-500' },
+    { key: 'love', icon: Heart, score: fortune.love, color: 'text-pink-500' },
+    { key: 'career', icon: Briefcase, score: fortune.career, color: 'text-blue-500' },
+    { key: 'health', icon: Activity, score: fortune.health, color: 'text-green-500' },
   ];
 
+  // Get translated color name
+  const luckyColorTranslated = tDaily(`colors.${fortune.luckyColorKey}` as 'colors.Purple');
+
+  // Get color hex for display
   const colorMap: Record<string, string> = {
-    '보라': '#9333ea',
-    '파랑': '#3b82f6',
-    '초록': '#22c55e',
-    '빨강': '#ef4444',
-    '노랑': '#eab308',
-    '주황': '#f97316',
+    Purple: '#9333ea',
+    Blue: '#3b82f6',
+    Green: '#22c55e',
+    Red: '#ef4444',
+    Yellow: '#eab308',
+    Orange: '#f97316',
   };
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="text-center mb-8">
         <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
           <Sparkles className="mr-1 h-3 w-3" />
@@ -141,14 +127,14 @@ export default function FreeFortunePage() {
         <h1 className="text-3xl md:text-4xl font-bold mb-2">{tDaily('title')}</h1>
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
           <Calendar className="h-4 w-4" />
-          <span>{currentTime.toLocaleDateString('ko-KR')}</span>
+          <span>{currentTime.toLocaleDateString()}</span>
           <Clock className="h-4 w-4 ml-2" />
-          <span>{currentTime.toLocaleTimeString('ko-KR')}</span>
+          <span>{currentTime.toLocaleTimeString()}</span>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {/* 출석 체크 카드 */}
+        {/* Check-in Card */}
         <Card className="mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
             <div className="flex items-center justify-between">
@@ -156,14 +142,14 @@ export default function FreeFortunePage() {
                 <h2 className="text-xl font-bold mb-1">{tDaily('checkin')}</h2>
                 <p className="text-white/80">
                   {checkedIn
-                    ? `연속 ${streak}일째 출석 중!`
-                    : '출석 체크하고 연속 기록을 시작하세요!'}
+                    ? tDaily('streakDays', { count: streak })
+                    : tDaily('streakStart')}
                 </p>
               </div>
               {checkedIn ? (
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
                   <CheckCircle className="h-5 w-5" />
-                  <span>출석 완료</span>
+                  <span>{tDaily('checkedIn')}</span>
                 </div>
               ) : (
                 <Button
@@ -171,11 +157,11 @@ export default function FreeFortunePage() {
                   className="bg-white text-purple-600 hover:bg-white/90"
                 >
                   <Gift className="mr-2 h-4 w-4" />
-                  출석하기
+                  {tDaily('checkInBtn')}
                 </Button>
               )}
             </div>
-            {/* 연속 출석 시각화 */}
+            {/* Streak visualization */}
             <div className="mt-4 flex gap-1">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div
@@ -186,11 +172,11 @@ export default function FreeFortunePage() {
                 />
               ))}
             </div>
-            <p className="text-xs text-white/60 mt-2">7일 연속 출석시 보너스 보상!</p>
+            <p className="text-xs text-white/60 mt-2">{tDaily('streakBonus')}</p>
           </div>
         </Card>
 
-        {/* 운세 점수 그리드 */}
+        {/* Fortune Scores Grid */}
         <div className="grid md:grid-cols-5 gap-4 mb-6">
           {scoreItems.map((item) => {
             const Icon = item.icon;
@@ -199,8 +185,8 @@ export default function FreeFortunePage() {
                 <CardContent className="p-4">
                   <Icon className={`h-6 w-6 mx-auto mb-2 ${item.color}`} />
                   <div className="text-2xl font-bold mb-1">{item.score}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.label}
+                  <div className="text-xs text-muted-foreground capitalize">
+                    {tDaily(`scores.${item.key}` as 'scores.overall')}
                   </div>
                   <Progress value={item.score} className="h-1 mt-2" />
                 </CardContent>
@@ -209,31 +195,31 @@ export default function FreeFortunePage() {
           })}
         </div>
 
-        {/* 오늘의 메시지 카드 */}
+        {/* Main Fortune Card */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sun className="h-5 w-5 text-yellow-500" />
-              오늘의 메시지
+              {tDaily('todayMessage')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-lg">{fortune.advice}</p>
+            <p className="text-lg">{tDaily(`advices.${fortune.adviceIndex}` as 'advices.0')}</p>
             <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
               <p className="text-amber-800 dark:text-amber-200 text-sm">
-                <strong>주의:</strong> {fortune.caution}
+                <strong>{tDaily('caution')}:</strong> {tDaily(`cautions.${fortune.cautionIndex}` as 'cautions.0')}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* 행운의 요소 */}
+        {/* Lucky Items */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 mx-auto mb-2 text-primary" />
               <div className="text-sm text-muted-foreground mb-1">
-                행운의 시간
+                {tDaily('luckyItems.time')}
               </div>
               <div className="text-xl font-bold">{fortune.luckyTime}</div>
             </CardContent>
@@ -242,43 +228,43 @@ export default function FreeFortunePage() {
             <CardContent className="p-6 text-center">
               <div
                 className="w-8 h-8 rounded-full mx-auto mb-2"
-                style={{ backgroundColor: colorMap[fortune.luckyColor] || '#9333ea' }}
+                style={{ backgroundColor: colorMap[fortune.luckyColorKey] }}
               />
               <div className="text-sm text-muted-foreground mb-1">
-                행운의 색
+                {tDaily('luckyItems.color')}
               </div>
-              <div className="text-xl font-bold">{fortune.luckyColor}</div>
+              <div className="text-xl font-bold">{luckyColorTranslated}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <Star className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
               <div className="text-sm text-muted-foreground mb-1">
-                행운의 숫자
+                {tDaily('luckyItems.number')}
               </div>
               <div className="text-xl font-bold">{fortune.luckyNumber}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* CTA 섹션 */}
+        {/* CTA Section */}
         <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="p-8 text-center">
             <Moon className="h-12 w-12 mx-auto mb-4 text-purple-500" />
-            <h3 className="text-xl font-bold mb-2">더 자세한 분석을 원하시나요?</h3>
+            <h3 className="text-xl font-bold mb-2">{tDaily('deeperAnalysis.title')}</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              프리미엄 사주 분석으로 나의 운명을 자세히 알아보세요.
+              {tDaily('deeperAnalysis.description')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/fortune/saju">
                 <Button size="lg">
-                  무료 사주 분석
+                  {tDaily('deeperAnalysis.freeSaju')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/pricing">
                 <Button size="lg" variant="outline">
-                  프리미엄 요금제 보기
+                  {tDaily('deeperAnalysis.viewPlans')}
                 </Button>
               </Link>
             </div>
