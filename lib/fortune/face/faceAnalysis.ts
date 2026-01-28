@@ -1,5 +1,6 @@
 /**
  * 관상학 분석 서비스
+ * - Vision API를 통한 실제 얼굴 분석
  * - 부위별 점수화 알고리즘
  * - 가중치 통합 점수 계산
  * - 강점/보완점 도출
@@ -24,6 +25,7 @@ import {
   getGradeFromScore,
 } from '@/types/face';
 import { generateStorytelling } from './faceStorytelling';
+import { analyzeWithVision, deterministicAnalysis, VisionAnalysisResult } from './visionAnalysis';
 
 // UUID 생성 함수
 function generateUUID(): string {
@@ -123,11 +125,43 @@ function generateScore(fortuneType: 'positive' | 'neutral' | 'challenging'): num
   return Math.round(baseScore);
 }
 
-// ===== 형태 선택 (AI 분석 시뮬레이션) =====
-function selectShape(part: FacePartType): FaceFeatureShape {
+// ===== Vision API 결과에서 형태 선택 =====
+function selectShapeFromVision(
+  part: FacePartType,
+  visionResult: VisionAnalysisResult
+): { shape: FaceFeatureShape; confidence: number; description: string } | null {
+  if (!visionResult.success || !visionResult.features) {
+    return null;
+  }
+
+  const visionFeature = visionResult.features[part];
+  if (!visionFeature) {
+    return null;
+  }
+
+  const shapes = SHAPE_MAPPINGS[part];
+  const shape = shapes[visionFeature.shapeId];
+
+  if (!shape) {
+    // 유효하지 않은 shapeId의 경우 기본값 반환
+    const defaultShape = Object.values(shapes)[0];
+    return {
+      shape: defaultShape,
+      confidence: visionFeature.confidence,
+      description: visionFeature.description,
+    };
+  }
+
+  return {
+    shape,
+    confidence: visionFeature.confidence,
+    description: visionFeature.description,
+  };
+}
+
+// ===== 형태 선택 (폴백용 - 랜덤) =====
+function selectShapeRandom(part: FacePartType): FaceFeatureShape {
   const shapes = Object.values(SHAPE_MAPPINGS[part]);
-  // 실제 구현에서는 AI 이미지 분석 결과를 사용
-  // 여기서는 랜덤으로 시뮬레이션
   const randomIndex = Math.floor(Math.random() * shapes.length);
   return shapes[randomIndex];
 }
@@ -157,6 +191,53 @@ function analyzePartByShape(part: FacePartType, shape: FaceFeatureShape): FacePa
     isImprovement,
     storytelling,
     examples: celebrityList.length > 0 ? celebrityList : undefined,
+  };
+}
+
+// ===== 부위별 분석 생성 (Vision API 신뢰도 반영) =====
+function analyzePartByShapeWithConfidence(
+  part: FacePartType,
+  shape: FaceFeatureShape,
+  confidence: number,
+  visionDescription: string
+): FacePartAnalysis {
+  // 기본 점수 생성
+  let baseScore = generateScore(shape.fortuneType);
+
+  // Vision API 신뢰도에 따른 점수 조정
+  // 높은 신뢰도(0.8+)일 경우 점수 범위 확장
+  if (confidence >= 0.8) {
+    const adjustment = (confidence - 0.8) * 10; // 최대 +2점
+    baseScore = Math.min(100, baseScore + Math.round(adjustment));
+  }
+
+  const score = baseScore;
+  const isStrength = score >= 85;
+  const isImprovement = score < 70;
+
+  // 스토리텔링 선택
+  const templateKey = shape.fortuneType === 'challenging' ? 'neutral' : shape.fortuneType;
+  const templates = STORYTELLING_TEMPLATES[part][templateKey] || STORYTELLING_TEMPLATES[part]['neutral'];
+  const storytelling = templates[Math.floor(Math.random() * templates.length)];
+
+  // 유명인 예시
+  const celebrityList = CELEBRITY_EXAMPLES[part][shape.id] || [];
+
+  // Vision API 설명을 trait에 반영
+  const trait = visionDescription || shape.description;
+
+  return {
+    part,
+    partKorean: FACE_PART_KOREAN[part],
+    score,
+    shape,
+    trait,
+    meaning: generateDetailedMeaning(part, shape, score),
+    isStrength,
+    isImprovement,
+    storytelling,
+    examples: celebrityList.length > 0 ? celebrityList : undefined,
+    confidence, // Vision API 신뢰도 추가
   };
 }
 
@@ -378,16 +459,92 @@ function generateAdvice(
   };
 }
 
-// ===== 메인 분석 함수 =====
+// ===== 메인 분석 함수 (비동기 - Vision API 사용) =====
+export async function analyzeFaceWithVision(imageData: string): Promise<FaceAnalysisResult> {
+  // Vision API로 실제 얼굴 분석 시도
+  let visionResult: VisionAnalysisResult;
+  let useAI = false;
+
+  try {
+    visionResult = await analyzeWithVision(imageData);
+    useAI = visionResult.success;
+    console.log('Vision API result:', visionResult.success ? 'success' : visionResult.error);
+  } catch (error) {
+    console.warn('Vision API failed, using deterministic fallback:', error);
+    visionResult = deterministicAnalysis(imageData);
+  }
+
+  // Vision API 실패 시 결정론적 분석 사용
+  if (!visionResult.success) {
+    visionResult = deterministicAnalysis(imageData);
+  }
+
+  // 부위별 형태 선택 (Vision API 결과 또는 결정론적 결과)
+  const parts: FacePartType[] = ['forehead', 'eyes', 'nose', 'mouth', 'chin', 'ears'];
+  const selectedShapes: Record<FacePartType, FaceFeatureShape> = {} as Record<FacePartType, FaceFeatureShape>;
+  const visionConfidences: Record<FacePartType, number> = {} as Record<FacePartType, number>;
+  const visionDescriptions: Record<FacePartType, string> = {} as Record<FacePartType, string>;
+
+  for (const part of parts) {
+    const visionData = selectShapeFromVision(part, visionResult);
+    if (visionData) {
+      selectedShapes[part] = visionData.shape;
+      visionConfidences[part] = visionData.confidence;
+      visionDescriptions[part] = visionData.description;
+    } else {
+      selectedShapes[part] = selectShapeRandom(part);
+      visionConfidences[part] = 0.5;
+      visionDescriptions[part] = '';
+    }
+  }
+
+  // 부위별 분석 (Vision API 신뢰도 반영)
+  const features: Record<FacePartType, FacePartAnalysis> = {} as Record<FacePartType, FacePartAnalysis>;
+  for (const part of parts) {
+    features[part] = analyzePartByShapeWithConfidence(
+      part,
+      selectedShapes[part],
+      visionConfidences[part],
+      visionDescriptions[part]
+    );
+  }
+
+  return buildAnalysisResult(features, useAI, visionResult.overallDescription);
+}
+
+// ===== 메인 분석 함수 (동기 - 폴백용) =====
 export function analyzeFace(imageData?: string): FaceAnalysisResult {
-  // 부위별 형태 선택 (실제 구현에서는 AI 이미지 분석 사용)
+  // 이미지가 제공된 경우 결정론적 분석 사용
+  if (imageData) {
+    const visionResult = deterministicAnalysis(imageData);
+    const parts: FacePartType[] = ['forehead', 'eyes', 'nose', 'mouth', 'chin', 'ears'];
+    const features: Record<FacePartType, FacePartAnalysis> = {} as Record<FacePartType, FacePartAnalysis>;
+
+    for (const part of parts) {
+      const visionData = selectShapeFromVision(part, visionResult);
+      if (visionData) {
+        features[part] = analyzePartByShapeWithConfidence(
+          part,
+          visionData.shape,
+          visionData.confidence,
+          visionData.description
+        );
+      } else {
+        features[part] = analyzePartByShape(part, selectShapeRandom(part));
+      }
+    }
+
+    return buildAnalysisResult(features, false);
+  }
+
+  // 이미지가 없는 경우 랜덤 분석 (테스트용)
   const selectedShapes: Record<FacePartType, FaceFeatureShape> = {
-    forehead: selectShape('forehead'),
-    eyes: selectShape('eyes'),
-    nose: selectShape('nose'),
-    mouth: selectShape('mouth'),
-    chin: selectShape('chin'),
-    ears: selectShape('ears'),
+    forehead: selectShapeRandom('forehead'),
+    eyes: selectShapeRandom('eyes'),
+    nose: selectShapeRandom('nose'),
+    mouth: selectShapeRandom('mouth'),
+    chin: selectShapeRandom('chin'),
+    ears: selectShapeRandom('ears'),
   };
 
   // 부위별 분석
@@ -400,6 +557,15 @@ export function analyzeFace(imageData?: string): FaceAnalysisResult {
     ears: analyzePartByShape('ears', selectedShapes.ears),
   };
 
+  return buildAnalysisResult(features, false);
+}
+
+// ===== 분석 결과 빌드 헬퍼 =====
+function buildAnalysisResult(
+  features: Record<FacePartType, FacePartAnalysis>,
+  useAI: boolean,
+  overallDescription?: string
+): FaceAnalysisResult {
   // 부위별 점수 추출
   const partScores: Record<FacePartType, number> = {
     forehead: features.forehead.score,
@@ -460,6 +626,10 @@ export function analyzeFace(imageData?: string): FaceAnalysisResult {
     personality,
     storytelling,
     advice,
+    metadata: {
+      useAI,
+      overallDescription,
+    },
   };
 }
 
