@@ -23,9 +23,6 @@ import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
 import {
   canUseFreeAnalysis,
   incrementFreeAnalysis,
-  getPointBalance,
-  deductPoints,
-  PRODUCT_COSTS,
 } from '@/lib/services/pointService';
 import {
   blindFreeAnalysis,
@@ -173,11 +170,11 @@ export async function POST(request: NextRequest) {
     // Supabase에 저장 (인증된 사용자인 경우)
     let userId: string | null = null;
     let analysisId: string | null = null;
-    let pointBalance = null;
+    let voucherInfo: { hasVoucher: boolean; remaining: number } = { hasVoucher: false, remaining: 0 };
     let freeAnalysisStatus = { canUse: true, remaining: 3, limit: 3 };
     let isBlinded = true; // 무료 분석은 기본적으로 블라인드
     let isAdmin = false;
-    let usedPoints = 0;
+    let usedVoucher = false;
 
     // 관리자 이메일 목록
     const ADMIN_EMAILS = ['mymiryu@gmail.com'];
@@ -192,11 +189,23 @@ export async function POST(request: NextRequest) {
         // 관리자 확인
         isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
 
-        // 포인트 잔액 조회
-        pointBalance = await getPointBalance(userId);
+        // 결제권(이용권) 잔여 확인
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: vouchers } = await (supabase as any)
+          .from('user_vouchers')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('service_type', 'saju')
+          .eq('status', 'active')
+          .gt('remaining_quantity', 0)
+          .gt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: true });
+
+        const totalVouchers = vouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
+        voucherInfo = { hasVoucher: totalVouchers > 0, remaining: totalVouchers };
 
         if (isAdmin) {
-          // 관리자: 무제한 무료 (포인트 차감 없음)
+          // 관리자: 무제한 무료
           freeAnalysisStatus = { canUse: true, remaining: 999, limit: 999 };
           isBlinded = false;
         } else {
@@ -207,43 +216,39 @@ export async function POST(request: NextRequest) {
             // 무료 분석 가능 → 사용
             await incrementFreeAnalysis(userId);
             isBlinded = true;
-          } else {
-            // 무료 분석 소진 → 포인트로 결제
-            const currentPoints = pointBalance?.points || 0;
-            const analysisCost = PRODUCT_COSTS.basic; // 500 포인트
+          } else if (voucherInfo.hasVoucher) {
+            // 무료 분석 소진 → 결제권 사용
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+              p_user_id: user.id,
+              p_service_type: 'saju',
+              p_quantity: 1,
+              p_related_id: null,
+              p_related_type: 'saju_analysis',
+            });
 
-            if (currentPoints >= analysisCost) {
-              // 포인트 차감
-              const deductResult = await deductPoints(userId, 'basic');
-              if (deductResult.success) {
-                usedPoints = analysisCost;
-                isBlinded = false; // 포인트 결제 시 블라인드 해제
-                // 포인트 잔액 업데이트
-                pointBalance = await getPointBalance(userId);
-              } else {
-                return NextResponse.json({
-                  success: false,
-                  error: '포인트 차감에 실패했습니다.',
-                  data: { pointBalance, upgradeCost: PRODUCT_COSTS.basic }
-                }, { status: 500 });
-              }
-            } else {
-              // 포인트 부족
+            if (useError || !useResult?.success) {
               return NextResponse.json({
                 success: false,
-                error: '오늘의 무료 분석 횟수를 모두 사용했습니다. 포인트를 충전해주세요.',
-                errorCode: 'INSUFFICIENT_POINTS',
-                data: {
-                  freeAnalysisStatus,
-                  pointBalance: {
-                    current: currentPoints,
-                    required: analysisCost,
-                    shortage: analysisCost - currentPoints
-                  },
-                  upgradeCost: PRODUCT_COSTS.basic,
-                }
-              }, { status: 402 });
+                error: '결제권 사용에 실패했습니다.',
+                errorCode: 'VOUCHER_USE_FAILED',
+              }, { status: 500 });
             }
+
+            usedVoucher = true;
+            isBlinded = false; // 결제권 사용 시 블라인드 해제
+            voucherInfo.remaining = useResult.remaining;
+          } else {
+            // 결제권 없음
+            return NextResponse.json({
+              success: false,
+              error: '무료 분석 횟수를 모두 사용했습니다. 결제권을 구매해주세요.',
+              errorCode: 'NO_VOUCHER',
+              data: {
+                freeAnalysisStatus,
+                voucherInfo,
+              }
+            }, { status: 402 });
           }
         }
 
@@ -251,8 +256,8 @@ export async function POST(request: NextRequest) {
         const saveResult = await saveAnalysisResult(userId, result, {
           isPremium: !isBlinded,
           isBlinded: isBlinded,
-          productType: usedPoints > 0 ? 'basic' : 'free',
-          pointsPaid: usedPoints,
+          productType: usedVoucher ? 'voucher' : 'free',
+          pointsPaid: 0,
           zodiacData: zodiacAnalysis,
         });
 
@@ -263,24 +268,33 @@ export async function POST(request: NextRequest) {
           console.error('분석 결과 저장 실패:', saveResult.error);
         }
 
-        // 포인트 잔액 업데이트
-        pointBalance = await getPointBalance(userId);
+        // 결제권 잔여 업데이트
         if (!isAdmin) {
           freeAnalysisStatus = await canUseFreeAnalysis(userId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: updatedVouchers } = await (supabase as any)
+            .from('user_vouchers')
+            .select('remaining_quantity')
+            .eq('user_id', user.id)
+            .eq('service_type', 'saju')
+            .eq('status', 'active')
+            .gt('remaining_quantity', 0)
+            .gt('expires_at', new Date().toISOString());
+          voucherInfo.remaining = updatedVouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
         }
       }
     } catch (dbError) {
       console.warn('DB 저장 실패:', dbError);
     }
 
-    // 블라인드 처리 (관리자/포인트 결제 제외)
+    // 블라인드 처리 (관리자/결제권 사용 제외)
     const blindedResult = isBlinded ? blindFreeAnalysis(result) : result;
 
     return NextResponse.json({
       success: true,
       data: {
         result: blindedResult,
-        fullResult: !isBlinded ? result : null, // 관리자/포인트결제에게만 제공
+        fullResult: !isBlinded ? result : null, // 관리자/결제권 사용자에게만 제공
         ohengActions,
         zodiacAnalysis, // 별자리 분석 포함
         isBlinded,
@@ -295,18 +309,13 @@ export async function POST(request: NextRequest) {
         userId,
         analysisId,
         timestamp: new Date().toISOString(),
-        pointBalance: pointBalance ? {
-          current: pointBalance.points,
-          isPremium: isAdmin,
-        } : null,
+        voucherInfo: {
+          remaining: voucherInfo.remaining,
+          hasVoucher: voucherInfo.hasVoucher,
+        },
         freeAnalysis: freeAnalysisStatus,
         isAdmin,
-        usedPoints,
-        upgradeCost: {
-          basic: PRODUCT_COSTS.basic,
-          deep: PRODUCT_COSTS.deep,
-          premium: PRODUCT_COSTS.premium,
-        }
+        usedVoucher,
       }
     });
 
