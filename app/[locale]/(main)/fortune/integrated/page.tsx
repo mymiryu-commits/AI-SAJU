@@ -550,17 +550,10 @@ function IntegratedAnalysisPageContent() {
           </div>
           <h2 className="text-2xl font-bold mb-4">분석 중 문제가 발생했습니다</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={() => { setStep('form'); setError(null); }}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              다시 시도
-            </Button>
-            <Link href="/points">
-              <Button variant="outline">
-                포인트 충전하기
-              </Button>
-            </Link>
-          </div>
+          <Button onClick={() => { setStep('form'); setError(null); }}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            다시 시도
+          </Button>
         </div>
       </div>
     );

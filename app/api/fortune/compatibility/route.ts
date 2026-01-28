@@ -50,6 +50,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 인증 및 결제권 확인
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // 관리자 이메일 목록
+    const ADMIN_EMAILS = ['mymiryu@gmail.com'];
+    const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email) : false;
+
+    if (!isAdmin) {
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: '로그인이 필요합니다.', errorCode: 'AUTH_REQUIRED' },
+          { status: 401 }
+        );
+      }
+
+      // 결제권 확인
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: vouchers } = await (supabase as any)
+        .from('user_vouchers')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('service_type', 'compatibility')
+        .eq('status', 'active')
+        .gt('remaining_quantity', 0)
+        .gt('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: true })
+        .limit(1);
+
+      if (!vouchers || vouchers.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: '궁합 분석은 결제권이 필요합니다.',
+          errorCode: 'NO_VOUCHER',
+        }, { status: 402 });
+      }
+
+      // 결제권 사용
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+        p_user_id: user.id,
+        p_service_type: 'compatibility',
+        p_quantity: 1,
+        p_related_id: null,
+        p_related_type: 'compatibility_analysis',
+      });
+
+      if (useError || !useResult?.success) {
+        return NextResponse.json({
+          success: false,
+          error: '결제권 사용에 실패했습니다.',
+          errorCode: 'VOUCHER_USE_FAILED',
+        }, { status: 500 });
+      }
+    }
+
     if (!p1Input.name || !p1Input.birthDate || !p1Input.gender) {
       return NextResponse.json(
         { success: false, error: '첫 번째 분의 정보가 불완전합니다.' },
