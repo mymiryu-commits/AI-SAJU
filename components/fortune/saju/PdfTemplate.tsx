@@ -27,6 +27,9 @@ import { analyzeUnsung } from '@/lib/fortune/saju/analysis/unsung';
 import { analyzeHapChung, transformToConsumerFriendlyRisk } from '@/lib/fortune/saju/analysis/hapchung';
 import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EARTHLY_BRANCHES_KO } from '@/lib/fortune/saju/calculator';
 
+// 운명 카드 시스템
+import { generateCardDeck, generateCardDeckSummary, getCardDescription } from '@/lib/fortune/saju/cards';
+
 // 천간/지지 한글 변환 헬퍼
 const getStemKo = (stem: string): string => {
   const idx = HEAVENLY_STEMS.indexOf(stem);
@@ -358,6 +361,30 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         // 현재 대운 인덱스
         const currentDaeunIndex = daeunList.findIndex(d => d === currentDaeun);
 
+        // 용신을 한글로 변환 (카드 덱 생성용)
+        const yongsinKorean = yongsin.map((el: Element) => {
+          const map: Record<Element, string> = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
+          return map[el] || '목';
+        });
+
+        // 우세 십신 (카드 덱 생성용)
+        const dominantSipsin = sipsinInterp.dominant[0] || 'siksin';
+        const sipsinKoreanMap: Record<SipsinType, string> = {
+          bijeon: '비견', geopjae: '겁재', siksin: '식신', sanggwan: '상관',
+          pyeonjae: '편재', jeongjae: '정재', pyeongwan: '편관', jeonggwan: '정관',
+          pyeonin: '편인', jeongin: '정인'
+        };
+
+        // 운명 카드 덱 생성
+        const cardDeck = generateCardDeck(
+          user,
+          saju,
+          oheng,
+          yongsinKorean,
+          sipsinKoreanMap[dominantSipsin] || '식신',
+          targetYear
+        );
+
         return {
           sipsin: { chart: sipsinChart, interp: sipsinInterp },
           sinsal: sinsalAnalysis,
@@ -367,13 +394,14 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             list: daeunList,
             current: currentDaeun,
             currentIndex: currentDaeunIndex
-          }
+          },
+          cardDeck
         };
       } catch (e) {
         console.error('Traditional analysis failed:', e);
         return null;
       }
-    }, [saju, user.gender, user.birthDate, currentAge]);
+    }, [saju, user, oheng, yongsin, user.gender, user.birthDate, currentAge, targetYear]);
 
     // 십신 한글 변환 헬퍼
     const sipsinToKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
@@ -1278,6 +1306,199 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 </div>
               </SubSection>
             </Section>
+
+            {/* ============ 운명 카드 섹션 ============ */}
+            {traditionalAnalysis.cardDeck && (
+              <Section title="나의 운명 카드">
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '20px',
+                  fontSize: '12pt',
+                  lineHeight: 1.7,
+                  padding: '12px 16px',
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #f59e0b'
+                }}>
+                  당신의 사주를 상징하는 <strong>운명 카드</strong>입니다.
+                  꽃, 동물, 나무, 보석으로 표현된 당신만의 운명 이야기를 확인하세요.
+                </p>
+
+                {/* 카드 그리드 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '16px',
+                  marginBottom: '24px'
+                }}>
+                  {/* 본질 카드 (꽃) */}
+                  <div style={{
+                    padding: '20px',
+                    backgroundColor: '#fdf2f8',
+                    borderRadius: '12px',
+                    border: '2px solid #ec4899'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌸</span>
+                      <div>
+                        <p style={{ fontSize: '10pt', color: '#9d174d', fontWeight: 600 }}>본질 카드</p>
+                        <p style={{ fontSize: '14pt', fontWeight: 700, color: '#831843' }}>
+                          {traditionalAnalysis.cardDeck.essence.flowerKorean}
+                        </p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
+                    </p>
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {traditionalAnalysis.cardDeck.essence.keywords.map((kw, i) => (
+                        <span key={i} style={{
+                          fontSize: '9pt',
+                          padding: '2px 8px',
+                          backgroundColor: '#fbcfe8',
+                          borderRadius: '10px',
+                          color: '#9d174d'
+                        }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 에너지 카드 (동물) */}
+                  <div style={{
+                    padding: '20px',
+                    backgroundColor: '#ecfdf5',
+                    borderRadius: '12px',
+                    border: '2px solid #10b981'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24pt', marginRight: '12px' }}>🦋</span>
+                      <div>
+                        <p style={{ fontSize: '10pt', color: '#047857', fontWeight: 600 }}>에너지 카드</p>
+                        <p style={{ fontSize: '14pt', fontWeight: 700, color: '#064e3b' }}>
+                          {traditionalAnalysis.cardDeck.energy.animalKorean}
+                        </p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
+                    </p>
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {traditionalAnalysis.cardDeck.energy.keywords.map((kw, i) => (
+                        <span key={i} style={{
+                          fontSize: '9pt',
+                          padding: '2px 8px',
+                          backgroundColor: '#a7f3d0',
+                          borderRadius: '10px',
+                          color: '#047857'
+                        }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 재능 카드 (나무) */}
+                  <div style={{
+                    padding: '20px',
+                    backgroundColor: '#fef9c3',
+                    borderRadius: '12px',
+                    border: '2px solid #eab308'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌳</span>
+                      <div>
+                        <p style={{ fontSize: '10pt', color: '#a16207', fontWeight: 600 }}>재능 카드</p>
+                        <p style={{ fontSize: '14pt', fontWeight: 700, color: '#713f12' }}>
+                          {traditionalAnalysis.cardDeck.talent.treeKorean}
+                        </p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
+                    </p>
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {traditionalAnalysis.cardDeck.talent.keywords.map((kw, i) => (
+                        <span key={i} style={{
+                          fontSize: '9pt',
+                          padding: '2px 8px',
+                          backgroundColor: '#fef08a',
+                          borderRadius: '10px',
+                          color: '#a16207'
+                        }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 수호 카드 (보석) */}
+                  <div style={{
+                    padding: '20px',
+                    backgroundColor: '#ede9fe',
+                    borderRadius: '12px',
+                    border: '2px solid #8b5cf6'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '24pt', marginRight: '12px' }}>💎</span>
+                      <div>
+                        <p style={{ fontSize: '10pt', color: '#6d28d9', fontWeight: 600 }}>수호 카드</p>
+                        <p style={{ fontSize: '14pt', fontWeight: 700, color: '#4c1d95' }}>
+                          {traditionalAnalysis.cardDeck.guardian.mainGemKorean}
+                        </p>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
+                    </p>
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {traditionalAnalysis.cardDeck.guardian.keywords.map((kw, i) => (
+                        <span key={i} style={{
+                          fontSize: '9pt',
+                          padding: '2px 8px',
+                          backgroundColor: '#ddd6fe',
+                          borderRadius: '10px',
+                          color: '#6d28d9'
+                        }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 행운 정보 요약 */}
+                <div style={{
+                  padding: '16px 20px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <p style={{ fontSize: '12pt', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>
+                    🍀 나의 행운 정보
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                    <div>
+                      <p style={{ fontSize: '9pt', color: '#64748b' }}>행운 숫자</p>
+                      <p style={{ fontSize: '14pt', fontWeight: 700, color: '#0f172a' }}>
+                        {traditionalAnalysis.cardDeck.fortune.luckyNumbers.join(' · ')}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '9pt', color: '#64748b' }}>행운 방향</p>
+                      <p style={{ fontSize: '14pt', fontWeight: 700, color: '#0f172a' }}>
+                        {traditionalAnalysis.cardDeck.fortune.luckyDirection}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '9pt', color: '#64748b' }}>행운 색상</p>
+                      <p style={{ fontSize: '14pt', fontWeight: 700, color: '#0f172a' }}>
+                        {traditionalAnalysis.cardDeck.fortune.luckyColor}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '9pt', color: '#64748b' }}>행운의 달</p>
+                      <p style={{ fontSize: '14pt', fontWeight: 700, color: '#0f172a' }}>
+                        {traditionalAnalysis.cardDeck.fortune.luckyMonths.map(m => `${m}월`).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+            )}
 
             {/* 페이지 나누기 */}
             <div style={{ pageBreakAfter: 'always' }} />
