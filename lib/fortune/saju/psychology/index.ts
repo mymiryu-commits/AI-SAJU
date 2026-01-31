@@ -56,3 +56,21 @@ export {
   type QuoteTheme,
   type QuoteMood
 } from './wisdomQuotes';
+
+// 연령대별 맞춤형 콘텐츠
+export {
+  AGE_GROUP_CONFIG,
+  getAgeGroup,
+  getAgeGroupConfig,
+  getHonorific,
+  generateHealthContent,
+  generateFamilyContent,
+  getNarrationTone,
+  generateLifeReviewContent,
+  type AgeGroup,
+  type AgeGroupConfig,
+  type AgeHealthContent,
+  type AgeFamilyContent,
+  type NarrationTone,
+  type LifeReviewContent
+} from './ageBasedContent';
