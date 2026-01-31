@@ -26,6 +26,7 @@ import { analyzeSinsal } from '@/lib/fortune/saju/analysis/sinsal';
 import { analyzeUnsung } from '@/lib/fortune/saju/analysis/unsung';
 import { analyzeHapChung, transformToConsumerFriendlyRisk } from '@/lib/fortune/saju/analysis/hapchung';
 import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EARTHLY_BRANCHES_KO } from '@/lib/fortune/saju/calculator';
+import { generateYearlyMonthlyFortune, generate2026AuspiciousDates, findBestAndWorstMonths, getQuarterlySummary } from '@/lib/fortune/saju/analysis/monthlyFortune';
 
 // 운명 카드 시스템
 import { generateCardDeck, generateCardDeckSummary, getCardDescription } from '@/lib/fortune/saju/cards';
@@ -36,6 +37,7 @@ import {
   getLifecycleData,
   getArchetypeByDayMaster,
   getAgeSpecificAdvice,
+  getMatchingQuotes,
   type FourActStructure
 } from '@/lib/fortune/saju/psychology';
 
@@ -417,7 +419,36 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             targetYear
           }),
           lifecycleData: getLifecycleData(currentAge),
-          archetype: getArchetypeByDayMaster(saju.day.stemKorean)
+          archetype: getArchetypeByDayMaster(saju.day.stemKorean),
+          wisdomQuotes: getMatchingQuotes(
+            getArchetypeByDayMaster(saju.day.stemKorean)?.type || 'hero',
+            dominantSipsin,
+            getLifecycleData(currentAge)?.stage || 'adult_mid',
+            3
+          ),
+          monthlyFortune: generateYearlyMonthlyFortune(
+            saju,
+            (() => {
+              // 오행 중 가장 높은 값 찾기 (Element 타입 그대로 반환)
+              const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+              let maxElement: Element = 'wood';
+              let maxValue = 0;
+              for (const el of elements) {
+                if (oheng[el] > maxValue) {
+                  maxValue = oheng[el];
+                  maxElement = el;
+                }
+              }
+              return maxElement;
+            })(),
+            yongsin,
+            undefined, // gisin
+            targetYear
+          ),
+          auspiciousDates: generate2026AuspiciousDates(
+            saju.day.heavenlyStem,
+            saju.day.earthlyBranch
+          )
         };
       } catch (e) {
         console.error('Traditional analysis failed:', e);
@@ -467,7 +498,8 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             height: '80px',
             background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
             borderRadius: '12px',
-            marginBottom: '40px',
+            marginBottom: '60px',
+            marginTop: '-30px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -552,6 +584,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
+              marginTop: '20px',
               marginBottom: '20px',
               tableLayout: 'fixed'
             }}>
@@ -616,7 +649,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         {/* ============ 2. 오행 분석 ============ */}
         <Section title="2. 오행 에너지 분석">
           <SubSection title="오행 분포">
-            <div style={{ marginBottom: '14px' }}>
+            <div style={{ marginTop: '20px', marginBottom: '14px' }}>
               {sortedElements.map(({ key, value }) => (
                 <div key={key} style={{
                   display: 'flex',
@@ -683,7 +716,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 용신/기신 분석 */}
           {(yongsin?.length > 0 || gisin?.length > 0) && (
             <SubSection title="용신(用神) & 기신(忌神) - 운을 좌우하는 핵심 에너지">
-              <p style={{ color: '#6b7280', marginBottom: '14px', fontSize: '12pt', lineHeight: 1.7 }}>
+              <p style={{ color: '#6b7280', marginTop: '24px', marginBottom: '14px', fontSize: '12pt', lineHeight: 1.7 }}>
                 용신은 당신의 사주에서 부족한 기운을 채워 균형을 잡아주는 <strong>행운의 에너지</strong>이고,
                 기신은 이미 과한 기운이 더해질 때 <strong>불균형을 일으키는 에너지</strong>입니다.
                 아래 가이드를 일상에 적용하면 운의 흐름을 더 유리하게 만들 수 있습니다.
@@ -924,7 +957,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
             {/* 연령대별 핵심 조언 */}
             {traditionalAnalysis.lifecycleData && (
-              <div style={{ marginTop: '24px' }}>
+              <div style={{ marginTop: '48px' }}>
                 <SubSection title={`${traditionalAnalysis.lifecycleData.ageRange} 시기, 알아두세요`}>
                   <div style={{
                     display: 'grid',
@@ -993,23 +1026,50 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     </p>
                   </div>
 
-                  {/* 명언/글귀 */}
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '20px',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '10px',
-                    borderLeft: '3px solid #6366f1'
-                  }}>
-                    <p style={{
-                      fontSize: '12pt',
-                      color: '#4f46e5',
-                      fontStyle: 'italic',
-                      lineHeight: 1.7
+                  {/* 성향 맞춤형 인생 격언 */}
+                  {traditionalAnalysis.wisdomQuotes && traditionalAnalysis.wisdomQuotes.length > 0 && (
+                    <div style={{
+                      marginTop: '20px',
+                      padding: '20px',
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f0f9ff 100%)',
+                      borderRadius: '12px',
+                      border: '1px solid #e9d5ff'
                     }}>
-                      "{traditionalAnalysis.lifecycleData.wisdomQuotes.original}"
-                    </p>
-                  </div>
+                      <p style={{
+                        fontSize: '10pt',
+                        color: '#7e22ce',
+                        fontWeight: 600,
+                        marginBottom: '14px',
+                        letterSpacing: '1px'
+                      }}>
+                        당신을 위한 인생 격언
+                      </p>
+                      {traditionalAnalysis.wisdomQuotes.map((quote, idx) => (
+                        <div key={quote.id} style={{
+                          marginBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '14px' : '0',
+                          paddingBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '14px' : '0',
+                          borderBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '1px dashed #e9d5ff' : 'none'
+                        }}>
+                          <p style={{
+                            fontSize: '12pt',
+                            color: '#4c1d95',
+                            fontStyle: 'italic',
+                            lineHeight: 1.7,
+                            marginBottom: '4px'
+                          }}>
+                            "{quote.korean}"
+                          </p>
+                          <p style={{
+                            fontSize: '10pt',
+                            color: '#8b5cf6',
+                            textAlign: 'right'
+                          }}>
+                            — {quote.authorKorean || quote.author}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </SubSection>
               </div>
             )}
@@ -1240,7 +1300,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 합충형파해 분석 */}
               <SubSection title="관계와 타이밍의 조화 (합충형파해)">
-                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                <p style={{ color: '#6b7280', marginTop: '40px', marginBottom: '12px', fontSize: '11pt' }}>
                   사주 내 지지(地支)들의 관계를 분석합니다. 합(合)은 조화, 충(沖)은 충돌을 의미합니다.
                 </p>
 
@@ -1592,7 +1652,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #ec4899'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌸</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#9d174d', fontWeight: 600 }}>본질 카드</p>
@@ -1601,20 +1661,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.essence.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#fbcfe8',
-                          borderRadius: '10px',
-                          color: '#9d174d'
+                          borderRadius: '12px',
+                          color: '#9d174d',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 에너지 카드 (동물) */}
@@ -1624,7 +1685,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #10b981'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🦋</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#047857', fontWeight: 600 }}>에너지 카드</p>
@@ -1633,20 +1694,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.energy.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#a7f3d0',
-                          borderRadius: '10px',
-                          color: '#047857'
+                          borderRadius: '12px',
+                          color: '#047857',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 재능 카드 (나무) */}
@@ -1656,7 +1718,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #eab308'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌳</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#a16207', fontWeight: 600 }}>재능 카드</p>
@@ -1665,20 +1727,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.talent.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#fef08a',
-                          borderRadius: '10px',
-                          color: '#a16207'
+                          borderRadius: '12px',
+                          color: '#a16207',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 수호 카드 (보석) */}
@@ -1688,7 +1751,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #8b5cf6'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>💎</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#6d28d9', fontWeight: 600 }}>수호 카드</p>
@@ -1697,20 +1760,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.guardian.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#ddd6fe',
-                          borderRadius: '10px',
-                          color: '#6d28d9'
+                          borderRadius: '12px',
+                          color: '#6d28d9',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
+                    </p>
                   </div>
                 </div>
 
@@ -1750,6 +1814,330 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                       </p>
                     </div>
                   </div>
+                </div>
+              </Section>
+            )}
+
+            {/* ============ 2026년 월별 운세 섹션 ============ */}
+            {traditionalAnalysis.monthlyFortune && traditionalAnalysis.monthlyFortune.length > 0 && (
+              <Section title="2026년 월별 운세">
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '20px',
+                  fontSize: '12pt',
+                  lineHeight: 1.7,
+                  padding: '12px 16px',
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #f59e0b'
+                }}>
+                  월별 에너지 흐름을 파악하여 <strong>최적의 타이밍</strong>에 중요한 결정을 내리세요.
+                  점수가 높은 달에 도전하고, 낮은 달에는 충전하세요.
+                </p>
+
+                {/* 12개월 운세 그래프 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(6, 1fr)',
+                  gap: '8px',
+                  marginBottom: '24px'
+                }}>
+                  {traditionalAnalysis.monthlyFortune.map((month) => (
+                    <div key={month.month} style={{
+                      textAlign: 'center',
+                      padding: '12px 8px',
+                      backgroundColor: month.score >= 80 ? '#dcfce7' :
+                                      month.score >= 65 ? '#fef9c3' :
+                                      month.score >= 50 ? '#f3f4f6' : '#fee2e2',
+                      borderRadius: '8px',
+                      border: `2px solid ${month.score >= 80 ? '#22c55e' :
+                                          month.score >= 65 ? '#eab308' :
+                                          month.score >= 50 ? '#9ca3af' : '#ef4444'}`
+                    }}>
+                      <p style={{ fontSize: '10pt', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                        {month.monthName}
+                      </p>
+                      <p style={{ fontSize: '20pt', marginBottom: '2px' }}>
+                        {month.emoji}
+                      </p>
+                      <p style={{
+                        fontSize: '14pt',
+                        fontWeight: 700,
+                        color: month.score >= 80 ? '#15803d' :
+                               month.score >= 65 ? '#a16207' :
+                               month.score >= 50 ? '#4b5563' : '#dc2626'
+                      }}>
+                        {month.score}점
+                      </p>
+                      <p style={{
+                        fontSize: '9pt',
+                        color: '#6b7280',
+                        fontWeight: 500
+                      }}>
+                        {month.keyword}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 분기별 요약 */}
+                <SubSection title="분기별 핵심 전략">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                    {(() => {
+                      const quarters = getQuarterlySummary(traditionalAnalysis.monthlyFortune);
+                      return quarters.map((q) => (
+                        <div key={q.quarter} style={{
+                          padding: '14px',
+                          backgroundColor: q.avgScore >= 70 ? '#ecfdf5' : q.avgScore >= 55 ? '#fffbeb' : '#fef2f2',
+                          borderRadius: '8px',
+                          borderLeft: `3px solid ${q.avgScore >= 70 ? '#10b981' : q.avgScore >= 55 ? '#f59e0b' : '#ef4444'}`
+                        }}>
+                          <p style={{ fontSize: '11pt', fontWeight: 700, color: '#1f2937', marginBottom: '6px' }}>
+                            {q.quarter}분기 ({q.quarter === 1 ? '1-3월' : q.quarter === 2 ? '4-6월' : q.quarter === 3 ? '7-9월' : '10-12월'})
+                          </p>
+                          <p style={{
+                            fontSize: '16pt',
+                            fontWeight: 700,
+                            color: q.avgScore >= 70 ? '#059669' : q.avgScore >= 55 ? '#d97706' : '#dc2626',
+                            marginBottom: '4px'
+                          }}>
+                            {q.avgScore}점 · {q.keyword}
+                          </p>
+                          <p style={{ fontSize: '10pt', color: '#6b7280', lineHeight: 1.5 }}>
+                            {q.advice}
+                          </p>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </SubSection>
+
+                {/* 최고/최저 월 상세 */}
+                {(() => {
+                  const bestWorst = findBestAndWorstMonths(traditionalAnalysis.monthlyFortune);
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                      {/* 최고의 달 */}
+                      <div style={{
+                        padding: '16px',
+                        backgroundColor: '#f0fdf4',
+                        borderRadius: '10px',
+                        border: '2px solid #22c55e'
+                      }}>
+                        <p style={{ fontSize: '10pt', color: '#15803d', fontWeight: 600, marginBottom: '8px' }}>
+                          🌟 황금의 달: {bestWorst.best.monthName}
+                        </p>
+                        <p style={{ fontSize: '24pt', fontWeight: 700, color: '#166534', marginBottom: '8px' }}>
+                          {bestWorst.best.score}점
+                        </p>
+                        <p style={{ fontSize: '11pt', color: '#166534', fontWeight: 600, marginBottom: '6px' }}>
+                          {bestWorst.best.advice.focus}
+                        </p>
+                        <p style={{ fontSize: '10pt', color: '#4ade80' }}>
+                          행운의 날: {bestWorst.best.luckyDays.slice(0, 3).join('일, ')}일
+                        </p>
+                      </div>
+
+                      {/* 주의할 달 */}
+                      <div style={{
+                        padding: '16px',
+                        backgroundColor: '#fef2f2',
+                        borderRadius: '10px',
+                        border: '2px solid #ef4444'
+                      }}>
+                        <p style={{ fontSize: '10pt', color: '#dc2626', fontWeight: 600, marginBottom: '8px' }}>
+                          ⚠️ 충전의 달: {bestWorst.worst.monthName}
+                        </p>
+                        <p style={{ fontSize: '24pt', fontWeight: 700, color: '#991b1b', marginBottom: '8px' }}>
+                          {bestWorst.worst.score}점
+                        </p>
+                        <p style={{ fontSize: '11pt', color: '#991b1b', fontWeight: 600, marginBottom: '6px' }}>
+                          {bestWorst.worst.advice.avoid}
+                        </p>
+                        <p style={{ fontSize: '10pt', color: '#f87171' }}>
+                          주의할 날: {bestWorst.worst.cautionDays.slice(0, 3).join('일, ')}일
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </Section>
+            )}
+
+            {/* ============ 2026년 택일 캘린더 ============ */}
+            {traditionalAnalysis.auspiciousDates && traditionalAnalysis.auspiciousDates.length > 0 && (
+              <Section title="2026년 주요 택일 캘린더">
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '16px',
+                  fontSize: '11pt'
+                }}>
+                  중요한 일정을 계획할 때 참고하세요. 길일에 계약, 이사, 결혼 등 중요한 결정을 내리세요.
+                </p>
+
+                {/* 길일 목록 */}
+                <SubSection title="✅ 추천 날짜 (길일)">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    {traditionalAnalysis.auspiciousDates
+                      .filter(d => d.type !== 'avoid')
+                      .slice(0, 12)
+                      .map((date, idx) => (
+                        <div key={idx} style={{
+                          padding: '10px 12px',
+                          backgroundColor: date.type === 'marriage' ? '#fdf2f8' :
+                                          date.type === 'business' ? '#ecfdf5' :
+                                          date.type === 'moving' ? '#eff6ff' : '#fefce8',
+                          borderRadius: '6px',
+                          borderLeft: `3px solid ${date.type === 'marriage' ? '#ec4899' :
+                                                   date.type === 'business' ? '#10b981' :
+                                                   date.type === 'moving' ? '#3b82f6' : '#eab308'}`
+                        }}>
+                          <p style={{ fontSize: '12pt', fontWeight: 700, color: '#1f2937' }}>
+                            {date.koreanDate}
+                          </p>
+                          <p style={{ fontSize: '10pt', color: '#6b7280' }}>
+                            {date.title}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </SubSection>
+
+                {/* 흉일 목록 */}
+                <SubSection title="⚠️ 피해야 할 날짜">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                    {traditionalAnalysis.auspiciousDates
+                      .filter(d => d.type === 'avoid')
+                      .slice(0, 8)
+                      .map((date, idx) => (
+                        <div key={idx} style={{
+                          padding: '8px 10px',
+                          backgroundColor: '#fef2f2',
+                          borderRadius: '6px',
+                          textAlign: 'center'
+                        }}>
+                          <p style={{ fontSize: '11pt', fontWeight: 600, color: '#dc2626' }}>
+                            {date.koreanDate}
+                          </p>
+                          <p style={{ fontSize: '9pt', color: '#ef4444' }}>
+                            {date.title}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </SubSection>
+              </Section>
+            )}
+
+            {/* ============ 2026년 실행 체크리스트 ============ */}
+            {traditionalAnalysis.monthlyFortune && (
+              <Section title="2026년 실행 체크리스트">
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '16px',
+                  fontSize: '11pt'
+                }}>
+                  구체적인 날짜와 함께 실천 항목을 체크해보세요. 하나씩 완료할 때마다 운의 흐름이 좋아집니다.
+                </p>
+
+                <div style={{
+                  padding: '20px',
+                  backgroundColor: '#f0fdf4',
+                  borderRadius: '10px',
+                  border: '1px solid #86efac',
+                  marginBottom: '16px'
+                }}>
+                  <p style={{ fontSize: '12pt', fontWeight: 700, color: '#166534', marginBottom: '12px' }}>
+                    ✅ 황금 기회 실행 (반드시 실천!)
+                  </p>
+                  {(() => {
+                    const best = findBestAndWorstMonths(traditionalAnalysis.monthlyFortune).best;
+                    const bestDates = traditionalAnalysis.auspiciousDates?.filter(d => d.type !== 'avoid').slice(0, 3) || [];
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <span style={{ fontSize: '16pt' }}>☐</span>
+                          <div>
+                            <p style={{ fontSize: '11pt', fontWeight: 600, color: '#166534' }}>
+                              {best.monthName} 첫째 주: {best.bestActivities[0] || '중요한 프로젝트 시작'}
+                            </p>
+                            <p style={{ fontSize: '10pt', color: '#4ade80' }}>
+                              행운의 날: {best.luckyDays.slice(0, 2).join('일, ')}일
+                            </p>
+                          </div>
+                        </div>
+                        {bestDates.slice(0, 2).map((date, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <span style={{ fontSize: '16pt' }}>☐</span>
+                            <div>
+                              <p style={{ fontSize: '11pt', fontWeight: 600, color: '#166534' }}>
+                                {date.koreanDate}: {date.title}
+                              </p>
+                              <p style={{ fontSize: '10pt', color: '#4ade80' }}>
+                                {date.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <span style={{ fontSize: '16pt' }}>☐</span>
+                          <div>
+                            <p style={{ fontSize: '11pt', fontWeight: 600, color: '#166534' }}>
+                              {best.monthName}: 용신 기운 활용하기
+                            </p>
+                            <p style={{ fontSize: '10pt', color: '#4ade80' }}>
+                              {yongsin && yongsin.length > 0
+                                ? `${ELEMENT_KOREAN[yongsin[0]]} 기운 보충 (${yongsin[0] === 'water' ? '수영, 온천' : yongsin[0] === 'wood' ? '등산, 산책' : yongsin[0] === 'fire' ? '햇볕 쬐기' : yongsin[0] === 'earth' ? '도자기, 원예' : '명상, 금속 액세서리'})`
+                                : '자연 속에서 에너지 충전'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div style={{
+                  padding: '20px',
+                  backgroundColor: '#fef2f2',
+                  borderRadius: '10px',
+                  border: '1px solid #fca5a5'
+                }}>
+                  <p style={{ fontSize: '12pt', fontWeight: 700, color: '#991b1b', marginBottom: '12px' }}>
+                    ⚠️ 주의 사항 체크
+                  </p>
+                  {(() => {
+                    const worst = findBestAndWorstMonths(traditionalAnalysis.monthlyFortune).worst;
+                    const avoidDates = traditionalAnalysis.auspiciousDates?.filter(d => d.type === 'avoid').slice(0, 2) || [];
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <span style={{ fontSize: '16pt' }}>☐</span>
+                          <div>
+                            <p style={{ fontSize: '11pt', fontWeight: 600, color: '#991b1b' }}>
+                              {worst.monthName}: {worst.avoidActivities[0] || '큰 결정 피하기'}
+                            </p>
+                            <p style={{ fontSize: '10pt', color: '#f87171' }}>
+                              이 달은 충전의 시기입니다. 무리하지 마세요.
+                            </p>
+                          </div>
+                        </div>
+                        {avoidDates.map((date, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <span style={{ fontSize: '16pt' }}>☐</span>
+                            <div>
+                              <p style={{ fontSize: '11pt', fontWeight: 600, color: '#991b1b' }}>
+                                {date.koreanDate}: {date.title}
+                              </p>
+                              <p style={{ fontSize: '10pt', color: '#f87171' }}>
+                                {date.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </Section>
             )}
@@ -2072,6 +2460,95 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 </InfoBox>
               </SubSection>
             )}
+
+            {/* 궁합 미리보기 - 나와 맞는 사주 TOP 3 */}
+            <SubSection title="💕 나와 맞는 사주 TOP 3">
+              <div style={{
+                padding: '20px',
+                background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
+                borderRadius: '12px',
+                border: '2px solid #f9a8d4',
+                marginBottom: '16px'
+              }}>
+                <p style={{ fontSize: '11pt', color: '#9d174d', marginBottom: '16px' }}>
+                  당신의 사주와 가장 잘 맞는 일간(日干)을 분석했습니다.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                  {/* 1위 */}
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#fff',
+                    borderRadius: '10px',
+                    border: '2px solid #ec4899',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '10pt', color: '#ec4899', fontWeight: 600 }}>🥇 최고 궁합</p>
+                    <p style={{ fontSize: '20pt', fontWeight: 700, color: '#be185d', margin: '8px 0' }}>
+                      {saju.day.stemKorean === '갑' || saju.day.stemKorean === '을' ? '경금·신금' :
+                       saju.day.stemKorean === '병' || saju.day.stemKorean === '정' ? '임수·계수' :
+                       saju.day.stemKorean === '무' || saju.day.stemKorean === '기' ? '갑목·을목' :
+                       saju.day.stemKorean === '경' || saju.day.stemKorean === '신' ? '병화·임수' : '무토·기토'}
+                    </p>
+                    <p style={{ fontSize: '9pt', color: '#9d174d' }}>
+                      서로 보완하는 관계
+                    </p>
+                  </div>
+
+                  {/* 2위 */}
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#fff',
+                    borderRadius: '10px',
+                    border: '1px solid #f9a8d4',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '10pt', color: '#db2777', fontWeight: 600 }}>🥈 좋은 궁합</p>
+                    <p style={{ fontSize: '18pt', fontWeight: 700, color: '#be185d', margin: '8px 0' }}>
+                      {saju.day.stemKorean === '갑' || saju.day.stemKorean === '을' ? '임수·계수' :
+                       saju.day.stemKorean === '병' || saju.day.stemKorean === '정' ? '갑목·을목' :
+                       saju.day.stemKorean === '무' || saju.day.stemKorean === '기' ? '병화·정화' :
+                       saju.day.stemKorean === '경' || saju.day.stemKorean === '신' ? '무토·기토' : '경금·신금'}
+                    </p>
+                    <p style={{ fontSize: '9pt', color: '#9d174d' }}>
+                      에너지가 통하는 관계
+                    </p>
+                  </div>
+
+                  {/* 3위 */}
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#fff',
+                    borderRadius: '10px',
+                    border: '1px solid #fbcfe8',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '10pt', color: '#db2777', fontWeight: 600 }}>🥉 무난한 궁합</p>
+                    <p style={{ fontSize: '18pt', fontWeight: 700, color: '#be185d', margin: '8px 0' }}>
+                      {saju.day.stemKorean}(동일)
+                    </p>
+                    <p style={{ fontSize: '9pt', color: '#9d174d' }}>
+                      이해하기 쉬운 관계
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  backgroundColor: '#fce7f3',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ fontSize: '11pt', color: '#9d174d', fontWeight: 600 }}>
+                    💡 상대방의 정확한 생년월일시를 알고 계신가요?
+                  </p>
+                  <p style={{ fontSize: '10pt', color: '#be185d', marginTop: '4px' }}>
+                    AI-PLANX 궁합 분석으로 더 자세한 관계 분석을 받아보세요!
+                  </p>
+                </div>
+              </div>
+            </SubSection>
           </Section>
         )}
 
