@@ -30,6 +30,15 @@ import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EA
 // 운명 카드 시스템
 import { generateCardDeck, generateCardDeckSummary, getCardDescription } from '@/lib/fortune/saju/cards';
 
+// 심리 기반 스토리텔링 시스템
+import {
+  generatePsychologicalStory,
+  getLifecycleData,
+  getArchetypeByDayMaster,
+  getAgeSpecificAdvice,
+  type FourActStructure
+} from '@/lib/fortune/saju/psychology';
+
 // 천간/지지 한글 변환 헬퍼
 const getStemKo = (stem: string): string => {
   const idx = HEAVENLY_STEMS.indexOf(stem);
@@ -395,7 +404,20 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             current: currentDaeun,
             currentIndex: currentDaeunIndex
           },
-          cardDeck
+          cardDeck,
+          psychologyStory: generatePsychologicalStory({
+            userName: user.name,
+            dayMaster: saju.day.heavenlyStem,
+            dayMasterKo: saju.day.stemKorean,
+            age: currentAge,
+            gender: user.gender,
+            birthYear: new Date(user.birthDate).getFullYear(),
+            yongsin: yongsin,
+            currentDaeunElement: currentDaeun?.element,
+            targetYear
+          }),
+          lifecycleData: getLifecycleData(currentAge),
+          archetype: getArchetypeByDayMaster(saju.day.stemKorean)
         };
       } catch (e) {
         console.error('Traditional analysis failed:', e);
@@ -761,6 +783,238 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             </SubSection>
           )}
         </Section>
+
+        {/* 페이지 나누기 */}
+        <div style={{ pageBreakAfter: 'always' }} />
+
+        {/* ============ 심리 기반 스토리텔링 섹션 ============ */}
+        {traditionalAnalysis?.psychologyStory && (
+          <Section title={`${user.name}님만을 위한 이야기`}>
+            {/* 4막 구조 스토리 */}
+
+            {/* 1막: 프롤로그 - 신뢰 구축 */}
+            <div style={{
+              marginBottom: '24px',
+              padding: '20px 24px',
+              backgroundColor: '#fefce8',
+              borderRadius: '12px',
+              borderLeft: '4px solid #eab308'
+            }}>
+              <p style={{
+                fontSize: '10pt',
+                color: '#a16207',
+                fontWeight: 600,
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                PROLOGUE
+              </p>
+              <p style={{
+                fontSize: '13pt',
+                color: '#1f2937',
+                lineHeight: 1.8,
+                fontWeight: 400
+              }}>
+                {traditionalAnalysis.psychologyStory.act1_prologue.content}
+              </p>
+            </div>
+
+            {/* 2막: 공감과 위로 */}
+            <div style={{
+              marginBottom: '24px',
+              padding: '20px 24px',
+              backgroundColor: '#fdf2f8',
+              borderRadius: '12px',
+              borderLeft: '4px solid #ec4899'
+            }}>
+              <p style={{
+                fontSize: '10pt',
+                color: '#9d174d',
+                fontWeight: 600,
+                marginBottom: '8px'
+              }}>
+                당신의 마음을 압니다
+              </p>
+              <p style={{
+                fontSize: '13pt',
+                color: '#1f2937',
+                lineHeight: 1.8
+              }}>
+                {traditionalAnalysis.psychologyStory.act2_empathy.content}
+              </p>
+            </div>
+
+            {/* 3막: 희망과 전환 (클라이맥스) */}
+            <div style={{
+              marginBottom: '24px',
+              padding: '24px',
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+              borderRadius: '12px',
+              border: '2px solid #10b981'
+            }}>
+              <p style={{
+                fontSize: '10pt',
+                color: '#047857',
+                fontWeight: 700,
+                marginBottom: '12px'
+              }}>
+                희망의 빛
+              </p>
+              <p style={{
+                fontSize: '14pt',
+                color: '#064e3b',
+                lineHeight: 1.8,
+                fontWeight: 500
+              }}>
+                {traditionalAnalysis.psychologyStory.act3_hope.content}
+              </p>
+            </div>
+
+            {/* 4막: 에필로그 - 여운 */}
+            <div style={{
+              marginBottom: '24px',
+              padding: '20px 24px',
+              backgroundColor: '#f5f3ff',
+              borderRadius: '12px',
+              borderLeft: '4px solid #8b5cf6'
+            }}>
+              <p style={{
+                fontSize: '10pt',
+                color: '#6d28d9',
+                fontWeight: 600,
+                marginBottom: '8px'
+              }}>
+                기억해 주세요
+              </p>
+              <p style={{
+                fontSize: '13pt',
+                color: '#1f2937',
+                lineHeight: 1.8
+              }}>
+                {traditionalAnalysis.psychologyStory.act4_epilogue.content}
+              </p>
+            </div>
+
+            {/* 운명 한 줄 */}
+            <div style={{
+              marginTop: '32px',
+              padding: '24px',
+              background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+              borderRadius: '16px',
+              textAlign: 'center'
+            }}>
+              <p style={{
+                fontSize: '10pt',
+                color: '#94a3b8',
+                marginBottom: '12px',
+                letterSpacing: '2px'
+              }}>
+                나의 운명 한 줄
+              </p>
+              <p style={{
+                fontSize: '16pt',
+                color: '#ffffff',
+                fontWeight: 700,
+                lineHeight: 1.6
+              }}>
+                {traditionalAnalysis.psychologyStory.destinyLine}
+              </p>
+            </div>
+
+            {/* 연령대별 핵심 조언 */}
+            {traditionalAnalysis.lifecycleData && (
+              <div style={{ marginTop: '24px' }}>
+                <SubSection title={`${traditionalAnalysis.lifecycleData.ageRange} 시기, 알아두세요`}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px'
+                  }}>
+                    {/* 지금 가장 중요한 것 */}
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: '#f0fdf4',
+                      borderRadius: '10px',
+                      border: '1px solid #bbf7d0'
+                    }}>
+                      <p style={{
+                        fontSize: '10pt',
+                        color: '#15803d',
+                        fontWeight: 600,
+                        marginBottom: '8px'
+                      }}>
+                        지금 가장 중요한 것
+                      </p>
+                      <p style={{ fontSize: '12pt', color: '#1f2937', lineHeight: 1.6 }}>
+                        {traditionalAnalysis.lifecycleData.insights.practicalAdvice}
+                      </p>
+                    </div>
+
+                    {/* 피해야 할 것 */}
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: '#fef2f2',
+                      borderRadius: '10px',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <p style={{
+                        fontSize: '10pt',
+                        color: '#b91c1c',
+                        fontWeight: 600,
+                        marginBottom: '8px'
+                      }}>
+                        피해야 할 것
+                      </p>
+                      <p style={{ fontSize: '12pt', color: '#1f2937', lineHeight: 1.6 }}>
+                        {traditionalAnalysis.lifecycleData.insights.avoidance}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 희망 메시지 */}
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    backgroundColor: '#faf5ff',
+                    borderRadius: '10px',
+                    border: '1px solid #e9d5ff'
+                  }}>
+                    <p style={{
+                      fontSize: '10pt',
+                      color: '#7e22ce',
+                      fontWeight: 600,
+                      marginBottom: '8px'
+                    }}>
+                      희망의 메시지
+                    </p>
+                    <p style={{ fontSize: '12pt', color: '#1f2937', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.lifecycleData.hopeMessages.shortTerm}
+                    </p>
+                  </div>
+
+                  {/* 명언/글귀 */}
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '10px',
+                    borderLeft: '3px solid #6366f1'
+                  }}>
+                    <p style={{
+                      fontSize: '12pt',
+                      color: '#4f46e5',
+                      fontStyle: 'italic',
+                      lineHeight: 1.7
+                    }}>
+                      "{traditionalAnalysis.lifecycleData.wisdomQuotes.original}"
+                    </p>
+                  </div>
+                </SubSection>
+              </div>
+            )}
+          </Section>
+        )}
 
         {/* 페이지 나누기 */}
         <div style={{ pageBreakAfter: 'always' }} />

@@ -38,6 +38,14 @@ import { analyzeSipsin, interpretSipsinChart, SIPSIN_INFO, type SipsinType } fro
 import { analyzeSinsal, SINSAL_INFO } from '../analysis/sinsal';
 import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EARTHLY_BRANCHES_KO } from '../calculator';
 
+// 심리 기반 스토리텔링 모듈
+import {
+  generatePsychologicalStory,
+  storyToNarrationSections,
+  getLifecycleData,
+  getAgeSpecificAdvice
+} from '../psychology';
+
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
 
@@ -498,28 +506,33 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     user.bloodType
   );
 
-  // ========== 1. 오프닝 (간결화) ==========
+  // ========== 심리 기반 4막 스토리텔링 ==========
+  const birthYear = new Date(user.birthDate).getFullYear();
+  const psychologyStory = generatePsychologicalStory({
+    userName: user.name,
+    dayMaster: dayStem,
+    dayMasterKo: dayMaster,
+    age,
+    gender: user.gender,
+    birthYear,
+    yongsin: yongsin || ['wood'] as Element[],
+    targetYear
+  });
+
+  // 4막 구조 섹션 추가
+  const psychoSections = storyToNarrationSections(psychologyStory);
+  psychoSections.forEach(section => {
+    sections.push({
+      title: section.title,
+      content: section.content,
+      pauseAfter: section.pauseAfter
+    });
+  });
+
+  // ========== 기존 분석 섹션들 (간소화) ==========
   const birthTimeKorean = formatTimeToNaturalKorean(user.birthTime);
   const essenceCard = ESSENCE_CARD_STORIES[dayMaster] || ESSENCE_CARD_STORIES['갑'];
-
-  sections.push({
-    title: '인트로',
-    content: `${user.name}님의 사주 분석을 시작합니다. ` +
-             `당신은 ${dayMasterPro.hanja}, ${dayMasterPro.poeticTitle}의 기운을 타고났습니다. ` +
-             `이게 무슨 의미인지 하나씩 알려드릴게요.`,
-    pauseAfter: 2000
-  });
-
-  // ========== 2. 핵심 정체성 (운명 정체성 + 본질 통합) ==========
   const categoryText = essenceCard.category === 'tree' ? '나무' : '꽃';
-  sections.push({
-    title: '핵심 정체성',
-    content: `${identityTitle.mainTitle}. "${identityTitle.subTitle}" ` +
-             `일간이란 생일의 천간으로, 당신의 본질을 결정합니다. ` +
-             `${dayMasterPro.hanja}은 ${dayMasterPro.symbol}의 성질로, ${essenceCard.symbol}(${categoryText})에 비유됩니다. ` +
-             `${essenceCard.story.slice(0, 100)}`,
-    pauseAfter: 2500
-  });
 
   // ========== 3. 사주에서 본 구체적 성격 (바넘 효과 제거) ==========
   // 일간별 구체적 특성 - 막연한 "소름" 표현 제거, 구체적 근거 제시
