@@ -36,6 +36,7 @@ import {
   getLifecycleData,
   getArchetypeByDayMaster,
   getAgeSpecificAdvice,
+  getMatchingQuotes,
   type FourActStructure
 } from '@/lib/fortune/saju/psychology';
 
@@ -417,7 +418,13 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             targetYear
           }),
           lifecycleData: getLifecycleData(currentAge),
-          archetype: getArchetypeByDayMaster(saju.day.stemKorean)
+          archetype: getArchetypeByDayMaster(saju.day.stemKorean),
+          wisdomQuotes: getMatchingQuotes(
+            getArchetypeByDayMaster(saju.day.stemKorean)?.type || 'hero',
+            dominantSipsin,
+            getLifecycleData(currentAge)?.stage || 'adult_mid',
+            3
+          )
         };
       } catch (e) {
         console.error('Traditional analysis failed:', e);
@@ -467,7 +474,8 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             height: '80px',
             background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
             borderRadius: '12px',
-            marginBottom: '40px',
+            marginBottom: '60px',
+            marginTop: '-30px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -552,6 +560,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
+              marginTop: '20px',
               marginBottom: '20px',
               tableLayout: 'fixed'
             }}>
@@ -616,7 +625,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         {/* ============ 2. 오행 분석 ============ */}
         <Section title="2. 오행 에너지 분석">
           <SubSection title="오행 분포">
-            <div style={{ marginBottom: '14px' }}>
+            <div style={{ marginTop: '20px', marginBottom: '14px' }}>
               {sortedElements.map(({ key, value }) => (
                 <div key={key} style={{
                   display: 'flex',
@@ -683,7 +692,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           {/* 용신/기신 분석 */}
           {(yongsin?.length > 0 || gisin?.length > 0) && (
             <SubSection title="용신(用神) & 기신(忌神) - 운을 좌우하는 핵심 에너지">
-              <p style={{ color: '#6b7280', marginBottom: '14px', fontSize: '12pt', lineHeight: 1.7 }}>
+              <p style={{ color: '#6b7280', marginTop: '24px', marginBottom: '14px', fontSize: '12pt', lineHeight: 1.7 }}>
                 용신은 당신의 사주에서 부족한 기운을 채워 균형을 잡아주는 <strong>행운의 에너지</strong>이고,
                 기신은 이미 과한 기운이 더해질 때 <strong>불균형을 일으키는 에너지</strong>입니다.
                 아래 가이드를 일상에 적용하면 운의 흐름을 더 유리하게 만들 수 있습니다.
@@ -924,7 +933,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
             {/* 연령대별 핵심 조언 */}
             {traditionalAnalysis.lifecycleData && (
-              <div style={{ marginTop: '24px' }}>
+              <div style={{ marginTop: '48px' }}>
                 <SubSection title={`${traditionalAnalysis.lifecycleData.ageRange} 시기, 알아두세요`}>
                   <div style={{
                     display: 'grid',
@@ -993,23 +1002,50 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     </p>
                   </div>
 
-                  {/* 명언/글귀 */}
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '20px',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '10px',
-                    borderLeft: '3px solid #6366f1'
-                  }}>
-                    <p style={{
-                      fontSize: '12pt',
-                      color: '#4f46e5',
-                      fontStyle: 'italic',
-                      lineHeight: 1.7
+                  {/* 성향 맞춤형 인생 격언 */}
+                  {traditionalAnalysis.wisdomQuotes && traditionalAnalysis.wisdomQuotes.length > 0 && (
+                    <div style={{
+                      marginTop: '20px',
+                      padding: '20px',
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f0f9ff 100%)',
+                      borderRadius: '12px',
+                      border: '1px solid #e9d5ff'
                     }}>
-                      "{traditionalAnalysis.lifecycleData.wisdomQuotes.original}"
-                    </p>
-                  </div>
+                      <p style={{
+                        fontSize: '10pt',
+                        color: '#7e22ce',
+                        fontWeight: 600,
+                        marginBottom: '14px',
+                        letterSpacing: '1px'
+                      }}>
+                        당신을 위한 인생 격언
+                      </p>
+                      {traditionalAnalysis.wisdomQuotes.map((quote, idx) => (
+                        <div key={quote.id} style={{
+                          marginBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '14px' : '0',
+                          paddingBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '14px' : '0',
+                          borderBottom: idx < traditionalAnalysis.wisdomQuotes.length - 1 ? '1px dashed #e9d5ff' : 'none'
+                        }}>
+                          <p style={{
+                            fontSize: '12pt',
+                            color: '#4c1d95',
+                            fontStyle: 'italic',
+                            lineHeight: 1.7,
+                            marginBottom: '4px'
+                          }}>
+                            "{quote.korean}"
+                          </p>
+                          <p style={{
+                            fontSize: '10pt',
+                            color: '#8b5cf6',
+                            textAlign: 'right'
+                          }}>
+                            — {quote.authorKorean || quote.author}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </SubSection>
               </div>
             )}
@@ -1240,7 +1276,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
               {/* 합충형파해 분석 */}
               <SubSection title="관계와 타이밍의 조화 (합충형파해)">
-                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                <p style={{ color: '#6b7280', marginTop: '40px', marginBottom: '12px', fontSize: '11pt' }}>
                   사주 내 지지(地支)들의 관계를 분석합니다. 합(合)은 조화, 충(沖)은 충돌을 의미합니다.
                 </p>
 
@@ -1592,7 +1628,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #ec4899'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌸</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#9d174d', fontWeight: 600 }}>본질 카드</p>
@@ -1601,20 +1637,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.essence.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#fbcfe8',
-                          borderRadius: '10px',
-                          color: '#9d174d'
+                          borderRadius: '12px',
+                          color: '#9d174d',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 에너지 카드 (동물) */}
@@ -1624,7 +1661,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #10b981'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🦋</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#047857', fontWeight: 600 }}>에너지 카드</p>
@@ -1633,20 +1670,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.energy.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#a7f3d0',
-                          borderRadius: '10px',
-                          color: '#047857'
+                          borderRadius: '12px',
+                          color: '#047857',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 재능 카드 (나무) */}
@@ -1656,7 +1694,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #eab308'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>🌳</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#a16207', fontWeight: 600 }}>재능 카드</p>
@@ -1665,20 +1703,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.talent.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#fef08a',
-                          borderRadius: '10px',
-                          color: '#a16207'
+                          borderRadius: '12px',
+                          color: '#a16207',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
+                    </p>
                   </div>
 
                   {/* 수호 카드 (보석) */}
@@ -1688,7 +1727,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                     borderRadius: '12px',
                     border: '2px solid #8b5cf6'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '24pt', marginRight: '12px' }}>💎</span>
                       <div>
                         <p style={{ fontSize: '10pt', color: '#6d28d9', fontWeight: 600 }}>수호 카드</p>
@@ -1697,20 +1736,21 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                         </p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
-                    </p>
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {traditionalAnalysis.cardDeck.guardian.keywords.map((kw, i) => (
                         <span key={i} style={{
                           fontSize: '9pt',
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           backgroundColor: '#ddd6fe',
-                          borderRadius: '10px',
-                          color: '#6d28d9'
+                          borderRadius: '12px',
+                          color: '#6d28d9',
+                          fontWeight: 600
                         }}>{kw}</span>
                       ))}
                     </div>
+                    <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
+                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
+                    </p>
                   </div>
                 </div>
 

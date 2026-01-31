@@ -43,3 +43,16 @@ export {
   type PastMirror,
   type StorytellingOptions
 } from './storytellingEngine';
+
+// 인생 격언 시스템
+export {
+  WISDOM_QUOTES,
+  getMatchingQuotes,
+  getRandomQuote,
+  getQuotesByTheme,
+  getQuotesByMood,
+  getTodayQuote,
+  type WisdomQuote,
+  type QuoteTheme,
+  type QuoteMood
+} from './wisdomQuotes';
