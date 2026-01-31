@@ -25,6 +25,17 @@ import { analyzeSipsin, interpretSipsinChart, SIPSIN_INFO, type SipsinType } fro
 import { analyzeSinsal } from '@/lib/fortune/saju/analysis/sinsal';
 import { analyzeUnsung } from '@/lib/fortune/saju/analysis/unsung';
 import { analyzeHapChung, transformToConsumerFriendlyRisk } from '@/lib/fortune/saju/analysis/hapchung';
+import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EARTHLY_BRANCHES_KO } from '@/lib/fortune/saju/calculator';
+
+// 천간/지지 한글 변환 헬퍼
+const getStemKo = (stem: string): string => {
+  const idx = HEAVENLY_STEMS.indexOf(stem);
+  return idx >= 0 ? HEAVENLY_STEMS_KO[idx] : stem;
+};
+const getBranchKo = (branch: string): string => {
+  const idx = EARTHLY_BRANCHES.indexOf(branch);
+  return idx >= 0 ? EARTHLY_BRANCHES_KO[idx] : branch;
+};
 
 interface PdfTemplateProps {
   user: UserInput;
@@ -319,6 +330,13 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
     const weakestElement = sortedElements[4];
 
     // ============ 정통사주 분석 계산 ============
+    // 현재 나이 계산
+    const currentAge = useMemo(() => {
+      const birthYear = new Date(user.birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      return currentYear - birthYear + 1; // 한국 나이
+    }, [user.birthDate]);
+
     const traditionalAnalysis = useMemo(() => {
       try {
         const sipsinChart = analyzeSipsin(saju);
@@ -328,17 +346,34 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
         const hapchungAnalysis = analyzeHapChung(saju);
         const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
 
+        // 대운 계산
+        const daeunList = calculateDaeun(saju, user.gender, user.birthDate);
+
+        // 현재 대운 찾기
+        const currentDaeun = daeunList.find((d, idx) => {
+          const nextAge = daeunList[idx + 1]?.age ?? Infinity;
+          return currentAge >= d.age && currentAge < nextAge;
+        }) || daeunList[0];
+
+        // 현재 대운 인덱스
+        const currentDaeunIndex = daeunList.findIndex(d => d === currentDaeun);
+
         return {
           sipsin: { chart: sipsinChart, interp: sipsinInterp },
           sinsal: sinsalAnalysis,
           unsung: unsungAnalysis,
-          hapchung: { analysis: hapchungAnalysis, risks: consumerRisks }
+          hapchung: { analysis: hapchungAnalysis, risks: consumerRisks },
+          daeun: {
+            list: daeunList,
+            current: currentDaeun,
+            currentIndex: currentDaeunIndex
+          }
         };
       } catch (e) {
         console.error('Traditional analysis failed:', e);
         return null;
       }
-    }, [saju]);
+    }, [saju, user.gender, user.birthDate, currentAge]);
 
     // 십신 한글 변환 헬퍼
     const sipsinToKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
@@ -1011,6 +1046,236 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 <p style={{ marginTop: '12px', fontSize: '11pt', color: '#6b7280', fontStyle: 'italic' }}>
                   {traditionalAnalysis.hapchung.analysis.summary}
                 </p>
+              </SubSection>
+            </Section>
+
+            {/* ============ 대운 타임라인 섹션 ============ */}
+            <Section title="10년 주기 인생 운세 (대운)">
+              <p style={{
+                color: '#6b7280',
+                marginBottom: '20px',
+                fontSize: '12pt',
+                lineHeight: 1.7,
+                padding: '12px 16px',
+                backgroundColor: '#faf5ff',
+                borderRadius: '8px',
+                borderLeft: '4px solid #8b5cf6'
+              }}>
+                <strong>대운(大運)</strong>은 10년 단위로 바뀌는 큰 운의 흐름입니다.
+                마치 계절처럼 인생에도 시기가 있으며, 각 대운마다 특별한 기운과 기회가 찾아옵니다.
+              </p>
+
+              {/* 현재 대운 하이라이트 */}
+              {traditionalAnalysis.daeun.current && (
+                <div style={{
+                  backgroundColor: '#8b5cf6',
+                  color: 'white',
+                  padding: '20px 24px',
+                  borderRadius: '12px',
+                  marginBottom: '24px',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '28pt', marginRight: '16px' }}>🌟</span>
+                    <div>
+                      <p style={{ fontSize: '11pt', opacity: 0.9, marginBottom: '4px' }}>현재 진행 중인 대운</p>
+                      <p style={{ fontSize: '20pt', fontWeight: 700 }}>
+                        {getStemKo(traditionalAnalysis.daeun.current.stem)}
+                        {getBranchKo(traditionalAnalysis.daeun.current.branch)}운
+                        ({traditionalAnalysis.daeun.current.age}세 ~)
+                      </p>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '12pt', lineHeight: 1.6, opacity: 0.95 }}>
+                    {(() => {
+                      const elem = traditionalAnalysis.daeun.current.element;
+                      const elemName = ELEMENT_NAMES[elem];
+                      const descriptions: Record<Element, string> = {
+                        wood: '성장과 도전의 시기입니다. 새로운 시작, 학업, 자기계발에 좋습니다.',
+                        fire: '열정과 표현의 시기입니다. 적극적인 활동, 사회 진출, 인맥 확장에 좋습니다.',
+                        earth: '안정과 축적의 시기입니다. 기반 다지기, 저축, 부동산에 좋습니다.',
+                        metal: '결실과 정리의 시기입니다. 성과 거두기, 전문성 완성에 좋습니다.',
+                        water: '지혜와 준비의 시기입니다. 공부, 계획 수립, 내면 성장에 좋습니다.'
+                      };
+                      return `${elemName}(${elem === 'wood' ? '木' : elem === 'fire' ? '火' : elem === 'earth' ? '土' : elem === 'metal' ? '金' : '水'})의 기운이 흐르는 시기 - ${descriptions[elem]}`;
+                    })()}
+                  </p>
+                </div>
+              )}
+
+              {/* 대운 타임라인 */}
+              <SubSection title="나의 대운 여정">
+                <div style={{
+                  position: 'relative',
+                  padding: '20px 0'
+                }}>
+                  {/* 타임라인 선 */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '45px',
+                    left: '20px',
+                    right: '20px',
+                    height: '4px',
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '2px',
+                    zIndex: 0
+                  }} />
+
+                  {/* 대운 아이템들 */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
+                    {traditionalAnalysis.daeun.list.slice(0, 8).map((daeun, idx) => {
+                      const isCurrent = idx === traditionalAnalysis.daeun.currentIndex;
+                      const isPast = idx < traditionalAnalysis.daeun.currentIndex;
+                      const elemColor = ELEMENT_COLORS[daeun.element];
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            width: '60px'
+                          }}
+                        >
+                          {/* 나이 */}
+                          <p style={{
+                            fontSize: '9pt',
+                            color: isCurrent ? '#8b5cf6' : '#9ca3af',
+                            fontWeight: isCurrent ? 700 : 400,
+                            marginBottom: '8px'
+                          }}>
+                            {daeun.age}세
+                          </p>
+
+                          {/* 원형 노드 */}
+                          <div style={{
+                            width: isCurrent ? '28px' : '20px',
+                            height: isCurrent ? '28px' : '20px',
+                            borderRadius: '50%',
+                            backgroundColor: isCurrent ? '#8b5cf6' : isPast ? elemColor : '#e5e7eb',
+                            border: isCurrent ? '4px solid rgba(139, 92, 246, 0.3)' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: isCurrent ? '0 2px 8px rgba(139, 92, 246, 0.4)' : 'none'
+                          }}>
+                            {isCurrent && (
+                              <span style={{ color: 'white', fontSize: '10pt' }}>★</span>
+                            )}
+                          </div>
+
+                          {/* 대운 표시 */}
+                          <div style={{
+                            marginTop: '8px',
+                            textAlign: 'center'
+                          }}>
+                            <p style={{
+                              fontSize: isCurrent ? '11pt' : '10pt',
+                              fontWeight: isCurrent ? 700 : 500,
+                              color: isCurrent ? '#8b5cf6' : isPast ? '#374151' : '#9ca3af'
+                            }}>
+                              {getStemKo(daeun.stem)}
+                              {getBranchKo(daeun.branch)}
+                            </p>
+                            <p style={{
+                              fontSize: '8pt',
+                              color: elemColor,
+                              fontWeight: 600
+                            }}>
+                              {ELEMENT_NAMES[daeun.element]}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 대운 해석 카드들 */}
+                <div style={{ marginTop: '24px' }}>
+                  <p style={{
+                    fontSize: '11pt',
+                    color: '#6b7280',
+                    marginBottom: '12px',
+                    fontWeight: 600
+                  }}>
+                    주요 대운 시기 해석
+                  </p>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '12px'
+                  }}>
+                    {traditionalAnalysis.daeun.list.slice(
+                      Math.max(0, traditionalAnalysis.daeun.currentIndex - 1),
+                      traditionalAnalysis.daeun.currentIndex + 3
+                    ).map((daeun, idx) => {
+                      const realIdx = Math.max(0, traditionalAnalysis.daeun.currentIndex - 1) + idx;
+                      const isCurrent = realIdx === traditionalAnalysis.daeun.currentIndex;
+                      const isPast = realIdx < traditionalAnalysis.daeun.currentIndex;
+                      const elemColor = ELEMENT_COLORS[daeun.element];
+
+                      const periodDescriptions: Record<Element, { theme: string; advice: string }> = {
+                        wood: { theme: '성장 · 시작', advice: '새로운 도전을 두려워하지 마세요' },
+                        fire: { theme: '열정 · 활동', advice: '적극적으로 나서면 빛을 발합니다' },
+                        earth: { theme: '안정 · 기반', advice: '내실을 다지는 것이 중요합니다' },
+                        metal: { theme: '결실 · 성취', advice: '그동안의 노력이 결실을 맺습니다' },
+                        water: { theme: '지혜 · 준비', advice: '다음을 위한 충전의 시간입니다' }
+                      };
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '14px 16px',
+                            backgroundColor: isCurrent ? '#faf5ff' : '#f9fafb',
+                            borderRadius: '10px',
+                            border: isCurrent ? '2px solid #8b5cf6' : '1px solid #e5e7eb'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                            <div style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              backgroundColor: elemColor,
+                              marginRight: '8px'
+                            }} />
+                            <span style={{
+                              fontSize: '12pt',
+                              fontWeight: 700,
+                              color: isCurrent ? '#8b5cf6' : '#374151'
+                            }}>
+                              {daeun.age}세 ~ {daeun.age + 9}세
+                              {isCurrent && ' (현재)'}
+                              {isPast && ' (지남)'}
+                            </span>
+                          </div>
+                          <p style={{
+                            fontSize: '13pt',
+                            fontWeight: 600,
+                            color: '#1f2937',
+                            marginBottom: '4px'
+                          }}>
+                            {getStemKo(daeun.stem)}{getBranchKo(daeun.branch)}운 - {periodDescriptions[daeun.element].theme}
+                          </p>
+                          <p style={{
+                            fontSize: '10pt',
+                            color: '#6b7280'
+                          }}>
+                            {periodDescriptions[daeun.element].advice}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </SubSection>
             </Section>
 
