@@ -46,6 +46,13 @@ import {
   getAgeSpecificAdvice
 } from '../psychology';
 
+// 월별 운세 시스템
+import {
+  generateYearlyMonthlyFortune,
+  monthlyFortuneToNarration,
+  findBestAndWorstMonths
+} from '../analysis/monthlyFortune';
+
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
 
@@ -830,7 +837,34 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     });
   }
 
-  // ========== 16. 마무리 (바넘 효과 제거, 간결화) ==========
+  // ========== 16. 2026년 월별 운세 ==========
+  const dayMasterElement = (() => {
+    const elements: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+    let maxEl: Element = 'wood';
+    let maxVal = 0;
+    for (const el of elements) {
+      if (oheng[el] > maxVal) {
+        maxVal = oheng[el];
+        maxEl = el;
+      }
+    }
+    return maxEl;
+  })();
+
+  const monthlyFortune = generateYearlyMonthlyFortune(saju, dayMasterElement, yongsin, gisin, targetYear);
+  const bestWorst = findBestAndWorstMonths(monthlyFortune);
+
+  sections.push({
+    title: '월별 운세',
+    content: `이제 ${targetYear}년 월별 운세입니다. ` +
+             `가장 좋은 달은 ${bestWorst.best.monthName}입니다. ${bestWorst.best.score}점으로 "${bestWorst.best.keyword}"의 에너지가 흐릅니다. ` +
+             `이 달에 중요한 결정을 내리세요. ` +
+             `반면 ${bestWorst.worst.monthName}은 ${bestWorst.worst.score}점으로 충전의 시기입니다. ` +
+             `무리하지 말고 재충전하세요.`,
+    pauseAfter: 2000
+  });
+
+  // ========== 17. 마무리 (바넘 효과 제거, 간결화) ==========
   sections.push({
     title: '마무리',
     content: `${user.name}님, 분석을 마무리하겠습니다. ` +
