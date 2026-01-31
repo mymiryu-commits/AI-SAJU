@@ -8,7 +8,7 @@
  * 전통 사주 이론 (십신, 신살, 12운성, 합충형파해) 통합
  */
 
-import { forwardRef, useState, useEffect } from 'react';
+import { forwardRef, useState, useEffect, useMemo } from 'react';
 import QRCode from 'qrcode';
 import type {
   UserInput,
@@ -19,6 +19,12 @@ import type {
   Element
 } from '@/types/saju';
 import { ELEMENT_KOREAN, CAREER_KOREAN } from '@/types/saju';
+
+// 정통사주 분석 모듈 import
+import { analyzeSipsin, interpretSipsinChart, SIPSIN_INFO, type SipsinType } from '@/lib/fortune/saju/analysis/sipsin';
+import { analyzeSinsal } from '@/lib/fortune/saju/analysis/sinsal';
+import { analyzeUnsung } from '@/lib/fortune/saju/analysis/unsung';
+import { analyzeHapChung, transformToConsumerFriendlyRisk } from '@/lib/fortune/saju/analysis/hapchung';
 
 interface PdfTemplateProps {
   user: UserInput;
@@ -131,6 +137,134 @@ const ELEMENT_CAUTION: Record<Element, string> = {
   water: '수(水) 기운이 과할 때는 우유부단함이나 지나친 걱정으로 행동력이 떨어질 수 있습니다. 검정·남색 의류를 줄이고, 북쪽 방향의 이동을 자제하세요. 짠 음식 과잉 섭취를 주의하고, 비관적이고 소극적인 사람과의 장시간 교류를 피하세요.'
 };
 
+// ============ 정통사주 스토리텔링 데이터 ============
+
+// 십신 스토리텔링 (사용자 친화적 해석)
+const SIPSIN_STORYTELLING: Record<SipsinType, {
+  icon: string;
+  title: string;
+  metaphor: string;
+  story: string;
+  strength: string;
+  bestFit: string;
+}> = {
+  bijeon: {
+    icon: '🤝',
+    title: '동료의 에너지',
+    metaphor: '대나무',
+    story: '당신 안에는 대나무처럼 곧게 뻗어가는 독립심이 있습니다. 남에게 기대지 않고 스스로 일어서는 힘, 그것이 당신의 핵심 에너지입니다.',
+    strength: '독립심, 자존심, 경쟁력, 개척정신',
+    bestFit: '창업, 프리랜서, 1인 기업, 자영업'
+  },
+  geopjae: {
+    icon: '🔥',
+    title: '도전의 에너지',
+    metaphor: '덩굴나무',
+    story: '당신 안에는 덩굴처럼 끊임없이 뻗어가는 확장의 에너지가 있습니다. 새로운 영역을 개척하고 도전하는 것이 당신의 본능입니다.',
+    strength: '추진력, 승부욕, 도전정신, 확장력',
+    bestFit: '영업, 투자, 스포츠, 스타트업'
+  },
+  siksin: {
+    icon: '🎨',
+    title: '표현의 에너지',
+    metaphor: '과일나무',
+    story: '당신 안에는 풍성한 열매를 맺는 과일나무가 있습니다. 창작하고, 표현하고, 나누는 것에서 가장 큰 기쁨을 느낍니다.',
+    strength: '창의력, 표현력, 낙관성, 베푸는 마음',
+    bestFit: '예술, 요리, 교육, 콘텐츠 제작'
+  },
+  sanggwan: {
+    icon: '💡',
+    title: '혁신의 에너지',
+    metaphor: '버드나무',
+    story: '당신 안에는 유연하게 흔들리는 버드나무가 있습니다. 틀을 깨고 새롭게 창조하는 것, 기존의 것을 비판하고 개선하는 것이 당신의 재능입니다.',
+    strength: '창의성, 비판력, 언변, 독창성',
+    bestFit: '비평가, 예술가, 변호사, 컨설턴트'
+  },
+  jeongjae: {
+    icon: '🏦',
+    title: '안정의 에너지',
+    metaphor: '은행나무',
+    story: '당신 안에는 오래 사는 은행나무가 있습니다. 착실하게 쌓아가고, 절약하고, 지키는 것이 당신의 강점입니다.',
+    strength: '성실함, 절약, 현실감각, 책임감',
+    bestFit: '회계, 금융, 공무원, 관리직'
+  },
+  pyeonjae: {
+    icon: '💰',
+    title: '기회의 에너지',
+    metaphor: '밤나무',
+    story: '당신 안에는 풍성한 열매의 밤나무가 있습니다. 기회를 포착하고, 투자하고, 재물을 불리는 것이 당신의 본능적 재능입니다.',
+    strength: '기회 포착, 사교성, 융통성, 투자 감각',
+    bestFit: '사업, 투자, 마케팅, 무역'
+  },
+  jeonggwan: {
+    icon: '⚖️',
+    title: '질서의 에너지',
+    metaphor: '향나무',
+    story: '당신 안에는 향기로운 향나무가 있습니다. 질서를 세우고, 규칙을 지키며, 사람들을 바른 길로 인도하는 것이 당신의 사명입니다.',
+    strength: '책임감, 신뢰성, 리더십, 정의감',
+    bestFit: '공직, 법률, 교육, 관리자'
+  },
+  pyeongwan: {
+    icon: '⚔️',
+    title: '권위의 에너지',
+    metaphor: '참나무',
+    story: '당신 안에는 강인한 참나무가 있습니다. 리더십과 추진력으로 세상을 이끄는 것, 어려운 상황에서도 굴하지 않는 것이 당신의 힘입니다.',
+    strength: '결단력, 추진력, 위기 대응력, 카리스마',
+    bestFit: '군인, 경찰, 경영자, 정치인'
+  },
+  jeongin: {
+    icon: '📚',
+    title: '지혜의 에너지',
+    metaphor: '느티나무',
+    story: '당신 안에는 포근한 느티나무가 있습니다. 배우고, 가르치며, 지식을 나누는 것이 당신의 천성입니다.',
+    strength: '학습력, 이해력, 배려심, 인내심',
+    bestFit: '학자, 교사, 연구원, 상담사'
+  },
+  pyeonin: {
+    icon: '🔮',
+    title: '통찰의 에너지',
+    metaphor: '소나무',
+    story: '당신 안에는 지혜로운 소나무가 있습니다. 깊이 사고하고 통찰하는 것, 남들이 보지 못하는 것을 꿰뚫어보는 것이 당신의 재능입니다.',
+    strength: '직관력, 창의성, 독창성, 깊은 사고',
+    bestFit: '연구, 기획, 전략, 철학'
+  }
+};
+
+// 신살 실용적 해석
+const SINSAL_FRIENDLY: Record<string, {
+  icon: string;
+  title: string;
+  meaning: string;
+  activation: string;
+}> = {
+  cheoneuigwiin: { icon: '⭐', title: '귀인의 별', meaning: '위기 때 도와주는 사람이 나타납니다', activation: '어려울 때 주변에 도움을 요청하세요' },
+  munchanggwisin: { icon: '📖', title: '학문의 별', meaning: '학업과 자격증 운이 강합니다', activation: '공부나 자격증 취득에 도전하세요' },
+  taegeuggwisin: { icon: '☯️', title: '태극의 별', meaning: '큰 복과 행운이 따릅니다', activation: '중요한 결정에 자신감을 가지세요' },
+  yeokmasal: { icon: '🐎', title: '이동의 별', meaning: '여행, 이사, 이직 운이 강합니다', activation: '새로운 환경에서 기회를 찾으세요' },
+  dohwasal: { icon: '🌸', title: '매력의 별', meaning: '이성에게 인기가 많습니다', activation: '외모와 매력 관리에 투자하세요' },
+  hwagaesal: { icon: '🎭', title: '예술의 별', meaning: '예술적 감각이 뛰어납니다', activation: '창작 활동이나 취미를 살리세요' }
+};
+
+// 12운성 에너지 설명
+const UNSUNG_SIMPLE: Record<string, {
+  emoji: string;
+  level: string;
+  meaning: string;
+}> = {
+  jangseong: { emoji: '🌱', level: '시작', meaning: '새로운 시작의 에너지, 성장의 잠재력' },
+  mokyok: { emoji: '🚿', level: '정화', meaning: '정리하고 깨끗이 하는 시기' },
+  gwandae: { emoji: '👔', level: '성인', meaning: '책임감 있는 성인으로서의 당당함' },
+  geonnok: { emoji: '💼', level: '안정', meaning: '직장이나 일에서의 안정된 성취' },
+  jewang: { emoji: '👑', level: '전성기', meaning: '최고의 에너지, 큰 결정에 유리' },
+  soe: { emoji: '🍂', level: '쇠퇴', meaning: '에너지 감소, 무리하지 말 것' },
+  byeong: { emoji: '🤒', level: '휴식', meaning: '건강 관리와 휴식이 필요' },
+  sa: { emoji: '🌙', level: '정지', meaning: '활동을 줄이고 내면을 돌아볼 때' },
+  myo: { emoji: '⚰️', level: '저장', meaning: '에너지를 모으고 저축하는 시기' },
+  jeol: { emoji: '💨', level: '끊음', meaning: '과거와 단절, 새로운 시작 준비' },
+  tae: { emoji: '🤰', level: '잉태', meaning: '새로운 계획이 싹트는 시기' },
+  yang: { emoji: '👶', level: '양육', meaning: '아이디어를 키우고 준비하는 시기' }
+};
+
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
   ({ user, saju, oheng, result, premium, targetYear = 2026 }, ref) => {
     // QR 코드 생성
@@ -183,6 +317,31 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
     const strongestElement = sortedElements[0];
     const weakestElement = sortedElements[4];
+
+    // ============ 정통사주 분석 계산 ============
+    const traditionalAnalysis = useMemo(() => {
+      try {
+        const sipsinChart = analyzeSipsin(saju);
+        const sipsinInterp = interpretSipsinChart(sipsinChart);
+        const sinsalAnalysis = analyzeSinsal(saju);
+        const unsungAnalysis = analyzeUnsung(saju);
+        const hapchungAnalysis = analyzeHapChung(saju);
+        const consumerRisks = transformToConsumerFriendlyRisk(hapchungAnalysis);
+
+        return {
+          sipsin: { chart: sipsinChart, interp: sipsinInterp },
+          sinsal: sinsalAnalysis,
+          unsung: unsungAnalysis,
+          hapchung: { analysis: hapchungAnalysis, risks: consumerRisks }
+        };
+      } catch (e) {
+        console.error('Traditional analysis failed:', e);
+        return null;
+      }
+    }, [saju]);
+
+    // 십신 한글 변환 헬퍼
+    const sipsinToKorean = (type: SipsinType): string => SIPSIN_INFO[type]?.korean || type;
 
     // 별자리 계산
     const zodiacSign = getZodiacSign(user.birthDate);
@@ -542,6 +701,323 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
 
         {/* 페이지 나누기 */}
         <div style={{ pageBreakAfter: 'always' }} />
+
+        {/* ============ 정통사주 심층 해석 섹션 ============ */}
+        {traditionalAnalysis && (
+          <>
+            <Section title="정통사주 심층 해석">
+              <p style={{
+                color: '#6b7280',
+                marginBottom: '20px',
+                fontSize: '12pt',
+                lineHeight: 1.7,
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px',
+                borderLeft: '4px solid #6366f1'
+              }}>
+                사주팔자는 수천 년 동양 철학의 지혜입니다. 아래 분석은 당신의 사주에 담긴
+                <strong> 십신(관계 에너지)</strong>, <strong>신살(특별한 별)</strong>,
+                <strong> 12운성(생애 에너지)</strong>, <strong>합충형파해(관계 조화)</strong>를
+                현대적 관점에서 해석한 것입니다.
+              </p>
+
+              {/* 십신 분석 */}
+              <SubSection title="나의 관계 에너지 (십신 분석)">
+                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                  십신은 일간(나)을 기준으로 사주의 다른 기운들과의 관계를 나타냅니다.
+                  당신에게 가장 강한 에너지와 그 의미를 알려드립니다.
+                </p>
+
+                {/* 우세 십신 카드 */}
+                {traditionalAnalysis.sipsin.interp.dominant.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    {traditionalAnalysis.sipsin.interp.dominant.slice(0, 2).map((type) => {
+                      const story = SIPSIN_STORYTELLING[type];
+                      const info = SIPSIN_INFO[type];
+                      return (
+                        <InfoBox key={type} type="highlight" style={{ marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <span style={{ fontSize: '28pt' }}>{story?.icon || '🔮'}</span>
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{ fontWeight: 700, color: '#6366f1', marginBottom: '6px', fontSize: '14pt' }}>
+                                {info?.korean}({info?.hanja}) - {story?.title || '에너지'}
+                              </h4>
+                              <p style={{ lineHeight: 1.7, marginBottom: '8px', fontSize: '12pt' }}>
+                                {story?.story || info?.personality}
+                              </p>
+                              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '11pt' }}>
+                                <span><strong style={{ color: '#059669' }}>강점:</strong> {story?.strength || info?.strength}</span>
+                                <span><strong style={{ color: '#2563eb' }}>적합 분야:</strong> {story?.bestFit || info?.career?.join(', ')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </InfoBox>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 십신 분포 요약 */}
+                <InfoBox type="default">
+                  <p style={{ marginBottom: '6px' }}>
+                    <strong>십신 균형:</strong> {traditionalAnalysis.sipsin.interp.balance}
+                  </p>
+                  <p style={{ marginBottom: '6px' }}>
+                    <strong>성격 특성:</strong> {traditionalAnalysis.sipsin.interp.personality}
+                  </p>
+                  <p>
+                    <strong>직업 적성:</strong> {traditionalAnalysis.sipsin.interp.career}
+                  </p>
+                </InfoBox>
+              </SubSection>
+
+              {/* 신살 분석 */}
+              <SubSection title="나를 돕는 특별한 별 (신살 분석)">
+                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                  신살은 사주에 작용하는 특별한 기운입니다. 길신(복), 특수살(재능), 흉살(주의)로 나뉩니다.
+                </p>
+
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {/* 길신 */}
+                  {traditionalAnalysis.sinsal.gilsin.filter(s => s.present).length > 0 && (
+                    <InfoBox type="success" style={{ flex: 1, minWidth: '200px' }}>
+                      <h4 style={{ color: '#059669', fontWeight: 700, marginBottom: '10px', fontSize: '13pt' }}>
+                        길신 - 행운을 가져다주는 별
+                      </h4>
+                      {traditionalAnalysis.sinsal.gilsin.filter(s => s.present).slice(0, 3).map(s => {
+                        const friendly = SINSAL_FRIENDLY[s.type];
+                        return (
+                          <div key={s.type} style={{ marginBottom: '8px', fontSize: '12pt' }}>
+                            <p style={{ fontWeight: 600 }}>
+                              {friendly?.icon || '⭐'} {s.info.korean}({s.info.hanja})
+                              {s.location && <span style={{ color: '#6b7280', fontSize: '10pt' }}> [{s.location}]</span>}
+                            </p>
+                            <p style={{ color: '#374151', fontSize: '11pt' }}>
+                              {friendly?.meaning || s.info.description}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </InfoBox>
+                  )}
+
+                  {/* 특수살 */}
+                  {traditionalAnalysis.sinsal.teuksuSal.filter(s => s.present).length > 0 && (
+                    <InfoBox type="info" style={{ flex: 1, minWidth: '200px' }}>
+                      <h4 style={{ color: '#2563eb', fontWeight: 700, marginBottom: '10px', fontSize: '13pt' }}>
+                        특수살 - 특별한 재능의 별
+                      </h4>
+                      {traditionalAnalysis.sinsal.teuksuSal.filter(s => s.present).slice(0, 3).map(s => {
+                        const friendly = SINSAL_FRIENDLY[s.type];
+                        return (
+                          <div key={s.type} style={{ marginBottom: '8px', fontSize: '12pt' }}>
+                            <p style={{ fontWeight: 600 }}>
+                              {friendly?.icon || '✨'} {s.info.korean}({s.info.hanja})
+                            </p>
+                            <p style={{ color: '#374151', fontSize: '11pt' }}>
+                              {friendly?.meaning || s.info.description}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </InfoBox>
+                  )}
+                </div>
+
+                {/* 흉살 (있을 경우만) */}
+                {traditionalAnalysis.sinsal.hyungsal.filter(s => s.present).length > 0 && (
+                  <InfoBox type="warning" style={{ marginTop: '12px' }}>
+                    <h4 style={{ color: '#dc2626', fontWeight: 700, marginBottom: '10px', fontSize: '13pt' }}>
+                      주의할 기운
+                    </h4>
+                    {traditionalAnalysis.sinsal.hyungsal.filter(s => s.present).slice(0, 2).map(s => (
+                      <div key={s.type} style={{ marginBottom: '8px', fontSize: '12pt' }}>
+                        <p style={{ fontWeight: 600 }}>△ {s.info.korean}({s.info.hanja})</p>
+                        <p style={{ color: '#374151', fontSize: '11pt' }}>{s.info.effect}</p>
+                        {s.info.remedy && (
+                          <p style={{ color: '#059669', fontSize: '11pt' }}>→ 해소법: {s.info.remedy}</p>
+                        )}
+                      </div>
+                    ))}
+                  </InfoBox>
+                )}
+
+                <p style={{ marginTop: '12px', fontSize: '11pt', color: '#6b7280', fontStyle: 'italic' }}>
+                  {traditionalAnalysis.sinsal.summary}
+                </p>
+              </SubSection>
+            </Section>
+
+            {/* 페이지 나누기 */}
+            <div style={{ pageBreakAfter: 'always' }} />
+
+            <Section title="생애 에너지와 관계 조화">
+              {/* 12운성 분석 */}
+              <SubSection title="현재 생애 에너지 (12운성)">
+                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                  12운성은 인생의 에너지 주기를 나타냅니다. 지금 당신의 에너지 상태를 확인하세요.
+                </p>
+
+                {/* 에너지 바 시각화 */}
+                <div style={{ marginBottom: '16px' }}>
+                  {traditionalAnalysis.unsung.positions.map((pos) => {
+                    const energyPercent = (pos.info.energyLevel / 10) * 100;
+                    const simple = UNSUNG_SIMPLE[pos.unsung];
+                    return (
+                      <div key={pos.pillar} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                        fontSize: '12pt'
+                      }}>
+                        <span style={{ width: '60px', fontWeight: 600 }}>{pos.pillar}</span>
+                        <span style={{ width: '30px' }}>{simple?.emoji || '○'}</span>
+                        <span style={{ width: '50px', color: '#6366f1', fontWeight: 600 }}>
+                          {pos.info.korean}
+                        </span>
+                        <div style={{
+                          flex: 1,
+                          height: '20px',
+                          backgroundColor: '#f3f4f6',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          marginRight: '12px'
+                        }}>
+                          <div style={{
+                            width: `${energyPercent}%`,
+                            height: '100%',
+                            backgroundColor: energyPercent >= 70 ? '#22c55e' : energyPercent >= 40 ? '#eab308' : '#ef4444',
+                            borderRadius: '10px'
+                          }} />
+                        </div>
+                        <span style={{ width: '60px', textAlign: 'right' }}>
+                          {pos.info.energyLevel}/10
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 현재 에너지 상태 요약 */}
+                <InfoBox type="highlight">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '32pt' }}>
+                      {UNSUNG_SIMPLE[traditionalAnalysis.unsung.peakPosition.unsung]?.emoji || '⭐'}
+                    </span>
+                    <div>
+                      <h4 style={{ fontWeight: 700, color: '#6366f1', marginBottom: '4px' }}>
+                        현재 에너지 상태: {traditionalAnalysis.unsung.dominantStage}
+                      </h4>
+                      <p style={{ fontSize: '12pt', marginBottom: '4px' }}>
+                        평균 에너지: <strong>{traditionalAnalysis.unsung.averageEnergy.toFixed(1)}</strong>/10점
+                      </p>
+                      <p style={{ fontSize: '12pt' }}>
+                        최고 에너지 위치: <strong>{traditionalAnalysis.unsung.peakPosition.pillar}</strong>
+                        ({traditionalAnalysis.unsung.peakPosition.info.korean}) - {traditionalAnalysis.unsung.peakPosition.info.description}
+                      </p>
+                    </div>
+                  </div>
+                </InfoBox>
+              </SubSection>
+
+              {/* 합충형파해 분석 */}
+              <SubSection title="관계와 타이밍의 조화 (합충형파해)">
+                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
+                  사주 내 지지(地支)들의 관계를 분석합니다. 합(合)은 조화, 충(沖)은 충돌을 의미합니다.
+                </p>
+
+                {/* 조화 점수 */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '16px',
+                  padding: '12px 16px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px'
+                }}>
+                  <span style={{ fontWeight: 700, marginRight: '12px' }}>관계 조화 점수:</span>
+                  <div style={{
+                    flex: 1,
+                    height: '24px',
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    marginRight: '12px'
+                  }}>
+                    <div style={{
+                      width: `${traditionalAnalysis.hapchung.analysis.harmonyScore}%`,
+                      height: '100%',
+                      backgroundColor: traditionalAnalysis.hapchung.analysis.harmonyScore >= 70 ? '#22c55e' :
+                                       traditionalAnalysis.hapchung.analysis.harmonyScore >= 40 ? '#eab308' : '#ef4444',
+                      borderRadius: '12px'
+                    }} />
+                  </div>
+                  <span style={{
+                    fontWeight: 700,
+                    fontSize: '16pt',
+                    color: traditionalAnalysis.hapchung.analysis.harmonyScore >= 70 ? '#059669' :
+                           traditionalAnalysis.hapchung.analysis.harmonyScore >= 40 ? '#d97706' : '#dc2626'
+                  }}>
+                    {traditionalAnalysis.hapchung.analysis.harmonyScore}점
+                  </span>
+                </div>
+
+                {/* 조화 관계 (합) */}
+                {traditionalAnalysis.hapchung.analysis.harmonies.length > 0 && (
+                  <InfoBox type="success" style={{ marginBottom: '12px' }}>
+                    <h4 style={{ color: '#059669', fontWeight: 700, marginBottom: '8px', fontSize: '13pt' }}>
+                      조화로운 관계 (합)
+                    </h4>
+                    {traditionalAnalysis.hapchung.analysis.harmonies.slice(0, 3).map((rel, idx) => (
+                      <p key={idx} style={{ fontSize: '12pt', marginBottom: '4px' }}>
+                        • {rel.positions.join(' - ')}: {rel.effect}
+                      </p>
+                    ))}
+                  </InfoBox>
+                )}
+
+                {/* 주의 관계 (충/형/파/해) */}
+                {traditionalAnalysis.hapchung.analysis.conflicts.length > 0 && (
+                  <InfoBox type="warning" style={{ marginBottom: '12px' }}>
+                    <h4 style={{ color: '#dc2626', fontWeight: 700, marginBottom: '8px', fontSize: '13pt' }}>
+                      주의할 관계
+                    </h4>
+                    {traditionalAnalysis.hapchung.analysis.conflicts.slice(0, 3).map((rel, idx) => (
+                      <p key={idx} style={{ fontSize: '12pt', marginBottom: '4px' }}>
+                        △ {rel.positions.join(' - ')}: {rel.type} - {rel.effect}
+                      </p>
+                    ))}
+                  </InfoBox>
+                )}
+
+                {/* 실생활 조언 */}
+                {traditionalAnalysis.hapchung.risks.length > 0 && (
+                  <InfoBox type="info">
+                    <h4 style={{ color: '#2563eb', fontWeight: 700, marginBottom: '8px', fontSize: '13pt' }}>
+                      실생활 적용 가이드
+                    </h4>
+                    {traditionalAnalysis.hapchung.risks.slice(0, 3).map((risk, idx) => (
+                      <div key={idx} style={{ marginBottom: '8px', fontSize: '12pt' }}>
+                        <p style={{ fontWeight: 600, color: risk.isPositive ? '#059669' : '#d97706' }}>
+                          {risk.isPositive ? '✓' : '△'} {risk.type}
+                        </p>
+                        <p style={{ color: '#374151', fontSize: '11pt' }}>{risk.actionTip}</p>
+                      </div>
+                    ))}
+                  </InfoBox>
+                )}
+
+                <p style={{ marginTop: '12px', fontSize: '11pt', color: '#6b7280', fontStyle: 'italic' }}>
+                  {traditionalAnalysis.hapchung.analysis.summary}
+                </p>
+              </SubSection>
+            </Section>
+
+            {/* 페이지 나누기 */}
+            <div style={{ pageBreakAfter: 'always' }} />
+          </>
+        )}
 
         {/* ============ 3. 운세 점수 ============ */}
         <Section title={`3. ${targetYear}년 운세 점수`}>
