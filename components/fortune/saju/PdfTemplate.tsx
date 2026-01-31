@@ -277,7 +277,7 @@ const UNSUNG_SIMPLE: Record<string, {
   meaning: string;
 }> = {
   jangseong: { emoji: '🌱', level: '시작', meaning: '새로운 시작의 에너지, 성장의 잠재력' },
-  mokyok: { emoji: '🚿', level: '정화', meaning: '정리하고 깨끗이 하는 시기' },
+  mokryok: { emoji: '🚿', level: '정화', meaning: '정리하고 깨끗이 하는 시기' },
   gwandae: { emoji: '👔', level: '성인', meaning: '책임감 있는 성인으로서의 당당함' },
   geonnok: { emoji: '💼', level: '안정', meaning: '직장이나 일에서의 안정된 성취' },
   jewang: { emoji: '👑', level: '전성기', meaning: '최고의 에너지, 큰 결정에 유리' },
@@ -1241,36 +1241,70 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                   {traditionalAnalysis.unsung.positions.map((pos) => {
                     const energyPercent = (pos.info.energyLevel / 10) * 100;
                     const simple = UNSUNG_SIMPLE[pos.unsung];
+                    const pillarMeaning: Record<string, string> = {
+                      '년주': '조상운/초년기',
+                      '월주': '부모운/청년기',
+                      '일주': '본인/배우자운',
+                      '시주': '자녀운/말년기'
+                    };
                     return (
                       <div key={pos.pillar} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: '8px',
-                        fontSize: '12pt'
+                        marginBottom: '16px',
+                        padding: '12px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
                       }}>
-                        <span style={{ width: '60px', fontWeight: 600 }}>{pos.pillar}</span>
-                        <span style={{ width: '30px' }}>{simple?.emoji || '○'}</span>
-                        <span style={{ width: '50px', color: '#6366f1', fontWeight: 600 }}>
-                          {pos.info.korean}
-                        </span>
+                        {/* 헤더: 주, 운성명, 점수 */}
                         <div style={{
-                          flex: 1,
-                          height: '20px',
-                          backgroundColor: '#f3f4f6',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          marginRight: '12px'
+                          display: 'flex',
+                          alignItems: 'center',
+                          marginBottom: '8px',
+                          fontSize: '12pt'
                         }}>
+                          <span style={{ width: '80px', fontWeight: 700 }}>
+                            {pos.pillar} <span style={{ fontSize: '9pt', color: '#6b7280' }}>({pillarMeaning[pos.pillar]})</span>
+                          </span>
+                          <span style={{ width: '30px', fontSize: '18pt' }}>{simple?.emoji || '○'}</span>
+                          <span style={{ width: '80px', color: '#6366f1', fontWeight: 700, fontSize: '14pt' }}>
+                            {pos.info.korean}({pos.info.hanja})
+                          </span>
                           <div style={{
-                            width: `${energyPercent}%`,
-                            height: '100%',
-                            backgroundColor: energyPercent >= 70 ? '#22c55e' : energyPercent >= 40 ? '#eab308' : '#ef4444',
-                            borderRadius: '10px'
-                          }} />
+                            flex: 1,
+                            height: '20px',
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            marginRight: '12px'
+                          }}>
+                            <div style={{
+                              width: `${energyPercent}%`,
+                              height: '100%',
+                              backgroundColor: energyPercent >= 70 ? '#22c55e' : energyPercent >= 40 ? '#eab308' : '#ef4444',
+                              borderRadius: '10px'
+                            }} />
+                          </div>
+                          <span style={{ width: '60px', textAlign: 'right', fontWeight: 600 }}>
+                            {pos.info.energyLevel}/10
+                          </span>
                         </div>
-                        <span style={{ width: '60px', textAlign: 'right' }}>
-                          {pos.info.energyLevel}/10
-                        </span>
+
+                        {/* 설명: 의미와 특성 */}
+                        <div style={{ marginLeft: '110px', fontSize: '11pt' }}>
+                          <p style={{ marginBottom: '4px', color: '#374151' }}>
+                            <strong style={{ color: '#4f46e5' }}>의미:</strong> {pos.info.description} | 단계: <span style={{
+                              padding: '2px 8px',
+                              backgroundColor: pos.info.stage === '전성기' ? '#dcfce7' : pos.info.stage === '성장기' ? '#fef9c3' : pos.info.stage === '쇠퇴기' ? '#fee2e2' : '#e0e7ff',
+                              color: pos.info.stage === '전성기' ? '#166534' : pos.info.stage === '성장기' ? '#854d0e' : pos.info.stage === '쇠퇴기' ? '#991b1b' : '#3730a3',
+                              borderRadius: '4px',
+                              fontSize: '10pt',
+                              fontWeight: 600
+                            }}>{pos.info.stage}</span>
+                          </p>
+                          <p style={{ color: '#6b7280', fontSize: '10pt' }}>
+                            💡 {pos.info.advice}
+                          </p>
+                        </div>
                       </div>
                     );
                   })}
@@ -1674,7 +1708,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                       ))}
                     </div>
                     <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.essence.story.slice(0, 80)}...
+                      {traditionalAnalysis.cardDeck.essence.story}
                     </p>
                   </div>
 
@@ -1707,7 +1741,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                       ))}
                     </div>
                     <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.energy.story.slice(0, 80)}...
+                      {traditionalAnalysis.cardDeck.energy.story}
                     </p>
                   </div>
 
@@ -1740,7 +1774,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                       ))}
                     </div>
                     <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.talent.story.slice(0, 80)}...
+                      {traditionalAnalysis.cardDeck.talent.story}
                     </p>
                   </div>
 
@@ -1773,7 +1807,7 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                       ))}
                     </div>
                     <p style={{ fontSize: '11pt', color: '#6b7280', lineHeight: 1.6 }}>
-                      {traditionalAnalysis.cardDeck.guardian.story.slice(0, 80)}...
+                      {traditionalAnalysis.cardDeck.guardian.story}
                     </p>
                   </div>
                 </div>
