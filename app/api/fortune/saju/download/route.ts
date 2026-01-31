@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
   generateSajuPDF,
   generatePDFFilename,
@@ -30,9 +30,86 @@ import {
 } from '@/lib/services/pointService';
 import { blindPremiumContent } from '@/lib/services/analysisService';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
+import type { TTSProviderType, TTSSettings } from '@/lib/services/ttsSettingsService';
 
 // 관리자 이메일 목록
 const ADMIN_EMAILS = ['mymiryu@gmail.com'];
+
+// 기본 TTS 설정
+const DEFAULT_TTS_SETTINGS: TTSSettings = {
+  provider: 'openai',
+  voice: 'nova',
+  speed: 0.95,
+  testMode: false
+};
+
+/**
+ * DB에서 TTS 설정 가져오기 (서버사이드)
+ */
+async function getTTSSettingsFromDB(): Promise<TTSSettings> {
+  try {
+    const serviceClient = createServiceClient();
+    const { data, error } = await (serviceClient as any)
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'tts_settings')
+      .single();
+
+    if (error || !data?.value) {
+      return DEFAULT_TTS_SETTINGS;
+    }
+
+    return data.value as TTSSettings;
+  } catch (error) {
+    console.error('Error fetching TTS settings:', error);
+    return DEFAULT_TTS_SETTINGS;
+  }
+}
+
+/**
+ * TTS 제공자별 API 키 및 설정 가져오기
+ */
+function getTTSConfig(provider: TTSProviderType, voiceId?: string) {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const googleAIKey = process.env.GOOGLE_AI_API_KEY;
+  const googleTTSKey = process.env.GOOGLE_TTS_API_KEY;
+
+  switch (provider) {
+    case 'openai':
+      if (!openaiKey) {
+        console.warn('OpenAI API key not found, falling back to Edge TTS');
+        return { provider: 'edge' as const, voiceId: 'ko-KR-SunHiNeural' };
+      }
+      return { provider: 'openai' as const, apiKey: openaiKey, voiceId: voiceId || 'nova' };
+
+    case 'gemini-flash':
+      if (!googleAIKey) {
+        console.warn('Google AI API key not found, falling back to OpenAI');
+        if (openaiKey) return { provider: 'openai' as const, apiKey: openaiKey, voiceId: 'nova' };
+        return { provider: 'edge' as const, voiceId: 'ko-KR-SunHiNeural' };
+      }
+      return { provider: 'gemini-flash' as const, apiKey: googleAIKey, voiceId: voiceId || 'Kore' };
+
+    case 'gemini-pro':
+      if (!googleAIKey) {
+        console.warn('Google AI API key not found, falling back to OpenAI');
+        if (openaiKey) return { provider: 'openai' as const, apiKey: openaiKey, voiceId: 'nova' };
+        return { provider: 'edge' as const, voiceId: 'ko-KR-SunHiNeural' };
+      }
+      return { provider: 'gemini-pro' as const, apiKey: googleAIKey, voiceId: voiceId || 'Kore' };
+
+    case 'google':
+      if (!googleTTSKey) {
+        console.warn('Google Cloud TTS API key not found, falling back to Edge TTS');
+        return { provider: 'edge' as const, voiceId: 'ko-KR-SunHiNeural' };
+      }
+      return { provider: 'google' as const, apiKey: googleTTSKey, voiceId: voiceId || 'ko-KR-Neural2-A' };
+
+    case 'edge':
+    default:
+      return { provider: 'edge' as const, voiceId: voiceId || 'ko-KR-SunHiNeural' };
+  }
+}
 
 // 저장된 분석 결과에서 다운로드 (GET)
 export async function GET(request: NextRequest) {
@@ -177,20 +254,13 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
-      const openaiKey = process.env.OPENAI_API_KEY;
-      const ttsProvider = openaiKey ? 'openai' : (process.env.TTS_PROVIDER || 'edge');
+      // DB에서 TTS 설정 가져오기
+      const ttsSettings = await getTTSSettingsFromDB();
 
-      const config = openaiKey
-        ? {
-            provider: 'openai' as const,
-            apiKey: openaiKey,
-            voiceId: 'nova'
-          }
-        : {
-            provider: 'edge' as const,
-            voiceId: 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
-          };
+      // TTS 설정에서 제공자 및 음성 설정
+      const config = getTTSConfig(ttsSettings.provider, ttsSettings.voice);
+
+      console.log(`[TTS] Using provider: ${config.provider}, voice: ${config.voiceId}`);
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -210,7 +280,8 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'audio/mpeg',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': audioBuffer.length.toString()
+          'Content-Length': audioBuffer.length.toString(),
+          'X-TTS-Provider': config.provider
         }
       });
     }
@@ -354,20 +425,14 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // audio
-      // OpenAI API 키가 있으면 OpenAI 사용, 없으면 Edge TTS 시도
-      const openaiKey = process.env.OPENAI_API_KEY;
+      // DB에서 TTS 설정 가져오기
+      const ttsSettings = await getTTSSettingsFromDB();
       const requestedVoice = (body as Record<string, unknown>).voiceId as string;
 
-      const config = openaiKey
-        ? {
-            provider: 'openai' as const,
-            apiKey: openaiKey,
-            voiceId: requestedVoice || 'nova'
-          }
-        : {
-            provider: 'edge' as const,
-            voiceId: requestedVoice || 'ko-KR-SunHiNeural' // 한국어 여성, 따뜻한 음성
-          };
+      // TTS 설정에서 제공자 및 음성 설정 (요청된 음성이 있으면 우선)
+      const config = getTTSConfig(ttsSettings.provider, requestedVoice || ttsSettings.voice);
+
+      console.log(`[TTS POST] Using provider: ${config.provider}, voice: ${config.voiceId}`);
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -387,7 +452,8 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'audio/mpeg',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': audioBuffer.length.toString()
+          'Content-Length': audioBuffer.length.toString(),
+          'X-TTS-Provider': config.provider
         }
       });
     }
