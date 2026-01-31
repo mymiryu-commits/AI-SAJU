@@ -33,6 +33,11 @@ import {
   generateBloodTypeIntegration
 } from '../mappings/differentiatedContent';
 
+// 정통사주 분석 모듈
+import { analyzeSipsin, interpretSipsinChart, SIPSIN_INFO, type SipsinType } from '../analysis/sipsin';
+import { analyzeSinsal, SINSAL_INFO } from '../analysis/sinsal';
+import { calculateDaeun, HEAVENLY_STEMS, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES, EARTHLY_BRANCHES_KO } from '../calculator';
+
 // TTS 제공자 타입
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
 
@@ -627,7 +632,90 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     }
   }
 
-  // ========== 10. 황금 기회일 (날짜 근거 추가) ==========
+  // ========== 10. 정통사주 분석 (십신, 신살, 대운) ==========
+  try {
+    // 십신 분석
+    const sipsinChart = analyzeSipsin(saju);
+    const sipsinInterp = interpretSipsinChart(sipsinChart);
+
+    // 우세 십신 스토리텔링
+    if (sipsinInterp.dominant.length > 0) {
+      const dominantSipsin = sipsinInterp.dominant[0];
+      const sipsinInfo = SIPSIN_INFO[dominantSipsin];
+      const sipsinStory = generateSipsinStory(dominantSipsin, sipsinInfo);
+
+      sections.push({
+        title: '십신 분석',
+        content: `정통사주 분석입니다. 당신의 사주에서 가장 강한 에너지는 ${sipsinInfo?.korean || dominantSipsin}입니다. ` +
+                 `${sipsinStory} ` +
+                 `이 기운은 ${sipsinInfo?.meaning || '특별한 역할'}을 담당합니다.`,
+        pauseAfter: 2500
+      });
+    }
+
+    // 신살 분석
+    const sinsalAnalysis = analyzeSinsal(saju);
+    const allSinsal = [...sinsalAnalysis.gilsin, ...sinsalAnalysis.teuksuSal.slice(0, 2)];
+
+    if (allSinsal.length > 0) {
+      let sinsalContent = '신살 분석입니다. 신살은 사주에 나타나는 특별한 별들입니다. ';
+
+      // 길신이 있으면 먼저
+      if (sinsalAnalysis.gilsin.length > 0) {
+        const gilsin = sinsalAnalysis.gilsin[0];
+        sinsalContent += `당신에게는 ${gilsin.info.korean}이 있습니다. ${gilsin.info.effect.slice(0, 60)} `;
+      }
+
+      // 특수살
+      if (sinsalAnalysis.teuksuSal.length > 0) {
+        const teuksu = sinsalAnalysis.teuksuSal[0];
+        sinsalContent += `${teuksu.info.korean}도 보입니다. ${teuksu.info.effect.slice(0, 50)}`;
+        if (teuksu.info.remedy) {
+          sinsalContent += ` 조언: ${teuksu.info.remedy.slice(0, 40)}`;
+        }
+      }
+
+      sections.push({
+        title: '신살 분석',
+        content: sinsalContent,
+        pauseAfter: 2500
+      });
+    }
+
+    // 대운 분석
+    const daeunList = calculateDaeun(saju, user.gender, user.birthDate);
+    const birthYear = new Date(user.birthDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const koreanAge = currentYear - birthYear + 1;
+
+    // 현재 대운 찾기
+    const currentDaeun = daeunList.find((d, idx) => {
+      const nextAge = daeunList[idx + 1]?.age ?? Infinity;
+      return koreanAge >= d.age && koreanAge < nextAge;
+    }) || daeunList[0];
+
+    if (currentDaeun) {
+      const stemIdx = HEAVENLY_STEMS.indexOf(currentDaeun.stem);
+      const branchIdx = EARTHLY_BRANCHES.indexOf(currentDaeun.branch);
+      const stemKo = stemIdx >= 0 ? HEAVENLY_STEMS_KO[stemIdx] : currentDaeun.stem;
+      const branchKo = branchIdx >= 0 ? EARTHLY_BRANCHES_KO[branchIdx] : currentDaeun.branch;
+
+      const daeunMeaning = getDaeunElementMeaning(currentDaeun.element);
+
+      sections.push({
+        title: '대운 분석',
+        content: `대운 분석입니다. 대운은 10년 단위로 바뀌는 큰 운의 흐름입니다. ` +
+                 `현재 ${stemKo}${branchKo}운이 진행 중입니다. ` +
+                 `${daeunMeaning} ` +
+                 `이 대운은 ${currentDaeun.age}세부터 시작되어 ${currentDaeun.age + 9}세까지 이어집니다.`,
+        pauseAfter: 2500
+      });
+    }
+  } catch (e) {
+    console.error('Traditional saju narration error:', e);
+  }
+
+  // ========== 11. 황금 기회일 (날짜 근거 추가) ==========
   const goldenTimes = calculateGoldenTimes(user.birthDate, dayStem, yongsin || ['wood'], targetYear);
   const currentMonth = new Date().getMonth() + 1;
 
@@ -836,6 +924,41 @@ function getYongsinAdvice(element: Element): string {
   };
 
   return advices[element] || '';
+}
+
+/**
+ * 십신 스토리텔링 생성
+ */
+function generateSipsinStory(sipsinType: SipsinType, info: typeof SIPSIN_INFO[SipsinType]): string {
+  const stories: Record<SipsinType, string> = {
+    bijeon: '형제나 동료와 같은 에너지입니다. 독립심이 강하고 자기 주관이 뚜렷합니다.',
+    geopjae: '경쟁하고 쟁취하는 에너지입니다. 도전정신이 강하고 승부욕이 있습니다.',
+    siksin: '표현하고 창조하는 에너지입니다. 창의력이 뛰어나고 표현력이 좋습니다.',
+    sanggwan: '비판하고 개혁하는 에너지입니다. 논리적이고 분석력이 뛰어납니다.',
+    pyeonjae: '빠르게 움직이는 재물의 에너지입니다. 투자나 사업에 재능이 있습니다.',
+    jeongjae: '안정적인 재물의 에너지입니다. 꾸준히 모으고 관리하는 능력이 있습니다.',
+    pyeongwan: '변화하는 권위의 에너지입니다. 도전적이고 혁신적인 리더십이 있습니다.',
+    jeonggwan: '안정적인 권위의 에너지입니다. 조직에서 신뢰받고 인정받는 능력이 있습니다.',
+    pyeonin: '특별한 학습의 에너지입니다. 직관력이 뛰어나고 영감이 넘칩니다.',
+    jeongin: '정통 학문의 에너지입니다. 학업에 뛰어나고 지식을 쌓는 데 능합니다.'
+  };
+
+  return stories[sipsinType] || info?.meaning || '특별한 에너지입니다.';
+}
+
+/**
+ * 대운 오행별 의미
+ */
+function getDaeunElementMeaning(element: Element): string {
+  const meanings: Record<Element, string> = {
+    wood: '목의 기운이 흐르는 시기입니다. 성장과 새로운 시작에 좋습니다. 학업, 자기계발, 새 프로젝트 시작에 유리합니다.',
+    fire: '화의 기운이 흐르는 시기입니다. 열정과 활동의 시기입니다. 적극적인 사회 활동, 인맥 확장에 좋습니다.',
+    earth: '토의 기운이 흐르는 시기입니다. 안정과 축적의 시기입니다. 기반을 다지고 저축하기 좋습니다.',
+    metal: '금의 기운이 흐르는 시기입니다. 결실과 성취의 시기입니다. 그동안의 노력이 결과로 나타납니다.',
+    water: '수의 기운이 흐르는 시기입니다. 지혜와 준비의 시기입니다. 공부하고 다음을 위해 충전하세요.'
+  };
+
+  return meanings[element] || '특별한 시기입니다.';
 }
 
 /**
