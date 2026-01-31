@@ -24,7 +24,17 @@ import {
   Users,
   Coins,
   QrCode,
+  Volume2,
+  Mic,
 } from 'lucide-react';
+import {
+  type TTSProviderType,
+  type TTSSettings,
+  TTS_PROVIDERS,
+  DEFAULT_TTS_SETTINGS,
+  fetchTTSSettings,
+  saveTTSSettings
+} from '@/lib/services/ttsSettingsService';
 import { Link } from '@/i18n/routing';
 
 export default function AdminSettingsPage() {
@@ -38,6 +48,11 @@ export default function AdminSettingsPage() {
   const [qrHeroImage, setQrHeroImage] = useState<string | null>(null);
   const [qrHeroImageLoading, setQrHeroImageLoading] = useState(true);
   const [qrHeroImageUploading, setQrHeroImageUploading] = useState(false);
+
+  // TTS Settings state
+  const [ttsSettings, setTtsSettings] = useState<TTSSettings>(DEFAULT_TTS_SETTINGS);
+  const [ttsLoading, setTtsLoading] = useState(true);
+  const [ttsSaving, setTtsSaving] = useState(false);
 
   const siteLogoInputRef = useRef<HTMLInputElement>(null);
   const aiLogoInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +77,53 @@ export default function AdminSettingsPage() {
     };
     fetchQrHeroImage();
   }, []);
+
+  // Fetch TTS Settings on mount
+  useEffect(() => {
+    const loadTTSSettings = async () => {
+      try {
+        const settings = await fetchTTSSettings();
+        setTtsSettings(settings);
+      } catch (error) {
+        console.error('Error fetching TTS settings:', error);
+      } finally {
+        setTtsLoading(false);
+      }
+    };
+    loadTTSSettings();
+  }, []);
+
+  // TTS Settings handlers
+  const handleTTSProviderChange = (provider: TTSProviderType) => {
+    const providerInfo = TTS_PROVIDERS[provider];
+    setTtsSettings(prev => ({
+      ...prev,
+      provider,
+      voice: providerInfo?.defaultVoice || prev.voice
+    }));
+  };
+
+  const handleTTSVoiceChange = (voice: string) => {
+    setTtsSettings(prev => ({ ...prev, voice }));
+  };
+
+  const handleSaveTTSSettings = async () => {
+    setTtsSaving(true);
+    setMessage(null);
+    try {
+      const success = await saveTTSSettings(ttsSettings);
+      if (success) {
+        setMessage({ type: 'success', text: 'TTS 설정이 저장되었습니다.' });
+      } else {
+        setMessage({ type: 'error', text: 'TTS 설정 저장에 실패했습니다.' });
+      }
+    } catch (error) {
+      console.error('Error saving TTS settings:', error);
+      setMessage({ type: 'error', text: 'TTS 설정 저장 중 오류가 발생했습니다.' });
+    } finally {
+      setTtsSaving(false);
+    }
+  };
 
   // QR Hero Image upload handler
   const handleQrHeroImageUpload = async (file: File) => {
@@ -551,6 +613,108 @@ export default function AdminSettingsPage() {
               </Button>
             )}
           </div>
+        </div>
+
+        {/* TTS Settings */}
+        <div className="mt-8 bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 flex items-center justify-center">
+                <Volume2 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">음성(TTS) 설정</h2>
+                <p className="text-muted-foreground text-sm">사주 분석 음성 생성에 사용할 TTS 제공자를 선택하세요</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSaveTTSSettings}
+              disabled={ttsSaving || ttsLoading}
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
+            >
+              {ttsSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              저장
+            </Button>
+          </div>
+
+          {ttsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-cyan-500" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* TTS Provider Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {(Object.entries(TTS_PROVIDERS) as [TTSProviderType, typeof TTS_PROVIDERS[TTSProviderType]][]).map(([key, provider]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleTTSProviderChange(key)}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      ttsSettings.provider === key
+                        ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30'
+                        : 'border-border hover:border-cyan-300 dark:hover:border-cyan-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-foreground">{provider.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        provider.quality >= 8.5 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        provider.quality >= 7 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                      }`}>
+                        품질 {provider.quality}/10
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">{provider.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">{provider.cost}</span>
+                      {ttsSettings.provider === key && (
+                        <CheckCircle className="h-4 w-4 text-cyan-500" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Voice Selection */}
+              <div className="mt-6 p-4 rounded-xl bg-secondary/50 border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Mic className="h-4 w-4 text-cyan-500" />
+                  <span className="font-medium text-foreground">음성 선택</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {TTS_PROVIDERS[ttsSettings.provider]?.voices.map((voice) => (
+                    <button
+                      key={voice}
+                      onClick={() => handleTTSVoiceChange(voice)}
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                        ttsSettings.voice === voice
+                          ? 'bg-cyan-500 text-white'
+                          : 'bg-background border border-border hover:border-cyan-300'
+                      }`}
+                    >
+                      {voice}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Current Settings Summary */}
+              <div className="mt-4 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-800/30">
+                <p className="text-sm text-cyan-800 dark:text-cyan-300">
+                  <strong>현재 설정:</strong> {TTS_PROVIDERS[ttsSettings.provider]?.name} - {ttsSettings.voice}
+                </p>
+                <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                  예상 비용: {TTS_PROVIDERS[ttsSettings.provider]?.cost}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* AI Shortcuts Management */}

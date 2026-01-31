@@ -53,8 +53,8 @@ import {
   findBestAndWorstMonths
 } from '../analysis/monthlyFortune';
 
-// TTS 제공자 타입
-export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge';
+// TTS 제공자 타입 (Gemini 포함)
+export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge' | 'gemini-flash' | 'gemini-pro';
 
 // node-edge-tts 동적 import
 let NodeEdgeTTS: any = null;
@@ -1711,6 +1711,26 @@ export async function generateSajuAudio(options: AudioGeneratorOptions): Promise
       if (!config.apiKey) throw new Error('Google API key required');
       return generateAudioWithGoogle(fullText, config.apiKey);
 
+    case 'gemini-flash':
+      // Gemini Flash TTS - 빠르고 저렴, 감정 표현 우수
+      if (!config.apiKey) throw new Error('Google AI API key required for Gemini TTS');
+      return generateAudioWithGeminiFlash(
+        fullText,
+        config.apiKey,
+        autoVoice || 'Kore',
+        '따뜻하고 친근한 톤으로, 사주 분석 결과를 천천히 읽어주세요.'
+      );
+
+    case 'gemini-pro':
+      // Gemini Pro TTS - 최고 품질, 자연스러운 감정
+      if (!config.apiKey) throw new Error('Google AI API key required for Gemini TTS');
+      return generateAudioWithGeminiPro(
+        fullText,
+        config.apiKey,
+        autoVoice || 'Kore',
+        '전문적이고 신뢰감 있는 톤으로, 사주 분석 결과를 따뜻하게 전달해주세요. 좋은 운세는 희망적으로, 주의할 점은 차분하게 조언해주세요.'
+      );
+
     case 'naver':
       // Naver는 clientId/clientSecret 필요
       throw new Error('Naver TTS requires separate client ID and secret');
@@ -1729,6 +1749,143 @@ export function generateAudioFilename(user: UserInput, targetYear: number = 2026
   return `사주분석_음성_${safeName}_${targetYear}년_${date}.mp3`;
 }
 
+// ========== Gemini TTS 지원 ==========
+
+/**
+ * Gemini TTS 음성 옵션
+ *
+ * 지원 모델:
+ * - gemini-2.5-flash-preview-tts: 빠르고 저렴 (권장)
+ * - gemini-2.5-pro-preview-tts: 고품질, 자연스러움
+ *
+ * 한국어 음성:
+ * - Kore (여성, 따뜻하고 친근함)
+ * - Charon (남성, 깊고 안정감)
+ * - Aoede (여성, 밝고 에너지틱)
+ * - Puck (중성, 부드러움)
+ */
+export const GEMINI_VOICES = {
+  female: ['Kore', 'Aoede', 'Leda'],
+  male: ['Charon', 'Orus', 'Fenrir'],
+  neutral: ['Puck', 'Zephyr']
+} as const;
+
+export type GeminiTTSModel = 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
+
+export interface GeminiTTSOptions {
+  model?: GeminiTTSModel;
+  voice?: string;
+  languageCode?: string;
+  speakingRate?: number;
+  pitch?: number;
+  // 감정/스타일 지시 (Gemini TTS의 강점)
+  stylePrompt?: string;
+}
+
+/**
+ * Google Gemini TTS API를 사용한 음성 생성
+ *
+ * Gemini TTS는 LLM 기반으로 문맥을 이해하고 감정 표현이 자연스럽습니다.
+ * 자연어 프롬프트로 톤, 속도, 감정을 조절할 수 있습니다.
+ *
+ * @param text 변환할 텍스트
+ * @param apiKey Google AI API 키 (Gemini API)
+ * @param options TTS 옵션
+ * @returns MP3 오디오 버퍼
+ */
+export async function generateAudioWithGemini(
+  text: string,
+  apiKey: string,
+  options: GeminiTTSOptions = {}
+): Promise<Buffer> {
+  const {
+    model = 'gemini-2.5-flash-preview-tts',
+    voice = 'Kore', // 한국어 여성 음성 기본값
+    languageCode = 'ko-KR',
+    speakingRate = 0.9, // 시니어 고객을 위해 약간 느리게
+    stylePrompt = '따뜻하고 신뢰감 있는 톤으로, 천천히 명확하게 읽어주세요.'
+  } = options;
+
+  // Gemini TTS API 엔드포인트
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+  const response = await fetch(`${endpoint}?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: `${stylePrompt}\n\n다음 텍스트를 읽어주세요:\n\n${text}`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: voice
+            }
+          }
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini TTS Error: ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  // Gemini API는 base64 인코딩된 오디오를 반환
+  const audioContent = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+  if (!audioContent) {
+    throw new Error('Gemini TTS: No audio content in response');
+  }
+
+  return Buffer.from(audioContent, 'base64');
+}
+
+/**
+ * Gemini Flash TTS (빠르고 저렴)
+ */
+export async function generateAudioWithGeminiFlash(
+  text: string,
+  apiKey: string,
+  voice: string = 'Kore',
+  stylePrompt?: string
+): Promise<Buffer> {
+  return generateAudioWithGemini(text, apiKey, {
+    model: 'gemini-2.5-flash-preview-tts',
+    voice,
+    stylePrompt: stylePrompt || '따뜻하고 친근한 톤으로 읽어주세요.'
+  });
+}
+
+/**
+ * Gemini Pro TTS (고품질)
+ */
+export async function generateAudioWithGeminiPro(
+  text: string,
+  apiKey: string,
+  voice: string = 'Kore',
+  stylePrompt?: string
+): Promise<Buffer> {
+  return generateAudioWithGemini(text, apiKey, {
+    model: 'gemini-2.5-pro-preview-tts',
+    voice,
+    stylePrompt: stylePrompt || '전문적이고 신뢰감 있는 톤으로, 사주 분석 결과를 따뜻하게 전달해주세요.'
+  });
+}
+
 export default {
   generateNarrationScript,
   narrationToText,
@@ -1738,6 +1895,10 @@ export default {
   generateAudioWithGoogle,
   generateAudioWithNaver,
   generateAudioWithEdge,
+  generateAudioWithGemini,
+  generateAudioWithGeminiFlash,
+  generateAudioWithGeminiPro,
   getEdgeVoices,
-  OPENAI_VOICES
+  OPENAI_VOICES,
+  GEMINI_VOICES
 };
