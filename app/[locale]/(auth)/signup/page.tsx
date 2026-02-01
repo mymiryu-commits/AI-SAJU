@@ -149,7 +149,7 @@ export default function SignupPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'kakao' | 'apple') => {
+  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
     // WebView에서 Google OAuth 시도 시 경고
     if (inWebView && provider === 'google') {
       setError(`${webViewApp || '인앱 브라우저'}에서는 Google 로그인이 지원되지 않습니다. 아래 안내에 따라 외부 브라우저에서 접속해주세요.`);
