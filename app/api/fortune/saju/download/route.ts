@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
           });
 
           const filename = generatePDFFilename(userInput, targetYear);
-          return new NextResponse(storedPdf.data, {
+          return new NextResponse(new Uint8Array(storedPdf.data), {
             status: 200,
             headers: {
               'Content-Type': 'application/pdf',
@@ -384,7 +384,7 @@ export async function GET(request: NextRequest) {
           });
 
           const filename = generateAudioFilename(userInput, targetYear);
-          return new NextResponse(storedAudio.data, {
+          return new NextResponse(new Uint8Array(storedAudio.data), {
             status: 200,
             headers: {
               'Content-Type': 'audio/mpeg',

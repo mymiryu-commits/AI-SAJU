@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateSaju } from '@/lib/fortune/saju/calculator';
-import { calculateOheng } from '@/lib/fortune/saju/oheng';
+import { analyzeOheng } from '@/lib/fortune/saju/oheng';
 import { analyzeIdealType } from '@/lib/fortune/saju/analysis/idealType';
 import { analyzeParentInfluence } from '@/lib/fortune/saju/analysis/familyImpact';
 
@@ -23,13 +23,14 @@ export async function POST(request: NextRequest) {
     const { testType, user, extraData } = body;
 
     // 사주 계산
+    const isLunar = user.calendar === 'lunar';
     const saju = calculateSaju(
       user.birthDate,
       user.birthTime || '12:00',
-      user.gender || 'male',
-      user.calendar || 'solar'
+      isLunar
     );
-    const oheng = calculateOheng(saju);
+    const ohengResult = analyzeOheng(saju);
+    const oheng = ohengResult.balance;
 
     let result;
 
@@ -230,12 +231,12 @@ function handleSuccessProfileTest(saju: any, oheng: any) {
 
   // 강점/약점 비율 계산 (오행 기반)
   const strongPoints = Object.entries(oheng)
-    .filter(([_, value]) => value > 20)
-    .map(([key, _]) => key);
+    .filter(([_, value]) => (value as number) > 20)
+    .map(([key]) => key);
 
   const weakPoints = Object.entries(oheng)
-    .filter(([_, value]) => value < 15)
-    .map(([key, _]) => key);
+    .filter(([_, value]) => (value as number) < 15)
+    .map(([key]) => key);
 
   return {
     testType: 'success-profile',
@@ -261,11 +262,11 @@ function handleSuccessProfileTest(saju: any, oheng: any) {
  * 퀵 궁합 테스트
  */
 function handleQuickCompatibilityTest(saju1: any, person2: any) {
+  const isLunar = person2.calendar === 'lunar';
   const saju2 = calculateSaju(
     person2.birthDate,
     person2.birthTime || '12:00',
-    person2.gender || 'male',
-    person2.calendar || 'solar'
+    isLunar
   );
 
   const element1 = saju1.day.element;

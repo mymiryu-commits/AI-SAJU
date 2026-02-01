@@ -3,7 +3,7 @@
  * 사주 기반 이상형/궁합 맞는 사람 유형 분석
  */
 
-import { SajuChart, Element, OhengResult } from '@/types/saju';
+import { SajuChart, Element, OhengBalance } from '@/types/saju';
 
 // 이상형 분석 결과
 export interface IdealTypeAnalysis {
@@ -184,7 +184,7 @@ const ELEMENT_CONTROLS: Record<Element, Element> = {
  */
 export function analyzeIdealType(
   saju: SajuChart,
-  oheng: OhengResult
+  oheng: OhengBalance
 ): IdealTypeAnalysis {
   // 일간(Day Master) 기반 분석 - 가장 중요한 기준
   const dayMasterElement = saju.day.element;
@@ -237,7 +237,7 @@ export function analyzeIdealType(
 /**
  * 용신 오행 찾기 (가장 부족한 기운)
  */
-function findYongsinElement(oheng: OhengResult): Element | null {
+function findYongsinElement(oheng: OhengBalance): Element | null {
   const elements: [Element, number][] = [
     ['wood', oheng.wood],
     ['fire', oheng.fire],
