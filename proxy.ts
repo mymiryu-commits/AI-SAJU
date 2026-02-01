@@ -71,74 +71,96 @@ export default async function proxy(request: NextRequest) {
 }
 
 async function checkPageAuth(request: NextRequest, requireAdmin: boolean = false): Promise<NextResponse | null> {
-  const response = NextResponse.next();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
+  try {
+    // 환경변수 체크
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[Proxy] Missing Supabase environment variables');
+      return null; // 환경변수 없으면 인증 스킵 (페이지에서 처리)
     }
-  );
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+    const response = NextResponse.next();
 
-  // 인증 실패 시 로그인 페이지로 리다이렉트
-  if (error || !user) {
-    const locale = request.nextUrl.pathname.match(/^\/(ko|ja|en)/)?.[1] || 'ko';
-    const loginUrl = new URL(`/${locale}/login`, request.url);
-    loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
 
-  // Admin 라우트인 경우 Admin 이메일 체크
-  if (requireAdmin) {
-    const userEmail = user.email?.toLowerCase();
-    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-      // Admin이 아닌 경우 홈으로 리다이렉트
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    // 인증 실패 시 로그인 페이지로 리다이렉트
+    if (error || !user) {
       const locale = request.nextUrl.pathname.match(/^\/(ko|ja|en)/)?.[1] || 'ko';
-      return NextResponse.redirect(new URL(`/${locale}`, request.url));
+      const loginUrl = new URL(`/${locale}/login`, request.url);
+      loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
     }
-  }
 
-  return null; // 인증 통과
+    // Admin 라우트인 경우 Admin 이메일 체크
+    if (requireAdmin) {
+      const userEmail = user.email?.toLowerCase();
+      if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+        // Admin이 아닌 경우 홈으로 리다이렉트
+        const locale = request.nextUrl.pathname.match(/^\/(ko|ja|en)/)?.[1] || 'ko';
+        return NextResponse.redirect(new URL(`/${locale}`, request.url));
+      }
+    }
+
+    return null; // 인증 통과
+  } catch (err) {
+    console.error('[Proxy] Auth check error:', err);
+    return null; // 에러 시 인증 스킵 (페이지에서 처리)
+  }
 }
 
 async function checkAdminApiAuth(request: NextRequest): Promise<NextResponse> {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll() {},
-      },
+  try {
+    // 환경변수 체크
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[Proxy] Missing Supabase environment variables');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
-  );
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {},
+        },
+      }
+    );
 
-  if (error || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userEmail = user.email?.toLowerCase();
+    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return NextResponse.next();
+  } catch (err) {
+    console.error('[Proxy] Admin API auth error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const userEmail = user.email?.toLowerCase();
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  return NextResponse.next();
 }
 
 export const config = {
