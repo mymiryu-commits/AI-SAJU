@@ -1,5 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { Database } from '@/types/database';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bnlrrlnjisokppslkmck.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHJybG5qaXNva3Bwc2xrbWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNDMxMzQsImV4cCI6MjA4MzcxOTEzNH0.TGPZpr7Vu5TyadoU71-7BxgmNNMwzRME4rJcB9e42Jw';
 
 // 허용된 리다이렉트 경로 (prefix 매칭)
 const ALLOWED_REDIRECT_PREFIXES = [
@@ -52,12 +57,43 @@ export async function GET(request: Request) {
   const next = searchParams.get('next');
 
   if (code) {
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+
+    // 쿠키를 Response에 설정하기 위한 임시 저장소
+    const cookiesToSet: { name: string; value: string; options: any }[] = [];
+
+    const supabase = createServerClient<Database>(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookies) {
+            // 쿠키 설정을 나중에 Response에 적용하기 위해 저장
+            cookies.forEach((cookie) => {
+              cookiesToSet.push(cookie);
+            });
+          },
+        },
+      }
+    );
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
       const safePath = getSafeRedirectPath(next);
-      return NextResponse.redirect(`${origin}${safePath}`);
+      const response = NextResponse.redirect(`${origin}${safePath}`);
+
+      // Response에 쿠키 설정
+      cookiesToSet.forEach(({ name, value, options }) => {
+        response.cookies.set(name, value, options);
+      });
+
+      return response;
+    } else {
+      console.error('[Auth Callback] Error exchanging code:', error.message);
     }
   }
 
