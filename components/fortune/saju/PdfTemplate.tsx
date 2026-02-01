@@ -270,24 +270,27 @@ const SINSAL_FRIENDLY: Record<string, {
   hwagaesal: { icon: '🎭', title: '예술의 별', meaning: '예술적 감각이 뛰어납니다', activation: '창작 활동이나 취미를 살리세요' }
 };
 
-// 12운성 에너지 설명
+// 12운성 에너지 설명 (trend: 상승/정점/하강/전환 표시)
 const UNSUNG_SIMPLE: Record<string, {
   emoji: string;
   level: string;
   meaning: string;
+  trend: 'rising' | 'peak' | 'falling' | 'transition';
+  trendEmoji: string;
+  trendText: string;
 }> = {
-  jangseong: { emoji: '🌱', level: '시작', meaning: '새로운 시작의 에너지, 성장의 잠재력' },
-  mokryok: { emoji: '🚿', level: '정화', meaning: '정리하고 깨끗이 하는 시기' },
-  gwandae: { emoji: '👔', level: '성인', meaning: '책임감 있는 성인으로서의 당당함' },
-  geonnok: { emoji: '💼', level: '안정', meaning: '직장이나 일에서의 안정된 성취' },
-  jewang: { emoji: '👑', level: '전성기', meaning: '최고의 에너지, 큰 결정에 유리' },
-  soe: { emoji: '🍂', level: '쇠퇴', meaning: '에너지 감소, 무리하지 말 것' },
-  byeong: { emoji: '🤒', level: '휴식', meaning: '건강 관리와 휴식이 필요' },
-  sa: { emoji: '🌙', level: '정지', meaning: '활동을 줄이고 내면을 돌아볼 때' },
-  myo: { emoji: '⚰️', level: '저장', meaning: '에너지를 모으고 저축하는 시기' },
-  jeol: { emoji: '💨', level: '끊음', meaning: '과거와 단절, 새로운 시작 준비' },
-  tae: { emoji: '🤰', level: '잉태', meaning: '새로운 계획이 싹트는 시기' },
-  yang: { emoji: '👶', level: '양육', meaning: '아이디어를 키우고 준비하는 시기' }
+  jangseong: { emoji: '🌱', level: '시작', meaning: '새로운 시작의 에너지, 성장의 잠재력', trend: 'rising', trendEmoji: '📈', trendText: '상승기 - 에너지가 점점 높아지는 중' },
+  mokryok: { emoji: '🚿', level: '정화', meaning: '정리하고 깨끗이 하는 시기', trend: 'rising', trendEmoji: '📈', trendText: '상승기 - 에너지가 점점 높아지는 중' },
+  gwandae: { emoji: '👔', level: '성인', meaning: '책임감 있는 성인으로서의 당당함', trend: 'rising', trendEmoji: '📈', trendText: '상승기 - 에너지가 점점 높아지는 중' },
+  geonnok: { emoji: '💼', level: '안정', meaning: '직장이나 일에서의 안정된 성취', trend: 'peak', trendEmoji: '⭐', trendText: '전성기 - 에너지가 최고조에 도달' },
+  jewang: { emoji: '👑', level: '전성기', meaning: '최고의 에너지, 큰 결정에 유리', trend: 'peak', trendEmoji: '⭐', trendText: '전성기 - 에너지가 최고조에 도달' },
+  soe: { emoji: '🍂', level: '쇠퇴', meaning: '에너지 감소, 무리하지 말 것', trend: 'falling', trendEmoji: '📉', trendText: '하강기 - 에너지가 감소하는 중, 휴식 권장' },
+  byeong: { emoji: '🤒', level: '휴식', meaning: '건강 관리와 휴식이 필요', trend: 'falling', trendEmoji: '📉', trendText: '하강기 - 에너지가 감소하는 중, 휴식 권장' },
+  sa: { emoji: '🌙', level: '정지', meaning: '활동을 줄이고 내면을 돌아볼 때', trend: 'falling', trendEmoji: '📉', trendText: '하강기 - 에너지가 감소하는 중, 휴식 권장' },
+  myo: { emoji: '⚰️', level: '저장', meaning: '에너지를 모으고 저축하는 시기', trend: 'transition', trendEmoji: '🔄', trendText: '전환기 - 새로운 시작을 준비하는 시간' },
+  jeol: { emoji: '💨', level: '끊음', meaning: '과거와 단절, 새로운 시작 준비', trend: 'transition', trendEmoji: '🔄', trendText: '전환기 - 새로운 시작을 준비하는 시간' },
+  tae: { emoji: '🤰', level: '잉태', meaning: '새로운 계획이 싹트는 시기', trend: 'rising', trendEmoji: '📈', trendText: '상승 시작 - 새로운 에너지가 싹트는 중' },
+  yang: { emoji: '👶', level: '양육', meaning: '아이디어를 키우고 준비하는 시기', trend: 'rising', trendEmoji: '📈', trendText: '상승 시작 - 새로운 에너지가 싹트는 중' }
 };
 
 const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
@@ -646,6 +649,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           )}
         </Section>
 
+        {/* 페이지 나누기 - 오행 에너지 분석을 새 페이지에서 시작 */}
+        <div style={{ pageBreakAfter: 'always' }} />
+
         {/* ============ 2. 오행 분석 ============ */}
         <Section title="2. 오행 에너지 분석">
           <SubSection title="오행 분포">
@@ -722,9 +728,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 아래 가이드를 일상에 적용하면 운의 흐름을 더 유리하게 만들 수 있습니다.
               </p>
 
-              {/* 용신 상세 */}
+              {/* 용신 상세 - 2줄 간격 추가 */}
               {yongsin?.length > 0 && (
-                <InfoBox type="success" style={{ marginBottom: '14px' }}>
+                <InfoBox type="success" style={{ marginTop: '32px', marginBottom: '14px' }}>
                   <h4 style={{
                     color: '#059669',
                     fontWeight: 700,
@@ -1232,9 +1238,29 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
             <Section title="생애 에너지와 관계 조화">
               {/* 12운성 분석 */}
               <SubSection title="현재 생애 에너지 (12운성)">
-                <p style={{ color: '#6b7280', marginBottom: '12px', fontSize: '11pt' }}>
-                  12운성은 인생의 에너지 주기를 나타냅니다. 지금 당신의 에너지 상태를 확인하세요.
+                <p style={{ color: '#6b7280', marginBottom: '8px', fontSize: '11pt', lineHeight: 1.7 }}>
+                  12운성은 인생의 에너지 주기를 나타냅니다. 마치 하루에 아침-낮-저녁이 있듯이,
+                  인생 에너지도 <strong>성장기 → 전성기 → 쇠퇴기 → 휴식기</strong>의 주기를 가집니다.
                 </p>
+                <div style={{
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  marginBottom: '16px',
+                  fontSize: '11pt',
+                  lineHeight: 1.7
+                }}>
+                  <strong style={{ color: '#0369a1' }}>📊 에너지 점수 해석 가이드</strong>
+                  <div style={{ marginTop: '8px', color: '#374151' }}>
+                    <p>• <strong style={{ color: '#22c55e' }}>7~10점 (높음)</strong>: 활동 에너지 최고조, 적극적 도전에 유리한 시기</p>
+                    <p>• <strong style={{ color: '#eab308' }}>4~6점 (보통)</strong>: 안정적 성장 또는 신중한 전환이 필요한 시기</p>
+                    <p>• <strong style={{ color: '#ef4444' }}>1~3점 (낮음)</strong>: 휴식과 재충전, 내면 성찰에 집중할 시기</p>
+                    <p style={{ marginTop: '6px', fontSize: '10pt', color: '#6b7280' }}>
+                      ※ 낮은 점수가 나쁜 것이 아닙니다! 씨앗이 땅 속에서 힘을 모으듯, 다음 성장을 준비하는 소중한 시간입니다.
+                    </p>
+                  </div>
+                </div>
 
                 {/* 에너지 바 시각화 */}
                 <div style={{ marginBottom: '16px' }}>
@@ -1301,6 +1327,15 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                               fontWeight: 600
                             }}>{pos.info.stage}</span>
                           </p>
+                          {/* 상승/하강 경향 표시 */}
+                          <p style={{
+                            marginBottom: '4px',
+                            fontSize: '10pt',
+                            color: simple?.trend === 'rising' ? '#059669' : simple?.trend === 'peak' ? '#7c3aed' : simple?.trend === 'falling' ? '#dc2626' : '#6b7280',
+                            fontWeight: 500
+                          }}>
+                            {simple?.trendEmoji} {simple?.trendText}
+                          </p>
                           <p style={{ color: '#6b7280', fontSize: '10pt' }}>
                             💡 {pos.info.advice}
                           </p>
@@ -1332,10 +1367,12 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 </InfoBox>
               </SubSection>
 
-              {/* 합충형파해 분석 */}
+              {/* 합충형파해 분석 - 3줄 간격 추가 */}
+              <div style={{ marginTop: '48px' }} />
               <SubSection title="관계와 타이밍의 조화 (합충형파해)">
-                <p style={{ color: '#6b7280', marginTop: '40px', marginBottom: '12px', fontSize: '11pt' }}>
-                  사주 내 지지(地支)들의 관계를 분석합니다. 합(合)은 조화, 충(沖)은 충돌을 의미합니다.
+                <p style={{ color: '#6b7280', marginTop: '24px', marginBottom: '16px', fontSize: '11pt', lineHeight: 1.7 }}>
+                  사주 내 지지(地支)들의 관계를 분석합니다. <strong>합(合)</strong>은 서로 잘 맞아 <span style={{ color: '#22c55e' }}>시너지가 나는 관계</span>,
+                  <strong> 충(沖)</strong>은 서로 부딪혀 <span style={{ color: '#ef4444' }}>주의가 필요한 관계</span>를 의미합니다.
                 </p>
 
                 {/* 조화 점수 */}

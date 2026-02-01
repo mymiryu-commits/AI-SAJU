@@ -12,6 +12,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  Building2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -55,6 +56,14 @@ const quickLinks = [
     icon: TrendingUp,
     color: 'text-orange-600',
     bgColor: 'bg-orange-100 dark:bg-orange-900/30',
+  },
+  {
+    title: '파트너 관리',
+    description: 'QR 수익 쉐어 파트너',
+    href: '/admin/partners',
+    icon: Building2,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
   },
 ];
 
