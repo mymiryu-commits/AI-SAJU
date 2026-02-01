@@ -874,12 +874,20 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     age
   );
 
+  // 부모 기운 영향 분석
+  const parentInfluence = getParentInfluence(dayStem);
+  const humanType = getHumanType(dayStem, traitAnalysis);
+
   sections.push({
     title: '기질 분석',
-    content: `선천 기질: ${traitAnalysis.innate.corePersonality.slice(0, 60)}. ` +
-             `타고난 재능: ${traitAnalysis.innate.naturalTalent.slice(0, 40)}. ` +
-             `성장 방향: ${traitAnalysis.acquired.growthDirection.slice(0, 60)}`,
-    pauseAfter: 2000
+    content: `${user.name}님의 기질을 분석해드릴게요. ` +
+             `선천적으로 ${traitAnalysis.innate.corePersonality.slice(0, 50)}. ` +
+             `타고난 재능은 ${traitAnalysis.innate.naturalTalent.slice(0, 40)}입니다. ` +
+             `흥미로운 점은, 당신은 ${parentInfluence.dominant} 기운을 더 많이 받고 태어났습니다. ` +
+             `${parentInfluence.description} ` +
+             `그리고 당신은 ${humanType.innateType}이면서 후천적으로는 ${humanType.acquiredType}입니다. ` +
+             `${humanType.guidance}`,
+    pauseAfter: 3500
   });
 
   // ========== 14. 5대 영역 성장 전략 (핵심만) ==========
@@ -989,7 +997,8 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     title: '마무리',
     content: `${user.name}님, 분석을 마무리하겠습니다. ` +
              closingMessage + ` ` +
-             `앞날에 좋은 일이 가득하길 바랍니다.`,
+             `앞날에 좋은 일이 가득하길 바랍니다. ` +
+             `더 상세한 운세 내용은 PDF 리포트에 담겨있으니 꼭 확인해보세요.`,
     pauseAfter: 2000
   });
 
@@ -1125,6 +1134,77 @@ function getDaeunElementMeaning(element: Element): string {
   };
 
   return meanings[element] || '특별한 시기입니다.';
+}
+
+/**
+ * 부모 기운 영향 분석 - 일간 기반
+ */
+function getParentInfluence(dayStem: string): { dominant: string; description: string } {
+  const influences: Record<string, { dominant: string; description: string }> = {
+    '甲': {
+      dominant: '아버지',
+      description: '아버지의 추진력과 리더십 기질을 이어받았습니다. 독립심이 강하고 새로운 도전을 두려워하지 않는 성향이죠.'
+    },
+    '乙': {
+      dominant: '어머니',
+      description: '어머니의 섬세함과 적응력을 물려받았습니다. 상황을 파악하고 유연하게 대처하는 능력이 뛰어나죠.'
+    },
+    '丙': {
+      dominant: '아버지',
+      description: '아버지의 열정적이고 밝은 에너지를 물려받았습니다. 사람들을 끌어당기는 매력이 있죠.'
+    },
+    '丁': {
+      dominant: '어머니',
+      description: '어머니의 따뜻함과 세심한 배려를 물려받았습니다. 내면의 빛으로 주변을 밝히는 타입이죠.'
+    },
+    '戊': {
+      dominant: '아버지',
+      description: '아버지의 묵직한 책임감과 포용력을 이어받았습니다. 믿음직스럽고 안정감을 주는 성향이죠.'
+    },
+    '己': {
+      dominant: '어머니',
+      description: '어머니의 포근함과 양육 본능을 물려받았습니다. 사람들을 품어주고 키워주는 능력이 탁월하죠.'
+    },
+    '庚': {
+      dominant: '아버지',
+      description: '아버지의 강인함과 결단력을 이어받았습니다. 원칙을 중시하고 정의로운 성향이죠.'
+    },
+    '辛': {
+      dominant: '어머니',
+      description: '어머니의 섬세한 미적 감각과 완벽주의를 물려받았습니다. 디테일에 강하고 아름다움을 추구하죠.'
+    },
+    '壬': {
+      dominant: '아버지',
+      description: '아버지의 넓은 시야와 지혜를 이어받았습니다. 큰 그림을 보고 전략적으로 사고하는 능력이 있죠.'
+    },
+    '癸': {
+      dominant: '어머니',
+      description: '어머니의 직관력과 깊은 감성을 물려받았습니다. 사람의 마음을 읽고 공감하는 능력이 뛰어나죠.'
+    }
+  };
+  return influences[dayStem] || { dominant: '부모님', description: '부모님 모두의 장점을 골고루 물려받았습니다.' };
+}
+
+/**
+ * 선천적/후천적 인간형 분석
+ */
+function getHumanType(dayStem: string, traitAnalysis: any): { innateType: string; acquiredType: string; guidance: string } {
+  // 음양에 따른 선천적 타입 결정
+  const yangStems = ['甲', '丙', '戊', '庚', '壬'];
+  const isYang = yangStems.includes(dayStem);
+
+  // 선천적 타입: 양간은 개척형, 음간은 감각형
+  const innateType = isYang ? '선천적 개척형 인간' : '선천적 감각형 인간';
+
+  // 후천적 타입: 환경 적응에 따라 반대 성향 개발
+  const acquiredType = isYang ? '후천적으로 섬세함을 키워가는 타입' : '후천적으로 추진력을 개발하는 타입';
+
+  // 가이드 메시지
+  const guidance = isYang
+    ? '타고난 추진력이 장점이지만, 섬세함과 공감 능력을 키우면 더 큰 성공을 이룰 수 있습니다.'
+    : '타고난 감각과 직관이 장점이지만, 결단력과 실행력을 키우면 원하는 것을 이룰 수 있습니다.';
+
+  return { innateType, acquiredType, guidance };
 }
 
 /**

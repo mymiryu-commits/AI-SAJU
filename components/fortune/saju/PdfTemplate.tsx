@@ -2403,10 +2403,9 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
           )}
         </Section>
 
-        {/* ============ 건강운 (새 페이지 시작) ============ */}
+        {/* ============ 건강운 ============ */}
         {aiAnalysis && (aiAnalysis.fortuneAdvice?.health || aiAnalysis.healthAdvice) && (
-          <div style={{ pageBreakBefore: 'always', paddingTop: '30px' }}>
-            <Section title="건강운 - 건강과 체력">
+          <Section title="건강운 - 건강과 체력">
               {aiAnalysis.fortuneAdvice?.health && (
                 <InfoBox type="default" style={{ marginBottom: '14px' }}>
                   <p style={{ lineHeight: 1.8, textAlign: 'justify' }}>
@@ -2422,7 +2421,6 @@ const PdfTemplate = forwardRef<HTMLDivElement, PdfTemplateProps>(
                 </InfoBox>
               )}
             </Section>
-          </div>
         )}
 
         {/* ============ 6. 이성관 심층 분석 ============ */}
