@@ -67,11 +67,11 @@ export async function GET(request: NextRequest) {
       const inputData = analysis.input_data || {};
       const scores = analysis.scores || {};
 
-      // 30일 보관 기간 체크
+      // 45일 보관 기간 체크
       const createdAt = new Date(analysis.created_at);
       const downloadExpiresAt = analysis.expires_at
         ? new Date(analysis.expires_at)
-        : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+        : new Date(createdAt.getTime() + 45 * 24 * 60 * 60 * 1000);  // 기본 45일
       const canDownload = new Date() <= downloadExpiresAt;
       const daysUntilExpire = Math.max(0, Math.ceil((downloadExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
@@ -93,7 +93,8 @@ export async function GET(request: NextRequest) {
         },
         saved: resultSummary.saved || false,
         hasPdf: !!analysis.pdf_url,
-        hasAudio: !!analysis.audio_url,
+        hasAudio: !!analysis.audio_url,  // true면 이미 생성됨 (재생성 불가)
+        audioGenerated: !!analysis.audio_url,  // 음성 생성 완료 여부 (중복 생성 방지용)
         pdfUrl: canDownload ? analysis.pdf_url : null,
         audioUrl: canDownload ? analysis.audio_url : null,
         shareImageUrl: analysis.share_image_url,

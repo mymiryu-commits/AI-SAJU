@@ -39,7 +39,9 @@ import {
   Flame,
   Shield,
   Target,
+  Share2,
 } from 'lucide-react';
+import { CompatibilityShareCard } from '@/components/common/SocialShareButtons';
 
 type RelationType = 'couple' | 'friend' | 'colleague' | 'family';
 
@@ -477,6 +479,28 @@ export default function CompatibilityPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* 공유 카드 - 바이럴 마케팅 */}
+          <Card className="mb-6 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Share2 className="h-5 w-5 text-pink-500" />
+                결과 공유하기
+              </CardTitle>
+              <CardDescription>
+                친구에게 궁합 결과를 공유하고 함께 분석해보세요!
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <CompatibilityShareCard
+                person1Name={result.person1.name}
+                person2Name={result.person2.name}
+                score={result.totalScore}
+                grade={result.grade}
+                relationType={relationType}
+              />
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

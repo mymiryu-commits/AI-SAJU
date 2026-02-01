@@ -29,6 +29,13 @@ import {
   PRODUCT_COSTS
 } from '@/lib/services/pointService';
 import { blindPremiumContent } from '@/lib/services/analysisService';
+import {
+  checkFileExists,
+  downloadStoredFile,
+  uploadAnalysisFile,
+  updateAnalysisFileUrls
+} from '@/lib/storage/analysisFiles';
+import { logGeneration, updateGenerationLog } from '@/lib/services/generationLogService';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
 import type { TTSProviderType, TTSSettings } from '@/lib/services/ttsSettingsService';
 
@@ -158,14 +165,50 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 데이터 준비
+    // 만료 확인 (45일 보관 기간)
+    if (analysis.expires_at) {
+      const expiresAt = new Date(analysis.expires_at);
+      if (new Date() > expiresAt) {
+        return NextResponse.json(
+          {
+            error: '다운로드 기간이 만료되었습니다. 분석일로부터 45일 이내에만 다운로드 가능합니다.',
+            errorCode: 'DOWNLOAD_EXPIRED'
+          },
+          { status: 410 }  // Gone
+        );
+      }
+    } else {
+      // expires_at이 없는 경우, created_at 기준 45일 체크
+      const createdAt = new Date(analysis.created_at);
+      const expirationDate = new Date(createdAt.getTime() + 45 * 24 * 60 * 60 * 1000);
+      if (new Date() > expirationDate) {
+        return NextResponse.json(
+          {
+            error: '다운로드 기간이 만료되었습니다. 분석일로부터 45일 이내에만 다운로드 가능합니다.',
+            errorCode: 'DOWNLOAD_EXPIRED'
+          },
+          { status: 410 }
+        );
+      }
+    }
+
+    // 데이터 준비 (input_data JSON에서 사용자 정보 추출)
+    const inputData = analysis.input_data as Record<string, unknown> || {};
     const userInput: UserInput = {
-      name: (analysis as Record<string, unknown>).user_name as string || '사용자',
-      birthDate: analysis.birth_date as string,
-      birthTime: (analysis as Record<string, unknown>).birth_time as string | undefined,
-      gender: (analysis.gender as 'male' | 'female') || 'male',
-      careerType: (analysis as Record<string, unknown>).career_type as UserInput['careerType']
+      name: (inputData.name as string) || '사용자',
+      birthDate: (inputData.birthDate as string) || '',
+      birthTime: inputData.birthTime as string | undefined,
+      gender: (inputData.gender as 'male' | 'female') || 'male',
+      careerType: inputData.careerType as UserInput['careerType']
     };
+
+    // 생년월일 유효성 검사
+    if (!userInput.birthDate) {
+      return NextResponse.json(
+        { error: '분석 데이터에 생년월일 정보가 없습니다.' },
+        { status: 400 }
+      );
+    }
 
     const resultData = analysis.result_full as Record<string, unknown> | null;
     const saju = (resultData?.saju as SajuChart) || calculateSaju(userInput.birthDate, userInput.birthTime);
@@ -186,6 +229,7 @@ export async function GET(request: NextRequest) {
       // PDF는 무료 사용자도 다운로드 가능하지만, 무료 버전은 블라인드 처리
       let pdfPremium = premium;
       let isBlindedPDF = false;
+      const pdfStartTime = Date.now();
 
       // 프리미엄 사용자이거나, 이 분석이 프리미엄인 경우 전체 PDF 제공
       if (!isPremiumUser && !isAnalysisPremium) {
@@ -196,33 +240,190 @@ export async function GET(request: NextRequest) {
         isBlindedPDF = true;
       }
 
-      // PDF 생성
-      const pdfBuffer = await generateSajuPDF({
-        user: userInput,
-        saju,
-        oheng,
-        yongsin,
-        gisin,
-        premium: pdfPremium,
-        targetYear
-      });
+      // 저장된 PDF 확인 (프리미엄 분석만 저장)
+      if (isAnalysisPremium && !isBlindedPDF) {
+        const storedPdf = await downloadStoredFile(user.id, analysisId, 'pdf');
+        if (storedPdf.success && storedPdf.data) {
+          console.log(`[PDF] Serving stored PDF for analysis ${analysisId}`);
 
-      const filename = isBlindedPDF
-        ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
-        : generatePDFFilename(userInput, targetYear);
+          // 로그: 저장된 파일 다운로드
+          await logGeneration({
+            userId: user.id,
+            userEmail: user.email || undefined,
+            analysisId,
+            analysisType: 'saju',
+            generationType: 'pdf',
+            status: 'skipped',  // 새로 생성하지 않고 기존 파일 제공
+            fileSizeBytes: storedPdf.data.length,
+            isFreeGeneration: true,
+            freeReason: 'premium_analysis',
+            generationTimeMs: Date.now() - pdfStartTime,
+            source: 'dashboard',
+            metadata: { source: 'stored' },
+          });
 
-      return new NextResponse(new Uint8Array(pdfBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': pdfBuffer.length.toString(),
-          'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full'
+          const filename = generatePDFFilename(userInput, targetYear);
+          return new NextResponse(storedPdf.data, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+              'Content-Length': storedPdf.data.length.toString(),
+              'X-PDF-Type': 'full',
+              'X-Source': 'stored'
+            }
+          });
         }
+      }
+
+      // PDF 생성 시작 로그
+      const pdfLogId = await logGeneration({
+        userId: user.id,
+        userEmail: user.email || undefined,
+        analysisId,
+        analysisType: 'saju',
+        generationType: 'pdf',
+        status: 'started',
+        isFreeGeneration: true,
+        source: 'dashboard',
       });
+
+      try {
+        // PDF 생성
+        const pdfBuffer = await generateSajuPDF({
+          user: userInput,
+          saju,
+          oheng,
+          yongsin,
+          gisin,
+          premium: pdfPremium,
+          targetYear
+        });
+
+        let savedUrl: string | undefined;
+        let storagePath: string | undefined;
+
+        // 프리미엄 PDF는 저장 (재사용을 위해)
+        if (isAnalysisPremium && !isBlindedPDF) {
+          const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'pdf', pdfBuffer);
+          if (uploadResult.success && uploadResult.url) {
+            await updateAnalysisFileUrls(analysisId, { pdfUrl: uploadResult.url });
+            savedUrl = uploadResult.url;
+            storagePath = `${user.id}/${analysisId}/pdf.pdf`;
+            console.log(`[PDF] Saved PDF for analysis ${analysisId}`);
+          }
+        }
+
+        // 로그: 성공
+        if (pdfLogId) {
+          await updateGenerationLog(pdfLogId, {
+            status: 'success',
+            fileSizeBytes: pdfBuffer.length,
+            fileUrl: savedUrl,
+            storagePath,
+            generationTimeMs: Date.now() - pdfStartTime,
+          });
+        }
+
+        const filename = isBlindedPDF
+          ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
+          : generatePDFFilename(userInput, targetYear);
+
+        return new NextResponse(new Uint8Array(pdfBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+            'Content-Length': pdfBuffer.length.toString(),
+            'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full',
+            'X-Source': 'generated'
+          }
+        });
+      } catch (pdfError) {
+        // 로그: 실패
+        if (pdfLogId) {
+          await updateGenerationLog(pdfLogId, {
+            status: 'failed',
+            errorCode: 'PDF_GENERATION_FAILED',
+            errorMessage: pdfError instanceof Error ? pdfError.message : 'PDF 생성 중 오류 발생',
+            generationTimeMs: Date.now() - pdfStartTime,
+          });
+        }
+        throw pdfError;
+      }
     } else {
-      // 음성 생성 - 관리자/프리미엄구독/프리미엄분석은 무료, 그 외는 포인트 차감
+      // ========== 음성(MP3) 다운로드 ==========
+      // 중요: MP3는 비용 발생으로 최초 1회만 생성, 이후 저장된 파일 제공
+
       const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+      const audioStartTime = Date.now();
+
+      // 1. 먼저 저장된 음성 파일이 있는지 확인
+      const audioExists = await checkFileExists(user.id, analysisId, 'audio');
+
+      if (audioExists) {
+        // 저장된 파일 다운로드
+        const storedAudio = await downloadStoredFile(user.id, analysisId, 'audio');
+        if (storedAudio.success && storedAudio.data) {
+          console.log(`[Audio] Serving stored MP3 for analysis ${analysisId}`);
+
+          // 로그: 저장된 파일 다운로드
+          await logGeneration({
+            userId: user.id,
+            userEmail: user.email || undefined,
+            analysisId,
+            analysisType: 'saju',
+            generationType: 'audio',
+            status: 'skipped',  // 새로 생성하지 않고 기존 파일 제공
+            fileSizeBytes: storedAudio.data.length,
+            isFreeGeneration: true,
+            freeReason: 'premium_analysis',
+            generationTimeMs: Date.now() - audioStartTime,
+            source: 'dashboard',
+            metadata: { source: 'stored' },
+          });
+
+          const filename = generateAudioFilename(userInput, targetYear);
+          return new NextResponse(storedAudio.data, {
+            status: 200,
+            headers: {
+              'Content-Type': 'audio/mpeg',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+              'Content-Length': storedAudio.data.length.toString(),
+              'X-Source': 'stored'
+            }
+          });
+        }
+      }
+
+      // 2. DB에 audio_url이 있는지도 확인 (이미 생성된 적 있음을 의미)
+      if (analysis.audio_url && !audioExists) {
+        // URL은 있는데 파일이 없음 (만료되었거나 삭제됨)
+
+        // 로그: 만료된 파일 요청
+        await logGeneration({
+          userId: user.id,
+          userEmail: user.email || undefined,
+          analysisId,
+          analysisType: 'saju',
+          generationType: 'audio',
+          status: 'failed',
+          errorCode: 'AUDIO_ALREADY_GENERATED',
+          errorMessage: '이전에 생성된 음성 파일이 만료되었습니다.',
+          generationTimeMs: Date.now() - audioStartTime,
+          source: 'dashboard',
+        });
+
+        return NextResponse.json(
+          {
+            error: '이전에 생성된 음성 파일이 만료되었습니다. 음성은 최초 1회만 생성 가능합니다.',
+            errorCode: 'AUDIO_ALREADY_GENERATED'
+          },
+          { status: 410 }
+        );
+      }
+
+      // 3. 새로 생성 (최초 1회만)
       const currentPoints = pointBalance?.points || 0;
       const audioCost = PRODUCT_COSTS.voice; // 300 포인트
 
@@ -231,6 +432,21 @@ export async function GET(request: NextRequest) {
 
       // 무료 대상이 아니고 포인트도 부족한 경우
       if (!isFreeAudio && currentPoints < audioCost) {
+        // 로그: 포인트 부족
+        await logGeneration({
+          userId: user.id,
+          userEmail: user.email || undefined,
+          analysisId,
+          analysisType: 'saju',
+          generationType: 'audio',
+          status: 'failed',
+          errorCode: 'INSUFFICIENT_POINTS',
+          errorMessage: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재: ${currentPoints}`,
+          generationTimeMs: Date.now() - audioStartTime,
+          source: 'dashboard',
+          metadata: { requiredPoints: audioCost, currentPoints },
+        });
+
         return NextResponse.json(
           {
             error: `음성 생성에는 ${audioCost} 포인트가 필요합니다. 현재 보유 포인트: ${currentPoints}`,
@@ -247,6 +463,21 @@ export async function GET(request: NextRequest) {
       if (!isFreeAudio) {
         const deductResult = await deductPoints(user.id, 'voice');
         if (!deductResult.success) {
+          // 로그: 포인트 차감 실패
+          await logGeneration({
+            userId: user.id,
+            userEmail: user.email || undefined,
+            analysisId,
+            analysisType: 'saju',
+            generationType: 'audio',
+            status: 'failed',
+            errorCode: 'POINT_DEDUCTION_FAILED',
+            errorMessage: '포인트 차감에 실패했습니다.',
+            pointsCharged: audioCost,
+            generationTimeMs: Date.now() - audioStartTime,
+            source: 'dashboard',
+          });
+
           return NextResponse.json(
             { error: '포인트 차감에 실패했습니다.' },
             { status: 500 }
@@ -260,30 +491,87 @@ export async function GET(request: NextRequest) {
       // TTS 설정에서 제공자 및 음성 설정
       const config = getTTSConfig(ttsSettings.provider, ttsSettings.voice);
 
-      console.log(`[TTS] Using provider: ${config.provider}, voice: ${config.voiceId}`);
+      console.log(`[TTS] Generating new audio with provider: ${config.provider}, voice: ${config.voiceId}`);
 
-      const audioBuffer = await generateSajuAudio({
-        user: userInput,
-        saju,
-        oheng,
-        yongsin,
-        gisin,
-        premium,
-        targetYear,
-        config
+      // 음성 생성 시작 로그
+      const freeReason = isAdmin ? 'admin' : isPremiumUser ? 'premium_user' : isAnalysisPremium ? 'premium_analysis' : undefined;
+      const audioLogId = await logGeneration({
+        userId: user.id,
+        userEmail: user.email || undefined,
+        analysisId,
+        analysisType: 'saju',
+        generationType: 'audio',
+        status: 'started',
+        ttsProvider: config.provider,
+        ttsVoice: config.voiceId,
+        pointsCharged: isFreeAudio ? 0 : audioCost,
+        isFreeGeneration: isFreeAudio,
+        freeReason,
+        source: 'dashboard',
       });
 
-      const filename = generateAudioFilename(userInput, targetYear);
+      try {
+        const audioBuffer = await generateSajuAudio({
+          user: userInput,
+          saju,
+          oheng,
+          yongsin,
+          gisin,
+          premium,
+          targetYear,
+          config
+        });
 
-      return new NextResponse(new Uint8Array(audioBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'audio/mpeg',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-          'Content-Length': audioBuffer.length.toString(),
-          'X-TTS-Provider': config.provider
+        let savedUrl: string | undefined;
+        let storagePath: string | undefined;
+
+        // 4. 생성된 음성 파일 저장 (재생성 방지)
+        const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'audio', audioBuffer);
+        if (uploadResult.success && uploadResult.url) {
+          await updateAnalysisFileUrls(analysisId, { audioUrl: uploadResult.url });
+          savedUrl = uploadResult.url;
+          storagePath = `${user.id}/${analysisId}/audio.mp3`;
+          console.log(`[Audio] Saved MP3 for analysis ${analysisId}`);
+        } else {
+          console.error(`[Audio] Failed to save MP3 for analysis ${analysisId}:`, uploadResult.error);
         }
-      });
+
+        // 로그: 성공
+        if (audioLogId) {
+          await updateGenerationLog(audioLogId, {
+            status: 'success',
+            fileSizeBytes: audioBuffer.length,
+            fileUrl: savedUrl,
+            storagePath,
+            generationTimeMs: Date.now() - audioStartTime,
+          });
+        }
+
+        const filename = generateAudioFilename(userInput, targetYear);
+
+        return new NextResponse(new Uint8Array(audioBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'audio/mpeg',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+            'Content-Length': audioBuffer.length.toString(),
+            'X-TTS-Provider': config.provider,
+            'X-Source': 'generated'
+          }
+        });
+      } catch (audioError) {
+        // 로그: 실패
+        if (audioLogId) {
+          await updateGenerationLog(audioLogId, {
+            status: 'failed',
+            errorCode: 'AUDIO_GENERATION_FAILED',
+            errorMessage: audioError instanceof Error ? audioError.message : '음성 생성 중 오류 발생',
+            errorDetails: audioError instanceof Error ? { stack: audioError.stack } : undefined,
+            generationTimeMs: Date.now() - audioStartTime,
+          });
+        }
+        throw audioError;
+      }
     }
   } catch (error) {
     console.error('Download error:', error);
