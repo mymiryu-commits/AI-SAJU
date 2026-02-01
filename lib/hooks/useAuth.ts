@@ -83,8 +83,8 @@ export function useAuth() {
     return { data, error };
   }, [supabase]);
 
-  // Sign in with OAuth (Google, Kakao, Apple)
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao' | 'apple') => {
+  // Sign in with OAuth (Google, Kakao)
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao') => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
