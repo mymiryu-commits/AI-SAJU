@@ -83,15 +83,29 @@ export function useAuth() {
     return { data, error };
   }, [supabase]);
 
-  // Sign in with OAuth (Google, Kakao, Apple)
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao' | 'apple') => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
-    return { data, error };
+  // Sign in with OAuth (Google, Kakao)
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao') => {
+    console.log('[useAuth] Starting OAuth with provider:', provider);
+    console.log('[useAuth] Redirect URL:', `${window.location.origin}/api/auth/callback`);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+          skipBrowserRedirect: false,
+        },
+      });
+
+      console.log('[useAuth] OAuth result:', { url: data?.url, error: error?.message });
+      return { data, error };
+    } catch (err) {
+      console.error('[useAuth] OAuth exception:', err);
+      return {
+        data: null,
+        error: { message: err instanceof Error ? err.message : 'OAuth failed' },
+      };
+    }
   }, [supabase]);
 
   // Sign out

@@ -1,66 +1,40 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '@/types/database';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bnlrrlnjisokppslkmck.supabase.co';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJubHJybG5qaXNva3Bwc2xrbWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNDMxMzQsImV4cCI6MjA4MzcxOTEzNH0.TGPZpr7Vu5TyadoU71-7BxgmNNMwzRME4rJcB9e42Jw';
 
-// 허용된 리다이렉트 경로 (prefix 매칭)
-const ALLOWED_REDIRECT_PREFIXES = [
-  '/my/',
-  '/fortune/',
-  '/pricing',
-  '/admin',
-  '/',
-];
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/';
+  const error = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
 
-// 리다이렉트 경로 검증
-function isAllowedRedirect(path: string): boolean {
-  // 빈 경로이거나 홈 경로는 허용
-  if (!path || path === '/') return true;
+  console.log('[Auth Callback] Request URL:', request.url);
+  console.log('[Auth Callback] Code:', code ? 'present' : 'missing');
+  console.log('[Auth Callback] Next:', next);
+  console.log('[Auth Callback] Error:', error);
+  console.log('[Auth Callback] Error Description:', errorDescription);
 
-  // 외부 URL 차단 (프로토콜 포함 시)
-  if (path.includes('://') || path.startsWith('//')) return false;
-
-  // 허용된 경로 prefix 체크
-  return ALLOWED_REDIRECT_PREFIXES.some(prefix => path.startsWith(prefix));
-}
-
-// 안전한 리다이렉트 경로 생성
-function getSafeRedirectPath(next: string | null): string {
-  const defaultPath = '/';
-
-  if (!next) return defaultPath;
-
-  // URL 디코딩 및 정규화
-  try {
-    const decodedPath = decodeURIComponent(next);
-    // 상대 경로만 허용 (/ 로 시작해야 함)
-    if (!decodedPath.startsWith('/')) return defaultPath;
-
-    // 허용된 경로인지 확인
-    if (!isAllowedRedirect(decodedPath)) {
-      console.warn(`[Auth] Blocked redirect to: ${decodedPath}`);
-      return defaultPath;
+  // OAuth 에러 처리
+  if (error) {
+    console.error('[Auth Callback] OAuth error:', error, errorDescription);
+    const errorUrl = new URL('/auth/auth-code-error', requestUrl.origin);
+    errorUrl.searchParams.set('error', error);
+    if (errorDescription) {
+      errorUrl.searchParams.set('error_description', errorDescription);
     }
-
-    return decodedPath;
-  } catch {
-    return defaultPath;
+    return NextResponse.redirect(errorUrl);
   }
-}
-
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next');
 
   if (code) {
     const cookieStore = await cookies();
 
     // 쿠키를 Response에 설정하기 위한 임시 저장소
-    const cookiesToSet: { name: string; value: string; options: any }[] = [];
+    const cookiesToSet: Array<{ name: string; value: string; options: any }> = [];
 
     const supabase = createServerClient<Database>(
       SUPABASE_URL,
@@ -68,10 +42,12 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll();
+            const allCookies = cookieStore.getAll();
+            console.log('[Auth Callback] Getting cookies:', allCookies.map(c => c.name));
+            return allCookies;
           },
           setAll(cookies) {
-            // 쿠키 설정을 나중에 Response에 적용하기 위해 저장
+            console.log('[Auth Callback] Setting cookies:', cookies.map(c => c.name));
             cookies.forEach((cookie) => {
               cookiesToSet.push(cookie);
             });
@@ -80,23 +56,55 @@ export async function GET(request: Request) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      const safePath = getSafeRedirectPath(next);
-      const response = NextResponse.redirect(`${origin}${safePath}`);
+      if (exchangeError) {
+        console.error('[Auth Callback] Exchange error:', exchangeError.message);
+        const errorUrl = new URL('/auth/auth-code-error', requestUrl.origin);
+        errorUrl.searchParams.set('error', 'exchange_failed');
+        errorUrl.searchParams.set('error_description', exchangeError.message);
+        return NextResponse.redirect(errorUrl);
+      }
+
+      console.log('[Auth Callback] Exchange successful, user:', data?.user?.email);
+      console.log('[Auth Callback] Cookies to set:', cookiesToSet.length);
+
+      // 안전한 리다이렉트 경로 결정
+      let redirectPath = next;
+      if (!redirectPath.startsWith('/')) {
+        redirectPath = '/';
+      }
+
+      const redirectUrl = new URL(redirectPath, requestUrl.origin);
+      const response = NextResponse.redirect(redirectUrl);
 
       // Response에 쿠키 설정
-      cookiesToSet.forEach(({ name, value, options }) => {
-        response.cookies.set(name, value, options);
-      });
+      for (const cookie of cookiesToSet) {
+        console.log('[Auth Callback] Setting cookie:', cookie.name);
+        response.cookies.set(cookie.name, cookie.value, {
+          ...cookie.options,
+          // 쿠키 옵션 강제 설정
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        });
+      }
 
       return response;
-    } else {
-      console.error('[Auth Callback] Error exchanging code:', error.message);
+    } catch (err) {
+      console.error('[Auth Callback] Exception:', err);
+      const errorUrl = new URL('/auth/auth-code-error', requestUrl.origin);
+      errorUrl.searchParams.set('error', 'exception');
+      errorUrl.searchParams.set('error_description', err instanceof Error ? err.message : 'Unknown error');
+      return NextResponse.redirect(errorUrl);
     }
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // code가 없는 경우
+  console.error('[Auth Callback] No code provided');
+  const errorUrl = new URL('/auth/auth-code-error', requestUrl.origin);
+  errorUrl.searchParams.set('error', 'no_code');
+  errorUrl.searchParams.set('error_description', 'Authorization code not provided');
+  return NextResponse.redirect(errorUrl);
 }
