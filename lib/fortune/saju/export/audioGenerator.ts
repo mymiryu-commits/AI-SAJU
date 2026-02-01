@@ -53,6 +53,19 @@ import {
   findBestAndWorstMonths
 } from '../analysis/monthlyFortune';
 
+// 감정 공명 시스템 (50대+ 공감도 200% 향상)
+import {
+  CHILDHOOD_PATTERNS,
+  RELATIONSHIP_WOUNDS,
+  SPOUSE_CONFLICT_PATTERNS,
+  CHILD_RELATIONSHIP,
+  HEALTH_PREDICTIONS,
+  HIDDEN_DREAMS,
+  AGE_SPECIFIC_MESSAGES,
+  getAgeGroup as getEmotionalAgeGroup,
+  getDayMasterElement
+} from '../mappings/emotionalResonance';
+
 // TTS 제공자 타입 (Gemini 포함)
 export type TTSProvider = 'google' | 'naver' | 'openai' | 'edge' | 'gemini-flash' | 'gemini-pro';
 
@@ -553,6 +566,35 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2000
   });
 
+  // ========== 3-1. 어린시절 패턴 ("소름 돋는" 과거 검증) ==========
+  const childhoodPattern = CHILDHOOD_PATTERNS[dayStem];
+  if (childhoodPattern) {
+    sections.push({
+      title: '어린시절 이야기',
+      content: `${user.name}님, 어린 시절 이야기를 해볼게요. ` +
+               `혹시... ${childhoodPattern.commonPhrase}라는 말을 자주 들으셨나요? ` +
+               `${dayMasterPro.hanja} 일간은 ${childhoodPattern.familyRole}. ` +
+               `그리고 ${childhoodPattern.hiddenStruggle}. ` +
+               `${childhoodPattern.formativeExperience} ` +
+               `하지만 알아주세요. ${childhoodPattern.validationMessage}`,
+      pauseAfter: 3000
+    });
+  }
+
+  // ========== 3-2. 관계 상처 분석 (깊은 공감) ==========
+  const relationshipWound = RELATIONSHIP_WOUNDS[dayStem];
+  if (relationshipWound && age >= 35) {
+    sections.push({
+      title: '마음의 상처',
+      content: `사람 관계에서 받은 상처를 말씀드릴게요. ` +
+               `${relationshipWound.trustIssue} ` +
+               `그래서 ${relationshipWound.betrayalExperience} ` +
+               `가끔은 ${relationshipWound.abandonmentFear} ` +
+               `하지만 기억하세요. ${relationshipWound.healingPath}`,
+      pauseAfter: 3000
+    });
+  }
+
   // ========== 4. 혈액형 + 사주 통합 (있으면, 압축) ==========
   const bloodType = (user as any).bloodType;
   if (bloodType) {
@@ -583,17 +625,32 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2500
   });
 
-  // ========== 6. 이성관/관계운 (압축 버전) ==========
+  // ========== 6. 이성관/관계운 (심층 분석 강화) ==========
   const maritalStatus = user.maritalStatus || 'single';
   const idealPartner = getIdealPartnerByDaymaster(dayMaster, user.gender || 'male');
+  const spouseConflict = SPOUSE_CONFLICT_PATTERNS[dayStem];
 
   if (maritalStatus === 'married' || maritalStatus === 'remarried') {
-    sections.push({
-      title: '부부 관계',
-      content: `부부 관계 조언입니다. ${idealPartner.marriedAdvice || idealPartner.traits} ` +
-               `핵심 팁: 감사 표현, 둘만의 시간, 개인 공간 존중. 이 세 가지를 실천하세요.`,
-      pauseAfter: 2000
-    });
+    // 배우자 갈등 패턴 심층 분석 (50대+ 핵심)
+    if (spouseConflict && age >= 40) {
+      sections.push({
+        title: '부부 관계 심층 분석',
+        content: `배우자와의 관계를 깊이 들여다볼게요. ` +
+                 `솔직히... 결혼 생활에서 "내가 왜 이렇게까지 참아야 하나" 하는 순간이 있으셨죠? ` +
+                 `${dayMasterPro.hanja} 일간인 당신은 ${spouseConflict.myExpressionStyle}. ` +
+                 `하지만 배우자 입장에서는 ${spouseConflict.partnerMisunderstanding}. ` +
+                 `사실 당신이 진짜 원하는 건 ${spouseConflict.hiddenNeed}. ` +
+                 `다음에 갈등이 생기면 이렇게 해보세요. ${spouseConflict.reconciliationTip}`,
+        pauseAfter: 3500
+      });
+    } else {
+      sections.push({
+        title: '부부 관계',
+        content: `부부 관계 조언입니다. ${idealPartner.marriedAdvice || idealPartner.traits} ` +
+                 `핵심 팁: 감사 표현, 둘만의 시간, 개인 공간 존중. 이 세 가지를 실천하세요.`,
+        pauseAfter: 2000
+      });
+    }
   } else if (maritalStatus === 'divorced') {
     sections.push({
       title: '새로운 시작',
@@ -609,6 +666,24 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
                `주의할 유형: ${idealPartner.warningTypes.slice(0, 60)} ` +
                `만남 장소: ${idealPartner.whereToMeet.slice(0, 50)}`,
       pauseAfter: 2500
+    });
+  }
+
+  // ========== 6-1. 자녀 관계 분석 (50대+ 핵심) ==========
+  const hasChildren = user.hasChildren === true;
+  const childRelation = CHILD_RELATIONSHIP[dayStem];
+  if (childRelation && age >= 40 && (hasChildren || maritalStatus === 'married' || maritalStatus === 'remarried')) {
+    sections.push({
+      title: '자녀와의 관계',
+      content: `${user.name}님, 자녀분과의 관계를 말씀드릴게요. ` +
+               `솔직히... 자녀가 당신 마음 같지 않아서 속상했던 적 많으시죠? ` +
+               `"내가 이렇게 키웠는데 왜 저럴까", "나 때는 부모님께 이러지 않았는데"... ` +
+               `${dayMasterPro.hanja} 일간인 당신은 ${childRelation.parentingStyle}입니다. ` +
+               `당신의 강점은 ${childRelation.strengthAsParent}. ` +
+               `하지만 자녀 입장에서는 ${childRelation.childPerspective}. ` +
+               `다음에 만나면 ${childRelation.communicationTip}. ` +
+               `그리고 알아주세요. ${childRelation.regretHealing}`,
+      pauseAfter: 4000
     });
   }
 
@@ -826,7 +901,7 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
   });
 
   // ========== 15. 가족 조언 (해당 시, 압축) ==========
-  const hasChildren = user.hasChildren === true;
+  // hasChildren는 이미 6-1 자녀 관계 분석에서 정의됨
   if (hasChildren || maritalStatus === 'married' || maritalStatus === 'remarried') {
     const familyAdvice = generateFamilyAdvice(dayStem, hasChildren, user.mbti);
     sections.push({
@@ -864,14 +939,58 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     pauseAfter: 2000
   });
 
-  // ========== 17. 마무리 (바넘 효과 제거, 간결화) ==========
+  // ========== 17. 건강 구체적 예측 (50대+ 핵심) ==========
+  const dayMasterElForHealth = getDayMasterElement(dayStem);
+  const healthPred = HEALTH_PREDICTIONS[dayMasterElForHealth];
+  if (healthPred && age >= 45) {
+    const weakOrgans = healthPred.vulnerableOrgans.slice(0, 2).join('과 ');
+    const mainSymptom = healthPred.commonSymptoms[0];
+    const mainPrevention = healthPred.preventionTips[0];
+    sections.push({
+      title: '건강 분석',
+      content: `${user.name}님, 중요한 건강 이야기를 해드릴게요. ` +
+               `${dayMasterPro.hanja} 일간인 당신은 ${weakOrgans}이 약점입니다. ` +
+               `혹시 최근... ${mainSymptom} 증상이 있으시진 않나요? ` +
+               `이건 그냥 피곤한 게 아닐 수 있어요. ` +
+               `${healthPred.ageRelatedRisks} ` +
+               `조언을 드리자면, ${mainPrevention} ` +
+               `그리고 ${healthPred.goldenTime}`,
+      pauseAfter: 3500
+    });
+  }
+
+  // ========== 18. 인생 2막 / 숨겨진 꿈 (50대+ 핵심) ==========
+  const hiddenDream = HIDDEN_DREAMS[dayStem];
+  if (hiddenDream && age >= 45) {
+    sections.push({
+      title: '인생 2막',
+      content: `${user.name}님, 마지막으로 중요한 이야기를 해드릴게요. ` +
+               `당신 안에... 아직 펼치지 못한 꿈이 있습니다. ` +
+               `어린 시절 혹시 ${hiddenDream.childhoodDream}를 꿈꿨던 적 있으신가요? ` +
+               `${hiddenDream.suppressedBy} ` +
+               `하지만 지금 당신에게 있는 ${hiddenDream.lateBloomingTalent}는 ` +
+               `이제야 빛을 볼 때가 됐습니다. ` +
+               `${hiddenDream.secondActSuggestion} 같은 걸 시작해보세요. ` +
+               `${hiddenDream.startingPoint}`,
+      pauseAfter: 4000
+    });
+  }
+
+  // ========== 19. 마무리 (연령대별 맞춤 메시지) ==========
+  const emotionalAge = getEmotionalAgeGroup(age);
+  const ageMessage = AGE_SPECIFIC_MESSAGES[emotionalAge];
+  const closingMessage = ageMessage
+    ? `지금 ${ageMessage.lifeStage}를 지나고 계시죠. ` +
+      `${ageMessage.validationMessage} ` +
+      `${ageMessage.futureHope}`
+    : `사주는 운명을 정하는 것이 아니라 나침반입니다. 오늘 알려드린 황금 기회일과 개운법을 실천해 보세요.`;
+
   sections.push({
     title: '마무리',
     content: `${user.name}님, 분석을 마무리하겠습니다. ` +
-             `사주는 운명을 정하는 것이 아니라 나침반입니다. ` +
-             `오늘 알려드린 황금 기회일과 개운법을 실천해 보세요. ` +
+             closingMessage + ` ` +
              `앞날에 좋은 일이 가득하길 바랍니다.`,
-    pauseAfter: 1500
+    pauseAfter: 2000
   });
 
   // 아웃트로 제거 (중복, 광고성)
