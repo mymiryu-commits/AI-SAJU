@@ -1,6 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// 추천 보상 상수
+const REFERRAL_REWARD_POINTS = 300;  // 추천인 기본 보상
+
+/**
+ * 추천 보상 처리
+ * 사용자의 결제 완료 시 추천인에게 커미션 지급
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function processReferralReward(supabase: any, userId: string, purchaseAmount: number) {
+  try {
+    // 1. pending 상태인 추천 조회
+    const { data: referral, error: refError } = await supabase
+      .from('referrals')
+      .select(`
+        id,
+        referrer_id,
+        commission_rate,
+        status,
+        first_purchase_processed
+      `)
+      .eq('referee_id', userId)
+      .single();
+
+    // 추천 기록이 없음
+    if (refError || !referral) {
+      return;
+    }
+
+    // 이미 첫 구매 보상이 처리된 경우 (중복 방지)
+    if (referral.first_purchase_processed) {
+      console.log(`[Referral] Already processed first purchase for user ${userId}`);
+      return;
+    }
+
+    // 2. 커미션 계산
+    const commissionRate = referral.commission_rate || 20;
+    const commission = Math.floor(purchaseAmount * (commissionRate / 100));
+    const totalReward = REFERRAL_REWARD_POINTS + commission;
+
+    console.log(`[Referral] Processing reward: referrer=${referral.referrer_id}, commission=${commission}P (${commissionRate}%)`);
+
+    // 3. 추천인 정보 조회
+    const { data: referrerProfile } = await supabase
+      .from('profiles')
+      .select('total_referrals, referral_earnings')
+      .eq('id', referral.referrer_id)
+      .single();
+
+    // 4. 추천 레코드 업데이트 (완료 처리)
+    await supabase
+      .from('referrals')
+      .update({
+        status: 'completed',
+        commission_earned: commission,
+        completed_at: new Date().toISOString(),
+        first_purchase_processed: true,
+        first_purchase_amount: purchaseAmount,
+      })
+      .eq('id', referral.id);
+
+    // 5. 추천인 프로필 통계 업데이트
+    await supabase
+      .from('profiles')
+      .update({
+        total_referrals: (referrerProfile?.total_referrals || 0) + 1,
+        referral_earnings: (referrerProfile?.referral_earnings || 0) + commission,
+      })
+      .eq('id', referral.referrer_id);
+
+    // 6. 추천인에게 포인트 지급
+    try {
+      await supabase.rpc('increment_coins', {
+        user_id: referral.referrer_id,
+        amount: totalReward,
+      });
+    } catch {
+      // RPC가 없으면 직접 업데이트
+      const { data: userData } = await supabase
+        .from('users')
+        .select('coin_balance')
+        .eq('id', referral.referrer_id)
+        .single();
+
+      await supabase
+        .from('users')
+        .update({ coin_balance: (userData?.coin_balance || 0) + totalReward })
+        .eq('id', referral.referrer_id);
+    }
+
+    // 7. 포인트 거래 기록
+    await supabase.from('coin_transactions').insert([
+      {
+        user_id: referral.referrer_id,
+        amount: REFERRAL_REWARD_POINTS,
+        type: 'referral_reward',
+        description: '추천 완료 보상',
+      },
+      {
+        user_id: referral.referrer_id,
+        amount: commission,
+        type: 'referral_commission',
+        description: `추천 커미션 (${commissionRate}%)`,
+      },
+    ]);
+
+    console.log(`[Referral] Successfully rewarded ${totalReward}P to referrer ${referral.referrer_id}`);
+  } catch (error) {
+    // 추천 보상 실패해도 결제는 성공 처리
+    console.error('[Referral] Error processing referral reward:', error);
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const paymentKey = searchParams.get('paymentKey');
@@ -97,6 +209,12 @@ export async function GET(request: NextRequest) {
           started_at: new Date().toISOString(),
           expires_at: expiresAt.toISOString(),
         }, { onConflict: 'user_id' });
+    }
+
+    // ============ 추천 보상 처리 ============
+    // 결제 완료 시 추천인에게 커미션 지급
+    if (payment) {
+      await processReferralReward(supabase, user.id, parseInt(amount));
     }
 
     // Redirect to success page
