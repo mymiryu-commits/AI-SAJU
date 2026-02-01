@@ -93,7 +93,8 @@ export async function GET(request: NextRequest) {
         },
         saved: resultSummary.saved || false,
         hasPdf: !!analysis.pdf_url,
-        hasAudio: !!analysis.audio_url,
+        hasAudio: !!analysis.audio_url,  // true면 이미 생성됨 (재생성 불가)
+        audioGenerated: !!analysis.audio_url,  // 음성 생성 완료 여부 (중복 생성 방지용)
         pdfUrl: canDownload ? analysis.pdf_url : null,
         audioUrl: canDownload ? analysis.audio_url : null,
         shareImageUrl: analysis.share_image_url,

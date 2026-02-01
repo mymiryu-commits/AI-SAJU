@@ -63,6 +63,7 @@ interface HistoryItem {
   saved: boolean;
   hasPdf: boolean;
   hasAudio: boolean;
+  audioGenerated: boolean;  // 음성이 이미 생성되었는지 (재생성 불가)
   pdfUrl?: string | null;
   audioUrl?: string | null;
   canDownload: boolean;
@@ -475,12 +476,24 @@ export default function HistoryPage() {
                                 size="icon"
                                 onClick={() => handleDownload(item, 'audio')}
                                 disabled={!item.canDownload || downloadingId === `${item.id}-audio`}
-                                title={item.canDownload ? '음성 다운로드' : '다운로드 기간 만료'}
+                                title={
+                                  !item.canDownload
+                                    ? '다운로드 기간 만료'
+                                    : item.audioGenerated
+                                    ? '음성 다운로드 (생성됨)'
+                                    : '음성 생성 및 다운로드 (최초 1회)'
+                                }
                               >
                                 {downloadingId === `${item.id}-audio` ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Volume2 className={`h-4 w-4 ${!item.canDownload ? 'text-muted-foreground' : ''}`} />
+                                  <Volume2 className={`h-4 w-4 ${
+                                    !item.canDownload
+                                      ? 'text-muted-foreground'
+                                      : item.audioGenerated
+                                      ? 'text-green-500'  // 이미 생성됨
+                                      : ''  // 아직 생성 안 됨
+                                  }`} />
                                 )}
                               </Button>
                             )}

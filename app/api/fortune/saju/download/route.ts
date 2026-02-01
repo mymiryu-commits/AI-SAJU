@@ -29,6 +29,12 @@ import {
   PRODUCT_COSTS
 } from '@/lib/services/pointService';
 import { blindPremiumContent } from '@/lib/services/analysisService';
+import {
+  checkFileExists,
+  downloadStoredFile,
+  uploadAnalysisFile,
+  updateAnalysisFileUrls
+} from '@/lib/storage/analysisFiles';
 import type { UserInput, SajuChart, OhengBalance, PremiumContent, Element } from '@/types/saju';
 import type { TTSProviderType, TTSSettings } from '@/lib/services/ttsSettingsService';
 
@@ -232,6 +238,25 @@ export async function GET(request: NextRequest) {
         isBlindedPDF = true;
       }
 
+      // 저장된 PDF 확인 (프리미엄 분석만 저장)
+      if (isAnalysisPremium && !isBlindedPDF) {
+        const storedPdf = await downloadStoredFile(user.id, analysisId, 'pdf');
+        if (storedPdf.success && storedPdf.data) {
+          console.log(`[PDF] Serving stored PDF for analysis ${analysisId}`);
+          const filename = generatePDFFilename(userInput, targetYear);
+          return new NextResponse(storedPdf.data, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+              'Content-Length': storedPdf.data.length.toString(),
+              'X-PDF-Type': 'full',
+              'X-Source': 'stored'
+            }
+          });
+        }
+      }
+
       // PDF 생성
       const pdfBuffer = await generateSajuPDF({
         user: userInput,
@@ -243,6 +268,15 @@ export async function GET(request: NextRequest) {
         targetYear
       });
 
+      // 프리미엄 PDF는 저장 (재사용을 위해)
+      if (isAnalysisPremium && !isBlindedPDF) {
+        const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'pdf', pdfBuffer);
+        if (uploadResult.success && uploadResult.url) {
+          await updateAnalysisFileUrls(analysisId, { pdfUrl: uploadResult.url });
+          console.log(`[PDF] Saved PDF for analysis ${analysisId}`);
+        }
+      }
+
       const filename = isBlindedPDF
         ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
         : generatePDFFilename(userInput, targetYear);
@@ -253,12 +287,50 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
           'Content-Length': pdfBuffer.length.toString(),
-          'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full'
+          'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full',
+          'X-Source': 'generated'
         }
       });
     } else {
-      // 음성 생성 - 관리자/프리미엄구독/프리미엄분석은 무료, 그 외는 포인트 차감
+      // ========== 음성(MP3) 다운로드 ==========
+      // 중요: MP3는 비용 발생으로 최초 1회만 생성, 이후 저장된 파일 제공
+
       const isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+
+      // 1. 먼저 저장된 음성 파일이 있는지 확인
+      const audioExists = await checkFileExists(user.id, analysisId, 'audio');
+
+      if (audioExists) {
+        // 저장된 파일 다운로드
+        const storedAudio = await downloadStoredFile(user.id, analysisId, 'audio');
+        if (storedAudio.success && storedAudio.data) {
+          console.log(`[Audio] Serving stored MP3 for analysis ${analysisId}`);
+          const filename = generateAudioFilename(userInput, targetYear);
+          return new NextResponse(storedAudio.data, {
+            status: 200,
+            headers: {
+              'Content-Type': 'audio/mpeg',
+              'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+              'Content-Length': storedAudio.data.length.toString(),
+              'X-Source': 'stored'
+            }
+          });
+        }
+      }
+
+      // 2. DB에 audio_url이 있는지도 확인 (이미 생성된 적 있음을 의미)
+      if (analysis.audio_url && !audioExists) {
+        // URL은 있는데 파일이 없음 (만료되었거나 삭제됨)
+        return NextResponse.json(
+          {
+            error: '이전에 생성된 음성 파일이 만료되었습니다. 음성은 최초 1회만 생성 가능합니다.',
+            errorCode: 'AUDIO_ALREADY_GENERATED'
+          },
+          { status: 410 }
+        );
+      }
+
+      // 3. 새로 생성 (최초 1회만)
       const currentPoints = pointBalance?.points || 0;
       const audioCost = PRODUCT_COSTS.voice; // 300 포인트
 
@@ -296,7 +368,7 @@ export async function GET(request: NextRequest) {
       // TTS 설정에서 제공자 및 음성 설정
       const config = getTTSConfig(ttsSettings.provider, ttsSettings.voice);
 
-      console.log(`[TTS] Using provider: ${config.provider}, voice: ${config.voiceId}`);
+      console.log(`[TTS] Generating new audio with provider: ${config.provider}, voice: ${config.voiceId}`);
 
       const audioBuffer = await generateSajuAudio({
         user: userInput,
@@ -309,6 +381,15 @@ export async function GET(request: NextRequest) {
         config
       });
 
+      // 4. 생성된 음성 파일 저장 (재생성 방지)
+      const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'audio', audioBuffer);
+      if (uploadResult.success && uploadResult.url) {
+        await updateAnalysisFileUrls(analysisId, { audioUrl: uploadResult.url });
+        console.log(`[Audio] Saved MP3 for analysis ${analysisId}`);
+      } else {
+        console.error(`[Audio] Failed to save MP3 for analysis ${analysisId}:`, uploadResult.error);
+      }
+
       const filename = generateAudioFilename(userInput, targetYear);
 
       return new NextResponse(new Uint8Array(audioBuffer), {
@@ -317,7 +398,8 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'audio/mpeg',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
           'Content-Length': audioBuffer.length.toString(),
-          'X-TTS-Provider': config.provider
+          'X-TTS-Provider': config.provider,
+          'X-Source': 'generated'
         }
       });
     }
