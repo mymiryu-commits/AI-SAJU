@@ -26,6 +26,7 @@ import {
   QrCode,
   Volume2,
   Mic,
+  Activity,
 } from 'lucide-react';
 import {
   type TTSProviderType,
@@ -483,6 +484,24 @@ export default function AdminSettingsPage() {
                 <Coins className="h-4 w-4 text-amber-500" />
                 <ArrowRight className="h-5 w-5 text-blue-500 group-hover:translate-x-1 transition-transform" />
               </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Generation Logs Link */}
+        <Link href="/admin/generation-logs">
+          <div className="mt-4 bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 border border-violet-200 dark:border-violet-800/30 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center">
+                  <Activity className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-violet-800 dark:text-violet-300">생성 로그 모니터링</h3>
+                  <p className="text-sm text-violet-600 dark:text-violet-400">PDF/MP3 생성 현황 및 에러 추적</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-violet-500 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </Link>
