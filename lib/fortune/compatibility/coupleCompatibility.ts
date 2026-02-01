@@ -389,17 +389,23 @@ function generateStrengths(
   const strengths: string[] = [];
 
   if (dayMaster.score >= 70) {
-    strengths.push('서로의 성격과 가치관이 잘 맞습니다.');
+    strengths.push('【가치관 일치】 서로의 성격과 가치관이 잘 맞습니다. 중요한 결정에서 의견 충돌이 적고, 자연스럽게 같은 방향을 바라봅니다.');
   }
   if (earthlyBranch.score >= 70) {
-    strengths.push('깊은 인연으로 연결되어 있습니다.');
+    strengths.push('【운명적 인연】 깊은 인연으로 연결되어 있습니다. 만남 자체가 특별한 의미를 가지며, 함께할 때 편안함을 느낍니다.');
   }
   if (oheng.score >= 70) {
-    strengths.push('함께 있으면 좋은 에너지가 흐릅니다.');
+    strengths.push('【상생 에너지】 함께 있으면 좋은 에너지가 흐릅니다. 한 사람이 부족한 부분을 상대방이 자연스럽게 채워주는 관계입니다.');
+  }
+  if (dayMaster.score >= 80 && earthlyBranch.score >= 80) {
+    strengths.push('【천생연분】 일간과 지지 모두 좋은 조합입니다. 결혼 후에도 서로를 존중하며 오래 행복할 수 있는 궁합입니다.');
+  }
+  if (oheng.score >= 60 && dayMaster.score >= 60) {
+    strengths.push('【성장 파트너】 함께 있으면 서로 성장합니다. 각자 혼자일 때보다 함께할 때 더 나은 사람이 됩니다.');
   }
 
   if (strengths.length === 0) {
-    strengths.push('서로 다른 점에서 배울 수 있습니다.');
+    strengths.push('【다양성의 힘】 서로 다른 점이 많아 배울 것이 풍부합니다. 차이를 존중하면 시야가 넓어집니다.');
   }
 
   return strengths;
@@ -413,17 +419,20 @@ function generateChallenges(
   const challenges: string[] = [];
 
   if (dayMaster.score < 50) {
-    challenges.push('성격 차이로 인한 갈등이 생길 수 있습니다.');
+    challenges.push('【성격 차이 주의】 표현 방식과 가치관에 차이가 있습니다. 특히 스트레스 상황에서 대응 방식이 달라 갈등이 생길 수 있어요. "왜 나처럼 안 해?"라는 기대를 내려놓으세요.');
   }
   if (earthlyBranch.score < 50) {
-    challenges.push('지지 충돌로 변화가 많을 수 있습니다.');
+    challenges.push('【변화와 시련】 지지 충돌로 관계에 변화가 많을 수 있습니다. 이사, 직장 변동, 가족 관계 등 외부 환경 변화가 관계에 영향을 줄 수 있어요. 변화를 함께 헤쳐나가면 오히려 더 강해집니다.');
   }
   if (oheng.score < 50) {
-    challenges.push('오행 상극으로 긴장감이 있을 수 있습니다.');
+    challenges.push('【에너지 충돌】 오행 상극 관계로 무의식적인 긴장감이 있을 수 있습니다. 특히 피곤하거나 스트레스 받을 때 서로에게 날카로워지기 쉬워요. 각자 재충전 시간을 가지는 것이 중요합니다.');
+  }
+  if (dayMaster.score < 40 && oheng.score < 40) {
+    challenges.push('【핵심 유의점】 근본적인 성향 차이가 있습니다. 상대방을 바꾸려 하기보다 "이 사람은 원래 이런 스타일이구나"라고 이해하세요. 다름을 인정하는 것이 첫 번째 단계입니다.');
   }
 
   if (challenges.length === 0) {
-    challenges.push('특별히 큰 어려움은 예상되지 않습니다.');
+    challenges.push('【안정적 관계】 특별히 큰 어려움은 예상되지 않습니다. 다만 "괜찮은 관계"에 안주하지 말고, 더 깊은 유대감을 쌓아가세요.');
   }
 
   return challenges;
@@ -437,20 +446,39 @@ function generateAdvice(
 ): string[] {
   const advice: string[] = [];
 
-  if (dayMaster.score < 60) {
-    advice.push('서로의 다른 점을 인정하고 존중하세요.');
-  }
-  if (earthlyBranch.score < 60) {
-    advice.push('변화를 두려워하지 말고 함께 성장하세요.');
-  }
+  // 상생 관계 시너지 전략
   if (oheng.score >= 70) {
-    advice.push('좋은 에너지를 유지하며 함께 발전하세요.');
-  }
-  if (yongsin.score >= 70) {
-    advice.push('서로의 강점을 살려 시너지를 만드세요.');
+    advice.push('【상생 시너지】 두 분의 오행이 서로를 살려주는 관계입니다. 상대방의 결정을 믿고 지지해주세요. 함께할 때 1+1이 3이 되는 시너지가 발생합니다.');
+  } else if (oheng.score >= 50) {
+    advice.push('【균형 전략】 서로의 강점과 약점이 보완됩니다. 중요한 결정은 반드시 함께 논의하고, 각자 잘하는 영역을 분담하세요.');
+  } else {
+    advice.push('【갈등 예방】 오행 상극 관계로 의견 충돌이 있을 수 있습니다. 감정적으로 반응하기 전 24시간 냉각기를 두세요. "왜 그랬어?"보다 "어떤 마음이었어?"로 질문하세요.');
   }
 
-  advice.push('정기적인 대화와 이해가 관계를 더 깊게 합니다.');
+  // 일간 궁합 기반 소통 전략
+  if (dayMaster.score < 60) {
+    advice.push('【소통 전략】 서로 표현 방식이 다릅니다. 상대방의 사랑 언어를 파악하세요. 말로 표현하는 타입인지, 행동으로 보여주는 타입인지 이해하면 오해가 줄어듭니다.');
+  } else if (dayMaster.score >= 80) {
+    advice.push('【강점 활용】 가치관이 잘 맞습니다. 함께 장기 목표를 세우고 실천하면 더 큰 성취를 이룹니다.');
+  }
+
+  // 지지 궁합 기반 관계 유지 전략
+  if (earthlyBranch.score < 60) {
+    advice.push('【변화 대응】 관계에 변화의 파도가 올 수 있습니다. 이 변화를 성장의 기회로 삼으세요. 위기 때 함께 극복하면 더 단단해집니다.');
+  } else if (earthlyBranch.score >= 80) {
+    advice.push('【인연의 힘】 깊은 인연으로 연결되어 있습니다. 서로를 당연하게 여기지 말고, 감사를 표현하는 습관을 들이세요.');
+  }
+
+  // 용신 보완 시너지
+  if (yongsin.score >= 70) {
+    advice.push('【시너지 활용법】 각자의 용신이 상대방에게 도움이 됩니다. 중요한 일은 함께 시작하고, 서로의 행운 방향과 시간대를 활용하세요.');
+  }
+
+  // 구체적 실천 조언
+  advice.push('【주간 실천법】 매주 최소 1회 두 사람만의 시간을 가지세요. 이때 핸드폰은 잠시 내려놓고 서로에게만 집중하면 관계가 깊어집니다.');
+
+  // 커플 추천 유도
+  advice.push('💕 더 깊은 궁합 분석을 원하시면 "통합 커플 분석"을 이용해보세요. 월별 최적 데이트 시기, 갈등 예방 타이밍, 결혼 길일 등을 확인할 수 있습니다.');
 
   return advice;
 }
