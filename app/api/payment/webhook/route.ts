@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import crypto from 'crypto';
 
 // Referral levels with commission rates
 const REFERRAL_LEVELS = [
@@ -12,31 +13,143 @@ const REFERRAL_LEVELS = [
 // Points reward for referral
 const REFERRAL_REWARD_POINTS = 300;  // 추천인 기본 보상
 
+/**
+ * Toss Payments 웹훅 서명 검증
+ * HMAC-SHA256 사용
+ */
+function verifyTossSignature(body: string, signature: string | null): boolean {
+  const webhookSecret = process.env.TOSS_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    // 프로덕션에서는 반드시 검증 필요
+    if (process.env.NODE_ENV === 'production') {
+      console.error('TOSS_WEBHOOK_SECRET is required in production');
+      return false;
+    }
+    console.warn('[DEV MODE] Webhook signature verification skipped');
+    return true;
+  }
+
+  if (!signature) {
+    console.error('Missing webhook signature');
+    return false;
+  }
+
+  try {
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(body)
+      .digest('base64');
+
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
+}
+
+/**
+ * Stripe 웹훅 서명 검증
+ */
+function verifyStripeSignature(body: string, signature: string | null): boolean {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('STRIPE_WEBHOOK_SECRET is required in production');
+      return false;
+    }
+    console.warn('[DEV MODE] Stripe webhook signature verification skipped');
+    return true;
+  }
+
+  if (!signature) {
+    console.error('Missing Stripe signature');
+    return false;
+  }
+
+  try {
+    // Stripe signature format: t=timestamp,v1=signature
+    const signatureParts = signature.split(',');
+    const timestamp = signatureParts.find(p => p.startsWith('t='))?.split('=')[1];
+    const v1Signature = signatureParts.find(p => p.startsWith('v1='))?.split('=')[1];
+
+    if (!timestamp || !v1Signature) {
+      console.error('Invalid Stripe signature format');
+      return false;
+    }
+
+    // 5분 이내의 요청만 허용 (replay attack 방지)
+    const timestampMs = parseInt(timestamp) * 1000;
+    if (Date.now() - timestampMs > 5 * 60 * 1000) {
+      console.error('Stripe webhook timestamp too old');
+      return false;
+    }
+
+    const payload = `${timestamp}.${body}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(payload)
+      .digest('hex');
+
+    return crypto.timingSafeEqual(
+      Buffer.from(v1Signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    console.error('Stripe signature verification error:', error);
+    return false;
+  }
+}
+
 // Webhook handler for payment confirmations
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    const signature = request.headers.get('x-webhook-signature');
+    const signature = request.headers.get('x-webhook-signature') ||
+                     request.headers.get('stripe-signature');
 
     // Determine provider from headers
-    const provider = request.headers.get('x-payment-provider') || 'toss';
+    const provider = request.headers.get('x-payment-provider') ||
+                    (request.headers.get('stripe-signature') ? 'stripe' : 'toss');
 
-    // Verify webhook signature (implement based on provider)
-    // For Toss: verify using HMAC-SHA256
-    // For Stripe: verify using stripe.webhooks.constructEvent
+    // ============ 서명 검증 ============
+    if (provider === 'toss') {
+      if (!verifyTossSignature(body, signature)) {
+        console.error('Invalid Toss webhook signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else if (provider === 'stripe') {
+      if (!verifyStripeSignature(body, request.headers.get('stripe-signature'))) {
+        console.error('Invalid Stripe webhook signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else {
+      console.error('Unknown payment provider:', provider);
+      return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
+    }
 
     const payload = JSON.parse(body);
-
-    const supabase = await createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createServiceClient() as any;
 
     if (provider === 'toss') {
       // Toss Payments webhook handling
-      const { orderId, status, paymentKey, approvedAt } = payload;
+      const { orderId, status, paymentKey } = payload;
+
+      // orderId 형식 검증
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!orderId || !uuidRegex.test(orderId)) {
+        console.error('Invalid orderId in webhook:', orderId);
+        return NextResponse.json({ error: 'Invalid orderId' }, { status: 400 });
+      }
 
       if (status === 'DONE') {
         // Update payment status
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: payment, error } = await (supabase as any)
+        const { data: payment, error } = await supabase
           .from('payments')
           .update({
             payment_id: paymentKey,
@@ -44,16 +157,29 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', orderId)
+          .eq('payment_status', 'pending')  // 아직 처리되지 않은 결제만
           .select()
           .single();
 
         if (error) {
           console.error('Payment update error:', error);
-          return NextResponse.json({ error: 'Update failed' }, { status: 500 });
+          // 이미 처리된 결제일 수 있음 (중복 웹훅)
+          return NextResponse.json({ received: true, note: 'Already processed or not found' });
         }
 
         // Process the successful payment
-        await processSuccessfulPayment(supabase, payment);
+        if (payment) {
+          await processSuccessfulPayment(supabase, payment);
+        }
+      } else if (status === 'CANCELED' || status === 'EXPIRED') {
+        // 결제 취소/만료 처리
+        await supabase
+          .from('payments')
+          .update({
+            payment_status: status.toLowerCase(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
       }
     } else if (provider === 'stripe') {
       // Stripe webhook handling
@@ -65,8 +191,7 @@ export async function POST(request: NextRequest) {
           const paymentId = session.metadata?.paymentId;
 
           if (paymentId) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: payment, error } = await (supabase as any)
+            const { data: payment, error } = await supabase
               .from('payments')
               .update({
                 payment_id: session.payment_intent,
@@ -74,6 +199,7 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString(),
               })
               .eq('id', paymentId)
+              .eq('payment_status', 'pending')
               .select()
               .single();
 
@@ -88,8 +214,7 @@ export async function POST(request: NextRequest) {
           const paymentId = paymentIntent.metadata?.paymentId;
 
           if (paymentId) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase as any)
+            await supabase
               .from('payments')
               .update({
                 payment_status: 'failed',
@@ -195,11 +320,15 @@ async function processSuccessfulPayment(supabase: any, payment: any) {
     }
   }
 
-  // Update user total spent
-  await supabase.rpc('increment_total_spent', {
-    user_id,
-    amount,
-  });
+  // Update user total spent (if RPC exists)
+  try {
+    await supabase.rpc('increment_total_spent', {
+      user_id,
+      amount,
+    });
+  } catch {
+    // RPC가 없으면 무시
+  }
 
   // ============ 추천 보상 처리 ============
   // 결제 완료 시 pending 상태인 추천이 있으면 보상 지급
