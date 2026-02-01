@@ -158,14 +158,50 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 데이터 준비
+    // 만료 확인 (45일 보관 기간)
+    if (analysis.expires_at) {
+      const expiresAt = new Date(analysis.expires_at);
+      if (new Date() > expiresAt) {
+        return NextResponse.json(
+          {
+            error: '다운로드 기간이 만료되었습니다. 분석일로부터 45일 이내에만 다운로드 가능합니다.',
+            errorCode: 'DOWNLOAD_EXPIRED'
+          },
+          { status: 410 }  // Gone
+        );
+      }
+    } else {
+      // expires_at이 없는 경우, created_at 기준 45일 체크
+      const createdAt = new Date(analysis.created_at);
+      const expirationDate = new Date(createdAt.getTime() + 45 * 24 * 60 * 60 * 1000);
+      if (new Date() > expirationDate) {
+        return NextResponse.json(
+          {
+            error: '다운로드 기간이 만료되었습니다. 분석일로부터 45일 이내에만 다운로드 가능합니다.',
+            errorCode: 'DOWNLOAD_EXPIRED'
+          },
+          { status: 410 }
+        );
+      }
+    }
+
+    // 데이터 준비 (input_data JSON에서 사용자 정보 추출)
+    const inputData = analysis.input_data as Record<string, unknown> || {};
     const userInput: UserInput = {
-      name: (analysis as Record<string, unknown>).user_name as string || '사용자',
-      birthDate: analysis.birth_date as string,
-      birthTime: (analysis as Record<string, unknown>).birth_time as string | undefined,
-      gender: (analysis.gender as 'male' | 'female') || 'male',
-      careerType: (analysis as Record<string, unknown>).career_type as UserInput['careerType']
+      name: (inputData.name as string) || '사용자',
+      birthDate: (inputData.birthDate as string) || '',
+      birthTime: inputData.birthTime as string | undefined,
+      gender: (inputData.gender as 'male' | 'female') || 'male',
+      careerType: inputData.careerType as UserInput['careerType']
     };
+
+    // 생년월일 유효성 검사
+    if (!userInput.birthDate) {
+      return NextResponse.json(
+        { error: '분석 데이터에 생년월일 정보가 없습니다.' },
+        { status: 400 }
+      );
+    }
 
     const resultData = analysis.result_full as Record<string, unknown> | null;
     const saju = (resultData?.saju as SajuChart) || calculateSaju(userInput.birthDate, userInput.birthTime);

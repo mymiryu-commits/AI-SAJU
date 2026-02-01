@@ -322,7 +322,8 @@ export async function POST(request: NextRequest) {
       is_premium: true,
       is_blinded: false,
       zodiac_included: !!zodiacAnalysis,
-      zodiac_data: zodiacAnalysis
+      zodiac_data: zodiacAnalysis,
+      expires_at: expiresAt.toISOString()  // 45일 보관 기한
     };
 
     let savedAnalysisId = analysisId;
@@ -338,7 +339,8 @@ export async function POST(request: NextRequest) {
           is_premium: true,
           is_blinded: false,
           zodiac_included: analysisRecord.zodiac_included,
-          zodiac_data: analysisRecord.zodiac_data
+          zodiac_data: analysisRecord.zodiac_data,
+          expires_at: expiresAt.toISOString()  // 45일 보관 기한 갱신
         })
         .eq('id', analysisId)
         .eq('user_id', user.id);
