@@ -202,11 +202,48 @@ export default function HistoryPage() {
 
   // 다운로드 - API를 통한 동적 생성
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [generatingAudioId, setGeneratingAudioId] = useState<string | null>(null);
+
+  // 음성 백그라운드 생성 (PDF 다운로드 시 자동 실행)
+  const triggerAudioGeneration = async (item: HistoryItem) => {
+    // 이미 음성이 있거나 생성 중이면 스킵
+    if (item.audioGenerated || item.audioUrl || generatingAudioId === item.id) {
+      return;
+    }
+
+    try {
+      setGeneratingAudioId(item.id);
+      console.log('[Audio] Auto-generating audio for analysis:', item.id);
+
+      const response = await fetch(`/api/fortune/saju/download?type=audio&analysisId=${item.id}`);
+
+      if (response.ok) {
+        console.log('[Audio] Auto-generation successful for:', item.id);
+        // 히스토리 새로고침하여 audioUrl 업데이트
+        const updatedHistory = historyItems.map(h =>
+          h.id === item.id ? { ...h, audioGenerated: true, hasAudio: true } : h
+        );
+        // 상태 업데이트는 하지 않고 조용히 완료
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('[Audio] Auto-generation skipped:', errorData.errorCode || 'unknown');
+      }
+    } catch (err) {
+      console.error('[Audio] Auto-generation error:', err);
+    } finally {
+      setGeneratingAudioId(null);
+    }
+  };
 
   const handleDownload = async (item: HistoryItem, type: 'pdf' | 'audio') => {
     if (!item.canDownload) {
       alert('다운로드 기간이 만료되었습니다. (최대 45일)');
       return;
+    }
+
+    // PDF 다운로드 시 음성도 백그라운드에서 자동 생성
+    if (type === 'pdf' && !item.audioGenerated && !item.audioUrl) {
+      triggerAudioGeneration(item);
     }
 
     // 저장된 URL이 있으면 직접 열기
