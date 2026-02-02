@@ -20,6 +20,7 @@ import {
   type UnsungAnalysis,
   type HapChungAnalysis
 } from '../analysis';
+import { calculateDaeun, HEAVENLY_STEMS_KO, EARTHLY_BRANCHES_KO } from '../calculator';
 
 function getOpenAIClient() {
   return new OpenAI({
@@ -112,6 +113,27 @@ export async function generateAIAnalysis(context: SajuContext): Promise<{
   const sinsalAnalysis = analyzeSinsal(saju);
   const unsungAnalysis = analyzeUnsung(saju);
   const hapchungAnalysis = analyzeHapChung(saju);
+
+  // ===== 대운 계산 =====
+  const daeunList = calculateDaeun(saju, user.gender, user.birthDate);
+  // 현재 대운 찾기
+  const currentDaeun = daeunList.find((d, idx) => {
+    const nextAge = daeunList[idx + 1]?.age ?? Infinity;
+    return age >= d.age && age < nextAge;
+  }) || daeunList[0];
+
+  // 대운 정보 포맷팅
+  const daeunInfo = currentDaeun ? (() => {
+    const stemKo = HEAVENLY_STEMS_KO[['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'].indexOf(currentDaeun.stem)] || currentDaeun.stem;
+    const branchKo = EARTHLY_BRANCHES_KO[['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'].indexOf(currentDaeun.branch)] || currentDaeun.branch;
+    return {
+      name: `${stemKo}${branchKo}`,
+      hanja: `${currentDaeun.stem}${currentDaeun.branch}`,
+      startAge: currentDaeun.age,
+      endAge: currentDaeun.age + 9,
+      element: currentDaeun.element
+    };
+  })() : null;
 
   // 전통 분석 데이터 포맷팅
   const traditionalAnalysis = formatTraditionalAnalysis(
@@ -230,6 +252,11 @@ ${traditionalAnalysis}
 - 2026년 병오(丙午)년
 - ${age}세의 운
 
+## 현재 대운 (중요!)
+${daeunInfo ? `- 현재 대운: ${daeunInfo.name}(${daeunInfo.hanja})운
+- 대운 기간: ${daeunInfo.startAge}세 ~ ${daeunInfo.endAge}세
+- 대운 오행: ${ELEMENT_KOREAN[daeunInfo.element as Element] || daeunInfo.element}` : '- 대운 정보 없음'}
+
 ---
 
 위 정보를 바탕으로 다음 JSON 형식으로 전문가 수준의 상세 분석을 제공해주세요:
@@ -239,7 +266,7 @@ ${traditionalAnalysis}
 
   "dayMasterAnalysis": "(일주 ${saju.day.heavenlyStem}${saju.day.earthlyBranch}의 의미, 일간과 일지의 관계, 이 조합이 가진 특별한 의미를 4-5문장으로)",
 
-  "tenYearFortune": "(현재 나이 ${age}세 기준 대운 분석. 지금이 어떤 대운 시기인지, 앞으로의 대운 흐름, 인생의 전환점 시기를 4-5문장으로)",
+  "tenYearFortune": "(현재 ${age}세로 ${daeunInfo ? daeunInfo.name + '(' + daeunInfo.hanja + ')' : ''}운 대운 시기입니다. 이 대운의 특징과 의미, 앞으로의 대운 흐름, 인생의 전환점 시기를 4-5문장으로. 반드시 ${daeunInfo ? daeunInfo.name : '현재'} 대운이라고 명시하세요)",
 
   "yearlyFortune": "(2026년 병오년 세운 분석. 올해 전체 운의 흐름, 좋은 시기와 조심할 시기, 핵심 키워드를 5-6문장으로)",
 
