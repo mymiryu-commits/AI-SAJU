@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Save to database if user is authenticated
     if (user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('fortune_analyses').insert({
+      const { error: insertError } = await (supabase as any).from('fortune_analyses').insert({
         user_id: user.id,
         type: 'saju',
         subtype: 'basic',
@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
         keywords: result.keywords,
         scores: result.scores,
       });
+
+      if (insertError) {
+        console.error('[Saju] Failed to save analysis:', insertError);
+        console.error('[Saju] User ID:', user.id);
+        console.error('[Saju] Error code:', insertError.code);
+        console.error('[Saju] Error message:', insertError.message);
+      } else {
+        console.log('[Saju] Analysis saved successfully for user:', user.id);
+      }
     }
 
     return NextResponse.json({
