@@ -5,7 +5,7 @@
  * MP3는 비용 발생으로 최초 1회만 생성, 이후 저장된 파일 제공
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createServerClient, createServiceClient } from '@/lib/supabase/server';
 
 const BUCKET_NAME = 'analysis-files';
 
@@ -93,7 +93,8 @@ export async function uploadAnalysisFile(
   fileBuffer: Buffer | Uint8Array
 ): Promise<AnalysisFileResult> {
   try {
-    const supabase = await createServerClient();
+    // Service client 사용하여 RLS 우회 (모든 사용자가 파일 저장 가능)
+    const supabase = createServiceClient();
     const filePath = getFilePath(userId, analysisId, type);
     const contentType = type === 'pdf' ? 'application/pdf' : 'audio/mpeg';
 
@@ -237,7 +238,8 @@ export async function updateAnalysisFileUrls(
   urls: { pdfUrl?: string; audioUrl?: string }
 ): Promise<boolean> {
   try {
-    const supabase = await createServerClient();
+    // Service client 사용하여 RLS 우회 (모든 사용자의 분석 URL 업데이트 가능)
+    const supabase = createServiceClient();
 
     const updateData: Record<string, string | null> = {};
     if (urls.pdfUrl !== undefined) updateData.pdf_url = urls.pdfUrl;
@@ -247,6 +249,10 @@ export async function updateAnalysisFileUrls(
       .from('fortune_analyses')
       .update(updateData)
       .eq('id', analysisId);
+
+    if (error) {
+      console.error('updateAnalysisFileUrls DB error:', error);
+    }
 
     return !error;
   } catch (error) {
