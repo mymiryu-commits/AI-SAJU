@@ -88,10 +88,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
-    // WebView에서 Google OAuth 시도 시 경고
-    if (inWebView && provider === 'google') {
-      setError(`${webViewApp || '인앱 브라우저'}에서는 Google 로그인이 지원되지 않습니다. 아래 안내에 따라 외부 브라우저에서 접속해주세요.`);
+  const handleSocialLogin = async (provider: 'google' | 'kakao' | 'facebook') => {
+    // WebView에서 Google/Facebook OAuth 시도 시 경고
+    if (inWebView && (provider === 'google' || provider === 'facebook')) {
+      setError(`${webViewApp || '인앱 브라우저'}에서는 ${provider === 'google' ? 'Google' : 'Facebook'} 로그인이 지원되지 않습니다. 아래 안내에 따라 외부 브라우저에서 접속해주세요.`);
       return;
     }
 
@@ -153,7 +153,7 @@ export default function LoginPage() {
             <AlertDescription>
               <div className="space-y-2">
                 <p className="font-medium">
-                  {webViewApp ? `${webViewApp} 앱` : '인앱 브라우저'}에서는 Google 로그인이 지원되지 않습니다.
+                  {webViewApp ? `${webViewApp} 앱` : '인앱 브라우저'}에서는 Google/Facebook 로그인이 지원되지 않습니다.
                 </p>
                 <p className="text-sm">
                   외부 브라우저(Chrome, Safari)에서 접속해주세요.
@@ -296,6 +296,21 @@ export default function LoginPage() {
               />
             </svg>
             카카오로 계속하기
+          </Button>
+
+          {/* Facebook 로그인 버튼 */}
+          <Button
+            type="button"
+            variant="outline"
+            className={`w-full bg-[#1877F2] hover:bg-[#1877F2]/90 text-white border-[#1877F2] font-medium ${inWebView ? 'opacity-50' : ''}`}
+            onClick={() => handleSocialLogin('facebook')}
+            disabled={loading}
+          >
+            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Facebook으로 계속하기
+            {inWebView && <span className="ml-1 text-xs">(외부 브라우저 필요)</span>}
           </Button>
         </div>
 
