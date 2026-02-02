@@ -1224,17 +1224,36 @@ export default function SajuResultCard({
                     ))}
                   </div>
 
+                  {/* 무료 PDF 다운로드 섹션 */}
+                  <div className="border-t pt-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                        무료 분석 결과 다운로드
+                      </h4>
+                    </div>
+                    <DownloadButtons
+                      user={result.user}
+                      saju={saju}
+                      oheng={oheng}
+                      result={result}
+                      analysisId={analysisId}
+                      isPremium={false}
+                      onUpgradeClick={onUnlockPremium}
+                    />
+                  </div>
+
                   {/* CTA 버튼 */}
                   <div className="pt-4">
                     <Button
                       onClick={onUnlockPremium}
                       className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-6 text-lg font-medium shadow-lg shadow-purple-500/30"
                     >
-                      나의 기회 확인하기
+                      프리미엄 분석 보기
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
                     <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-                      지금 확인하면 PDF 리포트를 무료로 제공해 드립니다
+                      프리미엄 구독 시 음성 분석과 더 상세한 PDF를 제공합니다
                     </p>
                   </div>
                 </div>

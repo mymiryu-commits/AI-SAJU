@@ -240,8 +240,11 @@ export async function GET(request: NextRequest) {
         isBlindedPDF = true;
       }
 
-      // 저장된 PDF 확인 (프리미엄 분석만 저장)
-      if (isAnalysisPremium && !isBlindedPDF) {
+      // 저장된 PDF 확인 (프리미엄 분석이거나, 무료 사용자가 동일 상태로 재다운로드)
+      // 프리미엄 사용자가 기존 블라인드 PDF를 가진 경우 재생성 필요
+      const shouldUseStoredPdf = isAnalysisPremium || (isBlindedPDF && !isPremiumUser);
+
+      if (shouldUseStoredPdf) {
         const storedPdf = await downloadStoredFile(user.id, analysisId, 'pdf');
         if (storedPdf.success && storedPdf.data) {
           console.log(`[PDF] Serving stored PDF for analysis ${analysisId}`);
@@ -262,14 +265,16 @@ export async function GET(request: NextRequest) {
             metadata: { source: 'stored' },
           });
 
-          const filename = generatePDFFilename(userInput, targetYear);
+          const filename = isBlindedPDF
+            ? generatePDFFilename(userInput, targetYear).replace('.pdf', '_무료버전.pdf')
+            : generatePDFFilename(userInput, targetYear);
           return new NextResponse(new Uint8Array(storedPdf.data), {
             status: 200,
             headers: {
               'Content-Type': 'application/pdf',
               'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
               'Content-Length': storedPdf.data.length.toString(),
-              'X-PDF-Type': 'full',
+              'X-PDF-Type': isBlindedPDF ? 'blinded' : 'full',
               'X-Source': 'stored'
             }
           });
@@ -303,15 +308,14 @@ export async function GET(request: NextRequest) {
         let savedUrl: string | undefined;
         let storagePath: string | undefined;
 
-        // 프리미엄 PDF는 저장 (재사용을 위해)
-        if (isAnalysisPremium && !isBlindedPDF) {
-          const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'pdf', pdfBuffer);
-          if (uploadResult.success && uploadResult.url) {
-            await updateAnalysisFileUrls(analysisId, { pdfUrl: uploadResult.url });
-            savedUrl = uploadResult.url;
-            storagePath = `${user.id}/${analysisId}/pdf.pdf`;
-            console.log(`[PDF] Saved PDF for analysis ${analysisId}`);
-          }
+        // 모든 PDF 저장 (대시보드에서 재다운로드 가능하도록)
+        // 프리미엄으로 업그레이드 시 전체 PDF로 덮어씀
+        const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'pdf', pdfBuffer);
+        if (uploadResult.success && uploadResult.url) {
+          await updateAnalysisFileUrls(analysisId, { pdfUrl: uploadResult.url });
+          savedUrl = uploadResult.url;
+          storagePath = `${user.id}/${analysisId}/pdf.pdf`;
+          console.log(`[PDF] Saved PDF for analysis ${analysisId} (type: ${isBlindedPDF ? 'blinded' : 'full'})`);
         }
 
         // 로그: 성공
