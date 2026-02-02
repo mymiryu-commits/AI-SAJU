@@ -97,12 +97,13 @@ export default function DownloadButtons({
   const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
 
   const handleDownload = async (type: DownloadType) => {
-    if (!isPremium) {
-      // 무료 사용자는 구매 모달 표시
+    // 음성은 프리미엄 전용
+    if (!isPremium && type === 'audio') {
       setSelectedType(type);
       setShowPurchaseModal(true);
       return;
     }
+    // PDF는 무료 사용자도 다운로드 가능 (기본 버전)
 
     setDownloadState(prev => ({ ...prev, [type]: 'loading' }));
 
@@ -203,11 +204,13 @@ export default function DownloadButtons({
 
   // 바로 보기/듣기 (다운로드 없이)
   const handleView = async (type: DownloadType) => {
-    if (!isPremium) {
+    // 음성은 프리미엄 전용
+    if (!isPremium && type === 'audio') {
       setSelectedType(type);
       setShowPurchaseModal(true);
       return;
     }
+    // PDF는 무료 사용자도 보기 가능
 
     setViewState(prev => ({ ...prev, [type]: 'loading' }));
 
@@ -518,16 +521,14 @@ export default function DownloadButtons({
     <div className="space-y-4">
       {/* 바로 보기/듣기 버튼들 (메인) */}
       <div className="flex flex-wrap gap-3">
-        {/* 문서 바로 보기 */}
+        {/* 문서 바로 보기 - 무료 사용자도 가능 */}
         <motion.button
           onClick={() => handleView('pdf')}
           disabled={viewState.pdf === 'loading'}
           className={`
             flex-1 min-w-[140px] px-4 py-4 rounded-xl font-medium
             transition-all duration-200
-            ${!isPremium
-              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-              : viewState.pdf === 'success'
+            ${viewState.pdf === 'success'
               ? 'bg-green-500 text-white'
               : viewState.pdf === 'error'
               ? 'bg-red-500 text-white'
@@ -535,8 +536,8 @@ export default function DownloadButtons({
             }
             disabled:opacity-50
           `}
-          whileHover={isPremium ? { scale: 1.02 } : {}}
-          whileTap={isPremium ? { scale: 0.98 } : {}}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           {getViewButtonContent('pdf')}
         </motion.button>
@@ -567,16 +568,14 @@ export default function DownloadButtons({
 
       {/* 다운로드 버튼들 (보조) */}
       <div className="flex flex-wrap gap-3">
-        {/* PDF 다운로드 */}
+        {/* PDF 다운로드 - 무료 사용자도 가능 */}
         <motion.button
           onClick={() => handleDownload('pdf')}
           disabled={downloadState.pdf === 'loading'}
           className={`
             flex-1 min-w-[140px] px-4 py-3 rounded-lg font-medium
             transition-all duration-200
-            ${!isPremium
-              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-              : downloadState.pdf === 'success'
+            ${downloadState.pdf === 'success'
               ? 'bg-green-500 text-white'
               : downloadState.pdf === 'error'
               ? 'bg-red-500 text-white'
@@ -584,8 +583,8 @@ export default function DownloadButtons({
             }
             disabled:opacity-50
           `}
-          whileHover={isPremium ? { scale: 1.02 } : {}}
-          whileTap={isPremium ? { scale: 0.98 } : {}}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           {getButtonContent('pdf')}
         </motion.button>
@@ -632,28 +631,28 @@ export default function DownloadButtons({
         </span>
       </button>
 
-      {/* 비프리미엄 안내 */}
+      {/* 비프리미엄 안내 - 음성은 프리미엄 전용 */}
       {!isPremium && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200"
+          className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200"
         >
           <div className="flex items-start gap-3">
-            <DownloadIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <AudioIcon />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-800">
-                다운로드 구매 가능
+              <p className="text-sm font-medium text-purple-800">
+                🎧 음성 분석은 프리미엄 전용입니다
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                PDF 리포트 ₩{DOWNLOAD_PRICES.pdf.toLocaleString()} / 음성 파일 ₩{DOWNLOAD_PRICES.audio.toLocaleString()}
+              <p className="text-xs text-purple-600 mt-1">
+                PDF 리포트는 무료로 다운로드 가능합니다.
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                프리미엄 구독 시 무료로 무제한 다운로드 가능!
+              <p className="text-xs text-purple-600 mt-1">
+                프리미엄 구독 시 음성 파일도 무제한 이용!
               </p>
               <button
                 onClick={onUpgradeClick}
-                className="mt-2 text-xs font-medium text-blue-700 hover:text-blue-800 underline"
+                className="mt-2 text-xs font-medium text-purple-700 hover:text-purple-800 underline"
               >
                 프리미엄 업그레이드 →
               </button>
