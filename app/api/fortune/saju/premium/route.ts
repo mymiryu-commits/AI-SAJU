@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
   calculateSaju,
   analyzeOheng,
@@ -328,9 +328,12 @@ export async function POST(request: NextRequest) {
 
     let savedAnalysisId = analysisId;
 
+    // Service client 사용 (RLS 우회, 인증 확인 완료 후)
+    const serviceClient = createServiceClient();
+
     if (analysisId) {
       // 기존 분석 업데이트 (프리미엄으로 업그레이드)
-      const { error } = await (supabase as any)
+      const { error } = await (serviceClient as any)
         .from('fortune_analyses')
         .update({
           subtype: productType,
@@ -350,14 +353,17 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // 새 분석 생성
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (serviceClient as any)
         .from('fortune_analyses')
         .insert(analysisRecord)
         .select('id')
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('[Premium] 분석 저장 실패:', error);
+      } else if (data) {
         savedAnalysisId = data.id;
+        console.log('[Premium] 분석 저장 성공:', savedAnalysisId);
       }
     }
 

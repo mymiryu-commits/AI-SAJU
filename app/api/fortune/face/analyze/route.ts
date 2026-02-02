@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/auth/permissions';
 import { analyzeFace, analyzeFaceWithVision } from '@/lib/fortune/face/faceAnalysis';
 import { generateTTSScript } from '@/lib/fortune/face/faceStorytelling';
@@ -134,7 +134,10 @@ export async function POST(request: NextRequest) {
 
     // 분석 결과 저장 (테이블이 없을 수 있으므로 try-catch)
     try {
-      const { error: saveError } = await (supabase as any)
+      // Service client 사용 (RLS 우회, 인증 확인 완료 후)
+      const serviceClient = createServiceClient();
+
+      const { error: saveError } = await (serviceClient as any)
         .from('face_analyses')
         .insert({
           user_id: user.id,
@@ -150,6 +153,8 @@ export async function POST(request: NextRequest) {
 
       if (saveError) {
         console.warn('Face analysis save warning:', saveError);
+      } else {
+        console.log('[Face] 분석 저장 성공');
       }
     } catch (dbError) {
       // DB 저장 실패해도 분석 결과는 반환

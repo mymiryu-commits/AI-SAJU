@@ -83,8 +83,8 @@ export function useAuth() {
     return { data, error };
   }, [supabase]);
 
-  // Sign in with OAuth (Google, Kakao)
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao') => {
+  // Sign in with OAuth (Google, Kakao, Facebook)
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'kakao' | 'facebook') => {
     console.log('[useAuth] Starting OAuth with provider:', provider);
     console.log('[useAuth] Redirect URL:', `${window.location.origin}/api/auth/callback`);
 

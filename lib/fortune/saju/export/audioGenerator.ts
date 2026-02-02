@@ -1033,7 +1033,7 @@ function generateOhengStory(
   const strongest = elements[0];
   const weakest = elements[4];
 
-  parts.push(`세 번째, 당신의 기운 이야기입니다.`);
+  parts.push(`당신의 기운 이야기입니다.`);
   parts.push(`당신 안에는 ${strongest.nameKr}의 기운이 가장 강하게 흐르고 있어요.`);
 
   // 강한 오행에 대한 의미 부여
@@ -1306,7 +1306,7 @@ function getGoldenDateReason(
 function generateTimelineStory(timeline: any, userName: string, targetYear: number): string {
   const parts: string[] = [];
 
-  parts.push(`네 번째, ${userName}님의 인생 흐름을 살펴볼게요.`);
+  parts.push(`${userName}님의 인생 흐름을 살펴볼게요.`);
 
   if (timeline.currentAge) {
     parts.push(`지금 ${timeline.currentAge}세인 당신은,`);
@@ -1340,7 +1340,7 @@ function generateTimelineStory(timeline: any, userName: string, targetYear: numb
 function generateMonthlyStory(monthlyPlan: MonthlyAction[], year: number): string {
   const parts: string[] = [];
 
-  parts.push(`다섯 번째, ${year}년 운세 흐름입니다.`);
+  parts.push(`${year}년 운세 흐름입니다.`);
 
   // 최고의 달 찾기
   const sortedMonths = [...monthlyPlan].sort((a, b) => (b.score || 0) - (a.score || 0));
