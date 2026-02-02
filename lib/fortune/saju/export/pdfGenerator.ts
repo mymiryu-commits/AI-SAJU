@@ -1007,18 +1007,19 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     format: 'a4'
   });
 
-  let yPos = 20;
   const pageWidth = 210;
   const pageHeight = 297;
   const margin = 20;
+  const pageTopMargin = 34; // 프린트 시 상단 잘림 방지 (2줄 추가 여백)
   const contentWidth = pageWidth - margin * 2;
   const lineHeight = 7;
+  let yPos = pageTopMargin;
 
   // 헬퍼 함수: 줄바꿈 체크 및 페이지 추가
   const checkNewPage = (height: number = lineHeight) => {
     if (yPos + height > pageHeight - margin) {
       doc.addPage();
-      yPos = margin;
+      yPos = pageTopMargin;
     }
   };
 
@@ -1191,7 +1192,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 프롤로그 페이지 (60갑자 + 시적 도입부) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 60갑자 정보 가져오기 (v2.0: premium.sixtyJiazi 우선 사용)
   const yearStem = saju.year?.heavenlyStem || '甲';
@@ -1287,7 +1288,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 전문가 분석: 운명 정체성 페이지 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   const dayStem = saju.day?.heavenlyStem || '甲';
   const dayMasterPro = DAY_MASTER_PROFESSIONAL[dayStem];
@@ -1444,7 +1445,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 올해 운영 대시보드 (Day7 추가) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 합충형파해 분석 및 리스크 타이밍 생성 (대시보드용)
   const hapchungForDashboard = analyzeHapChung(saju);
@@ -1522,44 +1523,9 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   });
   yPos += 10;
 
-  // 구분선
-  doc.setLineWidth(0.3);
-  doc.line(margin, yPos, pageWidth - margin, yPos);
-  yPos += 10;
-
-  // ========== Executive Summary (기존) ==========
-  const summary = generateYearSummary(oheng, yongsin, premium);
-
-  addSectionTitle(`${targetYear}년 운세 핵심 요약`);
-
-  // 전체 점수 표시
-  addSubSection(`${user.name}님의 ${targetYear}년 종합 운세`);
-  const scoreBar = '★'.repeat(Math.round(summary.overallScore / 20)) + '☆'.repeat(5 - Math.round(summary.overallScore / 20));
-  addText(`종합 점수: ${summary.overallScore}점 ${scoreBar}`);
+  // ========== Top 5 액션 아이템 (연령별 맞춤) ==========
   yPos += 5;
-
-  // 행운의 달
-  if (summary.luckyMonths.length > 0) {
-    addText(`행운의 달: ${summary.luckyMonths.map(m => m + '월').join(', ')}`);
-    yPos += 3;
-  }
-
-  // 핵심 하이라이트
-  if (summary.highlights.length > 0) {
-    addSubSection('올해의 기회');
-    summary.highlights.forEach(h => addText(`✓ ${h}`));
-    yPos += 3;
-  }
-
-  // 도전 과제
-  if (summary.challenges.length > 0) {
-    addSubSection('주의할 점');
-    summary.challenges.forEach(c => addText(`△ ${c}`));
-    yPos += 3;
-  }
-
-  // Top 5 액션 아이템 (연령별 맞춤)
-  const top5Title = ageGroup === 'child' ? '올해 부모님이 챙겨주실 5가지' : '올해 꼭 실천할 5가지';
+  const top5Title = ageGroup === 'child' ? '📋 올해 부모님이 챙겨주실 5가지' : '📋 올해 꼭 실천할 5가지';
   addSubSection(top5Title);
 
   let top5Actions: string[];
@@ -1601,7 +1567,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 본문 시작 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 1. 사주팔자 기본 정보
   addSectionTitle('1. 사주팔자 기본 정보');
@@ -1708,7 +1674,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 전통 사주 이론 분석 섹션 (고급 템플릿) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 전통 분석 실행
   const sipsinChart = analyzeSipsin(saju);
@@ -1773,7 +1739,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // 신살(神殺) 분석 - 새 페이지
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   addSubSection('신살(神殺) 분석 - 특별한 기운의 영향');
   addText('신살은 사주에 작용하는 특별한 기운으로 길신(복)과 흉살(주의)로 나뉩니다.');
@@ -1928,7 +1894,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 다음 섹션으로 이동 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 3. 아동용: 재능 DNA 분석 / 성인용: 건강·재물·관계 분석
   if (ageGroup === 'child') {
@@ -2512,7 +2478,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 별자리(Zodiac) 분석 페이지 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // 오행에서 가장 강한 요소 찾기
   const dominantElement = elements.reduce((max, el) =>
@@ -2601,7 +2567,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 종합 성향 분석 (혈액형+MBTI+사주+별자리) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   addSectionTitle('15. 나의 성향 종합 분석');
 
@@ -2697,7 +2663,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 16. 선천적/후천적 기질 분석 (차별화된 콘텐츠) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   const dayStemForTrait = saju.day?.heavenlyStem || '甲';
   const userZodiacSign = getZodiacSignFromBirthDate(user.birthDate);
@@ -2756,7 +2722,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 17. 이번 달 상세 운세 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   const thisMonth = new Date().getMonth() + 1;
   const monthlyFortune = generateMonthlyFortune(
@@ -2824,7 +2790,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 18. 5대 영역 성장 전략 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   const growthStrategy = generateGrowthStrategy(
     dayStemForTrait,
@@ -2871,7 +2837,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 19. 가족/자녀 관계 조언 ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   const hasChildren = user.hasChildren === true;
   const familyAdvice = generateFamilyAdvice(
@@ -2930,7 +2896,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
 
   // ========== 에필로그 페이지 (60갑자 + 시적 마무리) ==========
   doc.addPage();
-  yPos = margin;
+  yPos = pageTopMargin;
 
   // v2.0: premium.epilogue 또는 premium.sixtyJiazi 사용
   const epilogueText = premium?.epilogue
