@@ -717,14 +717,7 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
         pauseAfter: 2000
       });
     }
-    if (premium.lifeTimeline?.goldenWindows?.length) {
-      const goldenStory = generateGoldenWindowStory(premium.lifeTimeline.goldenWindows);
-      sections.push({
-        title: '황금 기회',
-        content: goldenStory,
-        pauseAfter: 2000
-      });
-    }
+    // 황금 기회는 아래 "황금 기회일" 섹션에서 통합 처리 (중복 제거)
   }
 
   // ========== 10. 정통사주 분석 (십신, 신살, 대운) ==========
