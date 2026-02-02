@@ -32,6 +32,11 @@ export async function POST(request: NextRequest) {
       // Service client를 사용하여 RLS 우회 (인증 확인 완료 후)
       const serviceClient = createServiceClient();
 
+      // 디버깅: Service Role Key 확인
+      const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+      console.log('[Saju] Service Role Key exists:', hasServiceKey);
+      console.log('[Saju] Attempting to save for user:', user.id);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: insertData, error: insertError } = await (serviceClient as any).from('fortune_analyses').insert({
         user_id: user.id,
@@ -45,14 +50,17 @@ export async function POST(request: NextRequest) {
       }).select('id').single();
 
       if (insertError) {
-        console.error('[Saju] Failed to save analysis:', insertError);
+        console.error('[Saju] Failed to save analysis:', JSON.stringify(insertError));
         console.error('[Saju] User ID:', user.id);
         console.error('[Saju] Error code:', insertError.code);
         console.error('[Saju] Error message:', insertError.message);
         console.error('[Saju] Error details:', insertError.details);
+        console.error('[Saju] Error hint:', insertError.hint);
       } else {
         console.log('[Saju] Analysis saved successfully for user:', user.id, 'ID:', insertData?.id);
       }
+    } else {
+      console.log('[Saju] No authenticated user, skipping save');
     }
 
     return NextResponse.json({
