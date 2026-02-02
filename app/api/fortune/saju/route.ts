@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { calculateSaju } from '@/lib/fortune/saju';
 
 export async function POST(request: NextRequest) {
@@ -29,8 +29,11 @@ export async function POST(request: NextRequest) {
 
     // Save to database if user is authenticated
     if (user) {
+      // Service client를 사용하여 RLS 우회 (인증 확인 완료 후)
+      const serviceClient = createServiceClient();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = await (supabase as any).from('fortune_analyses').insert({
+      const { data: insertData, error: insertError } = await (serviceClient as any).from('fortune_analyses').insert({
         user_id: user.id,
         type: 'saju',
         subtype: 'basic',
@@ -39,15 +42,16 @@ export async function POST(request: NextRequest) {
         result_full: result,
         keywords: result.keywords,
         scores: result.scores,
-      });
+      }).select('id').single();
 
       if (insertError) {
         console.error('[Saju] Failed to save analysis:', insertError);
         console.error('[Saju] User ID:', user.id);
         console.error('[Saju] Error code:', insertError.code);
         console.error('[Saju] Error message:', insertError.message);
+        console.error('[Saju] Error details:', insertError.details);
       } else {
-        console.log('[Saju] Analysis saved successfully for user:', user.id);
+        console.log('[Saju] Analysis saved successfully for user:', user.id, 'ID:', insertData?.id);
       }
     }
 

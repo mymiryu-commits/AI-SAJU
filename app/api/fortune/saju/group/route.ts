@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
   analyzeGroupCompatibility,
   generateGroupSummary,
@@ -71,7 +71,10 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        const { data, error } = await (supabase as any)
+        // Service client 사용 (RLS 우회, 인증 확인 완료 후)
+        const serviceClient = createServiceClient();
+
+        const { data, error } = await (serviceClient as any)
           .from('fortune_analyses')
           .insert({
             user_id: user.id,
@@ -97,8 +100,11 @@ export async function POST(request: NextRequest) {
           .select('id')
           .single();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[Group] 분석 저장 실패:', error);
+        } else if (data) {
           analysisId = data.id;
+          console.log('[Group] 분석 저장 성공:', analysisId);
         }
       }
     } catch (dbError) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 
 function generateDailyFortune(date: Date, userId?: string) {
   // Use date and userId as seed for consistent daily fortune
@@ -79,9 +79,10 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (!existing) {
-        // Save new daily fortune
+        // Save new daily fortune (Service client 사용)
+        const serviceClient = createServiceClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from('daily_fortunes').insert({
+        const { error: dailyError } = await (serviceClient as any).from('daily_fortunes').insert({
           user_id: user.id,
           fortune_date: dateStr,
           overall_score: fortune.scores.overall,
@@ -96,6 +97,9 @@ export async function GET(request: NextRequest) {
           lucky_number: fortune.lucky.number.toString(),
           caution: fortune.caution,
         });
+        if (dailyError) {
+          console.error('[Daily] 운세 저장 실패:', dailyError);
+        }
       }
     }
 
@@ -167,20 +171,24 @@ export async function POST(request: NextRequest) {
       rewardAmount = 1;
     }
 
-    // Create check-in
+    // Create check-in (Service client 사용)
+    const serviceClient = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('checkins').insert({
+    const { error: checkinError } = await (serviceClient as any).from('checkins').insert({
       user_id: user.id,
       checked_at: today,
       streak_count: newStreak,
       reward_type: rewardType,
       reward_amount: rewardAmount,
     });
+    if (checkinError) {
+      console.error('[Checkin] 체크인 저장 실패:', checkinError);
+    }
 
     // Add coins to user balance
     if (rewardType === 'coin' || rewardType === 'bonus') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).rpc('increment_coins', {
+      await (serviceClient as any).rpc('increment_coins', {
         user_id: user.id,
         amount: rewardAmount,
       });
