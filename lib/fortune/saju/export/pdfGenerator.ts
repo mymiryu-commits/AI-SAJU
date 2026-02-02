@@ -1271,20 +1271,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     yPos += 10;
   }
 
-  // 오행 시적 해석
-  const elementPoetry = generateElementBalancePoetry(convertOhengToRecord(oheng));
-  if (elementPoetry) {
-    doc.setFontSize(11);
-    doc.text('✦ 오행의 조화 ✦', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
-    doc.setFontSize(9);
-    const poetryLines = doc.splitTextToSize(elementPoetry, contentWidth - 10);
-    poetryLines.forEach((line: string) => {
-      checkNewPage();
-      doc.text(line, margin + 5, yPos);
-      yPos += 5;
-    });
-  }
+  // 오행 시적 해석은 섹션 13에서 상세하게 다루므로 프롤로그에서 제거 (중복 방지)
 
   // ========== 전문가 분석: 운명 정체성 페이지 ==========
   doc.addPage();
@@ -1523,9 +1510,44 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
   });
   yPos += 10;
 
-  // ========== Top 5 액션 아이템 (연령별 맞춤) ==========
+  // 구분선
+  doc.setLineWidth(0.3);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 10;
+
+  // ========== Executive Summary ==========
+  const summary = generateYearSummary(oheng, yongsin, premium);
+
+  addSectionTitle(`${targetYear}년 운세 핵심 요약`);
+
+  // 전체 점수 표시
+  addSubSection(`${user.name}님의 ${targetYear}년 종합 운세`);
+  const scoreBar = '★'.repeat(Math.round(summary.overallScore / 20)) + '☆'.repeat(5 - Math.round(summary.overallScore / 20));
+  addText(`종합 점수: ${summary.overallScore}점 ${scoreBar}`);
   yPos += 5;
-  const top5Title = ageGroup === 'child' ? '📋 올해 부모님이 챙겨주실 5가지' : '📋 올해 꼭 실천할 5가지';
+
+  // 행운의 달
+  if (summary.luckyMonths.length > 0) {
+    addText(`행운의 달: ${summary.luckyMonths.map(m => m + '월').join(', ')}`);
+    yPos += 3;
+  }
+
+  // 핵심 하이라이트
+  if (summary.highlights.length > 0) {
+    addSubSection('올해의 기회');
+    summary.highlights.forEach(h => addText(`✓ ${h}`));
+    yPos += 3;
+  }
+
+  // 도전 과제
+  if (summary.challenges.length > 0) {
+    addSubSection('주의할 점');
+    summary.challenges.forEach(c => addText(`△ ${c}`));
+    yPos += 3;
+  }
+
+  // Top 5 액션 아이템 (연령별 맞춤)
+  const top5Title = ageGroup === 'child' ? '올해 부모님이 챙겨주실 5가지' : '올해 꼭 실천할 5가지';
   addSubSection(top5Title);
 
   let top5Actions: string[];
@@ -2390,7 +2412,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     // ========== 6장 운명 카드 (v2.0) ==========
     if (premium?.destinyCards && premium.destinyCards.cards.length > 0) {
       doc.addPage();
-      yPos = margin;
+      yPos = pageTopMargin;
 
       addSectionTitle('12. 운명의 6장 카드');
 
@@ -2430,7 +2452,7 @@ export async function generateSajuPDF(options: PDFGeneratorOptions): Promise<Buf
     // ========== 오행 시적 해석 (v2.0) ==========
     if (premium?.elementPoetry) {
       doc.addPage();
-      yPos = margin;
+      yPos = pageTopMargin;
 
       addSectionTitle('13. 오행 관계의 시적 해석');
 
