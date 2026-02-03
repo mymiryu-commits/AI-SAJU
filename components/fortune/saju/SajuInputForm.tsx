@@ -499,10 +499,10 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                             <p className="font-medium text-gray-800 dark:text-white">
                               {profile.nickname || profile.name}
                               {profile.nickname && (
-                                <span className="ml-2 text-xs text-gray-500">({profile.name})</span>
+                                <span className="ml-2 text-sm text-gray-600">({profile.name})</span>
                               )}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm text-gray-600">
                               {profile.birth_date} · {profile.gender === 'male' ? '남' : '여'}
                               {profile.relation_type && profile.relation_type !== 'self' && (
                                 <span className="ml-1">
@@ -600,7 +600,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                 min="1920-01-01"
                 className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 클릭하여 달력에서 선택하세요
               </p>
             </div>
@@ -630,7 +630,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                 onChange={e => handleChange('birthTime', e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 모르시면 비워두세요. 시주 없이 분석됩니다.
               </p>
             </div>
@@ -852,7 +852,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                       }}
                       className="mt-1"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       예: 5, 12, 18 (여러 명일 경우 쉼표로 구분)
                     </p>
                   </div>
@@ -881,16 +881,16 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     key={option.value}
                     type="button"
                     onClick={() => handleInterestToggle(option.value)}
-                    className={`py-2 px-2 rounded-lg text-xs transition-all
+                    className={`py-3 px-3 rounded-lg text-sm font-medium transition-all
                       ${formData.interests?.includes(option.value)
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-sm text-gray-600 mt-2">
                 {formData.interests?.length || 0}/3 선택됨
               </p>
             </div>
@@ -905,8 +905,8 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     onClick={() => handleChange('currentConcern', option.value)}
                     className={`w-full py-4 px-4 rounded-lg text-left transition-all flex items-center gap-3
                       ${formData.currentConcern === option.value
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
                   >
                     <span className="text-2xl">{option.emoji}</span>
                     <span className="font-medium">{option.label}</span>
@@ -1006,7 +1006,7 @@ export default function SajuInputForm({ onSubmit, isLoading }: Props) {
                     placeholder="예: 엄마, 남편, 친구1"
                     className="mt-1"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-600 mt-1">
                     비워두면 이름으로 표시됩니다.
                   </p>
                 </div>
