@@ -598,7 +598,8 @@ export async function POST(request: NextRequest) {
       yongsin,
       gisin,
       premium,
-      targetYear = 2026
+      targetYear = 2026,
+      analysisId  // 선택적: 제공되면 Storage에 저장
     } = body as {
       type: string;
       user: UserInput;
@@ -608,6 +609,7 @@ export async function POST(request: NextRequest) {
       gisin?: Element[];
       premium?: PremiumContent;
       targetYear?: number;
+      analysisId?: string;
     };
 
     if (!type || !['pdf', 'audio', 'script'].includes(type)) {
@@ -704,6 +706,26 @@ export async function POST(request: NextRequest) {
         premium,
         targetYear
       });
+
+      // analysisId가 있으면 Storage에 저장 (대시보드에서 접근 가능)
+      if (analysisId) {
+        try {
+          const supabase = await createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+
+          if (user) {
+            const uploadResult = await uploadAnalysisFile(user.id, analysisId, 'pdf', pdfBuffer);
+            if (uploadResult.success && uploadResult.url) {
+              await updateAnalysisFileUrls(analysisId, { pdfUrl: uploadResult.url });
+              console.log(`[PDF POST] Saved PDF for analysis ${analysisId}`);
+            } else {
+              console.error(`[PDF POST] Failed to save PDF:`, uploadResult.error);
+            }
+          }
+        } catch (saveError) {
+          console.error('[PDF POST] Storage save error (ignored):', saveError);
+        }
+      }
 
       const filename = generatePDFFilename(userInput, targetYear);
 

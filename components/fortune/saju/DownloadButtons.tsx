@@ -111,17 +111,19 @@ export default function DownloadButtons({
     setDownloadState(prev => ({ ...prev, [type]: 'loading' }));
 
     try {
-      // PDF와 음성 모두 서버에서 생성 (Storage 저장을 위해)
+      // 서버에서 생성 및 Storage 저장
       let response: Response;
 
       if (analysisId) {
-        // 저장된 분석에서 다운로드 (GET)
+        // analysisId가 있으면 GET 사용 → Storage에 자동 저장
+        console.log(`[Download] Using GET with analysisId: ${analysisId}`);
         response = await fetch(
           `/api/fortune/saju/download?type=${type}&analysisId=${analysisId}`,
           { method: 'GET' }
         );
       } else {
-        // 실시간 생성 다운로드 (POST)
+        // analysisId가 없으면 POST 사용 (Storage 저장 불가)
+        console.warn('[Download] No analysisId - PDF will not be saved to dashboard');
         response = await fetch('/api/fortune/saju/download', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -415,11 +417,13 @@ export default function DownloadButtons({
       let response: Response;
 
       if (analysisId) {
+        console.log(`[Share] Using GET with analysisId: ${analysisId}`);
         response = await fetch(
           `/api/fortune/saju/download?type=pdf&analysisId=${analysisId}`,
           { method: 'GET' }
         );
       } else {
+        console.warn('[Share] No analysisId - PDF will not be saved to dashboard');
         response = await fetch('/api/fortune/saju/download', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
