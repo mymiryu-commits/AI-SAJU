@@ -301,14 +301,14 @@ export default function SajuResultCard({
                   <Layers className="w-5 h-5 text-purple-500" />
                   나의 운명 카드
                 </h3>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {saju.day?.stemKorean}{saju.day?.branchKorean}일주
                 </span>
               </div>
 
               {/* 해금 카드 상태 표시 */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {unlockedCardCount}/6장 해금됨
                 </span>
                 {nextTier && (
@@ -349,7 +349,7 @@ export default function SajuResultCard({
                         key={idx}
                         className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center"
                       >
-                        <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+                        <p className="text-sm text-gray-600 mb-1">{item.label}</p>
                         {item.pillar ? (
                           <>
                             <p className="text-xl font-bold text-gray-800 dark:text-white">
@@ -472,7 +472,7 @@ export default function SajuResultCard({
                             <span className="font-bold text-green-800 dark:text-green-200">
                               {info.poeticName}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
                               ({ELEMENT_KOREAN[el]})
                             </span>
                           </div>
@@ -509,7 +509,7 @@ export default function SajuResultCard({
                             <span className="font-bold text-red-800 dark:text-red-200">
                               {info.poeticName}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
                               ({ELEMENT_KOREAN[el]})
                             </span>
                           </div>
@@ -552,7 +552,7 @@ export default function SajuResultCard({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {enhancedPoetry.coreMessage.transitions.map((t, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded text-xs text-gray-600 dark:text-gray-400">
+                        <span key={idx} className="px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded text-sm text-gray-700 dark:text-gray-300">
                           {t}
                         </span>
                       ))}
@@ -575,7 +575,7 @@ export default function SajuResultCard({
                           <p className="font-medium text-blue-800 dark:text-blue-300 text-sm mb-1">
                             {rel.emoji} {rel.relationName}
                           </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
                             {rel.poeticExpression}
                           </p>
                         </div>
@@ -594,16 +594,16 @@ export default function SajuResultCard({
                           <p className="font-medium text-orange-800 dark:text-orange-300 text-sm mb-1">
                             {rel.emoji} {rel.relationName}
                           </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
                             {rel.poeticExpression}
                           </p>
-                          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                          <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
                             👉 {rel.warning}
                           </p>
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 text-center">
                       👉 균형 = 억제 + 활성의 동시 설계
                     </p>
                   </div>
@@ -731,7 +731,7 @@ export default function SajuResultCard({
                   <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
                     강점
                   </h4>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                     {zodiacAnalysis.sign.strengths.map((s, idx) => (
                       <li key={idx}>• {s}</li>
                     ))}
@@ -741,7 +741,7 @@ export default function SajuResultCard({
                   <h4 className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
                     주의할 점
                   </h4>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                     {zodiacAnalysis.sign.weaknesses.map((w, idx) => (
                       <li key={idx}>• {w}</li>
                     ))}
@@ -756,15 +756,15 @@ export default function SajuResultCard({
                 </h4>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">행운의 색</p>
+                    <p className="text-sm text-gray-600 mb-1">행운의 색</p>
                     <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.luckyColor}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">행운의 숫자</p>
+                    <p className="text-sm text-gray-600 mb-1">행운의 숫자</p>
                     <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.luckyNumber.join(', ')}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">수호성</p>
+                    <p className="text-sm text-gray-600 mb-1">수호성</p>
                     <p className="font-medium text-gray-800 dark:text-white">{zodiacAnalysis.sign.ruler}</p>
                   </div>
                 </div>
@@ -779,7 +779,7 @@ export default function SajuResultCard({
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   {zodiacAnalysis.sign.compatibilityDesc}
                 </p>
-                <p className="text-xs text-pink-600 dark:text-pink-400">
+                <p className="text-sm text-pink-600 dark:text-pink-400">
                   궁합 좋은 별자리: {zodiacAnalysis.sign.compatibility.join(', ')}
                 </p>
               </div>
@@ -935,7 +935,7 @@ export default function SajuResultCard({
                     </div>
                     <div>
                       <p className="font-medium text-gray-800 dark:text-white">현재 대운</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         {aiAnalysis?.tenYearFortune?.slice(0, 50)}...
                       </p>
                     </div>
@@ -954,7 +954,7 @@ export default function SajuResultCard({
                           </div>
                           <div>
                             <p className="font-medium text-gray-800 dark:text-white">다음 대운: {result.premium.lifeTimeline.phases[1].phase}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{result.premium.lifeTimeline.phases[1].ageRange}세</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{result.premium.lifeTimeline.phases[1].ageRange}세</p>
                           </div>
                         </div>
                         <p className="text-sm text-amber-700 dark:text-amber-300 ml-13">
@@ -972,7 +972,7 @@ export default function SajuResultCard({
                           </div>
                           <div>
                             <p className="font-medium text-gray-800 dark:text-white">인생 전환점: {result.premium.lifeTimeline.turningPoints[0].year}년</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{result.premium.lifeTimeline.turningPoints[0].age}세</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{result.premium.lifeTimeline.turningPoints[0].age}세</p>
                           </div>
                         </div>
                         <p className="text-sm text-purple-700 dark:text-purple-300 ml-13">
@@ -990,7 +990,7 @@ export default function SajuResultCard({
                           </div>
                           <div>
                             <p className="font-medium text-gray-800 dark:text-white">골든윈도우: {result.premium.lifeTimeline.goldenWindows[0].period}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">성공 확률 {result.premium.lifeTimeline.goldenWindows[0].successRate}%</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">성공 확률 {result.premium.lifeTimeline.goldenWindows[0].successRate}%</p>
                           </div>
                         </div>
                         <p className="text-sm text-green-700 dark:text-green-300 ml-13">
@@ -1023,7 +1023,7 @@ export default function SajuResultCard({
                         </div>
                         <div>
                           <p className="font-medium text-gray-800 dark:text-white">{item.label}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.years}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{item.years}</p>
                         </div>
                       </div>
                     </div>
@@ -1218,7 +1218,7 @@ export default function SajuResultCard({
                         </div>
                         <div>
                           <p className="font-medium text-gray-800 dark:text-white text-sm">{item.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{item.description}</p>
                         </div>
                       </motion.div>
                     ))}
@@ -1252,7 +1252,7 @@ export default function SajuResultCard({
                       프리미엄 분석 보기
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
-                    <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    <p className="text-center text-sm text-gray-600 dark:text-gray-300 mt-3">
                       프리미엄 구독 시 음성 분석과 더 상세한 PDF를 제공합니다
                     </p>
                   </div>
@@ -1305,7 +1305,7 @@ function OhengChart({ balance }: { balance: OhengBalance }) {
             </div>
             {/* 호버 시 시적 표현 표시 */}
             {info && (
-              <div className="hidden group-hover:block ml-24 mt-1 text-xs text-gray-500 dark:text-gray-400 italic">
+              <div className="hidden group-hover:block ml-24 mt-1 text-sm text-gray-600 dark:text-gray-300 italic">
                 {info.poeticName} • {info.season} • {info.nature}
               </div>
             )}
@@ -1451,7 +1451,7 @@ function ExpertSection({
         <div>
           <h4 className="font-bold text-gray-800 dark:text-white">{title}</h4>
           {subtitle && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{subtitle}</p>
           )}
         </div>
       </div>
@@ -1886,9 +1886,9 @@ function MonthlyFortuneCard({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-gray-800 dark:text-white">{month.keyword}</span>
-            <span className="text-xs text-gray-500">{month.score}점</span>
+            <span className="text-sm text-gray-600">{month.score}점</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
             {month.advice}
           </p>
         </div>
