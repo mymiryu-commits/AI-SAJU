@@ -111,13 +111,7 @@ export default function DownloadButtons({
     setDownloadState(prev => ({ ...prev, [type]: 'loading' }));
 
     try {
-      // PDF는 클라이언트 사이드에서 생성 (한글 폰트 지원)
-      if (type === 'pdf') {
-        await handleClientPdfDownload();
-        return;
-      }
-
-      // 음성은 서버에서 생성
+      // PDF와 음성 모두 서버에서 생성 (Storage 저장을 위해)
       let response: Response;
 
       if (analysisId) {
@@ -151,8 +145,9 @@ export default function DownloadButtons({
 
       // 파일 다운로드
       const blob = await response.blob();
+      const defaultFilename = type === 'pdf' ? `${user.name}_사주분석.pdf` : 'download.mp3';
       const filename = response.headers.get('Content-Disposition')
-        ?.match(/filename="(.+)"/)?.[1] || 'download.mp3';
+        ?.match(/filename="(.+)"/)?.[1] || defaultFilename;
 
       const decodedFilename = decodeURIComponent(filename);
       const url = URL.createObjectURL(blob);
@@ -405,7 +400,7 @@ export default function DownloadButtons({
     }
   };
 
-  // PDF 공유하기 (Web Share API)
+  // PDF 공유하기 (Web Share API) - 서버 API 사용하여 Storage 저장
   const handlePdfShare = async () => {
     // Web Share API 지원 확인
     if (!navigator.share) {
@@ -416,39 +411,38 @@ export default function DownloadButtons({
     setShareState('loading');
 
     try {
-      // PDF 템플릿 표시
-      setShowPdfTemplate(true);
+      // 서버 API로 PDF 생성 (Storage 저장됨)
+      let response: Response;
 
-      // 폰트 로딩 대기
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
+      if (analysisId) {
+        response = await fetch(
+          `/api/fortune/saju/download?type=pdf&analysisId=${analysisId}`,
+          { method: 'GET' }
+        );
+      } else {
+        response = await fetch('/api/fortune/saju/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'pdf',
+            user,
+            saju,
+            oheng,
+            yongsin: result.yongsin,
+            gisin: result.gisin,
+            premium,
+            targetYear
+          })
+        });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const element = pdfTemplateRef.current;
-      if (!element) {
-        throw new Error('PDF 템플릿을 찾을 수 없습니다.');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'PDF 생성에 실패했습니다.');
       }
 
-      const html2pdf = (await import('html2pdf.js')).default;
-
+      const pdfBlob = await response.blob();
       const filename = `${user.name}_사주분석_${targetYear}.pdf`;
-
-      // PDF를 blob으로 생성
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pdfBlob = await (html2pdf() as any)
-        .set({
-          margin: 0,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        })
-        .from(element)
-        .outputPdf('blob');
-
-      setShowPdfTemplate(false);
 
       // File 객체 생성
       const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
@@ -465,7 +459,6 @@ export default function DownloadButtons({
 
     } catch (error) {
       console.error('PDF share error:', error);
-      setShowPdfTemplate(false);
 
       // 사용자가 공유를 취소한 경우는 에러로 처리하지 않음
       if (error instanceof Error && error.name === 'AbortError') {
