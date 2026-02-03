@@ -96,6 +96,9 @@ export default function DownloadButtons({
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
 
+  // PDF 공유 관련
+  const [shareState, setShareState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
   const handleDownload = async (type: DownloadType) => {
     // 음성은 프리미엄 전용
     if (!isPremium && type === 'audio') {
@@ -402,6 +405,79 @@ export default function DownloadButtons({
     }
   };
 
+  // PDF 공유하기 (Web Share API)
+  const handlePdfShare = async () => {
+    // Web Share API 지원 확인
+    if (!navigator.share) {
+      alert('이 브라우저에서는 공유 기능을 지원하지 않습니다. PDF를 다운로드한 후 직접 공유해주세요.');
+      return;
+    }
+
+    setShareState('loading');
+
+    try {
+      // PDF 템플릿 표시
+      setShowPdfTemplate(true);
+
+      // 폰트 로딩 대기
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const element = pdfTemplateRef.current;
+      if (!element) {
+        throw new Error('PDF 템플릿을 찾을 수 없습니다.');
+      }
+
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      const filename = `${user.name}_사주분석_${targetYear}.pdf`;
+
+      // PDF를 blob으로 생성
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfBlob = await (html2pdf() as any)
+        .set({
+          margin: 0,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        })
+        .from(element)
+        .outputPdf('blob');
+
+      setShowPdfTemplate(false);
+
+      // File 객체 생성
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      // Web Share API로 공유
+      await navigator.share({
+        files: [pdfFile],
+        title: `${user.name}님의 사주 분석 리포트`,
+        text: `${user.name}님의 ${targetYear}년 사주 분석 결과입니다.`
+      });
+
+      setShareState('success');
+      setTimeout(() => setShareState('idle'), 3000);
+
+    } catch (error) {
+      console.error('PDF share error:', error);
+      setShowPdfTemplate(false);
+
+      // 사용자가 공유를 취소한 경우는 에러로 처리하지 않음
+      if (error instanceof Error && error.name === 'AbortError') {
+        setShareState('idle');
+        return;
+      }
+
+      setShareState('error');
+      setTimeout(() => setShareState('idle'), 5000);
+    }
+  };
+
   const handlePreview = async () => {
     if (!isPremium) {
       onUpgradeClick?.();
@@ -612,6 +688,46 @@ export default function DownloadButtons({
           {getButtonContent('audio')}
         </motion.button>
       </div>
+
+      {/* PDF 공유 버튼 (모바일 Web Share API 지원 시) */}
+      {typeof navigator !== 'undefined' && 'share' in navigator && (
+        <motion.button
+          onClick={handlePdfShare}
+          disabled={shareState === 'loading'}
+          className={`
+            w-full px-4 py-3 rounded-lg font-medium
+            transition-all duration-200
+            ${shareState === 'success'
+              ? 'bg-green-500 text-white'
+              : shareState === 'error'
+              ? 'bg-red-500 text-white'
+              : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md'
+            }
+            disabled:opacity-50
+          `}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <span className="flex items-center justify-center gap-2">
+            {shareState === 'loading' ? (
+              <>
+                <LoadingSpinner />
+                PDF 준비 중...
+              </>
+            ) : shareState === 'success' ? (
+              <>
+                <CheckIcon />
+                공유 완료
+              </>
+            ) : (
+              <>
+                <ShareIcon />
+                📤 PDF 카카오톡/문자로 공유하기
+              </>
+            )}
+          </span>
+        </motion.button>
+      )}
 
       {/* 미리보기 버튼 */}
       <button
@@ -1052,6 +1168,15 @@ function PreviewIcon() {
         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
     </svg>
   );
 }
