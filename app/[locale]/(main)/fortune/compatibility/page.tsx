@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,12 +104,54 @@ const gradeColors: Record<string, string> = {
 export default function CompatibilityPage() {
   const t = useTranslations('fortune');
   const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = useState<'form' | 'analyzing' | 'result' | 'error'>('form');
   const [progress, setProgress] = useState(0);
   const [relationType, setRelationType] = useState<RelationType>('couple');
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+  const [isCheckingPremium, setIsCheckingPremium] = useState(false);
+
+  // 이용권/구독 상태 확인
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      if (!user) {
+        setIsPremiumUnlocked(false);
+        return;
+      }
+
+      setIsCheckingPremium(true);
+      try {
+        // 이용권 확인
+        const voucherRes = await fetch('/api/voucher/check?service_type=compatibility');
+        const voucherData = await voucherRes.json();
+
+        if (voucherData.hasVoucher) {
+          setIsPremiumUnlocked(true);
+          return;
+        }
+
+        // 사주 이용권도 확인 (사주 이용권으로 궁합 프리미엄 사용 가능)
+        const sajuVoucherRes = await fetch('/api/voucher/check?service_type=saju');
+        const sajuVoucherData = await sajuVoucherRes.json();
+
+        if (sajuVoucherData.hasVoucher) {
+          setIsPremiumUnlocked(true);
+          return;
+        }
+
+        setIsPremiumUnlocked(false);
+      } catch (err) {
+        console.error('Failed to check premium status:', err);
+        setIsPremiumUnlocked(false);
+      } finally {
+        setIsCheckingPremium(false);
+      }
+    };
+
+    checkPremiumStatus();
+  }, [user]);
 
   const [person1, setPerson1] = useState<PersonData>({
     name: '',
@@ -431,12 +474,12 @@ export default function CompatibilityPage() {
 
           {/* Premium: Monthly Compatibility */}
           <div className="relative mb-6">
-            {!isPremiumUnlocked && (
+            {!isPremiumUnlocked && !isCheckingPremium && (
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-xl">
                 <Lock className="h-12 w-12 text-pink-500 mb-4" />
                 <h3 className="text-xl font-bold mb-2">2026년 월별 궁합</h3>
                 <p className="text-muted-foreground text-center mb-4 px-4">
-                  월별 궁합 점수와 조언을 확인하세요
+                  {user ? '이용권을 구매하시면 월별 궁합을 확인할 수 있습니다' : '로그인 후 이용권을 구매하시면 확인할 수 있습니다'}
                 </p>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-2xl font-bold text-pink-600">₩9,900</span>
@@ -444,14 +487,19 @@ export default function CompatibilityPage() {
                 </div>
                 <Button
                   className="bg-gradient-to-r from-pink-500 to-red-500"
-                  onClick={() => router.push('/pricing')}
+                  onClick={() => router.push(user ? '/pricing' : '/auth/login?redirect=/fortune/compatibility')}
                 >
-                  결제권 구매하기
+                  {user ? '이용권 구매하기' : '로그인하기'}
                 </Button>
               </div>
             )}
+            {isCheckingPremium && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80 dark:bg-black/80 backdrop-blur-sm rounded-xl">
+                <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+              </div>
+            )}
 
-            <Card className={!isPremiumUnlocked ? 'blur-sm pointer-events-none' : ''}>
+            <Card className={!isPremiumUnlocked || isCheckingPremium ? 'blur-sm pointer-events-none' : ''}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
