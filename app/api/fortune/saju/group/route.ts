@@ -111,19 +111,104 @@ export async function POST(request: NextRequest) {
       console.warn('DB 저장 실패:', dbError);
     }
 
+    // 프론트엔드용 응답 데이터 변환
+    const overallScore = Math.round(groupAnalysis.groupDynamics.overallHarmony);
+    const grade = overallScore >= 90 ? 'S' : overallScore >= 80 ? 'A' : overallScore >= 70 ? 'B' : overallScore >= 60 ? 'C' : 'D';
+
+    // 오행 한글 변환
+    const elementKorean: Record<string, string> = {
+      wood: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)'
+    };
+
+    // 역할 매핑
+    const roleMap: Record<string, { role: string; strength: string }> = {
+      wood: { role: '🌱 개척자/선구자', strength: '새로운 아이디어와 시작을 이끕니다' },
+      fire: { role: '🔥 동기부여자/리더', strength: '열정으로 팀에 활력을 불어넣습니다' },
+      earth: { role: '🪨 조율자/중재자', strength: '갈등을 조율하고 안정감을 제공합니다' },
+      metal: { role: '⚔️ 실행자/완결자', strength: '결단력 있게 마무리를 담당합니다' },
+      water: { role: '💧 전략가/분석가', strength: '유연하게 상황을 파악하고 조언합니다' }
+    };
+
+    const memberRoles = analyzedMembers.map(m => {
+      const element = m.saju?.day.element || 'earth';
+      const roleInfo = roleMap[element] || roleMap.earth;
+      return {
+        name: m.name,
+        role: roleInfo.role,
+        element: elementKorean[element] || element,
+        strength: roleInfo.strength
+      };
+    });
+
+    // 쌍별 분석
+    const pairAnalysis: { person1: string; person2: string; score: number; relationship: string }[] = [];
+    for (let i = 0; i < analyzedMembers.length; i++) {
+      for (let j = i + 1; j < analyzedMembers.length; j++) {
+        const e1 = analyzedMembers[i].saju?.day.element || 'earth';
+        const e2 = analyzedMembers[j].saju?.day.element || 'earth';
+        const compat = calculateSimpleCompatibility(e1, e2);
+        pairAnalysis.push({
+          person1: analyzedMembers[i].name,
+          person2: analyzedMembers[j].name,
+          score: compat.score,
+          relationship: compat.type
+        });
+      }
+    }
+
+    // 팀 케미 지표 계산 (groupDynamics 기반으로 추정)
+    const dynamics = groupAnalysis.groupDynamics as Record<string, unknown>;
+    const baseHarmony = groupAnalysis.groupDynamics.overallHarmony;
+    const teamChemistry = {
+      harmony: Math.round(baseHarmony),
+      synergy: Math.round((dynamics.synergyPotential as number) || baseHarmony * 0.95),
+      balance: Math.round((dynamics.balanceScore as number) || baseHarmony * 0.9),
+      growth: Math.round((dynamics.growthPotential as number) || baseHarmony * 1.05)
+    };
+
+    // 강점 생성 (summary는 string)
+    const dominantEl = groupAnalysis.groupDynamics.dominantElement;
+    const missingEl = groupAnalysis.groupDynamics.missingElement;
+    const strengths = [
+      `${elementKorean[dominantEl] || dominantEl} 에너지가 팀을 주도합니다`,
+      groupAnalysis.groupDynamics.groupStrength || '서로 다른 관점이 시너지를 만들어냅니다',
+      '다양한 에너지가 조화를 이룹니다'
+    ];
+
+    // 주의점 생성
+    const potentialConflicts = (dynamics.potentialConflicts as string[]) || [];
+    const challenges = potentialConflicts.length > 0
+      ? potentialConflicts.slice(0, 3)
+      : [
+          groupAnalysis.groupDynamics.groupWeakness || '의견 충돌 시 충분한 대화가 필요합니다',
+          `${elementKorean[missingEl] || missingEl} 에너지 보충이 필요합니다`,
+          '목표를 함께 공유하고 점검하세요'
+        ];
+
+    // 조언 생성
+    const advice = [
+      '정기적인 소통 시간을 가지세요',
+      '각자의 강점을 인정하고 활용하세요',
+      '갈등 발생 시 감정보다 목표에 집중하세요',
+      `${elementKorean[missingEl] || ''} 특성을 가진 활동을 함께 해보세요`
+    ];
+
     return NextResponse.json({
       success: true,
       data: {
-        analysis: groupAnalysis,
-        summary,
-        members: analyzedMembers.map(m => ({
-          id: m.id,
-          name: m.name,
-          relation: m.relation,
-          dayMaster: m.saju?.day.heavenlyStem,
-          dayElement: m.saju?.day.element,
-          zodiac: m.saju?.year.zodiac
-        }))
+        overallScore,
+        grade,
+        teamChemistry,
+        memberRoles,
+        pairAnalysis,
+        strengths,
+        challenges,
+        advice,
+        bestCombinations: pairAnalysis.filter(p => p.score >= 80).map(p => `${p.person1} & ${p.person2}`),
+        warningPairs: pairAnalysis.filter(p => p.score < 60).map(p => `${p.person1} & ${p.person2}`),
+        // 원본 데이터도 포함
+        rawAnalysis: groupAnalysis,
+        summary
       },
       meta: {
         analysisId,
