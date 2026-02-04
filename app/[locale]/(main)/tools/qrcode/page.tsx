@@ -33,23 +33,38 @@ import {
   Settings,
   Sparkles,
   ImageIcon,
+  Check,
+  Zap,
+  Shield,
+  Share2,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 type QRType = 'url' | 'vcard' | 'wifi' | 'email' | 'phone' | 'sms' | 'location' | 'event';
 
 const qrTypes = [
-  { id: 'url' as QRType, name: 'URL 링크', icon: Link2, description: '웹사이트 주소' },
-  { id: 'vcard' as QRType, name: '연락처', icon: User, description: '명함 QR코드' },
-  { id: 'wifi' as QRType, name: 'WiFi', icon: Wifi, description: '비밀번호 없이 연결' },
-  { id: 'email' as QRType, name: '이메일', icon: Mail, description: '이메일 작성' },
-  { id: 'phone' as QRType, name: '전화', icon: Phone, description: '바로 전화 연결' },
-  { id: 'sms' as QRType, name: 'SMS', icon: MessageSquare, description: '문자 메시지' },
-  { id: 'location' as QRType, name: '위치', icon: MapPin, description: '지도 위치' },
-  { id: 'event' as QRType, name: '일정', icon: Calendar, description: '캘린더 추가' },
+  { id: 'url' as QRType, name: 'URL 링크', icon: Link2, description: '웹사이트 주소', gradient: 'from-blue-500 to-cyan-500', popular: true },
+  { id: 'vcard' as QRType, name: '연락처', icon: User, description: '명함 QR코드', gradient: 'from-violet-500 to-purple-500', popular: true },
+  { id: 'wifi' as QRType, name: 'WiFi', icon: Wifi, description: '비밀번호 없이 연결', gradient: 'from-green-500 to-emerald-500' },
+  { id: 'email' as QRType, name: '이메일', icon: Mail, description: '이메일 작성', gradient: 'from-amber-500 to-orange-500' },
+  { id: 'phone' as QRType, name: '전화', icon: Phone, description: '바로 전화 연결', gradient: 'from-pink-500 to-rose-500' },
+  { id: 'sms' as QRType, name: 'SMS', icon: MessageSquare, description: '문자 메시지', gradient: 'from-teal-500 to-cyan-500' },
+  { id: 'location' as QRType, name: '위치', icon: MapPin, description: '지도 위치', gradient: 'from-red-500 to-orange-500' },
+  { id: 'event' as QRType, name: '일정', icon: Calendar, description: '캘린더 추가', gradient: 'from-indigo-500 to-blue-500' },
+];
+
+const presetColors = [
+  { name: '클래식', color: '#000000', bg: '#FFFFFF' },
+  { name: '다크', color: '#FFFFFF', bg: '#1a1a1a' },
+  { name: '네이비', color: '#1e3a5f', bg: '#f0f4f8' },
+  { name: '로얄', color: '#7c3aed', bg: '#f5f3ff' },
+  { name: '에메랄드', color: '#059669', bg: '#ecfdf5' },
+  { name: '로즈', color: '#be185d', bg: '#fdf2f8' },
 ];
 
 export default function QRCodeGeneratorPage() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [selectedType, setSelectedType] = useState<QRType>('url');
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [options, setOptions] = useState({
@@ -62,6 +77,7 @@ export default function QRCodeGeneratorPage() {
   const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('content');
 
   // Hero image from settings
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
@@ -126,113 +142,148 @@ export default function QRCodeGeneratorPage() {
     link.click();
   };
 
+  const applyPreset = (preset: typeof presetColors[0]) => {
+    setOptions(prev => ({
+      ...prev,
+      color: preset.color,
+      backgroundColor: preset.bg,
+    }));
+  };
+
   const renderForm = () => {
+    const inputClass = "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-cyan-500 focus:ring-cyan-500/20";
+
     switch (selectedType) {
       case 'url':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>URL</Label>
+              <Label className="text-sm font-medium">URL 주소</Label>
               <Input
                 placeholder="https://example.com"
                 value={formData.url || ''}
                 onChange={(e) => handleInputChange('url', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
+              <p className="text-xs text-muted-foreground mt-1">웹사이트, SNS, 앱 링크 등</p>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'vcard':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>이름</Label>
+                <Label className="text-sm font-medium">성</Label>
                 <Input
                   placeholder="홍"
-                  value={formData.firstName || ''}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  value={formData.lastName || ''}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
               <div>
-                <Label>성</Label>
+                <Label className="text-sm font-medium">이름</Label>
                 <Input
                   placeholder="길동"
-                  value={formData.lastName || ''}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  value={formData.firstName || ''}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
             </div>
             <div>
-              <Label>회사</Label>
+              <Label className="text-sm font-medium">회사</Label>
               <Input
                 placeholder="회사명"
                 value={formData.organization || ''}
                 onChange={(e) => handleInputChange('organization', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>직함</Label>
+              <Label className="text-sm font-medium">직함</Label>
               <Input
                 placeholder="대표이사"
                 value={formData.title || ''}
                 onChange={(e) => handleInputChange('title', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
-            <div>
-              <Label>전화번호</Label>
-              <Input
-                placeholder="010-1234-5678"
-                value={formData.phone || ''}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">전화번호</Label>
+                <Input
+                  placeholder="010-1234-5678"
+                  value={formData.phone || ''}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">이메일</Label>
+                <Input
+                  placeholder="email@example.com"
+                  value={formData.email || ''}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
+                />
+              </div>
             </div>
             <div>
-              <Label>이메일</Label>
-              <Input
-                placeholder="email@example.com"
-                value={formData.email || ''}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>웹사이트</Label>
+              <Label className="text-sm font-medium">웹사이트</Label>
               <Input
                 placeholder="https://example.com"
                 value={formData.website || ''}
                 onChange={(e) => handleInputChange('website', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'wifi':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>네트워크 이름 (SSID)</Label>
+              <Label className="text-sm font-medium">네트워크 이름 (SSID)</Label>
               <Input
                 placeholder="MyWiFi"
                 value={formData.ssid || ''}
                 onChange={(e) => handleInputChange('ssid', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>비밀번호</Label>
+              <Label className="text-sm font-medium">비밀번호</Label>
               <Input
                 type="password"
                 placeholder="WiFi 비밀번호"
                 value={formData.password || ''}
                 onChange={(e) => handleInputChange('password', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>암호화 방식</Label>
+              <Label className="text-sm font-medium">암호화 방식</Label>
               <Select
                 value={formData.encryption || 'WPA'}
                 onValueChange={(value) => handleInputChange('encryption', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={cn("mt-1.5", inputClass)}>
                   <SelectValue placeholder="암호화 방식 선택" />
                 </SelectTrigger>
                 <SelectContent>
@@ -242,153 +293,188 @@ export default function QRCodeGeneratorPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'email':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>이메일 주소</Label>
+              <Label className="text-sm font-medium">이메일 주소</Label>
               <Input
                 placeholder="email@example.com"
                 value={formData.email || ''}
                 onChange={(e) => handleInputChange('email', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>제목</Label>
+              <Label className="text-sm font-medium">제목</Label>
               <Input
                 placeholder="이메일 제목"
                 value={formData.subject || ''}
                 onChange={(e) => handleInputChange('subject', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>내용</Label>
+              <Label className="text-sm font-medium">내용</Label>
               <Input
                 placeholder="이메일 내용"
                 value={formData.body || ''}
                 onChange={(e) => handleInputChange('body', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'phone':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>전화번호</Label>
+              <Label className="text-sm font-medium">전화번호</Label>
               <Input
                 placeholder="010-1234-5678"
                 value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
+              <p className="text-xs text-muted-foreground mt-1">스캔하면 바로 전화가 연결됩니다</p>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'sms':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>전화번호</Label>
+              <Label className="text-sm font-medium">전화번호</Label>
               <Input
                 placeholder="010-1234-5678"
                 value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>메시지</Label>
+              <Label className="text-sm font-medium">메시지</Label>
               <Input
                 placeholder="문자 내용"
                 value={formData.message || ''}
                 onChange={(e) => handleInputChange('message', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'location':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>주소</Label>
+              <Label className="text-sm font-medium">주소</Label>
               <Input
                 placeholder="서울시 강남구..."
                 value={formData.address || ''}
                 onChange={(e) => handleInputChange('address', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>위도</Label>
+                <Label className="text-sm font-medium">위도</Label>
                 <Input
                   placeholder="37.5665"
                   value={formData.latitude || ''}
                   onChange={(e) => handleInputChange('latitude', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
               <div>
-                <Label>경도</Label>
+                <Label className="text-sm font-medium">경도</Label>
                 <Input
                   placeholder="126.9780"
                   value={formData.longitude || ''}
                   onChange={(e) => handleInputChange('longitude', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'event':
         return (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <div>
-              <Label>일정 제목</Label>
+              <Label className="text-sm font-medium">일정 제목</Label>
               <Input
                 placeholder="회의"
                 value={formData.title || ''}
                 onChange={(e) => handleInputChange('title', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>설명</Label>
+              <Label className="text-sm font-medium">설명</Label>
               <Input
                 placeholder="일정 설명"
                 value={formData.description || ''}
                 onChange={(e) => handleInputChange('description', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div>
-              <Label>장소</Label>
+              <Label className="text-sm font-medium">장소</Label>
               <Input
                 placeholder="회의실"
                 value={formData.location || ''}
                 onChange={(e) => handleInputChange('location', e.target.value)}
+                className={cn("mt-1.5", inputClass)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>시작 시간</Label>
+                <Label className="text-sm font-medium">시작 시간</Label>
                 <Input
                   type="datetime-local"
                   value={formData.startDate || ''}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
               <div>
-                <Label>종료 시간</Label>
+                <Label className="text-sm font-medium">종료 시간</Label>
                 <Input
                   type="datetime-local"
                   value={formData.endDate || ''}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
+                  className={cn("mt-1.5", inputClass)}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
         );
 
       default:
@@ -396,326 +482,461 @@ export default function QRCodeGeneratorPage() {
     }
   };
 
+  const selectedTypeInfo = qrTypes.find(t => t.id === selectedType);
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Hero Section */}
-      <div className="mb-10 bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/40 dark:via-purple-950/30 dark:to-fuchsia-950/20 border border-violet-200/50 dark:border-violet-800/30 rounded-3xl overflow-hidden relative">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-violet-200/40 to-purple-200/30 dark:from-violet-600/10 dark:to-purple-600/10 rounded-full blur-[60px]" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-br from-fuchsia-200/40 to-pink-200/30 dark:from-fuchsia-600/10 dark:to-pink-600/10 rounded-full blur-[60px]" />
+    <div className="min-h-screen bg-gradient-to-b from-cyan-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-cyan-950/20 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Premium Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 relative overflow-hidden rounded-3xl"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700" />
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-300/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-8 md:p-10">
-          {/* Text Content */}
-          <div className="flex-1 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-100 dark:bg-violet-900/50 rounded-full text-violet-600 dark:text-violet-300 text-sm mb-4">
-              <Sparkles className="h-3.5 w-3.5" />
-              PLANX-QR
-            </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
-              다기능 QR코드 생성기
-            </h1>
-            <p className="text-muted-foreground text-base md:text-lg max-w-lg">
-              URL, 명함, WiFi, 이메일 등 다양한 QR코드를 쉽고 빠르게 생성하세요
-            </p>
-          </div>
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 p-8 md:p-12">
+            {/* Text Content */}
+            <div className="flex-1 text-center md:text-left text-white">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm mb-4"
+              >
+                <Sparkles className="h-4 w-4" />
+                PLANX-QR Pro
+              </motion.div>
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+              >
+                프리미엄 QR코드
+                <br />
+                <span className="text-cyan-200">생성기</span>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-white/80 text-lg max-w-lg"
+              >
+                URL, 명함, WiFi, 이메일 등 8가지 유형의 QR코드를
+                <br className="hidden md:block" />
+                브랜드 색상으로 커스터마이징하세요
+              </motion.p>
 
-          {/* Image Area - Configurable from admin settings */}
-          <div className="w-full md:w-80 lg:w-96 aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center relative shadow-xl shadow-violet-500/10">
-            {heroImageUrl ? (
-              <>
-                {!heroImageLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center animate-pulse">
-                    <QrCode className="h-16 w-16 text-violet-300 dark:text-violet-600" />
+              {/* Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-wrap justify-center md:justify-start gap-6 mt-6"
+              >
+                {[
+                  { icon: QrCode, label: '8가지 유형' },
+                  { icon: Palette, label: '무제한 색상' },
+                  { icon: Download, label: '고화질 다운로드' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-white/80">
+                    <item.icon className="h-4 w-4" />
+                    <span className="text-sm">{item.label}</span>
                   </div>
-                )}
-                <Image
-                  src={heroImageUrl}
-                  alt="QR Code Generator"
-                  fill
-                  className={`object-cover transition-opacity duration-300 ${
-                    heroImageLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  onLoad={() => setHeroImageLoaded(true)}
-                  sizes="(max-width: 768px) 100vw, 384px"
-                  priority
-                />
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-violet-400 dark:text-violet-500">
-                <ImageIcon className="h-16 w-16 mb-2 opacity-50" />
-                <span className="text-sm opacity-70">히어로 이미지</span>
-                <span className="text-xs opacity-50">관리자 설정에서 추가</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Sub Header */}
-      <div className="text-center mb-8">
-        <Badge className="mb-4 bg-primary/10 text-primary">
-          <QrCode className="mr-1 h-3 w-3" />
-          QR Code Generator
-        </Badge>
-        <h2 className="text-2xl md:text-3xl font-bold mb-4">QR코드 유형 선택</h2>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          생성하고 싶은 QR코드 유형을 선택하세요
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Type Selection */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>QR코드 유형 선택</CardTitle>
-            <CardDescription>생성하고 싶은 QR코드 유형을 선택하세요</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              {qrTypes.map((type) => {
-                const Icon = type.icon;
-                return (
-                  <button
-                    key={type.id}
-                    onClick={() => {
-                      setSelectedType(type.id);
-                      setFormData({});
-                      setGeneratedQR(null);
-                    }}
-                    className={`p-4 rounded-lg border text-center transition-all ${
-                      selectedType === type.id
-                        ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                        : 'border-muted hover:border-primary/50'
-                    }`}
-                  >
-                    <Icon className={`h-6 w-6 mx-auto mb-2 ${
-                      selectedType === type.id ? 'text-primary' : 'text-muted-foreground'
-                    }`} />
-                    <div className="text-sm font-medium">{type.name}</div>
-                    <div className="text-xs text-muted-foreground">{type.description}</div>
-                  </button>
-                );
-              })}
+                ))}
+              </motion.div>
             </div>
 
-            <Tabs defaultValue="content" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="content">
-                  <Settings className="h-4 w-4 mr-2" />
-                  내용 입력
-                </TabsTrigger>
-                <TabsTrigger value="design">
-                  <Palette className="h-4 w-4 mr-2" />
-                  디자인 설정
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="content" className="mt-4">
-                {renderForm()}
-              </TabsContent>
-
-              <TabsContent value="design" className="mt-4 space-y-6">
-                <div>
-                  <Label>QR코드 크기: {options.size}px</Label>
-                  <Slider
-                    value={[options.size]}
-                    onValueChange={([value]) => setOptions(prev => ({ ...prev, size: value }))}
-                    min={100}
-                    max={1000}
-                    step={50}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>QR 색상</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <input
-                        type="color"
-                        value={options.color}
-                        onChange={(e) => setOptions(prev => ({ ...prev, color: e.target.value }))}
-                        className="w-10 h-10 rounded cursor-pointer"
-                      />
-                      <Input
-                        value={options.color}
-                        onChange={(e) => setOptions(prev => ({ ...prev, color: e.target.value }))}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>배경 색상</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <input
-                        type="color"
-                        value={options.backgroundColor}
-                        onChange={(e) => setOptions(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                        className="w-10 h-10 rounded cursor-pointer"
-                      />
-                      <Input
-                        value={options.backgroundColor}
-                        onChange={(e) => setOptions(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>오류 정정 수준</Label>
-                  <Select
-                    value={options.errorCorrectionLevel}
-                    onValueChange={(value) => setOptions(prev => ({
-                      ...prev,
-                      errorCorrectionLevel: value as 'L' | 'M' | 'Q' | 'H'
-                    }))}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="오류 정정 수준 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="L">낮음 (L) - 7% 복구</SelectItem>
-                      <SelectItem value="M">중간 (M) - 15% 복구</SelectItem>
-                      <SelectItem value="Q">높음 (Q) - 25% 복구</SelectItem>
-                      <SelectItem value="H">최고 (H) - 30% 복구</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>여백: {options.margin}</Label>
-                  <Slider
-                    value={[options.margin]}
-                    onValueChange={([value]) => setOptions(prev => ({ ...prev, margin: value }))}
-                    min={0}
-                    max={10}
-                    step={1}
-                    className="mt-2"
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            {error && (
-              <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full mt-6"
-              size="lg"
+            {/* Hero Image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="w-full md:w-80 lg:w-96 aspect-square rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm flex items-center justify-center relative shadow-2xl"
             >
-              {isGenerating ? (
+              {heroImageUrl ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  생성 중...
+                  {!heroImageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                      <QrCode className="h-20 w-20 text-white/30" />
+                    </div>
+                  )}
+                  <Image
+                    src={heroImageUrl}
+                    alt="QR Code Generator"
+                    fill
+                    className={`object-cover transition-opacity duration-300 ${
+                      heroImageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setHeroImageLoaded(true)}
+                    sizes="(max-width: 768px) 100vw, 384px"
+                    priority
+                  />
                 </>
               ) : (
-                <>
-                  <QrCode className="mr-2 h-4 w-4" />
-                  QR코드 생성
-                </>
+                <div className="flex flex-col items-center justify-center text-white/50">
+                  <div className="w-32 h-32 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mb-4">
+                    <QrCode className="h-16 w-16 text-white" />
+                  </div>
+                  <span className="text-sm">스캔하세요</span>
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
+            </motion.div>
+          </div>
+        </motion.div>
 
-        {/* Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>미리보기</CardTitle>
-            <CardDescription>생성된 QR코드를 확인하세요</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            {generatedQR ? (
-              <>
-                <div className="p-4 bg-white rounded-lg shadow-inner border">
-                  <img
-                    src={generatedQR}
-                    alt="Generated QR Code"
-                    className="max-w-full"
-                    style={{ width: Math.min(options.size, 250), height: Math.min(options.size, 250) }}
-                  />
-                </div>
-                <Button
-                  onClick={handleDownload}
-                  className="w-full mt-4"
-                  variant="outline"
+        {/* QR Type Selection - Premium Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">QR코드 유형 선택</h2>
+            <Badge variant="outline" className="text-cyan-600 border-cyan-200">
+              {qrTypes.length}개 유형 지원
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {qrTypes.map((type, index) => {
+              const Icon = type.icon;
+              return (
+                <motion.button
+                  key={type.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  onClick={() => {
+                    setSelectedType(type.id);
+                    setFormData({});
+                    setGeneratedQR(null);
+                  }}
+                  className={cn(
+                    'relative p-4 rounded-2xl border-2 text-left transition-all duration-300 group',
+                    selectedType === type.id
+                      ? 'border-cyan-500 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30 shadow-lg shadow-cyan-500/20'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-cyan-300 hover:shadow-md'
+                  )}
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  다운로드
-                </Button>
-                {!user && (
-                  <p className="text-xs text-muted-foreground mt-4 text-center">
-                    로그인하면 생성한 QR코드를 저장하고 관리할 수 있습니다
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <QrCode className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">QR코드가 여기에 표시됩니다</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  {type.popular && (
+                    <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-2">
+                      인기
+                    </Badge>
+                  )}
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 shadow-lg transition-transform group-hover:scale-110',
+                    type.gradient
+                  )}>
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-sm mb-0.5">{type.name}</div>
+                  <div className="text-xs text-muted-foreground">{type.description}</div>
+                  {selectedType === type.id && (
+                    <motion.div
+                      layoutId="selected-indicator"
+                      className="absolute top-3 right-3"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
 
-      {/* Features Section */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-center mb-8">지원 기능</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold mb-2">연락처 (vCard)</h3>
-              <p className="text-sm text-muted-foreground">
-                스캔하면 핸드폰에 연락처가 자동 저장됩니다
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wifi className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="font-semibold mb-2">WiFi 연결</h3>
-              <p className="text-sm text-muted-foreground">
-                비밀번호 입력 없이 WiFi에 바로 연결됩니다
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-6 w-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold mb-2">이벤트 일정</h3>
-              <p className="text-sm text-muted-foreground">
-                캘린더에 일정이 자동으로 추가됩니다
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Palette className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2">커스터마이징</h3>
-              <p className="text-sm text-muted-foreground">
-                색상, 크기, 오류 정정 수준을 자유롭게 설정
-              </p>
-            </CardContent>
-          </Card>
+        {/* Main Content */}
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* Form Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+            className="lg:col-span-3"
+          >
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3">
+                  {selectedTypeInfo && (
+                    <div className={cn(
+                      'w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg',
+                      selectedTypeInfo.gradient
+                    )}>
+                      <selectedTypeInfo.icon className="h-6 w-6 text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <CardTitle>{selectedTypeInfo?.name} QR코드</CardTitle>
+                    <CardDescription>{selectedTypeInfo?.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                    <TabsTrigger value="content" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600">
+                      <Settings className="h-4 w-4 mr-2" />
+                      내용 입력
+                    </TabsTrigger>
+                    <TabsTrigger value="design" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600">
+                      <Palette className="h-4 w-4 mr-2" />
+                      디자인
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="content" className="mt-0">
+                    <AnimatePresence mode="wait">
+                      {renderForm()}
+                    </AnimatePresence>
+                  </TabsContent>
+
+                  <TabsContent value="design" className="mt-0 space-y-6">
+                    {/* Color Presets */}
+                    <div>
+                      <Label className="text-sm font-medium mb-3 block">프리셋 색상</Label>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {presetColors.map((preset) => (
+                          <button
+                            key={preset.name}
+                            onClick={() => applyPreset(preset)}
+                            className={cn(
+                              'p-3 rounded-xl border-2 transition-all hover:scale-105',
+                              options.color === preset.color && options.backgroundColor === preset.bg
+                                ? 'border-cyan-500 ring-2 ring-cyan-500/20'
+                                : 'border-gray-200 dark:border-gray-700'
+                            )}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg mx-auto mb-1"
+                              style={{ backgroundColor: preset.bg, border: `3px solid ${preset.color}` }}
+                            />
+                            <span className="text-xs">{preset.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom Colors */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">QR 색상</Label>
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="color"
+                            value={options.color}
+                            onChange={(e) => setOptions(prev => ({ ...prev, color: e.target.value }))}
+                            className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-200"
+                          />
+                          <Input
+                            value={options.color}
+                            onChange={(e) => setOptions(prev => ({ ...prev, color: e.target.value }))}
+                            className="flex-1 font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">배경 색상</Label>
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="color"
+                            value={options.backgroundColor}
+                            onChange={(e) => setOptions(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                            className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-200"
+                          />
+                          <Input
+                            value={options.backgroundColor}
+                            onChange={(e) => setOptions(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                            className="flex-1 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Size */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-medium">QR코드 크기</Label>
+                        <span className="text-sm font-mono text-muted-foreground">{options.size}px</span>
+                      </div>
+                      <Slider
+                        value={[options.size]}
+                        onValueChange={([value]) => setOptions(prev => ({ ...prev, size: value }))}
+                        min={100}
+                        max={1000}
+                        step={50}
+                        className="py-2"
+                      />
+                    </div>
+
+                    {/* Error Correction */}
+                    <div>
+                      <Label className="text-sm font-medium">오류 정정 수준</Label>
+                      <Select
+                        value={options.errorCorrectionLevel}
+                        onValueChange={(value) => setOptions(prev => ({
+                          ...prev,
+                          errorCorrectionLevel: value as 'L' | 'M' | 'Q' | 'H'
+                        }))}
+                      >
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="오류 정정 수준 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="L">낮음 (L) - 7% 복구</SelectItem>
+                          <SelectItem value="M">중간 (M) - 15% 복구 ✓ 권장</SelectItem>
+                          <SelectItem value="Q">높음 (Q) - 25% 복구</SelectItem>
+                          <SelectItem value="H">최고 (H) - 30% 복구</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-xl text-sm"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className="w-full mt-6 h-14 text-lg gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-cyan-500/25"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-5 w-5" />
+                      QR코드 생성하기
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Preview Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+            className="lg:col-span-2"
+          >
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-24">
+              <CardHeader>
+                <CardTitle className="text-lg">미리보기</CardTitle>
+                <CardDescription>생성된 QR코드</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center">
+                <AnimatePresence mode="wait">
+                  {generatedQR ? (
+                    <motion.div
+                      key="qr"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="w-full"
+                    >
+                      <div
+                        className="p-6 rounded-2xl shadow-inner mx-auto w-fit"
+                        style={{ backgroundColor: options.backgroundColor }}
+                      >
+                        <img
+                          src={generatedQR}
+                          alt="Generated QR Code"
+                          style={{
+                            width: Math.min(options.size, 220),
+                            height: Math.min(options.size, 220)
+                          }}
+                        />
+                      </div>
+
+                      <div className="mt-6 space-y-3">
+                        <Button
+                          onClick={handleDownload}
+                          className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                        >
+                          <Download className="h-4 w-4" />
+                          PNG 다운로드
+                        </Button>
+
+                        {!user && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            로그인하면 생성 기록을 저장할 수 있습니다
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="w-48 h-48 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl flex items-center justify-center"
+                    >
+                      <div className="text-center text-muted-foreground">
+                        <QrCode className="h-16 w-16 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">QR코드가 여기에</p>
+                        <p className="text-sm">표시됩니다</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
+
+        {/* Features Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mt-12"
+        >
+          <h2 className="text-2xl font-bold text-center mb-8">PLANX-QR 특징</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Zap, title: '즉시 생성', desc: '클릭 한 번으로 바로 QR코드 생성', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+              { icon: Palette, title: '무제한 커스텀', desc: '브랜드 색상으로 자유롭게 디자인', color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+              { icon: Shield, title: '오류 복구', desc: '최대 30%까지 오류 복구 지원', color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
+              { icon: Share2, title: '다양한 유형', desc: '8가지 유형 QR코드 지원', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 + i * 0.1 }}
+              >
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                  <CardContent className="p-6 text-center">
+                    <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4', item.bg)}>
+                      <item.icon className={cn('h-7 w-7', item.color)} />
+                    </div>
+                    <h3 className="font-semibold mb-2">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </div>
   );
