@@ -687,10 +687,14 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
     });
   }
 
-  // ========== 7. 직업/환경 (중복 번호 수정, 압축) ==========
+  // ========== 7. 직업/환경 (십신 기반 추천으로 PDF와 일치) ==========
+  // 십신 분석으로 직업 추천 (PDF와 동일한 데이터 소스 사용)
+  const sipsinChart = analyzeSipsin(saju);
+  const sipsinInterp = interpretSipsinChart(sipsinChart);
+
   sections.push({
     title: '환경 분석',
-    content: `직업/환경입니다. 빛나는 곳: ${compatibility.shineIn}. ` +
+    content: `직업/환경입니다. ${sipsinInterp.career}. ` +
              `피할 곳: ${compatibility.avoidEnvironment.slice(0, 50)} ` +
              `주의: ${compatibility.warningSign.slice(0, 50)}`,
     pauseAfter: 2000
@@ -722,9 +726,7 @@ export function generateNarrationScript(options: AudioGeneratorOptions): Narrati
 
   // ========== 10. 정통사주 분석 (십신, 신살, 대운) ==========
   try {
-    // 십신 분석
-    const sipsinChart = analyzeSipsin(saju);
-    const sipsinInterp = interpretSipsinChart(sipsinChart);
+    // sipsinChart, sipsinInterp는 위 직업/환경 섹션에서 이미 분석됨
 
     // 우세 십신 스토리텔링
     if (sipsinInterp.dominant.length > 0) {
