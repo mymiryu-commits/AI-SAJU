@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
-import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings, LogOut, Crown, Sparkles } from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Sun, Moon, User, Settings, LogOut, Crown, Sparkles, Heart, Users, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,10 +21,23 @@ import { Badge } from '@/components/ui/badge';
 // 간소화된 메인 네비게이션 링크
 const navLinks = [
   { href: '/ranking', key: 'ranking', icon: '📊' },
-  { href: '/saju', key: 'saju', icon: '🔮' },
   { href: '/tools/qrcode', key: 'qr', icon: '📱' },
   { href: '/pricing', key: 'pricing', icon: '💎' },
 ] as const;
+
+// 사주 서브메뉴 (프리미엄 드롭다운)
+const fortuneSubMenu: {
+  href: string;
+  label: string;
+  icon: typeof Compass;
+  description: string;
+  gradient: string;
+  badge?: 'NEW' | 'HOT';
+}[] = [
+  { href: '/saju', label: '사주 분석', icon: Compass, description: '나의 운명 분석', gradient: 'from-amber-500 to-orange-500' },
+  { href: '/fortune/compatibility', label: '궁합 분석', icon: Heart, description: '두 사람의 인연', gradient: 'from-pink-500 to-rose-500', badge: 'HOT' },
+  { href: '/fortune/group', label: '그룹 분석', icon: Users, description: '2~5인 팀 케미', gradient: 'from-violet-500 to-purple-500', badge: 'NEW' },
+];
 
 const languages = [
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
@@ -103,7 +116,76 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-1">
-          {navLinks.map((link) => (
+          {/* 일반 링크 - 랭킹 */}
+          <Link
+            href="/ranking"
+            className={cn(
+              'px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300',
+              pathname === '/ranking'
+                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
+                : 'text-muted-foreground hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
+            )}
+          >
+            <span className="mr-1.5">📊</span>
+            {t('ranking')}
+          </Link>
+
+          {/* 사주/운세 드롭다운 메뉴 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 flex items-center gap-1',
+                  pathname.startsWith('/saju') || pathname.startsWith('/fortune')
+                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-300 shadow-sm'
+                    : 'text-muted-foreground hover:bg-gradient-to-r hover:from-amber-100/80 hover:to-orange-100/80 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:text-amber-700 dark:hover:text-amber-300'
+                )}
+              >
+                <span className="mr-1">🔮</span>
+                {t('saju')}
+                <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-72 p-2">
+              <div className="px-2 py-1.5 mb-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">운세 & 궁합</p>
+              </div>
+              {fortuneSubMenu.map((item) => (
+                <DropdownMenuItem key={item.href} asChild className="p-0 focus:bg-transparent">
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-750 transition-all group"
+                  >
+                    <div className={cn(
+                      'w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg',
+                      item.gradient
+                    )}>
+                      <item.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          {item.label}
+                        </span>
+                        {item.badge && (
+                          <Badge className={cn(
+                            'text-[10px] px-1.5 py-0',
+                            item.badge === 'NEW' ? 'bg-violet-500' : 'bg-rose-500'
+                          )}>
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{item.description}</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* 나머지 링크들 */}
+          {navLinks.filter(link => link.key !== 'ranking').map((link) => (
             <Link
               key={link.key}
               href={link.href}
@@ -277,7 +359,64 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t bg-background animate-fade-in">
           <div className="container mx-auto px-4 py-4 space-y-2">
-            {navLinks.map((link) => (
+            {/* 랭킹 */}
+            <Link
+              href="/ranking"
+              className={cn(
+                'flex items-center gap-2 py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300',
+                pathname === '/ranking'
+                  ? 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-700 dark:text-amber-300'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200'
+              )}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span>📊</span>
+              {t('ranking')}
+            </Link>
+
+            {/* 운세/궁합 섹션 */}
+            <div className="pt-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">🔮 운세 & 궁합</p>
+              <div className="space-y-1.5">
+                {fortuneSubMenu.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-300',
+                      pathname === item.href
+                        ? 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40'
+                        : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className={cn(
+                      'w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md',
+                      item.gradient
+                    )}>
+                      <item.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{item.label}</span>
+                        {item.badge && (
+                          <Badge className={cn(
+                            'text-[10px] px-1.5 py-0',
+                            item.badge === 'NEW' ? 'bg-violet-500' : 'bg-rose-500'
+                          )}>
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{item.description}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 나머지 링크들 */}
+            {navLinks.filter(link => link.key !== 'ranking').map((link) => (
               <Link
                 key={link.key}
                 href={link.href}
