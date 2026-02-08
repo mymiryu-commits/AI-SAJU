@@ -758,6 +758,50 @@ export interface Database {
           updated_at?: string
         }
       }
+      admin_schedules: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          link_url: string | null
+          link_label: string | null
+          is_completed: boolean
+          priority: number
+          due_date: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          link_url?: string | null
+          link_label?: string | null
+          is_completed?: boolean
+          priority?: number
+          due_date?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          link_url?: string | null
+          link_label?: string | null
+          is_completed?: boolean
+          priority?: number
+          due_date?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+      }
     }
     Views: {
       lotto_total_stats: {
