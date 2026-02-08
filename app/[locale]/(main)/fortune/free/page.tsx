@@ -38,30 +38,17 @@ function generateDailyFortune(date: Date) {
     career: random(60, 95),
     health: random(55, 90),
     luckyTime: `${random(6, 18)}:00`,
-    luckyColor: ['Purple', 'Blue', 'Green', 'Red', 'Yellow', 'Orange'][random(0, 5)],
+    luckyColorKey: ['Purple', 'Blue', 'Green', 'Red', 'Yellow', 'Orange'][random(0, 5)] as string,
     luckyNumber: random(1, 99),
-    advice: [
-      'Today is a great day for new beginnings. Trust your instincts.',
-      'Focus on relationships today. Good communication brings opportunities.',
-      'Financial decisions made today will have lasting impacts.',
-      'Take time for self-care. Your health is your wealth.',
-      'Creative pursuits will bring unexpected rewards today.',
-      'Be patient with others. Kindness will be repaid tenfold.',
-    ][random(0, 5)],
-    caution: [
-      'Avoid impulsive purchases in the afternoon.',
-      'Be careful with words around 3 PM.',
-      'Double-check important documents before signing.',
-      'Take breaks to avoid burnout.',
-      'Watch your diet, especially sweets.',
-      'Don\'t rush important decisions.',
-    ][random(0, 5)],
+    adviceIndex: random(0, 5),
+    cautionIndex: random(0, 5),
   };
 }
 
 export default function FreeFortunePage() {
   const t = useTranslations('fortune');
   const tDaily = useTranslations('fortune.daily');
+  const tCommon = useTranslations('common');
   const [fortune, setFortune] = useState<ReturnType<typeof generateDailyFortune> | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -103,7 +90,7 @@ export default function FreeFortunePage() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <Sparkles className="h-12 w-12 animate-spin mx-auto text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading your fortune...</p>
+        <p className="mt-4 text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -115,6 +102,19 @@ export default function FreeFortunePage() {
     { key: 'career', icon: Briefcase, score: fortune.career, color: 'text-blue-500' },
     { key: 'health', icon: Activity, score: fortune.health, color: 'text-green-500' },
   ];
+
+  // Get translated color name
+  const luckyColorTranslated = tDaily(`colors.${fortune.luckyColorKey}` as 'colors.Purple');
+
+  // Get color hex for display
+  const colorMap: Record<string, string> = {
+    Purple: '#9333ea',
+    Blue: '#3b82f6',
+    Green: '#22c55e',
+    Red: '#ef4444',
+    Yellow: '#eab308',
+    Orange: '#f97316',
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -142,14 +142,14 @@ export default function FreeFortunePage() {
                 <h2 className="text-xl font-bold mb-1">{tDaily('checkin')}</h2>
                 <p className="text-white/80">
                   {checkedIn
-                    ? `${tDaily('streakDays', { count: streak })}`
-                    : 'Check in to start your streak!'}
+                    ? tDaily('streakDays', { count: streak })
+                    : tDaily('streakStart')}
                 </p>
               </div>
               {checkedIn ? (
                 <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
                   <CheckCircle className="h-5 w-5" />
-                  <span>Checked In</span>
+                  <span>{tDaily('checkedIn')}</span>
                 </div>
               ) : (
                 <Button
@@ -157,7 +157,7 @@ export default function FreeFortunePage() {
                   className="bg-white text-purple-600 hover:bg-white/90"
                 >
                   <Gift className="mr-2 h-4 w-4" />
-                  Check In
+                  {tDaily('checkInBtn')}
                 </Button>
               )}
             </div>
@@ -172,7 +172,7 @@ export default function FreeFortunePage() {
                 />
               ))}
             </div>
-            <p className="text-xs text-white/60 mt-2">7 day streak for bonus rewards!</p>
+            <p className="text-xs text-white/60 mt-2">{tDaily('streakBonus')}</p>
           </div>
         </Card>
 
@@ -200,14 +200,14 @@ export default function FreeFortunePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sun className="h-5 w-5 text-yellow-500" />
-              Today&apos;s Message
+              {tDaily('todayMessage')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-lg">{fortune.advice}</p>
+            <p className="text-lg">{tDaily(`advices.${fortune.adviceIndex}` as 'advices.0')}</p>
             <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
               <p className="text-amber-800 dark:text-amber-200 text-sm">
-                <strong>Caution:</strong> {fortune.caution}
+                <strong>{tDaily('caution')}:</strong> {tDaily(`cautions.${fortune.cautionIndex}` as 'cautions.0')}
               </p>
             </div>
           </CardContent>
@@ -228,25 +228,12 @@ export default function FreeFortunePage() {
             <CardContent className="p-6 text-center">
               <div
                 className="w-8 h-8 rounded-full mx-auto mb-2"
-                style={{
-                  backgroundColor:
-                    fortune.luckyColor === 'Purple'
-                      ? '#9333ea'
-                      : fortune.luckyColor === 'Blue'
-                      ? '#3b82f6'
-                      : fortune.luckyColor === 'Green'
-                      ? '#22c55e'
-                      : fortune.luckyColor === 'Red'
-                      ? '#ef4444'
-                      : fortune.luckyColor === 'Yellow'
-                      ? '#eab308'
-                      : '#f97316',
-                }}
+                style={{ backgroundColor: colorMap[fortune.luckyColorKey] }}
               />
               <div className="text-sm text-muted-foreground mb-1">
                 {tDaily('luckyItems.color')}
               </div>
-              <div className="text-xl font-bold">{fortune.luckyColor}</div>
+              <div className="text-xl font-bold">{luckyColorTranslated}</div>
             </CardContent>
           </Card>
           <Card>
@@ -264,21 +251,20 @@ export default function FreeFortunePage() {
         <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="p-8 text-center">
             <Moon className="h-12 w-12 mx-auto mb-4 text-purple-500" />
-            <h3 className="text-xl font-bold mb-2">Want a Deeper Analysis?</h3>
+            <h3 className="text-xl font-bold mb-2">{tDaily('deeperAnalysis.title')}</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Get a comprehensive reading with our premium Four Pillars (Saju) analysis.
-              Understand your destiny in detail.
+              {tDaily('deeperAnalysis.description')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/fortune/saju">
                 <Button size="lg">
-                  Free Saju Analysis
+                  {tDaily('deeperAnalysis.freeSaju')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/pricing">
                 <Button size="lg" variant="outline">
-                  View Premium Plans
+                  {tDaily('deeperAnalysis.viewPlans')}
                 </Button>
               </Link>
             </div>

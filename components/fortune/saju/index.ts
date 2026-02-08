@@ -4,5 +4,6 @@
 
 export { default as SajuInputForm } from './SajuInputForm';
 export { default as SajuResultCard } from './SajuResultCard';
-export { default as PaywallModal, ExitIntentPopup } from './PaywallModal';
+export { default as PaywallModal, NoVoucherPopup } from './PaywallModal';
 export { default as DownloadButtons } from './DownloadButtons';
+export { default as PremiumResultDisplay } from './PremiumResultDisplay';
