@@ -74,16 +74,26 @@ interface VoucherSummary {
   };
 }
 
-const serviceTypeConfig: Record<string, { icon: typeof Sparkles; label: string; color: string }> = {
+const serviceTypeConfig: Record<string, {
+  icon: typeof Sparkles;
+  label: string;
+  color: string;
+  description: string;
+  features: string[];
+}> = {
   saju: {
     icon: Sparkles,
     label: '사주 완전분석',
     color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30',
+    description: '정통 사주팔자와 AI 기술이 만난 프리미엄 사주 분석 서비스',
+    features: ['오행 분석', '2026년 운세', '월별 운세', '성격 분석'],
   },
   qrcode: {
     icon: QrCode,
     label: 'QR코드 생성',
     color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
+    description: '고품질 QR코드를 무제한 생성할 수 있는 이용권',
+    features: ['8가지 QR 타입', '색상 커스터마이징', 'PNG 다운로드', '고해상도 지원'],
   },
 };
 
@@ -172,13 +182,18 @@ function VouchersPageContent() {
 
       // 토스페이먼츠 결제창 호출 (실제 구현에서는 토스 SDK 사용)
       if (data.toss) {
-        // 토스페이먼츠 결제 URL로 리다이렉트
+        // 토스페이먼츠 결제 URL로 리다이렉트 - 토스페이먼츠 심사용 상세정보 포함
         const tossParams = new URLSearchParams({
           orderId: data.toss.orderId,
           orderName: data.toss.orderName,
           amount: data.toss.amount.toString(),
           successUrl: data.toss.successUrl,
           failUrl: data.toss.failUrl,
+          // 토스페이먼츠 심사용 추가 정보
+          serviceType: pkg.service_type,
+          quantity: pkg.quantity.toString(),
+          regularPrice: pkg.regular_price.toString(),
+          description: pkg.description,
         });
 
         // 토스페이먼츠 결제 위젯이 있는 페이지로 이동
@@ -442,7 +457,7 @@ function VouchersPageContent() {
                     >
                       {/* 할인 라벨 */}
                       {pkg.discount_label && !pkg.is_sold_out && (
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-3 right-3 z-10">
                           <Badge className="bg-red-500 text-white">
                             {pkg.discount_label}
                           </Badge>
@@ -458,18 +473,30 @@ function VouchersPageContent() {
                         </div>
                       )}
 
+                      {/* 상품 이미지/아이콘 영역 - 토스페이먼츠 심사 필수 */}
+                      <div className={`h-32 flex items-center justify-center ${config.color}`}>
+                        <Icon className="h-16 w-16" />
+                      </div>
+
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">{pkg.name}</CardTitle>
-                        <CardDescription>{pkg.description}</CardDescription>
+                        <CardDescription className="line-clamp-2">{pkg.description}</CardDescription>
                       </CardHeader>
 
                       <CardContent>
                         <div className="space-y-3">
-                          {/* 가격 */}
-                          <div>
+                          {/* 수량 정보 */}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="font-medium">
+                              {pkg.quantity}회 이용권
+                            </Badge>
+                          </div>
+
+                          {/* 가격 - 토스페이먼츠 심사 필수 */}
+                          <div className="p-3 bg-muted/50 rounded-lg">
                             {pkg.regular_price !== pkg.sale_price && (
                               <p className="text-sm text-muted-foreground line-through">
-                                {formatPrice(pkg.regular_price)}원
+                                정가 {formatPrice(pkg.regular_price)}원
                               </p>
                             )}
                             <p className="text-2xl font-bold text-primary">
@@ -490,7 +517,7 @@ function VouchersPageContent() {
 
                           {/* 유효기간 */}
                           <p className="text-xs text-muted-foreground">
-                            유효기간: 구매일로부터 {pkg.validity_days}일
+                            유효기간: 구매일로부터 {pkg.validity_days}일 (약 {Math.round(pkg.validity_days / 30)}개월)
                           </p>
 
                           {/* 구매 버튼 */}
@@ -509,7 +536,7 @@ function VouchersPageContent() {
                             ) : (
                               <>
                                 <ShoppingCart className="mr-2 h-4 w-4" />
-                                구매하기
+                                {formatPrice(pkg.sale_price)}원 구매하기
                               </>
                             )}
                           </Button>
@@ -531,6 +558,26 @@ function VouchersPageContent() {
                   <p>• 이용권은 구매일로부터 1년간 유효합니다.</p>
                   <p>• 사용한 이용권은 환불이 제한될 수 있습니다. 자세한 내용은 <Link href="/legal/refund" className="text-primary underline">환불 정책</Link>을 확인해주세요.</p>
                   <p>• 결제 관련 문의: mymiryu@gmail.com</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 판매자 정보 - 토스페이먼츠 심사 필수 */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-medium mb-3">판매자 정보</h4>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p><strong>상호:</strong> 플랜엑스솔루션 주식회사</p>
+                <p><strong>대표:</strong> 김형석</p>
+                <p><strong>사업자등록번호:</strong> 786-87-03494</p>
+                <p><strong>주소:</strong> 강원특별자치도 춘천시 춘천순환로 108, 501호</p>
+                <p><strong>고객센터:</strong> 1588-5617 (평일 09:00~18:00)</p>
+                <p><strong>이메일:</strong> mymiryu@gmail.com</p>
+                <div className="pt-2 mt-2 border-t flex gap-4">
+                  <Link href="/legal/terms" className="text-primary hover:underline">이용약관</Link>
+                  <Link href="/legal/privacy" className="text-primary hover:underline">개인정보처리방침</Link>
+                  <Link href="/legal/refund" className="text-primary hover:underline">환불정책</Link>
                 </div>
               </div>
             </CardContent>

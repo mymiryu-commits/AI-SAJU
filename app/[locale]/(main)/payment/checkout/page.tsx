@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CreditCard, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, CreditCard, AlertCircle, ArrowLeft, Sparkles, QrCode, Shield, CheckCircle2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 declare global {
@@ -29,6 +32,30 @@ declare global {
   }
 }
 
+// 서비스 타입별 기본 정보
+const serviceTypeConfig: Record<string, {
+  icon: typeof Sparkles;
+  label: string;
+  image: string;
+  color: string;
+  description: string;
+}> = {
+  saju: {
+    icon: Sparkles,
+    label: '사주 완전분석 이용권',
+    image: '/images/products/saju-voucher.png',
+    color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30',
+    description: '정통 사주팔자와 AI 기술이 만난 프리미엄 사주 분석 서비스입니다. 오행 분석, 2026년 운세, 월별 상세 운세를 제공합니다.',
+  },
+  qrcode: {
+    icon: QrCode,
+    label: 'QR코드 생성 이용권',
+    image: '/images/products/qrcode-voucher.png',
+    color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
+    description: '고품질 QR코드를 무제한으로 생성할 수 있는 이용권입니다. URL, 명함, WiFi, 이메일 등 8가지 QR 타입을 지원합니다.',
+  },
+};
+
 function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -42,6 +69,10 @@ function CheckoutPageContent() {
   const amount = searchParams.get('amount');
   const successUrl = searchParams.get('successUrl');
   const failUrl = searchParams.get('failUrl');
+  const serviceType = searchParams.get('serviceType') || 'saju';
+  const quantity = searchParams.get('quantity');
+  const regularPrice = searchParams.get('regularPrice');
+  const description = searchParams.get('description');
 
   useEffect(() => {
     // 필수 파라미터 검증
@@ -126,6 +157,12 @@ function CheckoutPageContent() {
     );
   }
 
+  // 서비스 타입 설정
+  const config = serviceTypeConfig[serviceType] || serviceTypeConfig.saju;
+  const Icon = config.icon;
+  const productDescription = description ? decodeURIComponent(description) : config.description;
+  const hasDiscount = regularPrice && parseInt(regularPrice) > parseInt(amount || '0');
+
   return (
     <>
       <Script
@@ -134,32 +171,102 @@ function CheckoutPageContent() {
         strategy="afterInteractive"
       />
 
-      <div className="container mx-auto px-4 py-8 max-w-lg">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               결제하기
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* 주문 정보 */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b">
-                <span className="text-muted-foreground">상품명</span>
-                <span className="font-medium">{decodeURIComponent(orderName || '')}</span>
+            {/* 상품 정보 - 토스페이먼츠 심사 필수: 상품명, 이미지, 상세설명, 금액 */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <div className="flex gap-4">
+                {/* 상품 이미지 */}
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  <div className={`absolute inset-0 flex items-center justify-center ${config.color}`}>
+                    <Icon className="h-12 w-12" />
+                  </div>
+                </div>
+
+                {/* 상품 정보 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-lg">
+                        {decodeURIComponent(orderName || '')}
+                      </h3>
+                      {quantity && (
+                        <Badge variant="secondary" className="mt-1">
+                          {quantity}회 이용권
+                        </Badge>
+                      )}
+                    </div>
+                    {hasDiscount && (
+                      <Badge className="bg-red-500 text-white">
+                        할인
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* 상세설명 */}
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                    {productDescription}
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between items-center py-3 border-b">
+
+              {/* 서비스 특징 */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>구매 후 즉시 사용</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>1년간 유효</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* 주문 정보 상세 */}
+            <div className="space-y-3">
+              <h4 className="font-medium">주문 정보</h4>
+
+              <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">주문번호</span>
                 <span className="text-sm font-mono">{orderId}</span>
               </div>
-              <div className="flex justify-between items-center py-3">
-                <span className="text-muted-foreground">결제금액</span>
+
+              {hasDiscount && (
+                <>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">정가</span>
+                    <span className="text-muted-foreground line-through">
+                      {formatPrice(regularPrice)}원
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">할인</span>
+                    <span className="text-red-500">
+                      -{formatPrice(String(parseInt(regularPrice!) - parseInt(amount!)))}원
+                    </span>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-between items-center py-3 border-t">
+                <span className="font-medium">최종 결제금액</span>
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(amount)}원
                 </span>
               </div>
             </div>
+
+            <Separator />
 
             {/* 결제 버튼 */}
             <Button
@@ -189,11 +296,26 @@ function CheckoutPageContent() {
               </Link>
             </div>
 
-            {/* 안내 문구 */}
-            <div className="text-xs text-muted-foreground space-y-1 pt-4 border-t">
-              <p>• 결제는 토스페이먼츠를 통해 안전하게 처리됩니다.</p>
-              <p>• 결제 완료 후 이용권이 즉시 충전됩니다.</p>
-              <p>• 환불 정책은 <Link href="/legal/refund" className="underline">환불 정책</Link>을 참고해주세요.</p>
+            {/* 보안 및 안내 문구 */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Shield className="h-4 w-4 text-green-600" />
+                <span className="font-medium">안전한 결제</span>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• 결제는 토스페이먼츠를 통해 안전하게 처리됩니다.</p>
+                <p>• 결제 완료 후 이용권이 즉시 충전됩니다.</p>
+                <p>• 환불 정책은 <Link href="/legal/refund" className="underline hover:text-primary">환불 정책</Link>을 참고해주세요.</p>
+              </div>
+            </div>
+
+            {/* 판매자 정보 - 토스페이먼츠 심사 필수 */}
+            <div className="text-xs text-muted-foreground border-t pt-4 space-y-1">
+              <p><strong>판매자:</strong> 플랜엑스솔루션 주식회사</p>
+              <p><strong>사업자등록번호:</strong> 786-87-03494</p>
+              <p><strong>대표:</strong> 김형석</p>
+              <p><strong>주소:</strong> 강원특별자치도 춘천시 춘천순환로 108, 501호</p>
+              <p><strong>고객센터:</strong> 1588-5617 | mymiryu@gmail.com</p>
             </div>
           </CardContent>
         </Card>
