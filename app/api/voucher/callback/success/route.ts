@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 토스페이먼츠 결제 승인 요청
-    const secretKey = process.env.TOSS_PAYMENTS_SECRET_KEY;
+    const secretKey = process.env.TOSS_SECRET_KEY;
     if (!secretKey) {
-      console.error('TOSS_PAYMENTS_SECRET_KEY not configured');
+      console.error('TOSS_SECRET_KEY not configured');
       return NextResponse.redirect(`${redirectBase}/my/vouchers?error=config_error`);
     }
 
