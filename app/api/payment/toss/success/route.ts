@@ -5,6 +5,24 @@ import { createServiceClient } from '@/lib/supabase/server';
 // 추천 보상 상수
 const REFERRAL_REWARD_POINTS = 300;  // 추천인 기본 보상
 
+// 포인트 패키지별 지급 포인트 (pricing.ts와 동기화)
+const POINT_PACKAGE_MAP: Record<string, { points: number; bonus: number }> = {
+  point_starter:  { points: 500,   bonus: 0 },
+  point_basic:    { points: 1000,  bonus: 100 },
+  point_standard: { points: 3000,  bonus: 600 },
+  point_premium:  { points: 5000,  bonus: 1500 },
+  point_vip:      { points: 10000, bonus: 5000 },
+};
+
+// 통화에서 로케일 추출
+function getLocaleFromCurrency(currency: string): string {
+  switch (currency) {
+    case 'krw': return 'ko';
+    case 'jpy': return 'ja';
+    default: return 'en';
+  }
+}
+
 /**
  * 추천 보상 처리
  * 사용자의 결제 완료 시 추천인에게 커미션 지급
@@ -114,7 +132,129 @@ async function processReferralReward(supabase: any, userId: string, purchaseAmou
   }
 }
 
+/**
+ * 결제 완료 후 상품별 후처리
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function processPaymentByType(serviceClient: any, userId: string, payment: any) {
+  const { type, reference_id, amount, currency } = payment;
+
+  switch (type) {
+    case 'point': {
+      // 포인트 패키지 충전
+      const packageInfo = POINT_PACKAGE_MAP[reference_id];
+      if (!packageInfo) {
+        console.error(`[Payment] Unknown point package: ${reference_id}`);
+        return;
+      }
+
+      const totalPoints = packageInfo.points + packageInfo.bonus;
+      console.log(`[Payment] Crediting ${totalPoints}P (base: ${packageInfo.points}, bonus: ${packageInfo.bonus}) to user ${userId}`);
+
+      // 현재 잔액 조회
+      const { data: userData } = await serviceClient
+        .from('users')
+        .select('coin_balance')
+        .eq('id', userId)
+        .single();
+
+      const currentBalance = userData?.coin_balance || 0;
+      const newBalance = currentBalance + totalPoints;
+
+      // 잔액 업데이트
+      await serviceClient
+        .from('users')
+        .update({ coin_balance: newBalance })
+        .eq('id', userId);
+
+      // 거래 기록
+      await serviceClient.from('coin_transactions').insert({
+        user_id: userId,
+        type: 'charge',
+        amount: totalPoints,
+        balance_after: newBalance,
+        description: `포인트 충전: ${packageInfo.points}P + 보너스 ${packageInfo.bonus}P`,
+        reference_type: 'payment',
+        reference_id: payment.id,
+      });
+
+      console.log(`[Payment] Points credited. Balance: ${currentBalance} → ${newBalance}`);
+      break;
+    }
+
+    case 'subscription': {
+      // 구독 생성/갱신
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      await serviceClient
+        .from('subscriptions')
+        .upsert({
+          user_id: userId,
+          plan: reference_id,
+          status: 'active',
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          price: amount,
+          currency,
+          payment_provider: 'toss',
+        }, { onConflict: 'user_id' });
+
+      // 사용자 멤버십 업데이트
+      const tier = reference_id.replace('sub_', '');
+      await serviceClient
+        .from('users')
+        .update({
+          membership_tier: tier,
+          membership_expires_at: expiresAt.toISOString(),
+        })
+        .eq('id', userId);
+
+      console.log(`[Payment] Subscription activated: ${tier} until ${expiresAt.toISOString()}`);
+      break;
+    }
+
+    case 'analysis': {
+      // 분석 상품은 결제 완료 기록만 (분석 생성은 클라이언트에서)
+      console.log(`[Payment] Analysis payment completed: ${reference_id}`);
+      break;
+    }
+
+    case 'addon': {
+      // 부가 상품 (PDF, 음성 등) - 결제 완료 기록
+      console.log(`[Payment] Addon payment completed: ${reference_id}`);
+      break;
+    }
+
+    case 'qr': {
+      // QR 코드 플랜 활성화
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      await serviceClient
+        .from('subscriptions')
+        .upsert({
+          user_id: userId,
+          plan: reference_id,
+          status: 'active',
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          price: amount,
+          currency,
+          payment_provider: 'toss',
+        }, { onConflict: 'user_id' });
+
+      console.log(`[Payment] QR plan activated: ${reference_id}`);
+      break;
+    }
+
+    default:
+      console.warn(`[Payment] Unknown payment type: ${type}`);
+  }
+}
+
 export async function GET(request: NextRequest) {
+  const redirectBase = process.env.NEXT_PUBLIC_SITE_URL || '';
   const { searchParams } = new URL(request.url);
   const paymentKey = searchParams.get('paymentKey');
   const orderId = searchParams.get('orderId');
@@ -123,7 +263,7 @@ export async function GET(request: NextRequest) {
   // 기본 파라미터 검증
   if (!paymentKey || !orderId || !urlAmount) {
     return NextResponse.redirect(
-      new URL('/payment/fail?error=missing_params', request.url)
+      `${redirectBase}/ko/payment/fail?error=missing_params`
     );
   }
 
@@ -131,7 +271,7 @@ export async function GET(request: NextRequest) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(orderId)) {
     return NextResponse.redirect(
-      new URL('/payment/fail?error=invalid_order_id', request.url)
+      `${redirectBase}/ko/payment/fail?error=invalid_order_id`
     );
   }
 
@@ -139,7 +279,7 @@ export async function GET(request: NextRequest) {
   const parsedUrlAmount = parseInt(urlAmount);
   if (isNaN(parsedUrlAmount) || parsedUrlAmount <= 0) {
     return NextResponse.redirect(
-      new URL('/payment/fail?error=invalid_amount', request.url)
+      `${redirectBase}/ko/payment/fail?error=invalid_amount`
     );
   }
 
@@ -150,7 +290,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.redirect(
-        new URL('/login?redirect=/my/dashboard', request.url)
+        `${redirectBase}/ko/login?redirect=/my/dashboard`
       );
     }
 
@@ -168,37 +308,37 @@ export async function GET(request: NextRequest) {
     if (paymentError || !payment) {
       console.error('Payment not found or not owned by user:', paymentError);
       return NextResponse.redirect(
-        new URL('/payment/fail?error=payment_not_found', request.url)
+        `${redirectBase}/ko/payment/fail?error=payment_not_found`
       );
     }
 
-    // 2. 금액 검증: URL 금액과 DB 금액 비교
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbAmount = (payment as any).amount;
+    const paymentData = payment as any;
+    const locale = getLocaleFromCurrency(paymentData.currency || 'krw');
+
+    // 2. 금액 검증: URL 금액과 DB 금액 비교
+    const dbAmount = paymentData.amount;
     if (dbAmount !== parsedUrlAmount) {
       console.error(`Amount mismatch: URL=${parsedUrlAmount}, DB=${dbAmount}`);
       return NextResponse.redirect(
-        new URL('/payment/fail?error=amount_mismatch', request.url)
+        `${redirectBase}/${locale}/payment/fail?error=amount_mismatch`
       );
     }
 
-    // ============ 토스 결제 확인 ============
+    // ============ 토스 결제 승인 (Confirm) ============
     const secretKey = process.env.TOSS_SECRET_KEY;
 
-    // 프로덕션 환경에서는 반드시 토스 결제 확인 필요
     if (!secretKey) {
       // Demo/개발 모드 - 프로덕션에서는 허용하지 않음
       if (process.env.NODE_ENV === 'production') {
         console.error('TOSS_SECRET_KEY is required in production');
         return NextResponse.redirect(
-          new URL('/payment/fail?error=payment_config_error', request.url)
+          `${redirectBase}/${locale}/payment/fail?error=payment_config_error`
         );
       }
-
       console.warn('[DEV MODE] Payment confirmation skipped - TOSS_SECRET_KEY not set');
-      // 개발 모드에서만 결제 건너뛰기 허용
     } else {
-      // 토스 결제 확인 API 호출
+      // 토스 결제 승인 API 호출
       const confirmResponse = await fetch(
         'https://api.tosspayments.com/v1/payments/confirm',
         {
@@ -219,14 +359,28 @@ export async function GET(request: NextRequest) {
 
       if (!confirmResponse.ok) {
         console.error('Payment confirmation failed:', paymentResult);
+
+        // 결제 실패 시 상태 업데이트
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (serviceClient as any)
+          .from('payments')
+          .update({
+            payment_status: 'failed',
+            payment_key: paymentKey,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId)
+          .eq('user_id', user.id);
+
         return NextResponse.redirect(
-          new URL(`/payment/fail?error=${paymentResult.code || 'confirmation_failed'}`, request.url)
+          `${redirectBase}/${locale}/payment/fail?error=${paymentResult.code || 'confirmation_failed'}&message=${encodeURIComponent(paymentResult.message || '')}`
         );
       }
+
+      console.log(`[Payment] Toss confirmation successful: orderId=${orderId}, method=${paymentResult.method}`);
     }
 
     // ============ 결제 완료 처리 ============
-    // 트랜잭션처럼 처리 (실패 시 롤백은 별도 처리 필요)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (serviceClient as any)
       .from('payments')
@@ -236,47 +390,45 @@ export async function GET(request: NextRequest) {
         paid_at: new Date().toISOString(),
       })
       .eq('id', orderId)
-      .eq('user_id', user.id);  // 다시 한번 소유권 확인
+      .eq('user_id', user.id);  // 소유권 재확인
 
     if (updateError) {
       console.error('Failed to update payment status:', updateError);
-      // 토스에서 결제 취소 필요할 수 있음 (추후 구현)
       return NextResponse.redirect(
-        new URL('/payment/fail?error=update_failed', request.url)
+        `${redirectBase}/${locale}/payment/fail?error=update_failed`
       );
     }
 
-    // If subscription, create/update subscription record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paymentData = payment as any;
-    if (paymentData?.type === 'subscription') {
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month subscription
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (serviceClient as any)
-        .from('subscriptions')
-        .upsert({
-          user_id: user.id,
-          plan: paymentData.reference_id,
-          status: 'active',
-          started_at: new Date().toISOString(),
-          expires_at: expiresAt.toISOString(),
-        }, { onConflict: 'user_id' });
-    }
+    // ============ 상품별 후처리 ============
+    await processPaymentByType(serviceClient, user.id, paymentData);
 
     // ============ 추천 보상 처리 ============
-    // 결제 완료 시 추천인에게 커미션 지급 (DB 금액 사용)
     await processReferralReward(serviceClient, user.id, dbAmount);
 
-    // Redirect to success page
+    // ============ 총 결제금액 업데이트 ============
+    try {
+      await (serviceClient as any).rpc('increment_total_spent', {
+        user_id: user.id,
+        amount: dbAmount,
+      });
+    } catch {
+      // RPC가 없으면 무시
+    }
+
+    // 성공 페이지로 리다이렉트
+    const successParams = new URLSearchParams({
+      payment: 'success',
+      type: paymentData.type || '',
+      orderId: orderId,
+    });
+
     return NextResponse.redirect(
-      new URL('/my/dashboard?payment=success', request.url)
+      `${redirectBase}/${locale}/payment/success?${successParams.toString()}`
     );
   } catch (error) {
     console.error('Payment success handler error:', error);
     return NextResponse.redirect(
-      new URL('/payment/fail?error=server_error', request.url)
+      `${redirectBase}/ko/payment/fail?error=server_error`
     );
   }
 }

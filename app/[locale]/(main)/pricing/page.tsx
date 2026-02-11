@@ -187,7 +187,7 @@ export default function PricingPage() {
 
       if (data.success && data.toss) {
         // 토스페이먼츠 결제 페이지로 이동
-        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY;
         if (tossClientKey && typeof window !== 'undefined') {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const tossPayments = (window as any).TossPayments?.(tossClientKey);

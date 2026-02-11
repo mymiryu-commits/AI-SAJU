@@ -617,7 +617,7 @@ function IntegratedAnalysisPageContent() {
 
       if (data.success && data.toss) {
         // 토스페이먼츠 SDK 로드 및 결제
-        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+        const tossClientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY;
         if (!tossClientKey) {
           alert('결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.');
           setPaymentLoading(false);

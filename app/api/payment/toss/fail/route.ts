@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+  const redirectBase = process.env.NEXT_PUBLIC_SITE_URL || '';
   const { searchParams } = new URL(request.url);
   const errorCode = searchParams.get('code') || 'unknown';
-  const errorMessage = searchParams.get('message') || 'Unknown error';
+  const errorMessage = searchParams.get('message') || '';
 
   console.log('Payment failed:', { errorCode, errorMessage });
 
-  // Redirect to pricing page with error message
+  // 결제 실패 페이지로 리다이렉트 (로케일 포함)
+  const params = new URLSearchParams({
+    error: errorCode,
+    ...(errorMessage && { message: errorMessage }),
+  });
+
   return NextResponse.redirect(
-    new URL(`/pricing?error=${encodeURIComponent(errorCode)}&message=${encodeURIComponent(errorMessage)}`, request.url)
+    `${redirectBase}/ko/payment/fail?${params.toString()}`
   );
 }

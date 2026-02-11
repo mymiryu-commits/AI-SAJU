@@ -237,6 +237,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// 포인트 패키지별 지급 포인트 (pricing.ts와 동기화)
+const POINT_PACKAGE_MAP: Record<string, { points: number; bonus: number }> = {
+  point_starter:  { points: 500,   bonus: 0 },
+  point_basic:    { points: 1000,  bonus: 100 },
+  point_standard: { points: 3000,  bonus: 600 },
+  point_premium:  { points: 5000,  bonus: 1500 },
+  point_vip:      { points: 10000, bonus: 5000 },
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processSuccessfulPayment(supabase: any, payment: any) {
   const { user_id, type, reference_id, amount, currency } = payment;
@@ -246,7 +255,7 @@ async function processSuccessfulPayment(supabase: any, payment: any) {
       // Create or update subscription
       const tier = reference_id.replace('sub_', '');
       const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month subscription
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
 
       await supabase
         .from('subscriptions')
@@ -273,49 +282,70 @@ async function processSuccessfulPayment(supabase: any, payment: any) {
     }
     case 'analysis': {
       // Analysis is already created, just mark as paid
-      // The actual analysis generation happens on the client
       break;
     }
-    case 'coin': {
-      // Add coins to user balance
-      const coinPackage = reference_id.replace('coin_', '');
-      const coinAmounts: Record<string, number> = {
-        '100': 110,
-        '500': 600,
-        '1000': 1300,
-        '3000': 4200,
-      };
-      const coinsToAdd = coinAmounts[coinPackage] || 0;
-
-      if (coinsToAdd > 0) {
-        // Get current balance
-        const { data: userData } = await supabase
-          .from('users')
-          .select('coin_balance')
-          .eq('id', user_id)
-          .single();
-
-        const newBalance = (userData?.coin_balance || 0) + coinsToAdd;
-
-        // Update balance
-        await supabase
-          .from('users')
-          .update({ coin_balance: newBalance })
-          .eq('id', user_id);
-
-        // Record transaction
-        await supabase
-          .from('coin_transactions')
-          .insert({
-            user_id,
-            type: 'charge',
-            amount: coinsToAdd,
-            balance_after: newBalance,
-            description: `Coin package purchase: ${coinPackage}`,
-            reference_type: 'payment',
-            reference_id: payment.id,
-          });
+    case 'addon': {
+      // Addon purchase (PDF, audio) - just mark as paid
+      break;
+    }
+    case 'point': {
+      // 포인트 패키지 충전
+      const packageInfo = POINT_PACKAGE_MAP[reference_id];
+      if (!packageInfo) {
+        console.error(`[Webhook] Unknown point package: ${reference_id}`);
+        break;
       }
+
+      const totalPoints = packageInfo.points + packageInfo.bonus;
+
+      // Get current balance
+      const { data: userData } = await supabase
+        .from('users')
+        .select('coin_balance')
+        .eq('id', user_id)
+        .single();
+
+      const newBalance = (userData?.coin_balance || 0) + totalPoints;
+
+      // Update balance
+      await supabase
+        .from('users')
+        .update({ coin_balance: newBalance })
+        .eq('id', user_id);
+
+      // Record transaction
+      await supabase
+        .from('coin_transactions')
+        .insert({
+          user_id,
+          type: 'charge',
+          amount: totalPoints,
+          balance_after: newBalance,
+          description: `포인트 충전: ${packageInfo.points}P + 보너스 ${packageInfo.bonus}P`,
+          reference_type: 'payment',
+          reference_id: payment.id,
+        });
+
+      console.log(`[Webhook] Points credited: ${totalPoints}P to user ${user_id}`);
+      break;
+    }
+    case 'qr': {
+      // QR code plan activation
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      await supabase
+        .from('subscriptions')
+        .upsert({
+          user_id,
+          plan: reference_id,
+          status: 'active',
+          current_period_start: new Date().toISOString(),
+          current_period_end: expiresAt.toISOString(),
+          price: amount,
+          currency,
+          payment_provider: payment.payment_provider,
+        });
       break;
     }
   }

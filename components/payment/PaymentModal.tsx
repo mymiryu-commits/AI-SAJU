@@ -118,7 +118,7 @@ export function PaymentModal({
       if (data.success) {
         if (data.provider === 'toss') {
           // Get client key from environment
-          const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+          const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY;
 
           if (!clientKey) {
             // Demo mode - simulate success
