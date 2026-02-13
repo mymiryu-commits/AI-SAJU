@@ -1,53 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, Shield, Users, CheckCircle } from 'lucide-react';
+import { X, Ticket, HelpCircle, ChevronRight, Crown, Sparkles, Check, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ConversionTemplate, PRODUCTS } from '@/types/saju';
+import { ConversionTemplate } from '@/types/saju';
+import { Link } from '@/i18n/routing';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   template: ConversionTemplate;
   onPurchase: (productId: string) => void;
-  socialProof?: string[];
+  userVouchers?: number;
+  isAdmin?: boolean;
 }
+
+// 결제권 패키지
+const VOUCHER_PACKAGES = [
+  { id: 'basic', name: '베이직', tickets: 1, price: 4900, features: ['사주 기본 분석', '오행 분석', '성격 분석'] },
+  { id: 'standard', name: '스탠다드', tickets: 2, price: 9800, features: ['베이직 전체', '궁합 분석', 'PDF 리포트'], recommended: true },
+  { id: 'premium', name: '프리미엄', tickets: 4, price: 19600, features: ['스탠다드 전체', '10년 대운', 'AI 상담', '음성 리포트'] },
+];
 
 export default function PaywallModal({
   isOpen,
   onClose,
   template,
   onPurchase,
-  socialProof = []
+  userVouchers = 0,
+  isAdmin = false,
 }: Props) {
-  const [timeLeft, setTimeLeft] = useState(template.discount?.expiresIn || 24);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isOpen || !template.discount) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => Math.max(0, prev - 1 / 3600));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isOpen, template.discount]);
+  const [selectedPackage, setSelectedPackage] = useState<string>('standard');
 
   if (!isOpen) return null;
 
-  const formatTime = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    const s = Math.floor(((hours - h) * 60 - m) * 60);
-    return `${h}시간 ${m}분 ${s}초`;
-  };
+  const hasVoucher = isAdmin || userVouchers > 0;
 
   const handlePurchase = () => {
-    if (selectedProduct) {
-      onPurchase(selectedProduct);
-    } else {
-      onPurchase('basic');
+    if (selectedPackage && hasVoucher) {
+      onPurchase(selectedPackage);
     }
   };
 
@@ -64,156 +56,163 @@ export default function PaywallModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+          className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full max-h-[85vh] overflow-y-auto shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="relative p-6 border-b dark:border-gray-800">
+          {/* ===== 헤더 ===== */}
+          <div className="relative p-5 pb-4">
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white whitespace-pre-line pr-8">
-              {template.headline}
-            </h2>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-4">
-            {template.bullets.map((bullet, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
-              >
-                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-                  {bullet}
-                </p>
-              </motion.div>
-            ))}
-
-            {/* Urgency Message */}
-            {template.urgency && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl"
-              >
-                <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-line font-medium">
-                  {template.urgency}
-                </p>
-              </motion.div>
-            )}
-
-            {/* Discount Timer */}
-            {template.discount && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 }}
-                className="p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border border-red-200 dark:border-red-800 rounded-xl text-center"
-              >
-                <div className="flex items-center justify-center gap-2 text-red-600 dark:text-red-400 font-bold text-lg">
-                  <Clock className="w-5 h-5" />
-                  {template.discount.amount.toLocaleString()}원 할인
-                </div>
-                <p className="text-sm text-red-500 dark:text-red-400 mt-2 font-mono">
-                  남은 시간: {formatTime(timeLeft)}
-                </p>
-              </motion.div>
-            )}
-
-            {/* Product Selection */}
-            {template.type !== 'exit' && (
-              <div className="space-y-3 pt-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  상품 선택
-                </p>
-                {PRODUCTS.slice(0, 3).map(product => (
-                  <button
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product.id)}
-                    className={`w-full p-4 rounded-xl border-2 text-left transition-all
-                      ${selectedProduct === product.id
-                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'}`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-800 dark:text-white">
-                            {product.name}
-                          </span>
-                          {product.recommended && (
-                            <span className="px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">
-                              추천
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-lg font-bold text-purple-600">
-                            {(product.price - (template.discount?.amount || 0)).toLocaleString()}원
-                          </span>
-                          <span className="text-sm text-gray-400 line-through">
-                            {product.originalPrice.toLocaleString()}원
-                          </span>
-                        </div>
-                      </div>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                        ${selectedProduct === product.id
-                          ? 'border-purple-600 bg-purple-600'
-                          : 'border-gray-300'}`}
-                      >
-                        {selectedProduct === product.id && (
-                          <CheckCircle className="w-4 h-4 text-white" />
-                        )}
-                      </div>
-                    </div>
-                    <ul className="mt-2 space-y-1">
-                      {product.features.slice(0, 2).map((feature, i) => (
-                        <li key={i} className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          <span className="text-green-500">✓</span> {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="p-6 border-t dark:border-gray-800 space-y-3">
-            <Button
-              onClick={handlePurchase}
-              className="w-full py-6 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              {template.cta}
-            </Button>
-
-            <button
-              onClick={onClose}
-              className="w-full py-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-sm"
-            >
-              나중에 할게요
+              <X className="w-5 h-5 text-gray-400" />
             </button>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <div className="flex items-center gap-1 text-xs text-gray-400">
-                <Shield className="w-3 h-3" />
-                24시간 환불 보장
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-400">
-                <Users className="w-3 h-3" />
-                {socialProof[0] || '3,847명이 확인함'}
+              <div>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+                  프리미엄 분석
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  더 깊은 인사이트를 확인하세요
+                </p>
               </div>
             </div>
+          </div>
+
+          {/* ===== 관리자 모드 ===== */}
+          {isAdmin && (
+            <div className="mx-5 mb-4 p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
+              <div className="flex items-center gap-2 text-white">
+                <Crown className="w-5 h-5" />
+                <span className="font-bold">관리자 무제한 이용</span>
+              </div>
+            </div>
+          )}
+
+          {/* ===== 내 결제권 현황 ===== */}
+          {!isAdmin && (
+            <div className="mx-5 mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">내 결제권</span>
+                </div>
+                <span className="text-xl font-bold text-gray-800 dark:text-white">
+                  {userVouchers}장
+                </span>
+              </div>
+              {!hasVoucher && (
+                <div className="mt-2 text-sm text-red-500">
+                  결제권이 없습니다
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== 패키지 선택 ===== */}
+          <div className="px-5 pb-4 space-y-3">
+            {VOUCHER_PACKAGES.map(pkg => {
+              const isSelected = selectedPackage === pkg.id;
+
+              return (
+                <button
+                  key={pkg.id}
+                  onClick={() => setSelectedPackage(pkg.id)}
+                  className={`w-full p-4 rounded-xl border-2 text-left transition-all
+                    ${isSelected
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0
+                        ${isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-800 dark:text-white">{pkg.name}</span>
+                          {pkg.recommended && (
+                            <span className="px-1.5 py-0.5 bg-purple-500 text-white text-[10px] rounded font-medium">추천</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          결제권 {pkg.tickets}장 · ₩{pkg.price.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <span className="font-bold text-purple-600 text-lg">{pkg.tickets}장</span>
+                    </div>
+                  </div>
+
+                  {/* 선택된 상품의 상세 기능 표시 */}
+                  {isSelected && (
+                    <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
+                      <ul className="space-y-1">
+                        {pkg.features.map((feature, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Check className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ===== 분석/구매 버튼 ===== */}
+          <div className="p-5 pt-0 space-y-3">
+            {hasVoucher ? (
+              <Button
+                onClick={handlePurchase}
+                className="w-full py-5 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                결제권 사용하여 분석받기
+              </Button>
+            ) : (
+              <Link href="/my/vouchers" className="block">
+                <Button className="w-full py-5 text-base font-bold bg-gradient-to-r from-amber-500 to-orange-500">
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  결제권 구매하기
+                </Button>
+              </Link>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-full py-2 text-sm text-gray-400 hover:text-gray-600"
+            >
+              다음에 할게요
+            </button>
+          </div>
+
+          {/* ===== 안내 링크 ===== */}
+          <div className="px-5 pb-5 space-y-1">
+            {[
+              { label: '결제권 이용안내', href: '/guide#vouchers' },
+              { label: '환불 정책', href: '/legal/refund' },
+              { label: '자주 묻는 질문', href: '/guide#faq' },
+            ].map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center justify-between py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" />
+                  {link.label}
+                </div>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            ))}
           </div>
         </motion.div>
       </motion.div>
@@ -222,18 +221,14 @@ export default function PaywallModal({
 }
 
 /**
- * 이탈 방지 팝업 (간소화 버전)
+ * 결제권 부족 팝업
  */
-export function ExitIntentPopup({
+export function NoVoucherPopup({
   isOpen,
   onClose,
-  onAcceptOffer,
-  discountAmount = 3000
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onAcceptOffer: () => void;
-  discountAmount?: number;
 }) {
   if (!isOpen) return null;
 
@@ -249,34 +244,26 @@ export function ExitIntentPopup({
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full p-6 text-center"
+          className="bg-white dark:bg-gray-900 rounded-2xl max-w-xs w-full p-6 text-center"
         >
-          <div className="text-4xl mb-4">😢</div>
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-            잠깐만요!
+          <div className="w-14 h-14 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+            <Ticket className="w-7 h-7 text-amber-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3">
+            결제권이 없습니다
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            지금 떠나시면 분석 결과가 사라집니다.
-            <br />
-            <span className="font-bold text-purple-600">
-              {discountAmount.toLocaleString()}원 할인 쿠폰
-            </span>을 드릴까요?
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            분석을 계속하려면 결제권을 구매해주세요.
           </p>
 
-          <div className="space-y-3">
-            <Button
-              onClick={onAcceptOffer}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
-            >
-              할인받고 계속하기
+          <Link href="/my/vouchers" className="block mb-3">
+            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500">
+              결제권 구매하기
             </Button>
-            <button
-              onClick={onClose}
-              className="w-full py-2 text-gray-500 text-sm"
-            >
-              그냥 나갈게요
-            </button>
-          </div>
+          </Link>
+          <button onClick={onClose} className="w-full py-2 text-gray-400 text-sm">
+            닫기
+          </button>
         </motion.div>
       </motion.div>
     </AnimatePresence>

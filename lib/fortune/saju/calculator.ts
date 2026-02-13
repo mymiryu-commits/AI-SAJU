@@ -44,6 +44,15 @@ for (let i = 0; i < 60; i++) {
   SIXTY_JIAZI.push(HEAVENLY_STEMS[i % 10] + EARTHLY_BRANCHES[i % 12]);
 }
 
+/**
+ * 진태양시(True Solar Time) 조정
+ * 한국 표준시(KST)는 135°E 경도 기준이지만, 서울은 127°E에 위치
+ * 경도 차이: 135° - 127° = 8°
+ * 시간 차이: 8° × 4분/° = 32분
+ * 따라서 한국에서 진태양시 = 시계시간 - 32분
+ */
+const KOREA_LONGITUDE_CORRECTION_MINUTES = 32;
+
 // 절기 데이터 (2024-2030년 주요 절기)
 // 실제 서비스에서는 만세력 API나 더 정확한 데이터 사용 권장
 const SOLAR_TERMS_DATA: Record<number, Record<number, number>> = {
@@ -169,10 +178,38 @@ function calculateDayPillar(year: number, month: number, day: number): SajuPilla
 }
 
 /**
- * 시주 계산
+ * 진태양시로 시간 조정 (한국 기준)
+ * @param time HH:MM 형식의 시간 문자열
+ * @returns 조정된 시간 (시, 분)
+ */
+function adjustToTrueSolarTime(time: string): { hours: number; minutes: number; adjustedHours: number } {
+  const [hours, minutes = 0] = time.split(':').map(Number);
+
+  // 총 분으로 변환 후 32분 빼기
+  let totalMinutes = hours * 60 + minutes - KOREA_LONGITUDE_CORRECTION_MINUTES;
+
+  // 음수 처리 (전날로 넘어가는 경우)
+  if (totalMinutes < 0) {
+    totalMinutes += 24 * 60; // 24시간 더하기
+  }
+
+  const adjustedHours = Math.floor(totalMinutes / 60);
+  const adjustedMinutes = totalMinutes % 60;
+
+  return {
+    hours: adjustedHours,
+    minutes: adjustedMinutes,
+    adjustedHours: adjustedHours
+  };
+}
+
+/**
+ * 시주 계산 (진태양시 적용)
  */
 function calculateTimePillar(dayStem: string, time: string): SajuPillar {
-  const [hours] = time.split(':').map(Number);
+  // 진태양시로 조정 (한국 기준 -32분)
+  const { adjustedHours } = adjustToTrueSolarTime(time);
+  const hours = adjustedHours;
 
   // 시지 계산 (2시간 단위)
   // 子시: 23:00-00:59, 丑시: 01:00-02:59, ...
