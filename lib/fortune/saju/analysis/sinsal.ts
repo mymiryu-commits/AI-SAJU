@@ -260,7 +260,7 @@ export function analyzeSinsal(saju: SajuChart): SinsalAnalysis {
     { branch: saju.year.earthlyBranch, location: '년지' },
     { branch: saju.month.earthlyBranch, location: '월지' },
     { branch: saju.day.earthlyBranch, location: '일지' },
-    { branch: saju.time?.earthlyBranch || '', location: '시지' }
+    ...(saju.time ? [{ branch: saju.time.earthlyBranch, location: '시지' }] : [])
   ];
 
   const results: SinsalResult[] = [];

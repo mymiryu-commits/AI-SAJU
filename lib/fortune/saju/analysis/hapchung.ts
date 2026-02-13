@@ -114,7 +114,7 @@ export function analyzeHapChung(saju: SajuChart): HapChungAnalysis {
     saju.year.earthlyBranch,
     saju.month.earthlyBranch,
     saju.day.earthlyBranch,
-    saju.time?.earthlyBranch || ''
+    ...(saju.time ? [saju.time.earthlyBranch] : [])
   ];
 
   const relations: BranchRelation[] = [];
@@ -566,8 +566,8 @@ export function analyzeRiskTiming(saju: SajuChart, targetYear: number = 2026): R
     saju.year.earthlyBranch,
     saju.month.earthlyBranch,
     saju.day.earthlyBranch,
-    saju.time?.earthlyBranch || ''
-  ].filter(Boolean);
+    ...(saju.time ? [saju.time.earthlyBranch] : [])
+  ];
 
   const monthRisks: Array<{ month: number; riskScore: number; reasons: string[] }> = [];
   const monthOpportunities: Array<{ month: number; score: number; reasons: string[] }> = [];
