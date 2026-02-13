@@ -313,7 +313,7 @@ export function analyzeUnsung(saju: SajuChart): UnsungAnalysis {
     { name: '년주', branch: saju.year.earthlyBranch },
     { name: '월주', branch: saju.month.earthlyBranch },
     { name: '일주', branch: saju.day.earthlyBranch },
-    { name: '시주', branch: saju.time?.earthlyBranch || '' }
+    ...(saju.time ? [{ name: '시주' as const, branch: saju.time.earthlyBranch }] : [])
   ];
 
   const positions: UnsungPosition[] = pillars.map(({ name, branch }) => {
