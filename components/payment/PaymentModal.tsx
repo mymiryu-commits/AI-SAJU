@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
+import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,6 @@ import {
   Smartphone,
   Building,
   Loader2,
-  CheckCircle,
   Shield,
   Lock,
 } from 'lucide-react';
@@ -31,6 +31,8 @@ import {
   getPrice,
   getOriginalPrice,
 } from '@/lib/payment/pricing';
+
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || '';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -63,6 +65,7 @@ export function PaymentModal({
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [tossWidgets, setTossWidgets] = useState<TossPaymentsWidgets | null>(null);
 
   const price = getPrice(product, currency);
   const originalPrice = getOriginalPrice(product, currency);
@@ -72,21 +75,44 @@ export function PaymentModal({
     m.available.includes(locale)
   );
 
-  const handlePayment = async () => {
-    if (!agreedToTerms || !agreedToPrivacy) {
-      alert('약관에 동의해주세요.');
-      return;
+  // Initialize Toss Payments SDK
+  useEffect(() => {
+    if (!isOpen || !TOSS_CLIENT_KEY || locale !== 'ko') return;
+
+    let cancelled = false;
+
+    async function initToss() {
+      try {
+        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+        if (!cancelled) {
+          const widgets = tossPayments.widgets({ customerKey: 'ANONYMOUS' });
+          setTossWidgets(widgets);
+        }
+      } catch (error) {
+        console.error('Failed to load Toss Payments SDK:', error);
+      }
     }
+
+    initToss();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, locale]);
+
+  const handlePayment = async () => {
+    if (!agreedToTerms || !agreedToPrivacy) return;
 
     setIsProcessing(true);
 
     try {
+      // Step 1: Create payment record
       const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productType,
-          productId: product.id.replace(`${productType}_`, ''),
+          productId: product.id.replace(`${productType === 'subscription' ? 'sub' : productType === 'analysis' ? 'analysis' : 'coin'}_`, ''),
           locale,
           paymentMethod: selectedMethod,
         }),
@@ -94,37 +120,64 @@ export function PaymentModal({
 
       const data = await response.json();
 
-      if (data.success) {
-        if (data.provider === 'toss') {
-          // Initialize Toss Payments SDK
-          // In production, use actual TossPayments SDK
-          console.log('Toss payment data:', data.paymentData);
-          // window.TossPayments(clientKey).requestPayment(...)
-
-          // Simulate success for demo
-          setTimeout(() => {
-            setIsProcessing(false);
-            onSuccess?.();
-            onClose();
-          }, 2000);
-        } else {
-          // Stripe Checkout
-          console.log('Stripe payment data:', data.paymentData);
-          // In production, redirect to Stripe Checkout
-
-          // Simulate success for demo
-          setTimeout(() => {
-            setIsProcessing(false);
-            onSuccess?.();
-            onClose();
-          }, 2000);
-        }
-      } else {
-        throw new Error(data.error);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create payment');
       }
+
+      // Step 2: Initiate payment with appropriate provider
+      if (data.provider === 'toss' && tossWidgets) {
+        // Use Toss Payments Widget SDK
+        await tossWidgets.setAmount({
+          currency: 'KRW',
+          value: data.paymentData.amount,
+        });
+
+        await tossWidgets.requestPayment({
+          orderId: data.paymentData.orderId,
+          orderName: data.paymentData.orderName,
+          customerName: data.paymentData.customerName,
+          customerEmail: data.paymentData.customerEmail,
+          successUrl: data.paymentData.successUrl,
+          failUrl: data.paymentData.failUrl,
+        });
+      } else if (data.provider === 'toss') {
+        // Fallback: Direct Toss Payments API (without widget)
+        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+        const payment = tossPayments.payment({ customerKey: 'ANONYMOUS' });
+
+        const methodMap: Record<PaymentMethod, string> = {
+          card: 'CARD',
+          kakaopay: 'KAKAOPAY',
+          naverpay: 'NAVERPAY',
+          tosspay: 'TOSSPAY',
+          bank: 'TRANSFER',
+        };
+
+        await payment.requestPayment({
+          method: methodMap[selectedMethod] || 'CARD',
+          amount: { currency: 'KRW', value: data.paymentData.amount },
+          orderId: data.paymentData.orderId,
+          orderName: data.paymentData.orderName,
+          customerName: data.paymentData.customerName,
+          customerEmail: data.paymentData.customerEmail,
+          successUrl: data.paymentData.successUrl,
+          failUrl: data.paymentData.failUrl,
+        });
+      } else {
+        // Stripe for international payments
+        console.log('Stripe payment:', data.paymentData);
+        // For now, show that Stripe integration is pending
+        alert('International payment (Stripe) coming soon. Please use Korean payment methods.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Payment widget handles the redirect, so this code
+      // only runs if there's no redirect (shouldn't happen normally)
+      onSuccess?.();
+      onClose();
     } catch (error) {
       console.error('Payment error:', error);
-      alert('결제 처리 중 오류가 발생했습니다.');
       setIsProcessing(false);
     }
   };
@@ -133,7 +186,9 @@ export function PaymentModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>결제하기</DialogTitle>
+          <DialogTitle>
+            {locale === 'ko' ? '결제하기' : locale === 'ja' ? 'お支払い' : 'Payment'}
+          </DialogTitle>
           <DialogDescription>
             {product.name[locale as 'ko' | 'ja' | 'en'] || product.name.en}
           </DialogDescription>
@@ -171,7 +226,9 @@ export function PaymentModal({
 
           {/* Payment Methods */}
           <div>
-            <h4 className="font-medium mb-3">결제 수단</h4>
+            <h4 className="font-medium mb-3">
+              {locale === 'ko' ? '결제 수단' : locale === 'ja' ? '決済方法' : 'Payment Method'}
+            </h4>
             <RadioGroup
               value={selectedMethod}
               onValueChange={(value) => setSelectedMethod(value as PaymentMethod)}
@@ -209,7 +266,10 @@ export function PaymentModal({
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
               />
               <Label htmlFor="terms" className="text-sm leading-tight cursor-pointer">
-                <span className="text-primary underline">이용약관</span>에 동의합니다
+                <span className="text-primary underline">
+                  {locale === 'ko' ? '이용약관' : locale === 'ja' ? '利用規約' : 'Terms of Service'}
+                </span>
+                {locale === 'ko' ? '에 동의합니다' : locale === 'ja' ? 'に同意します' : ' agreed'}
               </Label>
             </div>
             <div className="flex items-start gap-2">
@@ -219,7 +279,10 @@ export function PaymentModal({
                 onCheckedChange={(checked) => setAgreedToPrivacy(checked as boolean)}
               />
               <Label htmlFor="privacy" className="text-sm leading-tight cursor-pointer">
-                <span className="text-primary underline">개인정보처리방침</span>에 동의합니다
+                <span className="text-primary underline">
+                  {locale === 'ko' ? '개인정보처리방침' : locale === 'ja' ? 'プライバシーポリシー' : 'Privacy Policy'}
+                </span>
+                {locale === 'ko' ? '에 동의합니다' : locale === 'ja' ? 'に同意します' : ' agreed'}
               </Label>
             </div>
           </div>
@@ -227,7 +290,13 @@ export function PaymentModal({
           {/* Security Notice */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-4 w-4" />
-            <span>결제 정보는 안전하게 암호화되어 처리됩니다</span>
+            <span>
+              {locale === 'ko'
+                ? '결제 정보는 토스페이먼츠를 통해 안전하게 처리됩니다'
+                : locale === 'ja'
+                ? '決済情報は安全に暗号化されて処理されます'
+                : 'Payment is securely processed by Toss Payments'}
+            </span>
           </div>
 
           {/* Payment Button */}
@@ -240,12 +309,13 @@ export function PaymentModal({
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                결제 처리 중...
+                {locale === 'ko' ? '결제 처리 중...' : locale === 'ja' ? '決済処理中...' : 'Processing...'}
               </>
             ) : (
               <>
                 <Lock className="mr-2 h-4 w-4" />
-                {formatPrice(price, currency)} 결제하기
+                {formatPrice(price, currency)}{' '}
+                {locale === 'ko' ? '결제하기' : locale === 'ja' ? 'お支払い' : 'Pay Now'}
               </>
             )}
           </Button>

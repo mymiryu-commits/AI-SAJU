@@ -8,11 +8,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-  { href: '/ranking', key: 'ranking' },
-  { href: '/guide', key: 'guide' },
   { href: '/fortune', key: 'fortune' },
+  { href: '/ranking', key: 'ranking' },
   { href: '/lotto', key: 'lotto' },
-  { href: '/prompts', key: 'prompts' },
   { href: '/pricing', key: 'pricing' },
 ] as const;
 

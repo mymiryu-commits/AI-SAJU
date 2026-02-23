@@ -25,7 +25,7 @@ export interface ProductConfig {
   features?: string[];
 }
 
-// Subscription Tiers
+// Subscription Tiers (confirmed pricing)
 export const SUBSCRIPTION_TIERS: Record<string, ProductConfig> = {
   basic: {
     id: 'sub_basic',
@@ -35,15 +35,16 @@ export const SUBSCRIPTION_TIERS: Record<string, ProductConfig> = {
       en: 'Basic',
     },
     description: {
-      ko: '개인 사용자를 위한 기본 플랜',
-      ja: '個人ユーザー向けの基本プラン',
-      en: 'Basic plan for personal use',
+      ko: '광고 제거 + 기본 분석 월 3회',
+      ja: '広告非表示 + 基本分析 月3回',
+      en: 'Ad-free + 3 basic analyses per month',
     },
-    price: { krw: 4900, jpy: 550, usd: 3.99 },
+    price: { krw: 3900, jpy: 450, usd: 2.99 },
     features: [
       'daily_fortune',
-      'basic_analysis',
+      'basic_analysis_3',
       'ad_free',
+      'pdf_reports',
     ],
   },
   pro: {
@@ -54,16 +55,18 @@ export const SUBSCRIPTION_TIERS: Record<string, ProductConfig> = {
       en: 'Pro',
     },
     description: {
-      ko: '더 많은 분석이 필요한 분을 위한 플랜',
-      ja: 'より多くの分析が必要な方向けのプラン',
-      en: 'For those who need more analyses',
+      ko: '무제한 기본 분석 + 심화 분석 월 5회',
+      ja: '基本分析無制限 + 深層分析 月5回',
+      en: 'Unlimited basic + 5 deep analyses per month',
     },
-    price: { krw: 9900, jpy: 1100, usd: 7.99 },
+    price: { krw: 7900, jpy: 880, usd: 5.99 },
     features: [
       'daily_fortune',
       'unlimited_basic_analysis',
-      'premium_analysis_discount',
+      'deep_analysis_5',
       'ad_free',
+      'pdf_reports',
+      'voice_reports',
       'priority_support',
     ],
   },
@@ -75,25 +78,26 @@ export const SUBSCRIPTION_TIERS: Record<string, ProductConfig> = {
       en: 'Premium',
     },
     description: {
-      ko: '모든 기능을 무제한으로 이용',
-      ja: 'すべての機能を無制限に利用',
-      en: 'Unlimited access to all features',
+      ko: '모든 분석 무제한 + PDF/음성 리포트',
+      ja: '全分析無制限 + PDF/音声レポート',
+      en: 'Unlimited everything + PDF/Audio reports',
     },
-    price: { krw: 19900, jpy: 2200, usd: 15.99 },
+    price: { krw: 14900, jpy: 1650, usd: 11.99 },
     features: [
       'daily_fortune',
       'unlimited_all_analysis',
-      'expert_consultation_discount',
+      'expert_consultation',
       'pdf_reports',
       'audio_reports',
       'ad_free',
       'priority_support',
       'early_access',
+      'family_analysis',
     ],
   },
 };
 
-// Fortune Analysis Products
+// Fortune Analysis Products (confirmed pricing - pay-per-use)
 export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
   saju_basic: {
     id: 'analysis_saju_basic',
@@ -103,18 +107,16 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       en: 'Basic Four Pillars Analysis',
     },
     description: {
-      ko: '사주팔자 기본 분석 및 2025년 운세',
-      ja: '四柱八字の基本分析と2025年の運勢',
-      en: 'Basic Four Pillars analysis with 2025 fortune',
+      ko: '사주팔자 기본 분석 및 올해 운세',
+      ja: '四柱八字の基本分析と今年の運勢',
+      en: 'Basic Four Pillars analysis with yearly fortune',
     },
-    price: { krw: 5900, jpy: 650, usd: 4.99 },
-    discountedPrice: { krw: 4130, jpy: 455, usd: 3.49 },
-    discountPercent: 30,
+    price: { krw: 3900, jpy: 450, usd: 2.99 },
   },
   saju_deep: {
     id: 'analysis_saju_deep',
     name: {
-      ko: '사주 심층 분석',
+      ko: '사주 심화 분석',
       ja: '四柱深層分析',
       en: 'Deep Four Pillars Analysis',
     },
@@ -123,9 +125,7 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: '大運分析を含む10年運勢',
       en: '10-year fortune with major fortune analysis',
     },
-    price: { krw: 12900, jpy: 1430, usd: 10.99 },
-    discountedPrice: { krw: 9030, jpy: 1001, usd: 7.69 },
-    discountPercent: 30,
+    price: { krw: 9900, jpy: 1100, usd: 7.99 },
   },
   saju_premium: {
     id: 'analysis_saju_premium',
@@ -139,9 +139,7 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: '月別詳細運勢 + PDF + 音声レポート',
       en: 'Monthly detailed fortune + PDF + Audio report',
     },
-    price: { krw: 24900, jpy: 2750, usd: 19.99 },
-    discountedPrice: { krw: 17430, jpy: 1925, usd: 13.99 },
-    discountPercent: 30,
+    price: { krw: 19900, jpy: 2200, usd: 15.99 },
   },
   face: {
     id: 'analysis_face',
@@ -155,23 +153,7 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: 'AI顔分析で見る人相',
       en: 'Face reading with AI analysis',
     },
-    price: { krw: 5900, jpy: 650, usd: 4.99 },
-  },
-  integrated: {
-    id: 'analysis_integrated',
-    name: {
-      ko: '통합 분석',
-      ja: '統合分析',
-      en: 'Integrated Analysis',
-    },
-    description: {
-      ko: '사주 + 관상 + 별자리 통합 분석',
-      ja: '四柱 + 人相 + 星座 統合分析',
-      en: 'Four Pillars + Face + Astrology Combined',
-    },
-    price: { krw: 14900, jpy: 1650, usd: 12.99 },
-    discountedPrice: { krw: 10430, jpy: 1155, usd: 9.09 },
-    discountPercent: 30,
+    price: { krw: 3900, jpy: 450, usd: 2.99 },
   },
   compatibility: {
     id: 'analysis_compatibility',
@@ -185,9 +167,49 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: '二人の四柱相性分析',
       en: 'Compatibility analysis for two people',
     },
-    price: { krw: 9900, jpy: 1100, usd: 8.99 },
-    discountedPrice: { krw: 6930, jpy: 770, usd: 6.29 },
-    discountPercent: 30,
+    price: { krw: 5900, jpy: 650, usd: 4.99 },
+  },
+  integrated: {
+    id: 'analysis_integrated',
+    name: {
+      ko: '통합 분석',
+      ja: '統合分析',
+      en: 'Integrated Analysis',
+    },
+    description: {
+      ko: '사주 + 관상 + 궁합 통합 분석',
+      ja: '四柱 + 人相 + 相性 統合分析',
+      en: 'Four Pillars + Face + Compatibility Combined',
+    },
+    price: { krw: 14900, jpy: 1650, usd: 11.99 },
+  },
+  tarot: {
+    id: 'analysis_tarot',
+    name: {
+      ko: '타로 리딩',
+      ja: 'タロットリーディング',
+      en: 'Tarot Reading',
+    },
+    description: {
+      ko: 'AI 타로 카드 리딩',
+      ja: 'AIタロットカードリーディング',
+      en: 'AI Tarot Card Reading',
+    },
+    price: { krw: 1900, jpy: 220, usd: 1.49 },
+  },
+  mbti_fortune: {
+    id: 'analysis_mbti_fortune',
+    name: {
+      ko: 'MBTI 운세',
+      ja: 'MBTI占い',
+      en: 'MBTI Fortune',
+    },
+    description: {
+      ko: 'MBTI 성격 유형 기반 운세 분석',
+      ja: 'MBTI性格タイプに基づく運勢分析',
+      en: 'Fortune analysis based on MBTI personality type',
+    },
+    price: { krw: 1900, jpy: 220, usd: 1.49 },
   },
 };
 

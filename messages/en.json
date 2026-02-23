@@ -231,10 +231,12 @@
     "monthly": "Monthly",
     "yearly": "Yearly",
     "yearlyDiscount": "2 months free",
+    "popular": "Popular",
+    "individual": "Individual Services",
+    "perUse": "per use",
     "tiers": {
       "free": {
         "name": "Free",
-        "price": "0",
         "features": [
           "Daily free fortune",
           "Simple Four Pillars (1 time)",
@@ -244,7 +246,6 @@
       },
       "basic": {
         "name": "Basic",
-        "price": "3.99",
         "features": [
           "All Free plan features",
           "Detailed analysis 3/month",
@@ -254,30 +255,116 @@
       },
       "pro": {
         "name": "Pro",
-        "price": "7.99",
-        "popular": true,
         "features": [
           "All Basic plan features",
-          "Unlimited analyses",
+          "Unlimited basic analyses",
+          "5 deep analyses/month",
           "Voice reports",
           "Priority support"
         ]
       },
       "premium": {
         "name": "Premium",
-        "price": "15.99",
         "features": [
           "All Pro plan features",
-          "Integrated analysis",
-          "1 expert consultation/month",
-          "Family analysis included"
+          "Unlimited all analyses",
+          "Expert consultation",
+          "Family analysis included",
+          "Early access to new features"
         ]
       }
+    },
+    "features": {
+      "feature_daily_fortune": "Daily free fortune",
+      "feature_basic_analysis_1": "Basic analysis (1 time)",
+      "feature_basic_analysis_3": "Basic analysis 3/month",
+      "feature_ai_ranking": "AI tools ranking access",
+      "feature_ad_free": "Ad-free experience",
+      "feature_pdf": "PDF reports",
+      "feature_voice": "Voice reports",
+      "feature_expert": "Expert consultation",
+      "feature_priority": "Priority support",
+      "feature_unlimited_basic": "Unlimited basic analyses",
+      "feature_deep_5": "5 deep analyses/month",
+      "feature_all_pro": "Everything in Pro",
+      "feature_unlimited_all": "Unlimited all analyses",
+      "feature_family": "Family analysis included",
+      "feature_early_access": "Early access to new features",
+      "feature_dedicated": "Dedicated support"
     },
     "cta": {
       "current": "Current Plan",
       "subscribe": "Subscribe",
       "upgrade": "Upgrade"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "cancel": {
+        "q": "Can I cancel anytime?",
+        "a": "Yes, you can cancel your subscription at any time. You will continue to have access until the end of your billing period."
+      },
+      "payment": {
+        "q": "What payment methods do you accept?",
+        "a": "We accept credit/debit cards, KakaoPay, Naver Pay, Toss Pay, and bank transfer."
+      },
+      "trial": {
+        "q": "Is there a free trial?",
+        "a": "Yes! You can use our Free plan forever with basic features. Paid plans offer 50% off the first month."
+      }
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Terms of Service",
+      "lastUpdated": "Last updated: February 2025",
+      "section1": {
+        "title": "Article 1 (Purpose)",
+        "content": "These terms define the conditions and procedures for using the AI fortune analysis service ('Service') provided by AI-SAJU ('Company'), and the rights, obligations, and responsibilities between the Company and users."
+      },
+      "section2": {
+        "title": "Article 2 (Service Description)",
+        "content": "The Company provides AI-based Four Pillars analysis, face reading, compatibility analysis, tarot reading, MBTI fortune, daily fortune, and lotto number analysis as entertainment services. This service provides analysis results based on statistical data and AI algorithms, and does not replace professional medical, legal, or financial advice."
+      },
+      "section3": {
+        "title": "Article 3 (Fees and Payment)",
+        "content": "The service is divided into free and paid plans. Payments for paid services are processed through Toss Payments. Subscription cancellation is available at any time, and the service remains accessible until the end of the billing period."
+      },
+      "section4": {
+        "title": "Article 4 (Refund Policy)",
+        "content": "Due to the nature of digital content, refunds for already-provided analysis results are not available in principle. However, full refunds are provided for service errors. For subscriptions, full refunds are possible within 7 days of payment if unused."
+      },
+      "section5": {
+        "title": "Article 5 (Disclaimer)",
+        "content": "This service is an AI data analysis-based entertainment service. Analysis results are for reference only, and the Company is not responsible for decisions made based on these results."
+      },
+      "section6": {
+        "title": "Article 6 (Dispute Resolution)",
+        "content": "Disputes arising from service usage shall be governed by the laws of the Republic of Korea."
+      }
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last updated: February 2025",
+      "section1": {
+        "title": "1. Personal Information Collected",
+        "content": "We collect the following personal information for service provision: email address, name/nickname, date and time of birth, gender, and payment information (processed via Toss Payments). Face photos are used only for face reading analysis and deleted immediately after analysis."
+      },
+      "section2": {
+        "title": "2. Purpose of Use",
+        "content": "Collected personal information is used only for: fortune analysis service provision, payment processing and usage history management, statistical analysis for service improvement (de-identified), and customer inquiry response."
+      },
+      "section3": {
+        "title": "3. Retention and Disposal",
+        "content": "Personal information is destroyed immediately upon account deletion. However, where required by law, data is safely stored for the legally required period before disposal."
+      },
+      "section4": {
+        "title": "4. Security Measures",
+        "content": "We implement encryption (TLS for transmission, AES-256 for storage), access control management, Supabase Row Level Security for data isolation, and regular security audits."
+      },
+      "section5": {
+        "title": "5. User Rights",
+        "content": "Users may request to view, correct, delete, or suspend processing of their personal information at any time via My Page > Settings or customer support."
+      }
     }
   },
   "footer": {

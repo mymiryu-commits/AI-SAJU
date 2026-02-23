@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,64 +16,17 @@ import {
   ArrowRight,
   HelpCircle,
 } from 'lucide-react';
+import {
+  SUBSCRIPTION_TIERS,
+  ANALYSIS_PRODUCTS,
+  getCurrencyFromLocale,
+  formatPrice,
+  type Currency,
+} from '@/lib/payment/pricing';
 
-const plans = {
-  monthly: {
-    free: { price: 0, period: 'forever' },
-    basic: { price: 4900, priceUsd: 3.99, priceJpy: 550, period: 'month' },
-    pro: { price: 9900, priceUsd: 7.99, priceJpy: 1100, period: 'month' },
-    premium: { price: 19900, priceUsd: 15.99, priceJpy: 2200, period: 'month' },
-  },
-  yearly: {
-    free: { price: 0, period: 'forever' },
-    basic: { price: 39900, priceUsd: 32.99, priceJpy: 4400, period: 'year', monthlyEquiv: 3325 },
-    pro: { price: 79900, priceUsd: 64.99, priceJpy: 8800, period: 'year', monthlyEquiv: 6658 },
-    premium: { price: 149900, priceUsd: 119.99, priceJpy: 16500, period: 'year', monthlyEquiv: 12491 },
-  },
-};
+type LocaleKey = 'ko' | 'ja' | 'en';
 
-const features = {
-  free: [
-    { text: 'Daily free fortune', included: true },
-    { text: 'Basic Saju analysis (1 time)', included: true },
-    { text: 'AI rankings access', included: true },
-    { text: 'Basic guides', included: true },
-    { text: 'Detailed analysis', included: false },
-    { text: 'PDF reports', included: false },
-    { text: 'Voice reports', included: false },
-    { text: 'Expert consultation', included: false },
-  ],
-  basic: [
-    { text: 'Daily free fortune', included: true },
-    { text: 'Detailed Saju analysis (3/month)', included: true },
-    { text: 'AI rankings access', included: true },
-    { text: 'All guides & tutorials', included: true },
-    { text: 'Ad-free experience', included: true },
-    { text: 'PDF reports', included: true },
-    { text: 'Voice reports', included: false },
-    { text: 'Expert consultation', included: false },
-  ],
-  pro: [
-    { text: 'Daily free fortune', included: true },
-    { text: 'Unlimited Saju & Face analysis', included: true },
-    { text: 'AI rankings access', included: true },
-    { text: 'All guides & tutorials', included: true },
-    { text: 'Ad-free experience', included: true },
-    { text: 'PDF reports', included: true },
-    { text: 'Voice reports', included: true },
-    { text: 'Priority support', included: true },
-  ],
-  premium: [
-    { text: 'Everything in Pro', included: true },
-    { text: 'Integrated analysis', included: true },
-    { text: 'Family/Group analysis', included: true },
-    { text: 'Expert consultation (1/month)', included: true },
-    { text: 'Personalized predictions', included: true },
-    { text: 'Early access to new features', included: true },
-    { text: 'Dedicated support', included: true },
-    { text: 'API access', included: true },
-  ],
-};
+const planKeys = ['free', 'basic', 'pro', 'premium'] as const;
 
 const planMeta: Record<string, { icon: typeof Star; color: string; bgColor: string; popular?: boolean }> = {
   free: { icon: Star, color: 'text-gray-500', bgColor: 'bg-gray-100' },
@@ -82,13 +35,64 @@ const planMeta: Record<string, { icon: typeof Star; color: string; bgColor: stri
   premium: { icon: Crown, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
 };
 
+function getPlanPrice(plan: string, currency: Currency, yearly: boolean): number {
+  if (plan === 'free') return 0;
+  const tier = SUBSCRIPTION_TIERS[plan];
+  if (!tier) return 0;
+  const monthly = tier.price[currency];
+  return yearly ? Math.round(monthly * 10) : monthly; // 10 months = 2 months free
+}
+
+function getFeatureKeys(plan: string): { text: string; included: boolean }[] {
+  const allFeatures: Record<string, { text: string; included: boolean }[]> = {
+    free: [
+      { text: 'feature_daily_fortune', included: true },
+      { text: 'feature_basic_analysis_1', included: true },
+      { text: 'feature_ai_ranking', included: true },
+      { text: 'feature_ad_free', included: false },
+      { text: 'feature_pdf', included: false },
+      { text: 'feature_voice', included: false },
+      { text: 'feature_expert', included: false },
+    ],
+    basic: [
+      { text: 'feature_daily_fortune', included: true },
+      { text: 'feature_basic_analysis_3', included: true },
+      { text: 'feature_ai_ranking', included: true },
+      { text: 'feature_ad_free', included: true },
+      { text: 'feature_pdf', included: true },
+      { text: 'feature_voice', included: false },
+      { text: 'feature_expert', included: false },
+    ],
+    pro: [
+      { text: 'feature_daily_fortune', included: true },
+      { text: 'feature_unlimited_basic', included: true },
+      { text: 'feature_deep_5', included: true },
+      { text: 'feature_ad_free', included: true },
+      { text: 'feature_pdf', included: true },
+      { text: 'feature_voice', included: true },
+      { text: 'feature_priority', included: true },
+    ],
+    premium: [
+      { text: 'feature_all_pro', included: true },
+      { text: 'feature_unlimited_all', included: true },
+      { text: 'feature_family', included: true },
+      { text: 'feature_expert', included: true },
+      { text: 'feature_early_access', included: true },
+      { text: 'feature_dedicated', included: true },
+    ],
+  };
+  return allFeatures[plan] ?? [];
+}
+
 export default function PricingPage() {
   const t = useTranslations('pricing');
+  const locale = useLocale() as LocaleKey;
+  const currency = getCurrencyFromLocale(locale);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const yearly = billingPeriod === 'yearly';
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR').format(price);
-  };
+  // Individual services from ANALYSIS_PRODUCTS
+  const serviceCards = ['saju_basic', 'face', 'compatibility', 'tarot', 'mbti_fortune'] as const;
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-16">
@@ -96,7 +100,7 @@ export default function PricingPage() {
       <div className="text-center mb-12">
         <Badge className="mb-4 bg-primary/10 text-primary">
           <Sparkles className="mr-1 h-3 w-3" />
-          Pricing Plans
+          {t('title')}
         </Badge>
         <h1 className="text-3xl md:text-5xl font-bold mb-4">{t('title')}</h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -115,7 +119,7 @@ export default function PricingPage() {
             <TabsTrigger value="yearly" className="relative">
               {t('yearly')}
               <Badge className="absolute -top-3 -right-3 bg-green-500 text-white text-xs">
-                -17%
+                {t('yearlyDiscount')}
               </Badge>
             </TabsTrigger>
           </TabsList>
@@ -124,11 +128,11 @@ export default function PricingPage() {
 
       {/* Plans Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        {(['free', 'basic', 'pro', 'premium'] as const).map((plan) => {
+        {planKeys.map((plan) => {
           const meta = planMeta[plan];
           const Icon = meta.icon;
-          const pricing = plans[billingPeriod][plan];
-          const planFeatures = features[plan];
+          const price = getPlanPrice(plan, currency, yearly);
+          const planFeatures = getFeatureKeys(plan);
 
           return (
             <Card
@@ -142,7 +146,7 @@ export default function PricingPage() {
               {meta.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <Badge className="bg-primary text-primary-foreground">
-                    Most Popular
+                    {t('popular')}
                   </Badge>
                 </div>
               )}
@@ -152,39 +156,33 @@ export default function PricingPage() {
                 >
                   <Icon className={`h-6 w-6 ${meta.color}`} />
                 </div>
-                <CardTitle className="text-xl capitalize">
-                  {t(`tiers.${plan}.name` as 'tiers.free.name')}
+                <CardTitle className="text-xl">
+                  {t(`tiers.${plan}.name` as `tiers.free.name`)}
                 </CardTitle>
                 <CardDescription>
-                  {plan === 'free'
-                    ? 'Get started for free'
-                    : plan === 'basic'
-                    ? 'For casual users'
-                    : plan === 'pro'
-                    ? 'For regular users'
-                    : 'For power users'}
+                  {plan !== 'free' && SUBSCRIPTION_TIERS[plan]
+                    ? SUBSCRIPTION_TIERS[plan].description[locale]
+                    : t(`tiers.${plan}.features.0` as `tiers.free.features.0`)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">
-                    {pricing.price === 0 ? (
-                      'Free'
-                    ) : (
-                      <>
-                        ₩{formatPrice(pricing.price)}
-                      </>
-                    )}
-                  </span>
-                  {pricing.price > 0 && (
-                    <span className="text-muted-foreground">
-                      /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
-                    </span>
-                  )}
-                  {billingPeriod === 'yearly' && 'monthlyEquiv' in pricing && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      ₩{formatPrice(pricing.monthlyEquiv)}/mo equivalent
-                    </p>
+                  {price === 0 ? (
+                    <span className="text-4xl font-bold">{t(`tiers.free.name`)}</span>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold">
+                        {formatPrice(price, currency)}
+                      </span>
+                      <span className="text-muted-foreground">
+                        /{yearly ? (locale === 'ko' ? '년' : locale === 'ja' ? '年' : 'yr') : (locale === 'ko' ? '월' : locale === 'ja' ? '月' : 'mo')}
+                      </span>
+                      {yearly && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {formatPrice(Math.round(price / 12), currency)}/{locale === 'ko' ? '월' : locale === 'ja' ? '月' : 'mo'}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -201,7 +199,7 @@ export default function PricingPage() {
                           feature.included ? '' : 'text-muted-foreground'
                         }
                       >
-                        {feature.text}
+                        {t(`features.${feature.text}` as `features.feature_daily_fortune`)}
                       </span>
                     </li>
                   ))}
@@ -213,10 +211,10 @@ export default function PricingPage() {
                   variant={meta.popular ? 'default' : 'outline'}
                 >
                   {plan === 'free' ? (
-                    'Get Started'
+                    t('cta.current')
                   ) : (
                     <>
-                      Subscribe
+                      {t('cta.subscribe')}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
@@ -227,91 +225,51 @@ export default function PricingPage() {
         })}
       </div>
 
-      {/* Additional Services */}
-      <div className="mt-16 max-w-4xl mx-auto">
+      {/* Individual Services */}
+      <div className="mt-16 max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold text-center mb-8">
-          Individual Services
+          {t('individual')}
         </h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Saju Analysis</h3>
-              <p className="text-2xl font-bold text-primary">₩5,900</p>
-              <p className="text-sm text-muted-foreground">per analysis</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Face Reading</h3>
-              <p className="text-2xl font-bold text-primary">₩5,900</p>
-              <p className="text-sm text-muted-foreground">per analysis</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Compatibility</h3>
-              <p className="text-2xl font-bold text-primary">₩9,900</p>
-              <p className="text-sm text-muted-foreground">per pair</p>
-            </CardContent>
-          </Card>
+        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {serviceCards.map((key) => {
+            const product = ANALYSIS_PRODUCTS[key];
+            if (!product) return null;
+            return (
+              <Card key={key}>
+                <CardContent className="p-6 text-center">
+                  <h3 className="font-semibold mb-2">{product.name[locale]}</h3>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatPrice(product.price[currency], currency)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{t('perUse')}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
       {/* FAQ */}
       <div className="mt-16 max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold text-center mb-8">
-          Frequently Asked Questions
+          {t('faq.title')}
         </h2>
         <div className="space-y-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold mb-1">Can I cancel anytime?</h3>
-                  <p className="text-muted-foreground">
-                    Yes, you can cancel your subscription at any time. You will
-                    continue to have access until the end of your billing
-                    period.
-                  </p>
+          {(['cancel', 'payment', 'trial'] as const).map((faq) => (
+            <Card key={faq}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold mb-1">{t(`faq.${faq}.q` as `faq.cancel.q`)}</h3>
+                    <p className="text-muted-foreground">
+                      {t(`faq.${faq}.a` as `faq.cancel.a`)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold mb-1">
-                    What payment methods do you accept?
-                  </h3>
-                  <p className="text-muted-foreground">
-                    We accept credit/debit cards, PayPal, and local payment
-                    methods including Toss Pay (Korea), LINE Pay (Japan), and
-                    more.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold mb-1">
-                    Is there a free trial?
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Yes! You can use our Free plan forever with limited
-                    features. We also offer a 7-day free trial for Pro and
-                    Premium plans.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

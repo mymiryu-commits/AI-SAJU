@@ -9,46 +9,19 @@ export function Footer() {
   return (
     <footer className="border-t bg-muted/50">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Company */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {/* Services */}
           <div>
             <h3 className="font-semibold mb-4">{t('company.title')}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/about" className="hover:text-primary">
+                <Link href="/fortune" className="hover:text-primary">
                   {t('company.about')}
                 </Link>
               </li>
               <li>
-                <Link href="/careers" className="hover:text-primary">
-                  {t('company.careers')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/press" className="hover:text-primary">
-                  {t('company.press')}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h3 className="font-semibold mb-4">{t('support.title')}</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link href="/faq" className="hover:text-primary">
+                <Link href="/pricing" className="hover:text-primary">
                   {t('support.faq')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-primary">
-                  {t('support.contact')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/feedback" className="hover:text-primary">
-                  {t('support.feedback')}
                 </Link>
               </li>
             </ul>
@@ -66,11 +39,6 @@ export function Footer() {
               <li>
                 <Link href="/privacy" className="hover:text-primary">
                   {t('legal.privacy')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies" className="hover:text-primary">
-                  {t('legal.cookies')}
                 </Link>
               </li>
             </ul>
