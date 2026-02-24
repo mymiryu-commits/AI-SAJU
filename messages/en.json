@@ -27,11 +27,14 @@
   "nav": {
     "home": "Home",
     "ranking": "AI Ranking",
+    "saju": "Fortune",
     "guide": "AI Guide",
     "prompts": "Prompt Market",
     "fortune": "AI Fortune",
     "lotto": "Lotto Analyzer",
-    "qr": "QR Card",
+    "qr": "QR Code",
+    "finance": "Finance",
+    "monetize": "Monetize",
     "community": "Community",
     "pricing": "Pricing",
     "login": "Login",
@@ -104,8 +107,7 @@
       "astrology": "Astrology",
       "tarot": "Tarot Reading",
       "compatibility": "Compatibility",
-      "group": "Family/Group Analysis",
-      "animal": "Animal Fortune"
+      "group": "Family/Group Analysis"
     },
     "saju": {
       "title": "AI Four Pillars Analysis",
@@ -145,7 +147,13 @@
       "title": "Daily Fortune",
       "checkin": "Check In",
       "streakDays": "{count} day streak",
+      "streakStart": "Start today!",
+      "checkedIn": "Checked In",
+      "checkInBtn": "Check In",
+      "streakBonus": "7-day streak unlocks special bonus!",
       "todayFortune": "Check today's fortune",
+      "todayMessage": "Today's Message",
+      "caution": "Caution",
       "scores": {
         "overall": "Overall",
         "wealth": "Wealth",
@@ -157,6 +165,36 @@
         "time": "Lucky Time",
         "color": "Lucky Color",
         "number": "Lucky Number"
+      },
+      "colors": {
+        "Purple": "Purple",
+        "Blue": "Blue",
+        "Green": "Green",
+        "Red": "Red",
+        "Yellow": "Yellow",
+        "Orange": "Orange"
+      },
+      "advices": {
+        "0": "Today new opportunities may come your way. Keep an open mind and look around.",
+        "1": "Starting the day with a calm mind will bring good results.",
+        "2": "Warm conversations will bring luck in relationships.",
+        "3": "Today is a good day to make important decisions. Trust your intuition.",
+        "4": "Collaboration with others will be the key to success.",
+        "5": "Believe in yourself and move forward. Your efforts will shine."
+      },
+      "cautions": {
+        "0": "Avoid hasty decisions and think carefully.",
+        "1": "Pay special attention to your health.",
+        "2": "Rational judgment is needed rather than emotional response.",
+        "3": "Be careful of excessive spending.",
+        "4": "Don't be swayed too much by others' words.",
+        "5": "Avoid overloaded schedules and get enough rest."
+      },
+      "deeperAnalysis": {
+        "title": "Want a deeper analysis?",
+        "description": "Discover your destiny with Four Pillars based deep analysis",
+        "freeSaju": "Free Saju Analysis",
+        "viewPlans": "View Premium Plans"
       }
     },
     "free": {
@@ -174,33 +212,100 @@
         "Expert consultation"
       ],
       "cta": "Get Premium Analysis"
+    }
+  },
+  "saju": {
+    "hero": {
+      "badge": "AI-Powered Fortune Analysis",
+      "title": "Discover Your Destiny",
+      "subtitle": "Four Pillars, Face Reading, Compatibility and more. Find your life direction with AI-powered fortune services.",
+      "freeCta": "Free Fortune Reading",
+      "demoCta": "Explore Services",
+      "stats": {
+        "totalAnalyses": "Total Analyses",
+        "avgRating": "Avg Rating",
+        "satisfaction": "Return Rate"
+      }
     },
-    "animal": {
-      "badge": "Free",
-      "title": "Animal Fortune",
-      "subtitle": "Discover your zodiac animal and personality based on birth year",
-      "form": {
-        "title": "Enter Birth Year",
-        "birthYear": "Birth Year",
-        "placeholder": "e.g. 1990",
-        "submit": "Find My Zodiac Animal"
+    "services": {
+      "title": "Fortune Services",
+      "subtitle": "Explore various AI-powered fortune telling services",
+      "filters": {
+        "all": "All",
+        "free": "Free",
+        "premium": "Premium",
+        "recommended": "Recommended"
       },
-      "result": {
-        "yearBorn": " born",
-        "personality": "Personality",
-        "strengths": "Strengths",
-        "compatible": "Compatible",
-        "incompatible": "Challenging",
-        "retry": "Try Again",
-        "trySaju": "Try Four Pillars Analysis"
+      "items": {
+        "basic-saju": {
+          "title": "Free Fortune Trial",
+          "description": "Discover your Four Pillars of Destiny with your birth date and time. Check your basic fortune for free."
+        },
+        "saju-analysis": {
+          "title": "Fortune Analysis",
+          "description": "Blood type/MBTI integration, Five Elements balance, monthly fortune, 10-year cycle analysis with PDF download."
+        },
+        "deep-saju": {
+          "title": "Traditional Deep Dive",
+          "description": "Ten Gods, Divine Generals, 12 Life Stages, Combinations analysis. In-depth traditional interpretation."
+        },
+        "premium-saju": {
+          "title": "Premium Analysis",
+          "description": "Fortune + Traditional analysis + PDF + Voice narration + Real-time AI consultation. All-in-one package."
+        },
+        "compatibility": {
+          "title": "Compatibility",
+          "description": "Analyze compatibility with lovers, spouses, or business partners. Learn the strengths and cautions in relationships."
+        },
+        "yearly-fortune": {
+          "title": "2025 Fortune",
+          "description": "Check this year's overall fortune flow and monthly points of attention."
+        }
+      }
+    },
+    "premium": {
+      "title": "Premium Benefits",
+      "subtitle": "Get deeper and more accurate analysis with points",
+      "cta": "Charge Points",
+      "features": {
+        "detailedReport": {
+          "title": "Detailed Reports",
+          "description": "PDF reports and voice narration you can review anytime."
+        },
+        "expertAdvice": {
+          "title": "Expert Advice",
+          "description": "Practical action guides based on AI analysis results."
+        },
+        "unlimitedAccess": {
+          "title": "Points System",
+          "description": "Charge points and use premium services as you need."
+        }
+      }
+    },
+    "quickStart": {
+      "badge": "Done in 3 Minutes",
+      "title": "Get Started Now",
+      "description": "AI analyzes your fortune with just simple information input.",
+      "cta": "Start Free Analysis",
+      "steps": {
+        "step1": "Enter your birth date and time",
+        "step2": "AI calculates your Four Pillars",
+        "step3": "Review your detailed fortune analysis"
       },
-      "compatibility": {
-        "title": "Animal Compatibility",
-        "otherYear": "Other Person's Birth Year",
-        "check": "Check",
-        "points": " pts"
-      },
-      "allAnimals": "All 12 Zodiac Animals"
+      "benefits": {
+        "accuracy": {
+          "title": "High Accuracy",
+          "description": "Precise analysis combining traditional methods with AI"
+        },
+        "speed": {
+          "title": "Fast Results",
+          "description": "Detailed analysis results within 3 minutes"
+        },
+        "privacy": {
+          "title": "Privacy Protected",
+          "description": "Your information is deleted immediately after analysis"
+        }
+      }
     }
   },
   "auth": {
@@ -242,6 +347,7 @@
       "dashboard": "Dashboard",
       "history": "Analysis History",
       "family": "Family Management",
+      "vouchers": "Vouchers",
       "subscription": "Subscription",
       "settings": "Settings"
     },
@@ -259,144 +365,53 @@
     "monthly": "Monthly",
     "yearly": "Yearly",
     "yearlyDiscount": "2 months free",
-    "popular": "Popular",
-    "perUse": "per use",
-    "freeLabel": "Free",
-    "freeSection": "Free Services",
-    "freeSubtitle": "Available immediately with sign-up",
-    "paidSection": "Premium Analysis",
-    "paidSubtitle": "In-depth AI-powered premium analysis services",
-    "subscriptionSection": "Subscription Plans",
-    "subscriptionSubtitle": "Subscribe for unlimited access at a better price",
     "tiers": {
       "free": {
         "name": "Free",
+        "price": "0",
         "features": [
-          "Daily Fortune / Tarot / MBTI / Animal Fortune",
-          "With ads"
+          "Daily free fortune",
+          "Simple Four Pillars (1 time)",
+          "AI rankings access",
+          "Basic guides"
         ]
       },
       "basic": {
         "name": "Basic",
+        "price": "3.99",
         "features": [
-          "All free services",
-          "Saju/Face/Compatibility 3/month",
-          "Ad-free",
+          "All Free plan features",
+          "Detailed analysis 3/month",
+          "Ad-free experience",
           "PDF reports"
         ]
       },
       "pro": {
         "name": "Pro",
+        "price": "7.99",
+        "popular": true,
         "features": [
-          "Everything in Basic",
-          "Unlimited paid analyses",
-          "PDF + Voice reports",
+          "All Basic plan features",
+          "Unlimited analyses",
+          "Voice reports",
           "Priority support"
         ]
       },
       "premium": {
         "name": "Premium",
+        "price": "15.99",
         "features": [
-          "Everything in Pro",
-          "Family analysis",
-          "Expert consultation",
-          "Early access to new features"
+          "All Pro plan features",
+          "Integrated analysis",
+          "1 expert consultation/month",
+          "Family analysis included"
         ]
       }
-    },
-    "features": {
-      "feature_daily_fortune": "Daily Fortune",
-      "feature_tarot": "Tarot Reading",
-      "feature_mbti": "MBTI Fortune",
-      "feature_animal": "Animal Fortune",
-      "feature_ad_free": "Ad-free experience",
-      "feature_paid_services": "Premium analysis services",
-      "feature_all_free": "All free services included",
-      "feature_saju_3": "Saju/Face/Compatibility 3/month",
-      "feature_all_basic": "Everything in Basic",
-      "feature_unlimited_paid": "Unlimited paid analyses",
-      "feature_pdf": "PDF reports",
-      "feature_voice": "Voice reports",
-      "feature_expert": "Expert consultation",
-      "feature_priority": "Priority support",
-      "feature_all_pro": "Everything in Pro",
-      "feature_family": "Family analysis included",
-      "feature_early_access": "Early access to new features",
-      "feature_dedicated": "Dedicated support"
     },
     "cta": {
       "current": "Current Plan",
       "subscribe": "Subscribe",
       "upgrade": "Upgrade"
-    },
-    "faq": {
-      "title": "Frequently Asked Questions",
-      "cancel": {
-        "q": "Can I cancel anytime?",
-        "a": "Yes, you can cancel your subscription at any time. You will continue to have access until the end of your billing period."
-      },
-      "payment": {
-        "q": "What payment methods do you accept?",
-        "a": "We accept credit/debit cards, KakaoPay, Naver Pay, Toss Pay, and bank transfer."
-      },
-      "trial": {
-        "q": "Is there a free trial?",
-        "a": "Yes! You can use our Free plan forever with basic features. Paid plans offer 50% off the first month."
-      }
-    }
-  },
-  "legal": {
-    "terms": {
-      "title": "Terms of Service",
-      "lastUpdated": "Last updated: February 2025",
-      "section1": {
-        "title": "Article 1 (Purpose)",
-        "content": "These terms define the conditions and procedures for using the AI fortune analysis service ('Service') provided by AI-SAJU ('Company'), and the rights, obligations, and responsibilities between the Company and users."
-      },
-      "section2": {
-        "title": "Article 2 (Service Description)",
-        "content": "The Company provides AI-based Four Pillars analysis, face reading, compatibility analysis, tarot reading, MBTI fortune, daily fortune, and lotto number analysis as entertainment services. This service provides analysis results based on statistical data and AI algorithms, and does not replace professional medical, legal, or financial advice."
-      },
-      "section3": {
-        "title": "Article 3 (Fees and Payment)",
-        "content": "The service is divided into free and paid plans. Payments for paid services are processed through Toss Payments. Subscription cancellation is available at any time, and the service remains accessible until the end of the billing period."
-      },
-      "section4": {
-        "title": "Article 4 (Refund Policy)",
-        "content": "Due to the nature of digital content, refunds for already-provided analysis results are not available in principle. However, full refunds are provided for service errors. For subscriptions, full refunds are possible within 7 days of payment if unused."
-      },
-      "section5": {
-        "title": "Article 5 (Disclaimer)",
-        "content": "This service is an AI data analysis-based entertainment service. Analysis results are for reference only, and the Company is not responsible for decisions made based on these results."
-      },
-      "section6": {
-        "title": "Article 6 (Dispute Resolution)",
-        "content": "Disputes arising from service usage shall be governed by the laws of the Republic of Korea."
-      }
-    },
-    "privacy": {
-      "title": "Privacy Policy",
-      "lastUpdated": "Last updated: February 2025",
-      "section1": {
-        "title": "1. Personal Information Collected",
-        "content": "We collect the following personal information for service provision: email address, name/nickname, date and time of birth, gender, and payment information (processed via Toss Payments). Face photos are used only for face reading analysis and deleted immediately after analysis."
-      },
-      "section2": {
-        "title": "2. Purpose of Use",
-        "content": "Collected personal information is used only for: fortune analysis service provision, payment processing and usage history management, statistical analysis for service improvement (de-identified), and customer inquiry response."
-      },
-      "section3": {
-        "title": "3. Retention and Disposal",
-        "content": "Personal information is destroyed immediately upon account deletion. However, where required by law, data is safely stored for the legally required period before disposal."
-      },
-      "section4": {
-        "title": "4. Security Measures",
-        "content": "We implement encryption (TLS for transmission, AES-256 for storage), access control management, Supabase Row Level Security for data isolation, and regular security audits."
-      },
-      "section5": {
-        "title": "5. User Rights",
-        "content": "Users may request to view, correct, delete, or suspend processing of their personal information at any time via My Page > Settings or customer support."
-      }
     }
   },
   "footer": {

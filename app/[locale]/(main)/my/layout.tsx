@@ -9,12 +9,14 @@ import {
   Users,
   CreditCard,
   Settings,
+  Ticket,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/my/dashboard', key: 'dashboard', icon: LayoutDashboard },
   { href: '/my/history', key: 'history', icon: History },
   { href: '/my/family', key: 'family', icon: Users },
+  { href: '/my/vouchers', key: 'vouchers', icon: Ticket },
   { href: '/my/subscription', key: 'subscription', icon: CreditCard },
   { href: '/my/settings', key: 'settings', icon: Settings },
 ];

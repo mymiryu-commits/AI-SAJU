@@ -231,12 +231,12 @@ export default function ReferralPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200">
               <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                🎁 피추천인 혜택
+                🎁 신규 가입자 혜택
               </h4>
               <ul className="text-sm space-y-1 text-blue-600 dark:text-blue-400">
-                <li>• 첫 결제 30% 할인</li>
-                <li>• 무료 코인 50개 지급</li>
-                <li>• 기본 분석 1회 무료</li>
+                <li>• 가입 즉시 <strong>200P</strong> 지급</li>
+                <li>• 추천인 코드 입력 시 추가 혜택</li>
+                <li>• 첫 결제 10% 할인</li>
               </ul>
             </div>
             <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200">
@@ -244,8 +244,8 @@ export default function ReferralPage() {
                 💰 추천인 혜택
               </h4>
               <ul className="text-sm space-y-1 text-purple-600 dark:text-purple-400">
-                <li>• 결제액의 20~35% 크레딧 적립</li>
-                <li>• 레벨업 시 추가 보너스</li>
+                <li>• 친구 가입 시 <strong>300P</strong> 적립</li>
+                <li>• 레벨업 시 수수료율 상승 (최대 35%)</li>
                 <li>• 월간 TOP 추천인 특별 혜택</li>
               </ul>
             </div>

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Toss Payments redirects here when payment fails or is canceled
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get('code') || 'UNKNOWN_ERROR';
-  const message = searchParams.get('message') || 'Payment failed';
-  const orderId = searchParams.get('orderId') || '';
+  const errorCode = searchParams.get('code') || 'unknown';
+  const errorMessage = searchParams.get('message') || 'Unknown error';
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
-  const params = new URLSearchParams({ code, message, orderId });
+  console.log('Payment failed:', { errorCode, errorMessage });
+
+  // Redirect to pricing page with error message
   return NextResponse.redirect(
-    `${baseUrl}/ko/payment/fail?${params.toString()}`
+    new URL(`/pricing?error=${encodeURIComponent(errorCode)}&message=${encodeURIComponent(errorMessage)}`, request.url)
   );
 }
