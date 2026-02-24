@@ -1,6 +1,9 @@
 /**
  * 사주 분석 API
  * POST /api/fortune/saju/analyze
+ *
+ * 무료 분석: 블라인드 처리된 결과 제공
+ * 프리미엄 분석: 포인트 차감 후 전체 결과 제공
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,11 +19,23 @@ import {
   generateSocialProof,
   generateProductRecommendation
 } from '@/lib/fortune/saju/newIndex';
-import type { UserInput, AnalysisResult, PersonalityAnalysis } from '@/types/saju';
+import { generateAIAnalysis } from '@/lib/fortune/saju/ai/openaiAnalysis';
+import {
+  canUseFreeAnalysis,
+  incrementFreeAnalysis,
+} from '@/lib/services/pointService';
+import {
+  blindFreeAnalysis,
+  integrateZodiacAnalysis,
+  saveAnalysisResult,
+} from '@/lib/services/analysisService';
+import type { UserInput, AnalysisResult, PersonalityAnalysis, AIAnalysis } from '@/types/saju';
 
 export async function POST(request: NextRequest) {
   try {
-    const input: UserInput = await request.json();
+    const body = await request.json();
+    const { useVoucher, ...inputFields } = body;
+    const input: UserInput = inputFields;
 
     // 필수 필드 검증
     if (!input.name || !input.birthDate || !input.gender) {
@@ -31,14 +46,33 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 사주 계산
-    const saju = calculateSaju(
-      input.birthDate,
-      input.birthTime,
-      input.calendar === 'lunar'
-    );
+    let saju;
+    try {
+      saju = calculateSaju(
+        input.birthDate,
+        input.birthTime,
+        input.calendar === 'lunar'
+      );
+    } catch (calcError) {
+      console.error('사주 계산 오류:', calcError);
+      return NextResponse.json(
+        { success: false, error: '사주 계산 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
 
     // 2. 오행 분석
-    const ohengResult = analyzeOheng(saju);
+    let ohengResult;
+    try {
+      ohengResult = analyzeOheng(saju);
+    } catch (ohengError) {
+      console.error('오행 분석 오류:', ohengError);
+      return NextResponse.json(
+        { success: false, error: '오행 분석 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+
     const ohengActions = generateOhengActions(ohengResult.yongsin, ohengResult.gisin);
 
     // 3. 운세 점수 계산
@@ -95,6 +129,51 @@ export async function POST(request: NextRequest) {
       coreMessage
     });
 
+    // 8. AI 분석 생성 (OpenAI)
+    let aiAnalysis: AIAnalysis | undefined;
+    try {
+      const aiResult = await generateAIAnalysis({
+        user: input,
+        saju,
+        oheng: ohengResult.balance,
+        yongsin: ohengResult.yongsin,
+        gisin: ohengResult.gisin,
+        scores,
+        dayMasterStrength: ohengResult.dayMasterStrength
+      });
+
+      aiAnalysis = {
+        personalityReading: aiResult.personalityReading,
+        fortuneAdvice: aiResult.fortuneAdvice,
+        lifePath: aiResult.lifePath,
+        luckyElements: aiResult.luckyElements,
+        warningAdvice: aiResult.warningAdvice,
+        // 전문가 수준 분석 필드
+        dayMasterAnalysis: aiResult.dayMasterAnalysis,
+        tenYearFortune: aiResult.tenYearFortune,
+        yearlyFortune: aiResult.yearlyFortune,
+        monthlyFortune: aiResult.monthlyFortune,
+        relationshipAnalysis: aiResult.relationshipAnalysis,
+        careerGuidance: aiResult.careerGuidance,
+        wealthStrategy: aiResult.wealthStrategy,
+        healthAdvice: aiResult.healthAdvice,
+        spiritualGuidance: aiResult.spiritualGuidance,
+        actionPlan: aiResult.actionPlan
+      };
+
+      // AI 생성 메시지로 coreMessage 업데이트
+      if (aiResult.coreMessage) {
+        coreMessage.hook = aiResult.coreMessage.hook || coreMessage.hook;
+        coreMessage.insight = aiResult.coreMessage.insight || coreMessage.insight;
+        coreMessage.urgency = aiResult.coreMessage.urgency || coreMessage.urgency;
+      }
+    } catch (aiError) {
+      console.warn('AI 분석 생성 실패:', aiError);
+    }
+
+    // 9. 별자리 분석 통합
+    const zodiacAnalysis = integrateZodiacAnalysis(input.birthDate);
+
     // 결과 객체
     const result: AnalysisResult = {
       user: input,
@@ -105,12 +184,21 @@ export async function POST(request: NextRequest) {
       gisin: ohengResult.gisin,
       personality,
       peerComparison,
-      coreMessage
+      coreMessage,
+      aiAnalysis
     };
 
     // Supabase에 저장 (인증된 사용자인 경우)
-    let userId = null;
-    let analysisId = null;
+    let userId: string | null = null;
+    let analysisId: string | null = null;
+    let voucherInfo: { hasVoucher: boolean; remaining: number } = { hasVoucher: false, remaining: 0 };
+    let freeAnalysisStatus = { canUse: true, remaining: 3, limit: 3 };
+    let isBlinded = true; // 무료 분석은 기본적으로 블라인드
+    let isAdmin = false;
+    let usedVoucher = false;
+
+    // 관리자 이메일 목록
+    const ADMIN_EMAILS = ['mymiryu@gmail.com'];
 
     try {
       const supabase = await createClient();
@@ -119,51 +207,192 @@ export async function POST(request: NextRequest) {
       if (user) {
         userId = user.id;
 
-        // 분석 결과 저장
-        const { data: analysisData, error: analysisError } = await (supabase as any)
-          .from('fortune_analyses')
-          .insert({
-            user_id: userId,
-            type: 'saju',
-            subtype: 'basic',
-            input_data: input,
-            result_summary: {
-              saju: {
-                year: `${saju.year.heavenlyStem}${saju.year.earthlyBranch}`,
-                month: `${saju.month.heavenlyStem}${saju.month.earthlyBranch}`,
-                day: `${saju.day.heavenlyStem}${saju.day.earthlyBranch}`,
-                time: saju.time ? `${saju.time.heavenlyStem}${saju.time.earthlyBranch}` : null
-              },
-              scores,
-              zodiac: saju.year.zodiac,
-              dayMaster: saju.day.heavenlyStem,
-              dayMasterStrength: ohengResult.dayMasterStrength
-            },
-            result_full: result,
-            keywords: [
-              saju.day.element,
-              saju.year.zodiac,
-              ...ohengResult.yongsin,
-              input.currentConcern || 'none'
-            ],
-            scores: scores
-          })
-          .select('id')
-          .single();
+        // 관리자 확인
+        isAdmin = user.email ? ADMIN_EMAILS.includes(user.email) : false;
 
-        if (!analysisError && analysisData) {
-          analysisId = analysisData.id;
+        // 결제권(이용권) 잔여 확인
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: vouchers } = await (supabase as any)
+          .from('user_vouchers')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('service_type', 'saju')
+          .eq('status', 'active')
+          .gt('remaining_quantity', 0)
+          .gt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: true });
+
+        const totalVouchers = vouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
+        voucherInfo = { hasVoucher: totalVouchers > 0, remaining: totalVouchers };
+
+        if (isAdmin) {
+          // 관리자: 무제한 무료
+          freeAnalysisStatus = { canUse: true, remaining: 999, limit: 999 };
+          isBlinded = false;
+        } else if (useVoucher) {
+          // useVoucher 플래그: 결제권 우선 사용 (통합 페이지 등에서 사용)
+          // 무료 분석을 건너뛰고 바로 결제권 사용
+          freeAnalysisStatus = await canUseFreeAnalysis(userId);
+
+          if (voucherInfo.hasVoucher) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+                p_user_id: user.id,
+                p_service_type: 'saju',
+                p_quantity: 1,
+                p_related_id: null,
+                p_related_type: 'saju_analysis',
+              });
+
+              console.log('use_voucher result (forced):', { useResult, useError });
+
+              if (useError) {
+                console.error('use_voucher RPC error:', useError);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              if (useResult === false || (useResult && useResult.success === false)) {
+                console.warn('use_voucher returned failure:', useResult);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              usedVoucher = true;
+              isBlinded = false;
+              voucherInfo.remaining = useResult?.remaining ?? (voucherInfo.remaining - 1);
+            } catch (voucherError) {
+              console.error('Voucher use error:', voucherError);
+              isBlinded = true;
+            }
+          } else {
+            // useVoucher 요청했지만 결제권 없음
+            return NextResponse.json({
+              success: false,
+              error: '결제권이 없습니다. 패키지를 구매해주세요.',
+              errorCode: 'NO_VOUCHER',
+              data: { freeAnalysisStatus, voucherInfo }
+            }, { status: 402 });
+          }
+        } else {
+          // 일반 사용자: 무료 분석 횟수 확인
+          freeAnalysisStatus = await canUseFreeAnalysis(userId);
+
+          if (freeAnalysisStatus.canUse) {
+            // 무료 분석 가능 → 사용
+            await incrementFreeAnalysis(userId);
+            isBlinded = true;
+          } else if (voucherInfo.hasVoucher) {
+            // 무료 분석 소진 → 결제권 사용
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: useResult, error: useError } = await (supabase as any).rpc('use_voucher', {
+                p_user_id: user.id,
+                p_service_type: 'saju',
+                p_quantity: 1,
+                p_related_id: null,
+                p_related_type: 'saju_analysis',
+              });
+
+              console.log('use_voucher result:', { useResult, useError });
+
+              if (useError) {
+                console.error('use_voucher RPC error:', useError);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              if (useResult === false || (useResult && useResult.success === false)) {
+                console.warn('use_voucher returned failure:', useResult);
+                return NextResponse.json({
+                  success: false,
+                  error: '결제권 사용에 실패했습니다.',
+                  errorCode: 'VOUCHER_USE_FAILED',
+                }, { status: 500 });
+              }
+
+              usedVoucher = true;
+              isBlinded = false;
+              voucherInfo.remaining = useResult?.remaining ?? (voucherInfo.remaining - 1);
+            } catch (voucherError) {
+              console.error('Voucher use error:', voucherError);
+              isBlinded = true;
+            }
+          } else {
+            // 결제권 없음
+            return NextResponse.json({
+              success: false,
+              error: '무료 분석 횟수를 모두 사용했습니다. 결제권을 구매해주세요.',
+              errorCode: 'NO_VOUCHER',
+              data: { freeAnalysisStatus, voucherInfo }
+            }, { status: 402 });
+          }
+        }
+
+        // 분석 결과 저장 (실패해도 분석 결과 반환)
+        try {
+          const saveResult = await saveAnalysisResult(userId, result, {
+            isPremium: !isBlinded,
+            isBlinded: isBlinded,
+            productType: usedVoucher ? 'voucher' : 'free',
+            pointsPaid: 0,
+            zodiacData: zodiacAnalysis,
+          });
+
+          if (saveResult.id) {
+            analysisId = saveResult.id;
+            console.log('분석 결과 저장 완료:', analysisId);
+          } else {
+            console.warn('분석 결과 저장 실패:', saveResult.error);
+          }
+        } catch (saveError) {
+          console.warn('분석 결과 저장 중 오류 (무시됨):', saveError);
+        }
+
+        // 결제권 잔여 업데이트 (실패해도 무시)
+        try {
+          if (!isAdmin) {
+            freeAnalysisStatus = await canUseFreeAnalysis(userId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: updatedVouchers } = await (supabase as any)
+              .from('user_vouchers')
+              .select('remaining_quantity')
+              .eq('user_id', user.id)
+              .eq('service_type', 'saju')
+              .eq('status', 'active')
+              .gt('remaining_quantity', 0)
+              .gt('expires_at', new Date().toISOString());
+            voucherInfo.remaining = updatedVouchers?.reduce((sum: number, v: { remaining_quantity: number }) => sum + v.remaining_quantity, 0) || 0;
+          }
+        } catch (voucherUpdateError) {
+          console.warn('결제권 잔여 업데이트 실패 (무시됨):', voucherUpdateError);
         }
       }
     } catch (dbError) {
-      console.warn('DB 저장 실패 (비로그인 사용자):', dbError);
+      console.warn('DB 저장 실패:', dbError);
     }
+
+    // 블라인드 처리 (관리자/결제권 사용 제외)
+    const blindedResult = isBlinded ? blindFreeAnalysis(result) : result;
 
     return NextResponse.json({
       success: true,
       data: {
-        result,
+        result: blindedResult,
+        fullResult: !isBlinded ? result : null, // 관리자/결제권 사용자에게만 제공
         ohengActions,
+        zodiacAnalysis, // 별자리 분석 포함
+        isBlinded,
         conversion: {
           paywallTemplate,
           urgencyBanner,
@@ -174,7 +403,14 @@ export async function POST(request: NextRequest) {
       meta: {
         userId,
         analysisId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        voucherInfo: {
+          remaining: voucherInfo.remaining,
+          hasVoucher: voucherInfo.hasVoucher,
+        },
+        freeAnalysis: freeAnalysisStatus,
+        isAdmin,
+        usedVoucher,
       }
     });
 
