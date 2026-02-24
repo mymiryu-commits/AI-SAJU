@@ -145,16 +145,10 @@ export function PaymentModal({
         const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
         const payment = tossPayments.payment({ customerKey: 'ANONYMOUS' });
 
-        const methodMap: Record<PaymentMethod, string> = {
-          card: 'CARD',
-          kakaopay: 'KAKAOPAY',
-          naverpay: 'NAVERPAY',
-          tosspay: 'TOSSPAY',
-          bank: 'TRANSFER',
-        };
-
+        // Use CARD method — Toss CARD payment window supports all payment methods
+        // including card, KakaoPay, NaverPay, TossPay via unified checkout
         await payment.requestPayment({
-          method: methodMap[selectedMethod] || 'CARD',
+          method: 'CARD',
           amount: { currency: 'KRW', value: data.paymentData.amount },
           orderId: data.paymentData.orderId,
           orderName: data.paymentData.orderName,

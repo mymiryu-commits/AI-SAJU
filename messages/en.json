@@ -104,7 +104,8 @@
       "astrology": "Astrology",
       "tarot": "Tarot Reading",
       "compatibility": "Compatibility",
-      "group": "Family/Group Analysis"
+      "group": "Family/Group Analysis",
+      "animal": "Animal Fortune"
     },
     "saju": {
       "title": "AI Four Pillars Analysis",
@@ -173,6 +174,33 @@
         "Expert consultation"
       ],
       "cta": "Get Premium Analysis"
+    },
+    "animal": {
+      "badge": "Free",
+      "title": "Animal Fortune",
+      "subtitle": "Discover your zodiac animal and personality based on birth year",
+      "form": {
+        "title": "Enter Birth Year",
+        "birthYear": "Birth Year",
+        "placeholder": "e.g. 1990",
+        "submit": "Find My Zodiac Animal"
+      },
+      "result": {
+        "yearBorn": " born",
+        "personality": "Personality",
+        "strengths": "Strengths",
+        "compatible": "Compatible",
+        "incompatible": "Challenging",
+        "retry": "Try Again",
+        "trySaju": "Try Four Pillars Analysis"
+      },
+      "compatibility": {
+        "title": "Animal Compatibility",
+        "otherYear": "Other Person's Birth Year",
+        "check": "Check",
+        "points": " pts"
+      },
+      "allAnimals": "All 12 Zodiac Animals"
     }
   },
   "auth": {
@@ -232,62 +260,66 @@
     "yearly": "Yearly",
     "yearlyDiscount": "2 months free",
     "popular": "Popular",
-    "individual": "Individual Services",
     "perUse": "per use",
+    "freeLabel": "Free",
+    "freeSection": "Free Services",
+    "freeSubtitle": "Available immediately with sign-up",
+    "paidSection": "Premium Analysis",
+    "paidSubtitle": "In-depth AI-powered premium analysis services",
+    "subscriptionSection": "Subscription Plans",
+    "subscriptionSubtitle": "Subscribe for unlimited access at a better price",
     "tiers": {
       "free": {
         "name": "Free",
         "features": [
-          "Daily free fortune",
-          "Simple Four Pillars (1 time)",
-          "AI rankings access",
-          "Basic guides"
+          "Daily Fortune / Tarot / MBTI / Animal Fortune",
+          "With ads"
         ]
       },
       "basic": {
         "name": "Basic",
         "features": [
-          "All Free plan features",
-          "Detailed analysis 3/month",
-          "Ad-free experience",
+          "All free services",
+          "Saju/Face/Compatibility 3/month",
+          "Ad-free",
           "PDF reports"
         ]
       },
       "pro": {
         "name": "Pro",
         "features": [
-          "All Basic plan features",
-          "Unlimited basic analyses",
-          "5 deep analyses/month",
-          "Voice reports",
+          "Everything in Basic",
+          "Unlimited paid analyses",
+          "PDF + Voice reports",
           "Priority support"
         ]
       },
       "premium": {
         "name": "Premium",
         "features": [
-          "All Pro plan features",
-          "Unlimited all analyses",
+          "Everything in Pro",
+          "Family analysis",
           "Expert consultation",
-          "Family analysis included",
           "Early access to new features"
         ]
       }
     },
     "features": {
-      "feature_daily_fortune": "Daily free fortune",
-      "feature_basic_analysis_1": "Basic analysis (1 time)",
-      "feature_basic_analysis_3": "Basic analysis 3/month",
-      "feature_ai_ranking": "AI tools ranking access",
+      "feature_daily_fortune": "Daily Fortune",
+      "feature_tarot": "Tarot Reading",
+      "feature_mbti": "MBTI Fortune",
+      "feature_animal": "Animal Fortune",
       "feature_ad_free": "Ad-free experience",
+      "feature_paid_services": "Premium analysis services",
+      "feature_all_free": "All free services included",
+      "feature_saju_3": "Saju/Face/Compatibility 3/month",
+      "feature_all_basic": "Everything in Basic",
+      "feature_unlimited_paid": "Unlimited paid analyses",
       "feature_pdf": "PDF reports",
       "feature_voice": "Voice reports",
       "feature_expert": "Expert consultation",
       "feature_priority": "Priority support",
-      "feature_unlimited_basic": "Unlimited basic analyses",
-      "feature_deep_5": "5 deep analyses/month",
       "feature_all_pro": "Everything in Pro",
-      "feature_unlimited_all": "Unlimited all analyses",
       "feature_family": "Family analysis included",
       "feature_early_access": "Early access to new features",
       "feature_dedicated": "Dedicated support"

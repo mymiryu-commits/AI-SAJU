@@ -104,7 +104,8 @@
       "astrology": "星座占い",
       "tarot": "タロット",
       "compatibility": "相性診断",
-      "group": "家族/グループ分析"
+      "group": "家族/グループ分析",
+      "animal": "動物占い"
     },
     "saju": {
       "title": "AI四柱推命",
@@ -173,6 +174,33 @@
         "専門家相談"
       ],
       "cta": "プレミアム分析を受ける"
+    },
+    "animal": {
+      "badge": "無料",
+      "title": "動物占い",
+      "subtitle": "生まれ年で分かるあなたの干支動物と性格",
+      "form": {
+        "title": "生まれ年を入力",
+        "birthYear": "生まれ年",
+        "placeholder": "例: 1990",
+        "submit": "干支動物を確認する"
+      },
+      "result": {
+        "yearBorn": "年生まれ",
+        "personality": "性格分析",
+        "strengths": "強み",
+        "compatible": "相性が良い",
+        "incompatible": "注意が必要",
+        "retry": "もう一度",
+        "trySaju": "四柱推命も受けてみる"
+      },
+      "compatibility": {
+        "title": "干支の相性チェック",
+        "otherYear": "相手の生まれ年",
+        "check": "確認",
+        "points": "点"
+      },
+      "allAnimals": "十二支の動物一覧"
     }
   },
   "auth": {
@@ -232,23 +260,27 @@
     "yearly": "年額",
     "yearlyDiscount": "2ヶ月無料",
     "popular": "人気",
-    "individual": "個別サービス",
     "perUse": "1回あたり",
+    "freeLabel": "無料",
+    "freeSection": "無料サービス",
+    "freeSubtitle": "会員登録だけですぐにご利用いただけます",
+    "paidSection": "有料分析サービス",
+    "paidSubtitle": "AIが深く分析するプレミアムサービス",
+    "subscriptionSection": "サブスクリプション",
+    "subscriptionSubtitle": "サブスクリプションで有料サービスをお得にご利用いただけます",
     "tiers": {
       "free": {
         "name": "無料",
         "features": [
-          "毎日の無料運勢",
-          "簡単四柱推命（1回）",
-          "AIランキング閲覧",
-          "基本ガイド利用"
+          "今日の運勢 / タロット / MBTI / 動物占い",
+          "広告あり"
         ]
       },
       "basic": {
         "name": "ベーシック",
         "features": [
-          "無料プランのすべての機能",
-          "詳細四柱推命 月3回",
+          "無料サービス全て",
+          "四柱推命/人相/相性 月3回",
           "広告非表示",
           "PDFレポート"
         ]
@@ -256,38 +288,38 @@
       "pro": {
         "name": "プロ",
         "features": [
-          "ベーシックプランのすべての機能",
-          "基本分析無制限",
-          "深層分析 月5回",
-          "音声レポート",
+          "ベーシックの全機能",
+          "有料分析無制限",
+          "PDF + 音声レポート",
           "優先サポート"
         ]
       },
       "premium": {
         "name": "プレミアム",
         "features": [
-          "プロプランのすべての機能",
-          "全分析無制限",
-          "専門家相談",
+          "プロの全機能",
           "家族分析含む",
+          "専門家相談",
           "新機能先行利用"
         ]
       }
     },
     "features": {
-      "feature_daily_fortune": "毎日の無料運勢",
-      "feature_basic_analysis_1": "基本四柱推命 1回",
-      "feature_basic_analysis_3": "基本分析 月3回",
-      "feature_ai_ranking": "AIツールランキング閲覧",
+      "feature_daily_fortune": "今日の運勢",
+      "feature_tarot": "タロットリーディング",
+      "feature_mbti": "MBTI占い",
+      "feature_animal": "動物占い",
       "feature_ad_free": "広告非表示",
+      "feature_paid_services": "有料分析サービス",
+      "feature_all_free": "無料サービス全て含む",
+      "feature_saju_3": "四柱推命/人相/相性 月3回",
+      "feature_all_basic": "ベーシックの全機能",
+      "feature_unlimited_paid": "有料分析無制限",
       "feature_pdf": "PDFレポート",
       "feature_voice": "音声レポート",
       "feature_expert": "専門家相談",
       "feature_priority": "優先サポート",
-      "feature_unlimited_basic": "基本分析無制限",
-      "feature_deep_5": "深層分析 月5回",
-      "feature_all_pro": "プロプランのすべての機能",
-      "feature_unlimited_all": "全分析無制限",
+      "feature_all_pro": "プロの全機能",
       "feature_family": "家族分析含む",
       "feature_early_access": "新機能先行利用",
       "feature_dedicated": "専任サポート"

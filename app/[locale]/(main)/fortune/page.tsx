@@ -13,6 +13,7 @@ import {
   Zap,
   ArrowRight,
   CheckCircle,
+  PawPrint,
 } from 'lucide-react';
 
 const fortuneServices = [
@@ -57,6 +58,13 @@ const fortuneServices = [
     color: 'bg-green-500',
     href: '/fortune/group',
     free: false,
+  },
+  {
+    key: 'animal',
+    icon: PawPrint,
+    color: 'bg-amber-500',
+    href: '/fortune/animal',
+    free: true,
   },
 ];
 

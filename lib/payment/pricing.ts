@@ -97,49 +97,21 @@ export const SUBSCRIPTION_TIERS: Record<string, ProductConfig> = {
   },
 };
 
-// Fortune Analysis Products (confirmed pricing - pay-per-use)
+// Fortune Analysis Products - PAID (pay-per-use)
 export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
-  saju_basic: {
-    id: 'analysis_saju_basic',
+  saju: {
+    id: 'analysis_saju',
     name: {
-      ko: '사주 기본 분석',
-      ja: '四柱基本分析',
-      en: 'Basic Four Pillars Analysis',
+      ko: '사주 분석',
+      ja: '四柱推命分析',
+      en: 'Four Pillars Analysis',
     },
     description: {
-      ko: '사주팔자 기본 분석 및 올해 운세',
-      ja: '四柱八字の基本分析と今年の運勢',
-      en: 'Basic Four Pillars analysis with yearly fortune',
-    },
-    price: { krw: 3900, jpy: 450, usd: 2.99 },
-  },
-  saju_deep: {
-    id: 'analysis_saju_deep',
-    name: {
-      ko: '사주 심화 분석',
-      ja: '四柱深層分析',
-      en: 'Deep Four Pillars Analysis',
-    },
-    description: {
-      ko: '대운 분석 포함 10년 운세',
-      ja: '大運分析を含む10年運勢',
-      en: '10-year fortune with major fortune analysis',
+      ko: '사주팔자 종합 분석 + 올해 운세 + PDF 리포트',
+      ja: '四柱八字の総合分析 + 今年の運勢 + PDFレポート',
+      en: 'Complete Four Pillars analysis + yearly fortune + PDF report',
     },
     price: { krw: 9900, jpy: 1100, usd: 7.99 },
-  },
-  saju_premium: {
-    id: 'analysis_saju_premium',
-    name: {
-      ko: '사주 프리미엄 분석',
-      ja: '四柱プレミアム分析',
-      en: 'Premium Four Pillars Analysis',
-    },
-    description: {
-      ko: '월별 상세 운세 + PDF + 음성 리포트',
-      ja: '月別詳細運勢 + PDF + 音声レポート',
-      en: 'Monthly detailed fortune + PDF + Audio report',
-    },
-    price: { krw: 19900, jpy: 2200, usd: 15.99 },
   },
   face: {
     id: 'analysis_face',
@@ -183,8 +155,26 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
     },
     price: { krw: 14900, jpy: 1650, usd: 11.99 },
   },
+};
+
+// Free Services (ad-supported)
+export const FREE_SERVICES: Record<string, ProductConfig> = {
+  daily_fortune: {
+    id: 'free_daily_fortune',
+    name: {
+      ko: '오늘의 운세',
+      ja: '今日の運勢',
+      en: 'Daily Fortune',
+    },
+    description: {
+      ko: '매일 확인하는 오늘의 운세',
+      ja: '毎日チェックする今日の運勢',
+      en: 'Check your daily fortune every day',
+    },
+    price: { krw: 0, jpy: 0, usd: 0 },
+  },
   tarot: {
-    id: 'analysis_tarot',
+    id: 'free_tarot',
     name: {
       ko: '타로 리딩',
       ja: 'タロットリーディング',
@@ -195,10 +185,10 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: 'AIタロットカードリーディング',
       en: 'AI Tarot Card Reading',
     },
-    price: { krw: 1900, jpy: 220, usd: 1.49 },
+    price: { krw: 0, jpy: 0, usd: 0 },
   },
   mbti_fortune: {
-    id: 'analysis_mbti_fortune',
+    id: 'free_mbti_fortune',
     name: {
       ko: 'MBTI 운세',
       ja: 'MBTI占い',
@@ -209,7 +199,21 @@ export const ANALYSIS_PRODUCTS: Record<string, ProductConfig> = {
       ja: 'MBTI性格タイプに基づく運勢分析',
       en: 'Fortune analysis based on MBTI personality type',
     },
-    price: { krw: 1900, jpy: 220, usd: 1.49 },
+    price: { krw: 0, jpy: 0, usd: 0 },
+  },
+  animal_fortune: {
+    id: 'free_animal_fortune',
+    name: {
+      ko: '나의 동물점',
+      ja: '私の動物占い',
+      en: 'My Animal Fortune',
+    },
+    description: {
+      ko: '띠 동물로 알아보는 나의 성격과 운세',
+      ja: '干支の動物で知る性格と運勢',
+      en: 'Discover your personality and fortune through your zodiac animal',
+    },
+    price: { krw: 0, jpy: 0, usd: 0 },
   },
 };
 

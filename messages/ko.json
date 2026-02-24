@@ -104,7 +104,8 @@
       "astrology": "별자리 운세",
       "tarot": "타로 리딩",
       "compatibility": "궁합",
-      "group": "가족/그룹 분석"
+      "group": "가족/그룹 분석",
+      "animal": "나의 동물점"
     },
     "saju": {
       "title": "AI 사주 분석",
@@ -173,6 +174,33 @@
         "전문가 상담 연결"
       ],
       "cta": "프리미엄 분석 받기"
+    },
+    "animal": {
+      "badge": "무료",
+      "title": "나의 동물점",
+      "subtitle": "태어난 해로 알아보는 나의 띠 동물과 성격",
+      "form": {
+        "title": "출생연도 입력",
+        "birthYear": "출생연도",
+        "placeholder": "예: 1990",
+        "submit": "내 띠 동물 확인하기"
+      },
+      "result": {
+        "yearBorn": "년생",
+        "personality": "성격 분석",
+        "strengths": "강점",
+        "compatible": "잘 맞는 띠",
+        "incompatible": "주의할 띠",
+        "retry": "다시 해보기",
+        "trySaju": "사주 분석도 받아보기"
+      },
+      "compatibility": {
+        "title": "띠 궁합 확인",
+        "otherYear": "상대방 출생연도",
+        "check": "궁합 확인",
+        "points": "점"
+      },
+      "allAnimals": "12간지 동물 모아보기"
     }
   },
   "auth": {
@@ -232,23 +260,27 @@
     "yearly": "연간",
     "yearlyDiscount": "2개월 무료",
     "popular": "인기",
-    "individual": "개별 서비스",
     "perUse": "1회 이용",
+    "freeLabel": "무료",
+    "freeSection": "무료 서비스",
+    "freeSubtitle": "회원가입만 하면 바로 이용할 수 있어요",
+    "paidSection": "유료 분석 서비스",
+    "paidSubtitle": "AI가 깊이 있게 분석하는 프리미엄 서비스",
+    "subscriptionSection": "구독 플랜",
+    "subscriptionSubtitle": "구독하면 유료 서비스를 더 저렴하게 이용할 수 있어요",
     "tiers": {
       "free": {
         "name": "무료",
         "features": [
-          "일일 무료 운세",
-          "간단 사주 분석 (1회)",
-          "AI 순위 열람",
-          "기본 가이드 이용"
+          "오늘의 운세 / 타로 / MBTI / 동물점",
+          "광고 포함"
         ]
       },
       "basic": {
         "name": "베이직",
         "features": [
-          "무료 플랜의 모든 기능",
-          "상세 사주 분석 월 3회",
+          "무료 서비스 전체",
+          "사주/관상/궁합 월 3회",
           "광고 제거",
           "PDF 리포트"
         ]
@@ -256,38 +288,38 @@
       "pro": {
         "name": "프로",
         "features": [
-          "베이직 플랜의 모든 기능",
-          "무제한 기본 분석",
-          "심화 분석 월 5회",
-          "음성 리포트",
+          "베이직의 모든 기능",
+          "유료 분석 무제한",
+          "PDF + 음성 리포트",
           "우선 고객 지원"
         ]
       },
       "premium": {
         "name": "프리미엄",
         "features": [
-          "프로 플랜의 모든 기능",
-          "모든 분석 무제한",
-          "전문가 상담",
+          "프로의 모든 기능",
           "가족 분석 포함",
+          "전문가 상담",
           "신기능 우선 이용"
         ]
       }
     },
     "features": {
-      "feature_daily_fortune": "일일 무료 운세",
-      "feature_basic_analysis_1": "기본 사주 분석 1회",
-      "feature_basic_analysis_3": "기본 분석 월 3회",
-      "feature_ai_ranking": "AI 도구 순위 열람",
+      "feature_daily_fortune": "오늘의 운세",
+      "feature_tarot": "타로 리딩",
+      "feature_mbti": "MBTI 운세",
+      "feature_animal": "나의 동물점",
       "feature_ad_free": "광고 제거",
+      "feature_paid_services": "유료 분석 서비스",
+      "feature_all_free": "무료 서비스 전체 포함",
+      "feature_saju_3": "사주/관상/궁합 월 3회",
+      "feature_all_basic": "베이직의 모든 기능",
+      "feature_unlimited_paid": "유료 분석 무제한",
       "feature_pdf": "PDF 리포트",
       "feature_voice": "음성 리포트",
       "feature_expert": "전문가 상담",
       "feature_priority": "우선 고객 지원",
-      "feature_unlimited_basic": "무제한 기본 분석",
-      "feature_deep_5": "심화 분석 월 5회",
-      "feature_all_pro": "프로 플랜의 모든 기능",
-      "feature_unlimited_all": "모든 분석 무제한",
+      "feature_all_pro": "프로의 모든 기능",
       "feature_family": "가족 분석 포함",
       "feature_early_access": "신기능 우선 이용",
       "feature_dedicated": "전담 고객 지원"
