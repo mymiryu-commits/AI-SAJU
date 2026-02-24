@@ -961,7 +961,7 @@ export default function TarotPage() {
   // ===== 카드 드로우 화면 =====
   if (step === 'draw') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950">
+      <div className="min-h-screen bg-gradient-to-b from-[#080818] via-[#0c0c20] to-[#0a0a14]">
         <MysticBackground />
         <div className="container mx-auto px-4 py-8 relative z-10">
           <CardDrawing
@@ -976,7 +976,7 @@ export default function TarotPage() {
   // ===== 질문 입력 화면 =====
   if (step === 'question') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950">
+      <div className="min-h-screen bg-gradient-to-b from-[#080818] via-[#0c0c20] to-[#0a0a14]">
         <MysticBackground />
         <div className="container mx-auto px-4 py-8 md:py-20 relative z-10">
           <div className="max-w-xl mx-auto">
@@ -1042,7 +1042,7 @@ export default function TarotPage() {
 
   // ===== 스프레드 선택 화면 =====
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-b from-[#080818] via-[#0c0c20] to-[#0a0a14]">
       <MysticBackground />
       <div className="container mx-auto px-4 py-8 md:py-16 relative z-10">
         <div className="max-w-3xl mx-auto">
