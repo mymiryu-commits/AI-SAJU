@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,10 @@ import {
   getTodayZodiacRanking,
 } from '@/lib/fortune/chineseZodiac';
 import { ServiceCardImages } from '@/types/settings';
+
+interface SajuLandingPageProps {
+  initialCardImages?: ServiceCardImages;
+}
 
 // 띠 아이콘 매핑
 const zodiacEmojis: Record<ChineseZodiacSign, string> = {
@@ -156,33 +160,12 @@ const serviceCards = [
   },
 ];
 
-export default function SajuLandingPage() {
-  const [cardImages, setCardImages] = useState<ServiceCardImages>({});
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+export default function SajuLandingPage({ initialCardImages = {} }: SajuLandingPageProps) {
+  const cardImages = initialCardImages;
   const [zodiacRanking, setZodiacRanking] = useState<ReturnType<typeof getTodayZodiacRanking>>([]);
   const [currentDate, setCurrentDate] = useState<string>('');
 
-  // 이미지 로드 완료 핸들러 - Next.js Image onLoad 한 번만 사용
-  const handleImageLoad = useCallback((cardId: string) => {
-    setLoadedImages(prev => ({ ...prev, [cardId]: true }));
-  }, []);
-
   useEffect(() => {
-    // 서비스 카드 이미지 URL만 빠르게 가져오기 (프리로드 제거)
-    const fetchCardImages = async () => {
-      try {
-        const response = await fetch('/api/site-settings?key=service_card_images');
-        const result = await response.json();
-        if (result.data?.value) {
-          setCardImages(result.data.value);
-        }
-      } catch {
-        // 이미지 로드 실패 시 그라데이션 배경 유지
-      }
-    };
-
-    fetchCardImages();
-
     // 오늘의 띠별 운세 순위 가져오기
     const today = new Date();
     setCurrentDate(today.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }));
@@ -332,7 +315,6 @@ export default function SajuLandingPage() {
             {serviceCards.map((card, index) => {
               const Icon = card.icon;
               const imageUrl = cardImages[card.id as keyof ServiceCardImages];
-              const isImageLoaded = loadedImages[card.id];
 
               return (
                 <Link
@@ -348,9 +330,9 @@ export default function SajuLandingPage() {
                   >
                     {/* Card Image Area - 항상 그라데이션 배경 유지 */}
                     <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${card.gradient}`}>
-                      {/* 이미지가 있으면 즉시 렌더링, Next.js Image가 로딩 처리 */}
+                      {/* 이미지가 있으면 즉시 렌더링 (서버에서 URL 프리페치) */}
                       {imageUrl && (
-                        <div className={`absolute inset-0 transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="absolute inset-0">
                           <Image
                             src={imageUrl}
                             alt={card.title}
@@ -358,31 +340,32 @@ export default function SajuLandingPage() {
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                             priority={index < 4}
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
-                            onLoad={() => handleImageLoad(card.id)}
                           />
                           {/* 이미지 오버레이 */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                       )}
-                      {/* 이미지가 로드되지 않았거나 없는 경우 기본 아이콘 표시 */}
-                      <div className={`absolute inset-0 transition-opacity duration-300 ${imageUrl && isImageLoaded ? 'opacity-0' : 'opacity-100'}`}>
-                        {/* 배경 패턴 */}
-                        <div className="absolute inset-0 opacity-30">
-                          <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
-                          <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/20 rounded-full blur-xl" />
-                        </div>
-                        {/* 아이콘 */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-white/30 rounded-full blur-xl scale-150 group-hover:scale-175 transition-transform duration-500" />
-                            <div className="relative w-18 h-18 md:w-22 md:h-22 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
-                              <Icon className="h-9 w-9 md:h-11 md:w-11 text-white drop-shadow-lg" />
+                      {/* 이미지가 없는 경우 기본 아이콘 표시 */}
+                      {!imageUrl && (
+                        <div className="absolute inset-0">
+                          {/* 배경 패턴 */}
+                          <div className="absolute inset-0 opacity-30">
+                            <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
+                            <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/20 rounded-full blur-xl" />
+                          </div>
+                          {/* 아이콘 */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-white/30 rounded-full blur-xl scale-150 group-hover:scale-175 transition-transform duration-500" />
+                              <div className="relative w-18 h-18 md:w-22 md:h-22 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
+                                <Icon className="h-9 w-9 md:h-11 md:w-11 text-white drop-shadow-lg" />
+                              </div>
                             </div>
                           </div>
+                          {/* 하단 그라데이션 */}
+                          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
                         </div>
-                        {/* 하단 그라데이션 */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
-                      </div>
+                      )}
                     </div>
 
                     {/* Card Button Area */}
