@@ -17,7 +17,6 @@ import {
   Calendar,
   TrendingUp,
   Brain,
-  Loader2,
   Dna,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -159,46 +158,26 @@ const serviceCards = [
 
 export default function SajuLandingPage() {
   const [cardImages, setCardImages] = useState<ServiceCardImages>({});
-  const [isImagesLoading, setIsImagesLoading] = useState(true);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [zodiacRanking, setZodiacRanking] = useState<ReturnType<typeof getTodayZodiacRanking>>([]);
   const [currentDate, setCurrentDate] = useState<string>('');
 
-  // 이미지 로드 완료 핸들러
+  // 이미지 로드 완료 핸들러 - Next.js Image onLoad 한 번만 사용
   const handleImageLoad = useCallback((cardId: string) => {
     setLoadedImages(prev => ({ ...prev, [cardId]: true }));
   }, []);
 
   useEffect(() => {
-    // 서비스 카드 이미지 설정 가져오기
+    // 서비스 카드 이미지 URL만 빠르게 가져오기 (프리로드 제거)
     const fetchCardImages = async () => {
       try {
         const response = await fetch('/api/site-settings?key=service_card_images');
         const result = await response.json();
         if (result.data?.value) {
           setCardImages(result.data.value);
-          // 이미지 URL이 있는 카드들을 미리 로드
-          const imageUrls = result.data.value as ServiceCardImages;
-          const preloadPromises = Object.entries(imageUrls).map(([key, url]) => {
-            if (url) {
-              return new Promise<void>((resolve) => {
-                const img = document.createElement('img');
-                img.onload = () => {
-                  setLoadedImages(prev => ({ ...prev, [key]: true }));
-                  resolve();
-                };
-                img.onerror = () => resolve();
-                img.src = url;
-              });
-            }
-            return Promise.resolve();
-          });
-          await Promise.all(preloadPromises);
         }
-      } catch (error) {
-        console.error('Error fetching card images:', error);
-      } finally {
-        setIsImagesLoading(false);
+      } catch {
+        // 이미지 로드 실패 시 그라데이션 배경 유지
       }
     };
 
@@ -354,7 +333,6 @@ export default function SajuLandingPage() {
               const Icon = card.icon;
               const imageUrl = cardImages[card.id as keyof ServiceCardImages];
               const isImageLoaded = loadedImages[card.id];
-              const showImage = imageUrl && isImageLoaded;
 
               return (
                 <Link
@@ -367,17 +345,18 @@ export default function SajuLandingPage() {
                       shadow-lg hover:shadow-2xl hover:-translate-y-2
                       border border-border/50 hover:border-purple-200 dark:hover:border-purple-800/50
                       ${card.shadowColor}`}
-                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Card Image Area - 항상 그라데이션 배경 유지 */}
                     <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${card.gradient}`}>
-                      {/* 이미지가 있고 로드된 경우에만 표시 */}
+                      {/* 이미지가 있으면 즉시 렌더링, Next.js Image가 로딩 처리 */}
                       {imageUrl && (
-                        <div className={`absolute inset-0 transition-opacity duration-500 ${showImage ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`absolute inset-0 transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}>
                           <Image
                             src={imageUrl}
                             alt={card.title}
                             fill
+                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            priority={index < 4}
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                             onLoad={() => handleImageLoad(card.id)}
                           />
@@ -386,7 +365,7 @@ export default function SajuLandingPage() {
                         </div>
                       )}
                       {/* 이미지가 로드되지 않았거나 없는 경우 기본 아이콘 표시 */}
-                      <div className={`absolute inset-0 transition-opacity duration-500 ${showImage ? 'opacity-0' : 'opacity-100'}`}>
+                      <div className={`absolute inset-0 transition-opacity duration-300 ${imageUrl && isImageLoaded ? 'opacity-0' : 'opacity-100'}`}>
                         {/* 배경 패턴 */}
                         <div className="absolute inset-0 opacity-30">
                           <div className="absolute top-4 right-4 w-24 h-24 bg-white/20 rounded-full blur-2xl" />
